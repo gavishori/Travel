@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Travel Log — יומן מסע</title>
+    <!-- Tailwind CDN for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Leaflet for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Lucide Icons for modern interface -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap');
+        body {
+            direction: rtl;
+            font-family: 'Heebo', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* 24px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem; /* 24px */
+        }
+        .input-field {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem; /* 12px */
+            padding: 0.75rem 1rem;
+            transition: all 0.2s;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+        .input-field[disabled] {
+            cursor: not-allowed;
+            background-color: #f0f4f8; /* Light blue-gray background for disabled state */
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px; /* full rounded */
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-height: 44px; /* Accessible touch target size */
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-height: 44px; /* Accessible touch target size */
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+        .icon-btn {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            transition: all 0.2s;
+            min-width: 44px;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+        #tripList li {
+          transition: all 0.2s;
+          cursor: pointer;
+        }
+        #tripList li:hover {
+          background-color: #f7fafc;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .no-spinners::-webkit-outer-spin-button, 
+        .no-spinners::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .no-spinners {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
+        <header class="flex items-center justify-between mb-8 pb-4 border-b border-gray-300">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-600">Travel Log</h1>
+            <button id="addTripBtn" class="btn-primary flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span>הוסף טיול</span>
+            </button>
+        </header>
+
+        <!-- MAIN SCREEN -->
+        <main id="main-screen" class="card">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 text-gray-700">הטיולים שלי</h2>
+            <ul id="tripList" class="space-y-4"></ul>
+        </main>
+
+        <!-- TRIP EDITOR (hidden by default) -->
+        <section id="tripEditor" class="hidden card mt-6 md:mt-10">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-gray-300 gap-4">
+                <div class="flex items-center gap-4">
+                    <button id="backBtn" class="icon-btn" aria-label="חזור">
+                        <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </button>
+                    <h2 id="tripDestinationHeader" class="text-2xl sm:text-3xl font-bold text-gray-700"></h2>
+                </div>
+                <button id="saveTripDetails" class="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    <span>שמור</span>
+                </button>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="flex flex-col gap-6 md:gap-8">
+
+                <!-- פרטים כלליים Card -->
+                <div class="card p-6">
+                    <h3 class="flex items-center gap-2 text-xl font-bold text-gray-700 mb-4">
+                        <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+                        <span>פרטים כלליים</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="destinationInput" class="text-sm font-medium text-gray-500">יעד</label>
+                            <input id="destinationInput" class="w-full input-field" placeholder="לדוגמה: פולין, ורשה" />
+                        </div>
+                        <div>
+                            <label for="holidayTypeInput" class="text-sm font-medium text-gray-500">סוג טיול</label>
+                            <input id="holidayTypeInput" class="w-full input-field" placeholder="בטן-גב / סקי / טרקים" />
+                        </div>
+                        <div>
+                            <label for="participantsInput" class="text-sm font-medium text-gray-500">משתתפים</label>
+                            <input id="participantsInput" class="w-full input-field" placeholder="מי משתתף?" />
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="startDateInput" class="text-sm font-medium text-gray-500">תאריך התחלה</label>
+                                <input id="startDateInput" type="date" class="w-full input-field" />
+                            </div>
+                            <div>
+                                <label for="endDateInput" class="text-sm font-medium text-gray-500">תאריך סיום</label>
+                                <input id="endDateInput" type="date" class="w-full input-field" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ניהול תקציב Card -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="flex items-center gap-2 text-xl font-bold text-gray-700">
+                            <i data-lucide="wallet" class="w-6 h-6 text-green-500"></i>
+                            <span>ניהול תקציב</span>
+                        </h3>
+                        <div id="budget-buttons">
+                            <button id="updateBudgetBtn" class="btn-primary flex items-center gap-2 bg-blue-500 hover:bg-blue-600">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                <span>עדכן תקציב</span>
+                            </button>
+                            <button id="editBudgetBtn" class="btn-primary flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 hidden">
+                                <i data-lucide="edit-2" class="w-5 h-5"></i>
+                                <span>ערוך תקציב</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">תקציב כולל</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input id="usdBudget" placeholder="USD" class="input-field text-center no-spinners" type="number" />
+                                <input id="eurBudget" placeholder="EUR" class="input-field text-center no-spinners" type="number" />
+                                <input id="ilsBudget" placeholder="ILS" class="input-field text-center no-spinners" type="number" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">הוצאות בפועל</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input id="totalUsdSpent" readonly class="input-field bg-gray-200 text-center" />
+                                <input id="totalEurSpent" readonly class="input-field bg-gray-200 text-center" />
+                                <input id="totalIlsSpent" readonly class="input-field bg-gray-200 text-center" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">יתרה</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input id="remainingUsd" readonly class="input-field text-center" />
+                                <input id="remainingEur" readonly class="input-field text-center" />
+                                <input id="remainingIls" readonly class="input-field text-center" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- הוצאות Card -->
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="flex items-center gap-2 text-xl font-bold text-gray-700">
+                            <i data-lucide="tag" class="w-6 h-6 text-yellow-500"></i>
+                            <span>הוצאות</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <button id="sortExpensesBtn" class="icon-btn" aria-label="מיין הוצאות">
+                                <i data-lucide="arrow-down-up" class="w-5 h-5"></i>
+                            </button>
+                            <button id="addExpenseBtn" class="btn-primary flex items-center gap-2 bg-blue-500 hover:bg-blue-600">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span>הוסף הוצאה</span>
+                            </button>
+                        </div>
+                    </div>
+                    <ul id="expenseList" class="space-y-3"></ul>
+                </div>
+                <!-- תיעוד יומי ומפה Card -->
+                <div class="card p-6">
+                    <h3 class="flex items-center gap-2 text-xl font-bold text-gray-700 mb-4">
+                        <i data-lucide="book-open" class="w-6 h-6 text-purple-500"></i>
+                        <span>תיעוד יומי</span>
+                    </h3>
+                    <div class="flex items-center gap-2 mb-4">
+                        <button id="sortLogsBtn" class="icon-btn" aria-label="מיין תיעוד יומי">
+                            <i data-lucide="arrow-down-up" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <textarea id="dailyLogInput" rows="4" class="w-full input-field" placeholder="מה עשינו היום?"></textarea>
+                    <div class="flex flex-col md:flex-row gap-4 mt-4 items-center">
+                        <label class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <input id="imageInput" type="file" accept="image/*,video/*" multiple class="hidden"/>
+                            <span>בחר תמונה/סרטון</span>
+                        </label>
+                        <button id="addLogBtn" class="btn-primary flex items-center gap-2 w-full md:w-auto justify-center bg-green-500 hover:bg-green-600">
+                            <div id="log-spinner" class="spinner hidden"></div>
+                            <i id="add-log-icon" data-lucide="plus-circle" class="w-5 h-5"></i>
+                            <span>הזן תיעוד</span>
+                        </button>
+                    </div>
+                    <div id="gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6"></div>
+                    <div id="logsArea" class="mt-6 space-y-3"></div>
+
+                    <div class="mt-8">
+                        <h4 class="flex items-center gap-2 text-lg font-bold text-gray-700 mb-4">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
+                            <span>מפת הטיול</span>
+                        </h4>
+                        <div id="map" style="height: 400px;" class="rounded-xl border border-gray-200"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div class="mt-8 flex flex-col md:flex-row justify-end gap-4">
+                <button id="shareTripBtn" class="btn-secondary flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white">
+                    <i data-lucide="share-2" class="w-5 h-5"></i>
+                    <span>שתף</span>
+                </button>
+                <button id="unshareTripBtn" class="btn-secondary flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white hidden">
+                    <i data-lucide="x-circle" class="w-5 h-5"></i>
+                    <span>בטל שיתוף</span>
+                </button>
+                <button id="exportCsvBtn" class="btn-secondary flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span>ייצא CSV</span>
+                </button>
+                <button id="exportPdfBtn" class="btn-secondary flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span>ייצא PDF</span>
+                </button>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alertModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative p-8 w-96 max-w-sm mx-auto shadow-2xl rounded-2xl bg-white text-center transform scale-105">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">הודעה</h3>
+            <p id="alertMessage" class="text-gray-600 mb-6"></p>
+            <button id="alertCloseBtn" class="w-full py-3 btn-primary">
+                סגור
+            </button>
+        </div>
+    </div>
+    
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative p-8 w-96 max-w-sm mx-auto shadow-2xl rounded-2xl bg-white text-center transform scale-105">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">אישור מחיקה</h3>
+            <p id="confirmMessage" class="text-gray-600 mb-6">האם אתה בטוח שברצונך למחוק?</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="confirmYesBtn" class="py-3 px-6 btn-primary bg-red-500 hover:bg-red-600">
+                    כן, מחק
+                </button>
+                <button id="confirmNoBtn" class="py-3 px-6 btn-primary">
+                    בטל
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modules -->
+    <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
