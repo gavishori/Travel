@@ -1,0 +1,77 @@
+/* Additional small styles */
+body { direction: rtl; }
+
+/* The existing list item style is now handled better with Tailwind in the HTML file */
+/* #tripList li { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; } */
+
+/* This is a useful utility class, keeping it. */
+.no-spinners::-webkit-outer-spin-button, .no-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* === Enhanced UI Additions === */
+
+/* Glassmorphism cards */
+.card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 20px 30px rgba(0,0,0,0.08); }
+
+/* Buttons polish */
+.btn-primary { border: 1px solid rgba(255,255,255,0.2); }
+.btn-secondary { border: 1px solid rgba(0,0,0,0.05); }
+
+/* Dark mode (class-based) */
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+.dark body { background-color: #0b1220; color: #e7ecf3; }
+.dark .card { background: rgba(17, 24, 39, 0.72); border-color: rgba(255,255,255,0.08); }
+.dark .input-field { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color:#e7ecf3; }
+.dark .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
+.dark .btn-secondary { background: #111827; color:#cbd5e1; border-color: rgba(255,255,255,0.06); }
+.dark .icon-btn { background:#111827; color:#cbd5e1; }
+.dark #tripList li:hover { background: rgba(255,255,255,0.04); }
+.dark .leaflet-popup-content-wrapper { background:#111827; color:#e7ecf3; }
+.dark .leaflet-container { background:#0b1220; }
+
+/* Skeleton loader utility */
+.skeleton { position: relative; overflow: hidden; background: #e5e7eb; }
+.skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: skeleton 1.2s infinite;
+}
+@keyframes skeleton { 100% { transform: translateX(100%);} }
+
+/* Compact map filter buttons on small screens */
+@media (max-width: 640px) {
+  .map-filter-btn { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+}
+
+
+/* Map popup styling + focus flash highlight */
+.leaflet-popup-content { margin: 8px 10px; }
+.custom-popup .amount-strong { font-weight: 800; font-size: 1rem; }
+.focus-flash { outline: 3px solid rgba(99,102,241,.6); box-shadow: 0 0 0 4px rgba(99,102,241,.25); transition: outline-color .3s; }
+.expense-icon, .log-icon { display:grid; place-items:center; background: rgba(0,0,0,.35); color:#fff; border-radius: 9999px; }
+.theme-light .expense-icon, .theme-light .log-icon { background: #4f46e5; color:#fff; }
+
+.theme-dark .leaflet-control-zoom a { background:#0b1220; color:#e5e7eb; border:1px solid rgba(255,255,255,.1); }
+.theme-light .leaflet-control-zoom a { background:#fff; color:#111827; border:1px solid #e5e7eb; }
+
+
+/* Popup cosmetics + focus highlight */
+.leaflet-popup-content { direction: rtl; }
+.custom-popup .popup-go, .custom-popup .popup-edit { cursor: pointer; }
+.tl-highlight { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 12px; }
+
+/* Theme helpers */
+body.theme-light { background-color:#f6f7fb; color:#0f172a; }
+body.theme-dark { background-color:#0b1220; color:#e5ecff; }
+body.theme-dark .card { background: rgba(17,24,39,0.72); border-color: rgba(255,255,255,0.08); }
+body.theme-light .card { background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.06); }
