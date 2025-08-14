@@ -1,77 +1,320 @@
-/* Additional small styles */
-body { direction: rtl; }
+/* ---- Layout v3 Cosmetics ---- */
+:root { --ring: rgba(255,255,255,0.10); --bg-panel: rgba(255,255,255,0.05); }
+* { font-feature-settings: "ss01" 1; }
+.font-heebo { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; }
 
-/* The existing list item style is now handled better with Tailwind in the HTML file */
-/* #tripList li { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; } */
-
-/* This is a useful utility class, keeping it. */
-.no-spinners::-webkit-outer-spin-button, .no-spinners::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.card-neo {
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(16,185,129,0.14), transparent 40%) ,
+              linear-gradient(180deg, rgba(30,41,59,0.65), rgba(30,41,59,0.45));
+  border: 1px solid var(--ring);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-/* === Enhanced UI Additions === */
-
-/* Glassmorphism cards */
-.card {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.4);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--ring);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 20px 30px rgba(0,0,0,0.08); }
-
-/* Buttons polish */
-.btn-primary { border: 1px solid rgba(255,255,255,0.2); }
-.btn-secondary { border: 1px solid rgba(0,0,0,0.05); }
-
-/* Dark mode (class-based) */
-:root { color-scheme: light; }
-.dark { color-scheme: dark; }
-.dark body { background-color: #0b1220; color: #e7ecf3; }
-.dark .card { background: rgba(17, 24, 39, 0.72); border-color: rgba(255,255,255,0.08); }
-.dark .input-field { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color:#e7ecf3; }
-.dark .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
-.dark .btn-secondary { background: #111827; color:#cbd5e1; border-color: rgba(255,255,255,0.06); }
-.dark .icon-btn { background:#111827; color:#cbd5e1; }
-.dark #tripList li:hover { background: rgba(255,255,255,0.04); }
-.dark .leaflet-popup-content-wrapper { background:#111827; color:#e7ecf3; }
-.dark .leaflet-container { background:#0b1220; }
-
-/* Skeleton loader utility */
-.skeleton { position: relative; overflow: hidden; background: #e5e7eb; }
-.skeleton::after {
-  content: ""; position: absolute; inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
-  animation: skeleton 1.2s infinite;
-}
-@keyframes skeleton { 100% { transform: translateX(100%);} }
-
-/* Compact map filter buttons on small screens */
-@media (max-width: 640px) {
-  .map-filter-btn { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+.panel-title {
+  display:flex; align-items:center; gap:.5rem;
+  font-weight:800; color:#c7fcec; letter-spacing:.01em; margin-bottom:.5rem;
 }
 
+/* Inputs */
+.input {
+  width: 100%; border:1px solid var(--ring); background: rgba(255,255,255,0.04);
+  border-radius: .85rem; padding: .7rem .9rem; outline: none; color: #eaf5ef;
+  transition: box-shadow .2s, border-color .2s, transform .05s;
+}
+.input:focus { box-shadow: 0 0 0 3px rgba(16,185,129,.25); border-color: rgba(16,185,129,.55); transform: translateY(-1px); }
+.label { color:#b9d9cf; font-size:.85rem; margin-bottom:.25rem; display:block; }
+.no-spinners::-webkit-outer-spin-button, .no-spinners::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* Map popup styling + focus flash highlight */
-.leaflet-popup-content { margin: 8px 10px; }
-.custom-popup .amount-strong { font-weight: 800; font-size: 1rem; }
-.focus-flash { outline: 3px solid rgba(99,102,241,.6); box-shadow: 0 0 0 4px rgba(99,102,241,.25); transition: outline-color .3s; }
-.expense-icon, .log-icon { display:grid; place-items:center; background: rgba(0,0,0,.35); color:#fff; border-radius: 9999px; }
-.theme-light .expense-icon, .theme-light .log-icon { background: #4f46e5; color:#fff; }
+/* Buttons */
+.btn-solid-emerald {
+  display:inline-flex; align-items:center; gap:.5rem;
+  background: linear-gradient(135deg,#10b981,#059669);
+  color:white; border:1px solid rgba(255,255,255,.1);
+  padding:.6rem 1rem; border-radius:9999px; font-weight:700;
+  box-shadow: 0 10px 25px rgba(16,185,129,.25);
+  transition: transform .1s, box-shadow .2s, filter .2s;
+}
+.btn-solid-emerald:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-soft {
+  display:inline-flex; align-items:center; gap:.5rem;
+  background: rgba(255,255,255,.06); color:#e2e8f0; border:1px solid var(--ring);
+  padding:.55rem .95rem; border-radius:9999px;
+}
+.btn-soft-emerald { composes: btn-soft; }
+.btn-soft-amber {
+  display:inline-flex; align-items:center; gap:.5rem;
+  background: rgba(251,191,36,.15); color:#fde68a; border:1px solid rgba(251,191,36,.35);
+  padding:.55rem .95rem; border-radius:9999px;
+}
+.btn-ghost {
+  display:inline-flex; align-items:center; gap:.5rem;
+  background: transparent; color:#e2e8f0; border:1px dashed var(--ring);
+  padding:.5rem .8rem; border-radius:9999px;
+}
+.chip {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.35rem .7rem; border-radius:9999px; border:1px solid var(--ring);
+  background: rgba(255,255,255,.05); color:#e2e8f0; font-size:.8rem;
+}
+.chip.active { box-shadow: 0 2px 0 rgba(255,255,255,.06) inset, 0 0 0 2px rgba(16,185,129,.20); }
 
-.theme-dark .leaflet-control-zoom a { background:#0b1220; color:#e5e7eb; border:1px solid rgba(255,255,255,.1); }
-.theme-light .leaflet-control-zoom a { background:#fff; color:#111827; border:1px solid #e5e7eb; }
+/* Tabs */
+.tabs { display:flex; gap:.5rem; }
+.tab-btn {
+  background: rgba(255,255,255,.06); color:#e2e8f0; border:1px solid var(--ring);
+  padding:.55rem .9rem; border-radius:9999px; display:inline-flex; align-items:center; gap:.45rem; font-weight:700;
+  transition: all .15s;
+}
+.tab-btn.active { background: rgba(16,185,129,.18); border-color:rgba(16,185,129,.45); color:#c7fcec; box-shadow: 0 6px 18px rgba(16,185,129,.22); }
+
+/* Modals */
+.modal { position: fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,.58); z-index:50; }
+.modal-card {
+  width: 28rem; max-width: 90vw; background: linear-gradient(180deg, rgba(2,6,23,.9), rgba(2,6,23,.8));
+  border: 1px solid var(--ring); border-radius: 1rem; padding: 1rem; color:#e2e8f0;
+}
+
+/* Spinner */
+.spinner {
+  border: 4px solid rgba(255,255,255,.15);
+  border-left-color: #10b981;
+  border-radius: 50%;
+  width: 24px; height: 24px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Light theme support ---- */
+body.light { background: linear-gradient(to bottom, #f8fafc, #e2e8f0); color: #0f172a; }
+body.light .card-neo {
+  background: radial-gradient(900px 500px at 20% -10%, rgba(16,185,129,0.12), transparent 40%),
+              linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7));
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 30px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+body.light .panel {
+  background: rgba(255,255,255,0.85);
+  border-color: rgba(15,23,42,0.08);
+  color: #0f172a;
+}
+body.light .panel-title { color: #065f46; }
+body.light .input {
+  background: rgba(15,23,42,0.03);
+  color: #0f172a;
+  border-color: rgba(15,23,42,0.15);
+}
+body.light .input:focus { box-shadow: 0 0 0 3px rgba(16,185,129,.25); border-color: rgba(16,185,129,.55); }
+body.light .label { color: #334155; }
+
+body.light .btn-soft { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
+body.light .btn-ghost { color:#0f172a; border-color: rgba(15,23,42,0.2); }
+body.light .chip { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
+body.light .chip.active { box-shadow: 0 0 0 2px rgba(16,185,129,.20); }
+
+body.light .tabs .tab-btn { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
+body.light .tabs .tab-btn.active { background: rgba(16,185,129,.15); color:#065f46; border-color: rgba(16,185,129,.35); }
+
+body.light .modal-card {
+  background: white;
+  color:#0f172a;
+  border-color: rgba(15,23,42,0.12);
+}
 
 
-/* Popup cosmetics + focus highlight */
-.leaflet-popup-content { direction: rtl; }
-.custom-popup .popup-go, .custom-popup .popup-edit { cursor: pointer; }
-.tl-highlight { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 12px; }
 
-/* Theme helpers */
-body.theme-light { background-color:#f6f7fb; color:#0f172a; }
-body.theme-dark { background-color:#0b1220; color:#e5ecff; }
-body.theme-dark .card { background: rgba(17,24,39,0.72); border-color: rgba(255,255,255,0.08); }
-body.theme-light .card { background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.06); }
+/* ==== SURFACE AWARE TEXT CONTRAST v2 ==== */
+:root { --text-on-light:#0b2a5b; --text-on-dark:#ffffff; }
+
+/* Highest precedence: affect all descendants including SVG strokes */
+:where(.on-light, .surface-light) :is(*, svg, svg * ) {
+  color: var(--text-on-light) !important;
+  fill: var(--text-on-light) !important;
+  stroke: var(--text-on-light) !important;
+}
+:where(.on-dark, .surface-dark) :is(*, svg, svg * ) {
+  color: var(--text-on-dark) !important;
+  fill: var(--text-on-dark) !important;
+  stroke: var(--text-on-dark) !important;
+}
+
+/* Inputs & placeholders on each surface */
+:where(.on-dark, .surface-dark) :is(input, textarea, select) {
+  color: var(--text-on-dark) !important; caret-color: var(--text-on-dark);
+}
+:where(.on-dark, .surface-dark) :is(input::placeholder, textarea::placeholder) {
+  color: rgba(255,255,255,.8) !important;
+}
+:where(.on-light, .surface-light) :is(input, textarea, select) {
+  color: var(--text-on-light) !important; caret-color: var(--text-on-light);
+}
+:where(.on-light, .surface-light) :is(input::placeholder, textarea::placeholder) {
+  color: rgba(11,42,91,.7) !important;
+}
+
+/* Utility backgrounds (explicit) */
+.bg-white, .bg-gray-50, .bg-slate-50, .bg-neutral-50, .bg-[#ffffff] {
+  color: var(--text-on-light) !important;
+}
+.bg-white *, .bg-gray-50 *, .bg-slate-50 *, .bg-neutral-50 *, .bg-[#ffffff] * {
+  color: var(--text-on-light) !important;
+}
+
+/* Dark/blue known backgrounds */
+.bg-blue-900, .bg-blue-800, .bg-slate-900, .bg-slate-800, .bg-indigo-900,
+.header-dark, .section-dark, .panel-dark {
+  color: var(--text-on-dark) !important;
+}
+.bg-blue-900 *, .bg-blue-800 *, .bg-slate-900 *, .bg-slate-800 *, .bg-indigo-900 *,
+.header-dark *, .section-dark *, .panel-dark * {
+  color: var(--text-on-dark) !important;
+}
+
+/* Keep semantic colors */
+:where(.on-light, .on-dark, .surface-light, .surface-dark) .text-red-500 { color: #ef4444 !important; }
+:where(.on-light, .on-dark, .surface-light, .surface-dark) .text-yellow-500 { color: #eab308 !important; }
+
+
+
+/* ==== FIX: Trip details & budget text visible in dark mode ==== */
+body:not(.light) :where([class^="text-"], [class*=" text-"], .panel-title, .label, .input, .form-label, .card-title, .section-title, .summary, .summary *){
+  color: #ffffff !important;
+}
+/* Keep navy on explicitly light surfaces */
+.on-light :where([class^="text-"], [class*=" text-"], .panel-title, .label, .input, .form-label, .card-title, .section-title, .summary, .summary *){
+  color: #0b2a5b !important;
+}
+
+
+
+/* ==== FINAL PRECEDENCE OVERRIDES ==== */
+/* 1) In dark mode, titles are white by default */
+body:not(.light) :is(h1,h2,h3,h4,h5,h6,.section-title,.panel-title,.header-title){
+  color:#ffffff !important;
+  fill:#ffffff !important;
+  stroke:#ffffff !important;
+}
+
+/* 2) Anything inside an explicitly white card/area must be navy */
+.bg-white, .bg-white :is(*, svg, svg *) {
+  color:#0b2a5b !important;
+  fill:#0b2a5b !important;
+  stroke:#0b2a5b !important;
+}
+
+/* 3) Explicit light utility backgrounds keep navy as well */
+.bg-gray-50, .bg-slate-50, .bg-neutral-50,
+.bg-gray-50 :is(*, svg, svg *),
+.bg-slate-50 :is(*, svg, svg *),
+.bg-neutral-50 :is(*, svg, svg *) {
+  color:#0b2a5b !important;
+  fill:#0b2a5b !important;
+  stroke:#0b2a5b !important;
+}
+
+
+
+/* ==== USER REQUESTED COLORS (destination header, tabs, primary actions) ==== */
+/* Destination title: always deep navy */
+#tripDestinationHeader { color: #0b2a5b !important; }
+
+/* Tab buttons (including "הצג הכל"): navy on white in all states */
+.tab-btn {
+  background: #ffffff !important;
+  color: #0b2a5b !important;
+  border: 1px solid var(--ring) !important;
+}
+.tab-btn:hover,
+.tab-btn.active,
+.tab-btn[aria-selected="true"] {
+  background: #ffffff !important;
+  color: #0b2a5b !important;
+  box-shadow: 0 6px 16px rgba(11,42,91,0.12) !important;
+}
+.tab-btn :is(svg, svg *) {
+  stroke: currentColor !important;
+  fill: currentColor !important;
+}
+
+/* Primary action buttons (Save / Add Trip) were green; make them white+navy */
+.btn-solid-emerald {
+  background: #ffffff !important;
+  color: #0b2a5b !important;
+  border: 1px solid var(--ring) !important;
+}
+.btn-solid-emerald:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 6px 16px rgba(11,42,91,0.12);
+}
+.btn-solid-emerald :is(svg, svg *) { stroke: currentColor !important; fill: currentColor !important; }
+
+
+
+/* ==== Trip list card actions to navy-on-white ==== */
+#tripList [data-edit],
+#tripList [data-delete] {
+  background: #ffffff !important;
+  color: #0b2a5b !important;
+  border: 1px solid var(--ring) !important;
+}
+#tripList [data-edit]:hover,
+#tripList [data-delete]:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 6px 16px rgba(11,42,91,0.12);
+}
+#tripList [data-edit] :is(svg, svg *),
+#tripList [data-delete] :is(svg, svg *) {
+  stroke: currentColor !important;
+  fill: currentColor !important;
+}
+/* Trip title/meta on white cards: navy */
+#tripList h4, #tripList p {
+  color: #0b2a5b !important;
+}
+
+
+
+/* ==== DARK MODE SPECIFIC HARD FIXES (logs title, ghost buttons, toggle) ==== */
+/* Panel titles and section headers in dark mode must be white */
+body:not(.light) :is(.panel-title, .section-title, #logs-section h3, #logs-section .panel-title, #expenses-section h2){
+  color:#ffffff !important;
+}
+
+/* Ghost/dashed icon buttons (including the two small round ones in logs + the theme toggle) */
+body:not(.light) .btn-ghost,
+body:not(.light) .btn-ghost :is(svg, svg *){
+  color:#ffffff !important;
+  stroke:#ffffff !important;
+  fill:#ffffff !important;
+}
+body:not(.light) .btn-ghost{
+  background: transparent !important;
+  border:1px dashed rgba(255,255,255,0.35) !important;
+}
+
+/* Theme toggle explicitly */
+body:not(.light) #themeToggle,
+body:not(.light) #themeToggle :is(svg, svg *){
+  color:#ffffff !important;
+  stroke:#ffffff !important;
+  fill:#ffffff !important;
+}
+body:not(.light) #themeToggle{
+  border:1px dashed rgba(255,255,255,0.35) !important;
+  background: transparent !important;
+}
+
+/* Ensure big "הוסף טיול" pill (white) keeps navy text in both modes */
+#addTripBtn {
+  background:#ffffff !important;
+  color: #0b2a5b !important;
+}
+#addTripBtn :is(svg, svg *){ stroke:currentColor !important; fill:currentColor !important; }
