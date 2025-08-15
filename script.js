@@ -256,21 +256,28 @@ function updateActualExpensesDisplay(expenses) {
 }
 
 // Custom icons for map markers
+
 const expenseIcon = L.divIcon({
     className: 'expense-icon',
-    html: '<i data-lucide="tag" class="w-4 h-4"></i>',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
+    html: `
+      <div class="marker-outline">
+        <i data-lucide="tag"></i>
+      </div>
+    `,
+    iconSize: [30, 40],
+    iconAnchor: [15, 40]
 });
 
 const logIcon = L.divIcon({
     className: 'log-icon',
-    html: '<i data-lucide="book" class="w-4 h-4"></i>',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
+    html: `
+      <div class="marker-outline">
+        <i data-lucide="book-open"></i>
+      </div>
+    `,
+    iconSize: [30, 40],
+    iconAnchor: [15, 40]
 });
-
-
 // Rendering Functions
 function renderExpenseList(expensesArr) {
     expenseList.innerHTML = "";
@@ -372,15 +379,73 @@ function initMap(points) {
         const isExpense = p.category;
         const description = p.locationName || p.description || p.text || 'נקודה';
         const popupContent = `
-            <div class="p-2 text-right">
-                <h4 class="font-bold text-gray-800">${isExpense ? 'הוצאה' : 'תיעוד יומי'}</h4>
-                <p class="text-sm text-gray-600">${description}</p>
-                <p class="text-xs text-gray-400 mt-2">${p.date ? formatDateTime(p.date).date : ''} | ${p.date ? formatDateTime(p.date).time : ''}</p>
-                ${p.lat && p.lng ? `<p class="text-xs text-gray-400">קואורדינטות: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}</p>` : ''}
+            <div class="popup-card">
+              <div class="popup-title">${(p.locationName || (isExpense ? (p.category || 'הוצאה') : 'תיעוד יומי'))}</div>
+              <div class="popup-meta">${p.date ? (formatDateTime(p.date).date + ' · ' + formatDateTime(p.date).time) : ''}</div>
+              <div class="popup-content">${isExpense 
+                    ? ((p.description || '') + (p.amount ? ` — ${p.amount} ${p.currency||''}` : '')) 
+                    : (p.text || '')}
+              </div>
+              ${p.mediaUrl ? `<img class="popup-media" src="${p.mediaUrl}" alt="תמונה" />` : ''}
+              <div class="popup-actions">
+                <button class="btn-mini popup-edit" data-type="${isExpense?'expense':'log'}" data-id="${p.id||''}">ערוך</button>
+                <button class="btn-mini popup-show" data-type="${isExpense?'expense':'log'}" data-id="${p.id||''}">הצג</button>
+              </div>
             </div>
         `;
         const marker = L.marker([p.lat, p.lng], { icon: isExpense ? expenseIcon : logIcon }).bindPopup(popupContent, { className: 'custom-popup' });
         markers.push(marker);
+        
+        // attach actions when popup opens
+        marker.on('popupopen', (e) => {
+            const el = e.popup.getElement();
+            if (!el) return;
+            lucide.createIcons();
+            const id = (p.id || '');
+            const type = (p.category ? 'expense' : 'log');
+
+            function selectTabById(sectionId) {
+                const tabBtn = document.querySelector(`.tab-btn[data-target="${sectionId}"]`);
+                if (tabBtn) tabBtn.click();
+            }
+            function highlightElement(el) {
+                if (!el) return;
+                el.classList.add('flash-highlight');
+                setTimeout(() => el.classList.remove('flash-highlight'), 1600);
+                el.scrollIntoView({behavior:'smooth', block:'center'});
+            }
+
+            const editBtn = el.querySelector('.popup-edit');
+            const showBtn = el.querySelector('.popup-show');
+
+            if (editBtn) editBtn.addEventListener('click', () => {
+                if (type === 'expense') {
+                    selectTabById('#expenses-section');
+                    const item = document.querySelector(`[data-expense-id="${id}"] .edit-expense`);
+                    if (item) item.click();
+                    const li = document.querySelector(`[data-expense-id="${id}"]`);
+                    highlightElement(li);
+                } else {
+                    selectTabById('#logs-section');
+                    const btn = document.querySelector(`[data-log-id="${id}"] .edit-log-btn`);
+                    if (btn) btn.click();
+                    const row = document.querySelector(`[data-log-id="${id}"]`);
+                    highlightElement(row);
+                }
+            });
+
+            if (showBtn) showBtn.addEventListener('click', () => {
+                if (type === 'expense') {
+                    selectTabById('#expenses-section');
+                    const li = document.querySelector(`[data-expense-id="${id}"]`);
+                    highlightElement(li);
+                } else {
+                    selectTabById('#logs-section');
+                    const row = document.querySelector(`[data-log-id="${id}"]`);
+                    highlightElement(row);
+                }
+            });
+        });
     });
 
     if (markers.length > 0) {
@@ -423,6 +488,22 @@ function getCurrentLocation() {
 }
 
 // Function to geocode a location name using Nominatim API
+
+// helper: fetch place suggestions from Nominatim
+let lastPlaceSuggestions = new Map(); // name -> {lat,lng,display_name}
+let suggestTimer = null;
+async function fetchPlaceSuggestions(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=8&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    lastPlaceSuggestions.clear();
+    const options = data.map(it => {
+        const name = it.display_name;
+        lastPlaceSuggestions.set(name, {lat: parseFloat(it.lat), lng: parseFloat(it.lon), display_name: name});
+        return name;
+    });
+    return options;
+}
 async function geocodeLocation(query) {
     const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
     const data = await response.json();
@@ -1069,19 +1150,10 @@ logsArea.addEventListener('click', async (e) => {
     } else if (target.classList.contains('set-location-btn')) {
         const id = target.closest('div[data-log-id]').dataset.logId;
         const log = currentTrip.logs.find(l => l.id === id);
-        showSetLocationModal(log.locationName || '', async (name, lat, lng) => {
-            const docRef = doc(db, `artifacts/${appId}/users/${userId}/trips`, selectedTripId);
-            const snap = await getDoc(docRef);
-            let data = snap.exists() ? snap.data() : {};
-            const logs = data.logs || [];
-            const idx = logs.findIndex(log => log.id === id);
-            if (idx !== -1) {
-                logs[idx].locationName = name;
-                logs[idx].lat = lat;
-                logs[idx].lng = lng;
-                await updateDoc(docRef, { logs });
-                showAlert('המיקום נשמר בהצלחה!');
-            }
+        showSetLocationModal(log.locationName || '', (name, lat, lng) => {
+            dailyLogCoordinates = { name, lat, lng };
+            dailyLogLocationDisplay.textContent = name;
+            showAlert('המיקום נשמר');
         });
     } else if (target.classList.contains('edit-log-btn')) {
         const id = e.target.closest('.edit-log-btn').dataset.id;
@@ -1468,56 +1540,32 @@ if (filterLogsBtn) {
 /* === Theme Toggle (light/dark) === */
 (() => {
   const toggle = document.getElementById('themeToggle');
-  const root = document.documentElement;
-  const saved = localStorage.getItem('tl-theme');
-  if (saved === 'dark') root.classList.add('dark');
-  function apply(mode){ root.classList.toggle('dark', mode === 'dark'); localStorage.setItem('tl-theme', mode); if (window.lucide) lucide.createIcons(); }
+  const body = document.body;
+  const saved = localStorage.getItem('theme-pref');
+  if (saved === 'light') body.classList.add('light');
+  function renderIcon(){
+    if (!toggle) return;
+    const isLight = body.classList.contains('light');
+    toggle.innerHTML = `<i data-lucide="${isLight ? 'sun' : 'moon'}" class="w-5 h-5"></i>`;
+    try { lucide.createIcons(); } catch(e){}
+  }
+  renderIcon();
   if (toggle) {
-    toggle.addEventListener('click', () => {
-      const isDark = root.classList.contains('dark');
-      apply(isDark ? 'light' : 'dark');
-      // Swap icon
-      const i = toggle.querySelector('i[data-lucide]');
-      if (i) i.setAttribute('data-lucide', isDark ? 'moon' : 'sun');
-      if (window.lucide) lucide.createIcons();
+    toggle.addEventListener('click', ()=>{
+      body.classList.toggle('light');
+      localStorage.setItem('theme-pref', body.classList.contains('light') ? 'light' : 'dark');
+      renderIcon();
+      // Invalidate map when switching theme and logs/map is visible
+      const logsVisible = !document.querySelector('#logs-section')?.classList.contains('hidden');
+      if (logsVisible && typeof map !== 'undefined' && map) {
+        setTimeout(()=>{ try { map.invalidateSize(); } catch(e){} }, 60);
+      }
     });
   }
 })();
 
-
-
-// === Layout v2: Tabs handling (appended) ===
-(function() {
-  const tabs = document.querySelectorAll('.tab-btn');
-  const sections = ['#details-section', '#expenses-section', '#logs-section'];
-  function show(targetSelector) {
-    sections.forEach(sel => {
-      const el = document.querySelector(sel);
-      if (!el) return;
-      if (sel === targetSelector) el.classList.remove('hidden');
-      else el.classList.add('hidden');
-    });
-    tabs.forEach(btn => {
-      if (btn.dataset.target === targetSelector) btn.setAttribute('aria-selected', 'true');
-      else btn.setAttribute('aria-selected', 'false');
-    });
-    try { lucide.createIcons(); } catch(e) {}
-    // invalidate map size if logs tab opened
-    if (targetSelector === '#logs-section' && typeof map !== 'undefined' && map) {
-      setTimeout(() => { try { map.invalidateSize(); } catch(e) {} }, 50);
-    }
-  }
-  tabs.forEach(btn => btn.addEventListener('click', () => show(btn.dataset.target)));
-  // default
-  show('#details-section');
-})();
-
-
-// === Layout v3: Tabs handling (safe, no-op if already wired) ===
-
-
-// === Layout v3: Tabs handling (safe, no-op if already wired) ===
-(function v3Tabs(){ try{
+// === Tabs handling ===
+(function(){ try{
   const tabs = document.querySelectorAll('.tab-btn');
   const sections = ['#details-section', '#expenses-section', '#logs-section'];
   if(!tabs.length) return;
@@ -1537,36 +1585,6 @@ if (filterLogsBtn) {
   tabs.forEach(btn=>btn.addEventListener('click', ()=>show(btn.dataset.target)));
   show('#details-section');
 } catch(e){} })();
-
-
-// === Theme toggle (dark/light) ===
-(function themeToggleInit(){
-  const btn = document.getElementById('themeToggle');
-  const ICON_DARK = 'moon'; // shown in light? we'll swap dynamically
-  const ICON_LIGHT = 'sun';
-  const body = document.body;
-  const saved = localStorage.getItem('theme-pref');
-  if (saved === 'light') body.classList.add('light');
-  function renderIcon(){
-    if (!btn) return;
-    const isLight = body.classList.contains('light');
-    btn.innerHTML = `<i data-lucide="${isLight ? ICON_LIGHT : ICON_DARK}" class="w-5 h-5"></i>`;
-    try { lucide.createIcons(); } catch(e){}
-  }
-  renderIcon();
-  if (btn) {
-    btn.addEventListener('click', ()=>{
-      body.classList.toggle('light');
-      localStorage.setItem('theme-pref', body.classList.contains('light') ? 'light' : 'dark');
-      renderIcon();
-      // Invalidate map when switching theme and logs/map is visible
-      const logsVisible = !document.querySelector('#logs-section')?.classList.contains('hidden');
-      if (logsVisible && typeof map !== 'undefined' && map) {
-        setTimeout(()=>{ try { map.invalidateSize(); } catch(e){} }, 60);
-      }
-    });
-  }
-})(); 
 
 
 // ==== SURFACE AWARE TEXT CONTRAST v2 ====
@@ -1631,4 +1649,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   mo.observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','style']});
+});
+
+
+// === Global handler: open Set Location modal for expenses/logs ===
+document.addEventListener('click', (ev) => {
+    const trg = ev.target.closest('.set-location-btn');
+    if (!trg) return;
+    const id = trg.getAttribute('data-id');
+    const type = trg.getAttribute('data-type'); // 'expense' or 'log'
+    const initial = (type === 'expense' ? (currentTrip.expenses||[]).find(x=>x.id===id) : (currentTrip.logs||[]).find(x=>x.id===id)) || {};
+    showSetLocationModal(initial.locationName || '', async (name, lat, lng) => {
+        if (!currentTrip) return;
+        if (type === 'expense') {
+            const arr = currentTrip.expenses || [];
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx !== -1) {
+                arr[idx].locationName = name;
+                arr[idx].lat = lat;
+                arr[idx].lng = lng;
+            }
+            currentTrip.expenses = arr;
+        } else {
+            const arr = currentTrip.logs || [];
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx !== -1) {
+                arr[idx].locationName = name;
+                arr[idx].lat = lat;
+                arr[idx].lng = lng;
+            }
+            currentTrip.logs = arr;
+        }
+        await saveTrip(currentTrip);
+        // Re-render relevant lists and map
+        renderExpenseList(currentTrip.expenses || []);
+        renderLogs(currentTrip.logs || []);
+        updateMap('all');
+    });
 });
