@@ -6,7 +6,6 @@
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Travel Log — יומן מסע (Layout v3)</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="./style.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&amp;display=swap" rel="stylesheet"/>
@@ -20,6 +19,7 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <!-- Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="./style.css?v=popup-fix">
 </head>
 <body class="font-heebo bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 min-h-screen">
 <!-- Top Bar -->
@@ -143,12 +143,7 @@
 </div>
 </div>
 </section>
-<!-- EXPENSES -->
 <section class="hidden grid gap-6 mt-4" id="expenses-section">
-<div class="panel">
-<h3 class="panel-title"><i class="w-5 h-5 text-amber-300" data-lucide="badge-dollar-sign"></i><span>סיכום הוצאות</span></h3>
-<p class="text-slate-300/80 text-sm">הסיכומים מתעדכנים לפי התקציב והוצאות בפועל.</p>
-</div>
 <div class="panel">
 <div class="flex justify-between items-center mb-3">
 <h3 class="panel-title"><i class="w-5 h-5 text-amber-300" data-lucide="tag"></i><span>הוצאות</span></h3>
@@ -217,7 +212,6 @@
 <div class="modal-card">
 <h4 class="text-lg font-bold mb-2">קביעת מיקום</h4>
 <input class="input w-full mb-3" id="locationNameInput" placeholder="לדוגמה: כיכר הונגרית, בודפשט"/>
-<datalist id="locationSuggestions"></datalist>
 <div class="flex gap-2">
 <button class="btn-soft flex-1" id="getLocationBtn">מיקום נוכחי</button>
 <button class="btn-solid-emerald flex-1" id="saveLocationBtn">שמור</button>
