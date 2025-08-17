@@ -1,388 +1,168 @@
-/* ---- Layout v3 Cosmetics ---- */
-:root { --ring: rgba(255,255,255,0.10); --bg-panel: rgba(255,255,255,0.05); }
-* { font-feature-settings: "ss01" 1; }
-.font-heebo { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; }
-
-.card-neo {
-  background: radial-gradient(1200px 600px at 80% -10%, rgba(16,185,129,0.14), transparent 40%) ,
-              linear-gradient(180deg, rgba(30,41,59,0.65), rgba(30,41,59,0.45));
-  border: 1px solid var(--ring);
-  border-radius: 1.25rem;
-  padding: 1.25rem;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+/* Base theme */
+:root{
+  --bg: #0f1216;
+  --panel: #151a21;
+  --card: #1a2029;
+  --text: #e6eaf2;
+  --muted: #9aa5b1;
+  --primary: #5b8cff;
+  --primary-600: #3f73ff;
+  --danger: #ff5b6e;
+  --ok: #35d49a;
+  --border: #2a3340;
+  --shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--ring);
-  border-radius: 1.25rem;
-  padding: 1rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-}
-.panel-title {
-  display:flex; align-items:center; gap:.5rem;
-  font-weight:800; color:#c7fcec; letter-spacing:.01em; margin-bottom:.5rem;
-}
-
-/* Inputs */
-.input {
-  width: 100%; border:1px solid var(--ring); background: rgba(255,255,255,0.04);
-  border-radius: .85rem; padding: .7rem .9rem; outline: none; color: #eaf5ef;
-  transition: box-shadow .2s, border-color .2s, transform .05s;
-}
-.input:focus { box-shadow: 0 0 0 3px rgba(16,185,129,.25); border-color: rgba(16,185,129,.55); transform: translateY(-1px); }
-.label { color:#b9d9cf; font-size:.85rem; margin-bottom:.25rem; display:block; }
-.no-spinners::-webkit-outer-spin-button, .no-spinners::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-/* Buttons */
-.btn-solid-emerald {
-  display:inline-flex; align-items:center; gap:.5rem;
-  background: linear-gradient(135deg,#10b981,#059669);
-  color:white; border:1px solid rgba(255,255,255,.1);
-  padding:.6rem 1rem; border-radius:9999px; font-weight:700;
-  box-shadow: 0 10px 25px rgba(16,185,129,.25);
-  transition: transform .1s, box-shadow .2s, filter .2s;
-}
-.btn-solid-emerald:hover { transform: translateY(-1px); filter: brightness(1.05); }
-.btn-soft {
-  display:inline-flex; align-items:center; gap:.5rem;
-  background: rgba(255,255,255,.06); color:#e2e8f0; border:1px solid var(--ring);
-  padding:.55rem .95rem; border-radius:9999px;
-}
-.btn-soft-emerald { composes: btn-soft; }
-.btn-soft-amber {
-  display:inline-flex; align-items:center; gap:.5rem;
-  background: rgba(251,191,36,.15); color:#fde68a; border:1px solid rgba(251,191,36,.35);
-  padding:.55rem .95rem; border-radius:9999px;
-}
-.btn-ghost {
-  display:inline-flex; align-items:center; gap:.5rem;
-  background: transparent; color:#e2e8f0; border:1px dashed var(--ring);
-  padding:.5rem .8rem; border-radius:9999px;
-}
-.chip {
-  display:inline-flex; align-items:center; gap:.4rem;
-  padding:.35rem .7rem; border-radius:9999px; border:1px solid var(--ring);
-  background: rgba(255,255,255,.05); color:#e2e8f0; font-size:.8rem;
-}
-.chip.active { box-shadow: 0 2px 0 rgba(255,255,255,.06) inset, 0 0 0 2px rgba(16,185,129,.20); }
-
-/* Tabs */
-.tabs { display:flex; gap:.5rem; }
-.tab-btn {
-  background: rgba(255,255,255,.06); color:#e2e8f0; border:1px solid var(--ring);
-  padding:.55rem .9rem; border-radius:9999px; display:inline-flex; align-items:center; gap:.45rem; font-weight:700;
-  transition: all .15s;
-}
-.tab-btn.active { background: rgba(16,185,129,.18); border-color:rgba(16,185,129,.45); color:#c7fcec; box-shadow: 0 6px 18px rgba(16,185,129,.22); }
-
-/* Modals */
-.modal { position: fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,.58); z-index:50; }
-.modal-card {
-  width: 28rem; max-width: 90vw; background: linear-gradient(180deg, rgba(2,6,23,.9), rgba(2,6,23,.8));
-  border: 1px solid var(--ring); border-radius: 1rem; padding: 1rem; color:#e2e8f0;
+:root.light{
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --text: #141a22;
+  --muted: #5c6670;
+  --primary: #2258ff;
+  --primary-600: #1b4ae0;
+  --danger: #e03148;
+  --ok: #0ea86b;
+  --border: #e8ecf2;
+  --shadow: 0 10px 30px rgba(0,0,0,0.07);
 }
 
-/* Spinner */
-.spinner {
-  border: 4px solid rgba(255,255,255,.15);
-  border-left-color: #10b981;
-  border-radius: 50%;
-  width: 24px; height: 24px;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ---- Light theme support ---- */
-body.light { background: linear-gradient(to bottom, #f8fafc, #e2e8f0); color: #0f172a; }
-body.light .card-neo {
-  background: radial-gradient(900px 500px at 20% -10%, rgba(16,185,129,0.12), transparent 40%),
-              linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7));
-  border-color: rgba(15, 23, 42, 0.08);
-  box-shadow: 0 12px 30px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
-}
-body.light .panel {
-  background: rgba(255,255,255,0.85);
-  border-color: rgba(15,23,42,0.08);
-  color: #0f172a;
-}
-body.light .panel-title { color: #065f46; }
-body.light .input {
-  background: rgba(15,23,42,0.03);
-  color: #0f172a;
-  border-color: rgba(15,23,42,0.15);
-}
-body.light .input:focus { box-shadow: 0 0 0 3px rgba(16,185,129,.25); border-color: rgba(16,185,129,.55); }
-body.light .label { color: #334155; }
-
-body.light .btn-soft { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
-body.light .btn-ghost { color:#0f172a; border-color: rgba(15,23,42,0.2); }
-body.light .chip { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
-body.light .chip.active { box-shadow: 0 0 0 2px rgba(16,185,129,.20); }
-
-body.light .tabs .tab-btn { background: rgba(15,23,42,.05); color:#0f172a; border-color: rgba(15,23,42,0.12); }
-body.light .tabs .tab-btn.active { background: rgba(16,185,129,.15); color:#065f46; border-color: rgba(16,185,129,.35); }
-
-body.light .modal-card {
-  background: white;
-  color:#0f172a;
-  border-color: rgba(15,23,42,0.12);
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: 'Rubik', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
-
-
-/* ==== SURFACE AWARE TEXT CONTRAST v2 ==== */
-:root { --text-on-light:#0b2a5b; --text-on-dark:#ffffff; }
-
-/* Highest precedence: affect all descendants including SVG strokes */
-:where(.on-light, .surface-light) :is(*, svg, svg * ) {
-  color: var(--text-on-light) !important;
-  fill: var(--text-on-light) !important;
-  stroke: var(--text-on-light) !important;
+.app-header, .app-footer{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px;
+  background: var(--panel);
+  border-bottom:1px solid var(--border);
+  position: sticky; top:0; z-index:50;
 }
-:where(.on-dark, .surface-dark) :is(*, svg, svg * ) {
-  color: var(--text-on-dark) !important;
-  fill: var(--text-on-dark) !important;
-  stroke: var(--text-on-dark) !important;
+.app-footer{
+  border-top:1px solid var(--border);
+  border-bottom:none;
+  bottom:0; top:auto; position: sticky;
 }
 
-/* Inputs & placeholders on each surface */
-:where(.on-dark, .surface-dark) :is(input, textarea, select) {
-  color: var(--text-on-dark) !important; caret-color: var(--text-on-dark);
-}
-:where(.on-dark, .surface-dark) :is(input::placeholder, textarea::placeholder) {
-  color: rgba(255,255,255,.8) !important;
-}
-:where(.on-light, .surface-light) :is(input, textarea, select) {
-  color: var(--text-on-light) !important; caret-color: var(--text-on-light);
-}
-:where(.on-light, .surface-light) :is(input::placeholder, textarea::placeholder) {
-  color: rgba(11,42,91,.7) !important;
-}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand .logo{ font-size:22px; }
+.brand h1{ font-size:18px; margin:0; }
 
-/* Utility backgrounds (explicit) */
-.bg-white, .bg-gray-50, .bg-slate-50, .bg-neutral-50, .bg-[ffffff] {
-  color: var(--text-on-light) !important;
-}
-.bg-white *, .bg-gray-50 *, .bg-slate-50 *, .bg-neutral-50 *, .bg-[ffffff] * {
-  color: var(--text-on-light) !important;
-}
+.header-actions{ display:flex; gap:10px; }
 
-/* Dark/blue known backgrounds */
-.bg-blue-900, .bg-blue-800, .bg-slate-900, .bg-slate-800, .bg-indigo-900,
-.header-dark, .section-dark, .panel-dark {
-  color: var(--text-on-dark) !important;
+main{ padding:16px; max-width:1200px; margin:0 auto; }
+
+.view{ display:none; }
+.view.active{ display:block; }
+
+.toolbar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:10px;
 }
-.bg-blue-900 *, .bg-blue-800 *, .bg-slate-900 *, .bg-slate-800 *, .bg-indigo-900 *,
-.header-dark *, .section-dark *, .panel-dark * {
-  color: var(--text-on-dark) !important;
+.toolbar h2{ margin:0; }
+
+.cards{ list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.cards li{
+  background: var(--card);
+  border:1px solid var(--border); border-radius:14px; box-shadow: var(--shadow);
+  padding:14px; display:flex; flex-direction:column; gap:8px;
 }
+.cards .trip-title{ font-weight:600; }
+.cards .muted{ font-size:12px; color: var(--muted); }
+.cards .row{ display:flex; gap:8px; align-items:center; justify-content:space-between; }
 
-/* Keep semantic colors */
-:where(.on-light, .on-dark, .surface-light, .surface-dark) .text-red-500 { color: #ef4444 !important; }
-:where(.on-light, .on-dark, .surface-light, .surface-dark) .text-yellow-500 { color: #eab308 !important; }
-
-
-
-/* ==== FIX: Trip details & budget text visible in dark mode ==== */
-body:not(.light) :where([class^="text-"], [class*=" text-"], .panel-title, .label, .input, .form-label, .card-title, .section-title, .summary, .summary *){
-  color: #ffffff !important;
-}
-/* Keep navy on explicitly light surfaces */
-.on-light :where([class^="text-"], [class*=" text-"], .panel-title, .label, .input, .form-label, .card-title, .section-title, .summary, .summary *){
-  color: #0b2a5b !important;
+.fab{
+  position: fixed; bottom:90px; inset-inline-end:24px;
+  background: var(--primary); color:#fff; border:none; border-radius:50%;
+  width:56px; height:56px; font-size:26px; cursor:pointer; box-shadow: var(--shadow);
 }
 
+.btn{
+  appearance:none; border:none; border-radius:12px; padding:10px 14px; cursor:pointer;
+  background: var(--card); color: var(--text); border:1px solid var(--border);
+}
+.btn.primary{ background: var(--primary); color:#fff; border-color:transparent; }
+.btn.ghost{ background: transparent; }
+.btn.danger{ background: var(--danger); color:#fff; border-color:transparent; }
 
+.input, select.input, textarea.input{
+  width:100%; padding:10px 12px; border-radius:12px;
+  background: var(--panel); border:1px solid var(--border); color: var(--text);
+}
+.input:focus{ outline:2px solid var(--primary-600); }
 
-/* ==== FINAL PRECEDENCE OVERRIDES ==== */
-/* 1) In dark mode, titles are white by default */
-body:not(.light) :is(h1,h2,h3,h4,h5,h6,.section-title,.panel-title,.header-title){
-  color:#ffffff !important;
-  fill:#ffffff !important;
-  stroke:#ffffff !important;
+.breadcrumbs{
+  display:flex; align-items:center; gap:10px; justify-content:space-between;
+  margin:8px 0 14px;
+}
+.breadcrumbs h2{ margin:0; flex:1; }
+
+.share-controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.tab{ padding:8px 12px; border-radius:12px; border:1px solid var(--border); background: var(--panel); cursor:pointer; }
+.tab.active{ background: var(--primary); color:#fff; border-color:transparent; }
+
+.panel{ display:none; }
+.panel.active{ display:block; }
+
+.card{
+  background: var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:16px; box-shadow: var(--shadow);
+  margin-bottom:12px;
 }
 
-/* 2) Anything inside an explicitly white card/area must be navy */
-.bg-white, .bg-white :is(*, svg, svg *) {
-  color:#0b2a5b !important;
-  fill:#0b2a5b !important;
-  stroke:#0b2a5b !important;
+.grid-2{
+  display:grid; grid-template-columns:1fr; gap:12px;
+}
+@media (min-width: 900px){
+  .grid-2{ grid-template-columns:1fr 1fr; }
 }
 
-/* 3) Explicit light utility backgrounds keep navy as well */
-.bg-gray-50, .bg-slate-50, .bg-neutral-50,
-.bg-gray-50 :is(*, svg, svg *),
-.bg-slate-50 :is(*, svg, svg *),
-.bg-neutral-50 :is(*, svg, svg *) {
-  color:#0b2a5b !important;
-  fill:#0b2a5b !important;
-  stroke:#0b2a5b !important;
+.two{ display:grid; grid-template-columns:1fr; gap:8px; }
+.two.flat{ grid-template-columns: 1fr auto; }
+@media (min-width:600px){ .two{ grid-template-columns:1fr 1fr; } }
+
+.form{ display:flex; flex-direction:column; gap:10px; }
+.form-actions{ display:flex; gap:10px; justify-content:flex-end; }
+
+.muted{ color: var(--muted); font-size: 12px; }
+
+.table{ width:100%; border-collapse: collapse; }
+.table th, .table td{ padding:10px; border-bottom:1px solid var(--border); text-align:right; }
+.table tbody tr:hover{ background: rgba(255,255,255,0.02); }
+.table .row-actions{ display:flex; gap:6px; }
+
+.stat .label{ color: var(--muted); font-size:12px; }
+.stat .value{ font-weight:700; margin-top:4px; }
+.value.negative{ color: var(--danger); }
+
+.list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+.list li{ padding:12px; border:1px solid var(--border); border-radius:12px; background: var(--panel); }
+
+.map{ width:100%; height:280px; border-radius:12px; border:1px solid var(--border); }
+.map.tall{ height:420px; }
+
+.dialog::backdrop{ background: rgba(0,0,0,0.45); }
+.dialog{ border:none; padding:0; border-radius:16px; width:min(680px, 92vw); }
+.dialog.wide{ width:min(980px, 96vw); }
+.dialog .form{ padding:16px; }
+
+/* Footer */
+.app-footer{ color: var(--muted); font-size:12px; }
+
+/* Badges */
+.badge{
+  display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
+  border:1px solid var(--border); background: var(--panel); font-size:12px;
 }
+.badge.ok{ border-color: transparent; background: rgba(53,212,154,0.12); color: #b3ffe4; }
+.badge.bad{ border-color: transparent; background: rgba(224,49,72,0.12); color: #ffd7dc; }
 
-
-
-/* ==== USER REQUESTED COLORS (destination header, tabs, primary actions) ==== */
-/* Destination title: always deep navy */
-#tripDestinationHeader { color: #0b2a5b !important; }
-
-/* Tab buttons (including "הצג הכל"): navy on white in all states */
-.tab-btn {
-  background: #ffffff !important;
-  color: #0b2a5b !important;
-  border: 1px solid var(--ring) !important;
-}
-.tab-btn:hover,
-.tab-btn.active,
-.tab-btn[aria-selected="true"] {
-  background: #ffffff !important;
-  color: #0b2a5b !important;
-  box-shadow: 0 6px 16px rgba(11,42,91,0.12) !important;
-}
-.tab-btn :is(svg, svg *) {
-  stroke: currentColor !important;
-  fill: currentColor !important;
-}
-
-/* Primary action buttons (Save / Add Trip) were green; make them white+navy */
-.btn-solid-emerald {
-  background: #ffffff !important;
-  color: #0b2a5b !important;
-  border: 1px solid var(--ring) !important;
-}
-.btn-solid-emerald:hover {
-  filter: brightness(0.98);
-  box-shadow: 0 6px 16px rgba(11,42,91,0.12);
-}
-.btn-solid-emerald :is(svg, svg *) { stroke: currentColor !important; fill: currentColor !important; }
-
-
-
-/* ==== Trip list card actions to navy-on-white ==== */
-#tripList [data-edit],
-#tripList [data-delete] {
-  background: #ffffff !important;
-  color: #0b2a5b !important;
-  border: 1px solid var(--ring) !important;
-}
-#tripList [data-edit]:hover,
-#tripList [data-delete]:hover {
-  filter: brightness(0.98);
-  box-shadow: 0 6px 16px rgba(11,42,91,0.12);
-}
-#tripList [data-edit] :is(svg, svg *),
-#tripList [data-delete] :is(svg, svg *) {
-  stroke: currentColor !important;
-  fill: currentColor !important;
-}
-/* Trip title/meta on white cards: navy */
-#tripList h4, #tripList p {
-  color: #0b2a5b !important;
-}
-
-
-
-/* ==== DARK MODE SPECIFIC HARD FIXES (logs title, ghost buttons, toggle) ==== */
-/* Panel titles and section headers in dark mode must be white */
-body:not(.light) :is(.panel-title, .section-title, #logs-section h3, #logs-section .panel-title, #expenses-section h2){
-  color:#ffffff !important;
-}
-
-/* Ghost/dashed icon buttons (including the two small round ones in logs + the theme toggle) */
-body:not(.light) .btn-ghost,
-body:not(.light) .btn-ghost :is(svg, svg *){
-  color:#ffffff !important;
-  stroke:#ffffff !important;
-  fill:#ffffff !important;
-}
-body:not(.light) .btn-ghost{
-  background: transparent !important;
-  border:1px dashed rgba(255,255,255,0.35) !important;
-}
-
-/* Theme toggle explicitly */
-body:not(.light) #themeToggle,
-body:not(.light) #themeToggle :is(svg, svg *){
-  color:#ffffff !important;
-  stroke:#ffffff !important;
-  fill:#ffffff !important;
-}
-body:not(.light) #themeToggle{
-  border:1px dashed rgba(255,255,255,0.35) !important;
-  background: transparent !important;
-}
-
-/* Ensure big "הוסף טיול" pill (white) keeps navy text in both modes */
-#addTripBtn {
-  background:#ffffff !important;
-  color: #0b2a5b !important;
-}
-#addTripBtn :is(svg, svg *){ stroke:currentColor !important; fill:currentColor !important; }
-
-
-/* ==== Drop-shaped markers ==== */
-.marker-drop {
-  position: relative;
-  width: 30px;
-  height: 40px;
-  background: #10b981;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  transform: rotate(45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-.marker-drop i {
-  transform: rotate(-45deg);
-}
-.marker-drop.expense {
-  background: #f59e0b;
-}
-.marker-drop.log {
-  background: #8b5cf6;
-}
-
-
-/* === Contrast fixes === */
-body { color: var(--txt); }
-.bg-white, .bg-white * { color: #0b1b33 !important; }
-.card-neo, .panel, .tabs .tab-btn, .btn-soft, .btn-ghost, .input, .label { color: inherit; }
-
-/* Popup card */
-.popup-card { color:#e2e8f0; }
-body.light .popup-card { color:#0b1b33; }
-
-/* Leaflet popup wrapper already styled; ensure text inherits */
-.leaflet-popup-content { margin: 12px 16px; }
-
-/* === Mobile tweaks === */
-@media (max-width: 640px){
-  .tabs{ gap:.4rem; }
-  .tab-btn{ padding:.5rem .75rem; font-size:.9rem; }
-  #tripEditor .panel .flex, #tripEditor .panel .grid{ gap:.6rem; }
-  .btn-solid-emerald, .btn-primary, .btn-soft, .btn-ghost{ width: 100%; justify-content:center; }
-  #expenseList li{ flex-direction: column !important; align-items: stretch !important; }
-  #expenseList .w-24, #expenseList .w-20{ width: 100% !important; }
-}
-
-/* Ensure select dropdown text visible on dark surfaces */
-select{ background-color: rgba(255,255,255,.06); color: var(--txt); }
-body.light select{ background-color: #fff; color:#0b1b33; }
-option{ color: initial; }
-
-
-/* Ensure popup text visible in dark map popup */
-.leaflet-popup-content-wrapper, .popup-card{
-  color: #fff !important;
-}
-body.light .leaflet-popup-content-wrapper, body.light .popup-card{
-  color: #0b1b33 !important;
-}
-
-/* highlight row on popup click */
-.highlight-row{
-  outline: 3px solid #ff9a3d;
-  border-radius: 8px;
-  transition: outline .3s ease;
-}
+/* Utilities */
+.hidden{ display:none !important; }
