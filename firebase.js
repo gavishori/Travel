@@ -1,30 +1,43 @@
-// firebase.js - initialises Firebase and exports Firestore + Storage helpers
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-
-// Firebase config from the user's project
-const firebaseConfig = {
-    apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-    authDomain: "travel-416ff.firebaseapp.com",
-    projectId: "travel-416ff",
-    storageBucket: "travel-416ff.appspot.com",
-    messagingSenderId: "1075073511694",
-    appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-    measurementId: "G-FT56H33X5J"
+// firebase.js (updated with user's config + anonymous auth)
+window.firebaseConfig = {
+  apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+  authDomain: "travel-416ff.firebaseapp.com",
+  projectId: "travel-416ff",
+  storageBucket: "travel-416ff.appspot.com",
+  messagingSenderId: "1075073511694",
+  appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+  measurementId: "G-FT56H33X5J"
 };
 
-// Initialize Firebase services
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app);
+(function(){
+  const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
+  if (!hasConfig){
+    console.info("Firebase config missing → running in local mode (localStorage).");
+    window.AppDataLayer = { mode: "local" };
+    return;
+  }
 
+  try{
+    const app = firebase.initializeApp(window.firebaseConfig);
+    const db = firebase.firestore();
 
-// Using a global variable for appId to be accessible throughout the app
-const appId = "travel-416ff";
+    // Anonymous auth (keeps per-user isolation with rules)
+    // Uses v10 compat: firebase.auth() is available if auth-compat is loaded; we'll lazy load.
+    const ensureAuth = async () => {
+      if (!firebase.auth){ 
+        await new Promise((res,rej)=>{
+          const s = document.createElement("script");
+          s.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
+          s.onload = res; s.onerror = rej; document.head.appendChild(s);
+        });
+      }
+      return firebase.auth().signInAnonymously();
+    };
 
-// Export the initialized services and appId
-export { app, db, storage, auth, appId };
+    window.AppDataLayer = { mode: "firebase", db, ensureAuth };
+    console.info("Firebase initialized.");
+  }catch(err){
+    console.error("Firebase init error → fallback to local mode", err);
+    window.AppDataLayer = { mode: "local" };
+  }
+})();
