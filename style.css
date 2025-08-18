@@ -64,15 +64,15 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .toolbar{
   display:flex; align-items:center; justify-content:space-between; gap:12px;
   margin-bottom:10px;
-  flex-wrap: wrap; /* Added for mobile */
+  flex-wrap: wrap;
 }
 .toolbar h2{ margin:0; }
 .toolbar-actions {
-  display: flex; /* Added for mobile */
-  flex-grow: 1; /* Added for mobile */
+  display: flex;
+  flex-grow: 1;
 }
 #tripSearch {
-  width: 100%; /* Added for mobile */
+  width: 100%;
 }
 
 .cards{ list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
@@ -115,7 +115,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .breadcrumbs{
   display:flex; align-items:center; gap:10px; justify-content:space-between;
   margin:8px 0 14px;
-  flex-wrap: wrap; /* Added for mobile */
+  flex-wrap: wrap;
 }
 .breadcrumbs h2{ margin:0; flex:1; }
 
