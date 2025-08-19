@@ -19,7 +19,7 @@
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
-      <button id="saveAllBtn" class="btn primary" title="שמור">שמור</button>
+      <!-- The 'saveAllBtn' was removed as requested -->
     </div>
   </header>
 
@@ -43,14 +43,6 @@
       <div class="breadcrumbs">
         <button id="backToHome" class="btn ghost">← חזרה</button>
         <h2 id="tripTitle">שם נסיעה</h2>
-        <div class="share-controls">
-          <label><input type="checkbox" id="shareToggle"> שיתוף נסיעה</label>
-          <select id="shareScope">
-            <option value="full">מלא (כולל הוצאות)</option>
-            <option value="partial">חלקי (ללא הוצאות)</option>
-          </select>
-          <button id="copyShareLink" class="btn ghost">העתק קישור</button>
-        </div>
       </div>
 
       <nav class="tabs">
@@ -59,7 +51,7 @@
         <button class="tab" data-tab="budget">הוצאות</button>
         <button class="tab" data-tab="journal">יומן יומי</button>
         <button class="tab" data-tab="map">מפה</button>
-        <button class="tab" data-tab="export">ייצא</button>
+        <button class="tab" data-tab="export">ייצוא ושיתוף</button>
       </nav>
 
       <div class="tab-panels">
@@ -91,45 +83,57 @@
 
         <!-- META -->
         <div id="tab-meta" class="panel">
-          <form id="tripMetaForm" class="form">
-            <label>יעד
-              <input type="text" id="tripDestination" class="input" placeholder="עיר / מדינה" list="destList" required />
-              <datalist id="destList"></datalist>
-            </label>
+          <form id="tripMetaForm" class="form compact">
+            <div class="form-grid">
+              <div class="form-col">
+                <label>יעד
+                  <div class="input-with-button">
+                    <input type="text" id="tripDestination" class="input" placeholder="עיר / מדינה" list="destList" required />
+                    <button type="button" id="verifyDestination" class="btn ghost">אמת במפה</button>
+                    <datalist id="destList"></datalist>
+                  </div>
+                </label>
 
-            <label>סוג טיול
-              <select id="tripType" class="input" multiple>
-                <option value="beach">בטן-גב</option>
-                <option value="ski">סקי</option>
-                <option value="trek">טרקים</option>
-                <option value="other">אחר</option>
-              </select>
-            </label>
+                <label>סוג טיול
+                  <div class="checkbox-group" id="tripTypeCheckboxes">
+                    <label><input type="checkbox" value="beach"> בטן-גב</label>
+                    <label><input type="checkbox" value="ski"> סקי</label>
+                    <label><input type="checkbox" value="trek"> טרקים</label>
+                    <label><input type="checkbox" value="other"> אחר</label>
+                  </div>
+                </label>
 
-            <label>משתתפים
-              <input type="text" id="tripParticipants" class="input" placeholder="שמות, פסיקים ביניהם" />
-            </label>
+                <label>משתתפים
+                  <input type="text" id="tripParticipants" class="input" placeholder="שמות, פסיקים ביניהם" />
+                </label>
+              </div>
+              
+              <div class="form-col">
+                <div class="two">
+                  <label>תאריך התחלה
+                    <input type="date" id="tripStart" class="input" required />
+                  </label>
+                  <label>תאריך סיום
+                    <input type="date" id="tripEnd" class="input" required />
+                  </label>
+                </div>
+                
+                <label>תקציב בסיס
+                  <div class="two currency-inputs">
+                    <input type="number" id="tripBudgetUSD" class="input" placeholder="USD" min="0" step="0.01" />
+                    <input type="number" id="tripBudgetEUR" class="input" placeholder="EUR" min="0" step="0.01" />
+                    <input type="number" id="tripBudgetILS" class="input" placeholder="ILS" min="0" step="0.01" />
+                  </div>
+                </label>
 
-            <div class="two">
-              <label>תאריך התחלה
-                <input type="date" id="tripStart" class="input" required />
-              </label>
-              <label>תאריך סיום
-                <input type="date" id="tripEnd" class="input" required />
-              </label>
+                <label>
+                  <input type="checkbox" id="budgetLocked" />
+                  <span>נעילת תקציב</span>
+                </label>
+              </div>
             </div>
-
-            <div class="two">
-              <label>תקציב בסיס (USD)
-                <input type="number" id="tripBudgetUSD" class="input" min="0" step="0.01" />
-              </label>
-              <label>נעילת תקציב
-                <input type="checkbox" id="budgetLocked" />
-              </label>
-            </div>
-
+            
             <div class="form-actions">
-              <button type="button" id="verifyDestination" class="btn ghost">אמת יעד במפה</button>
               <button type="submit" class="btn primary">שמור</button>
             </div>
           </form>
@@ -137,39 +141,52 @@
 
         <!-- BUDGET -->
         <div id="tab-budget" class="panel">
-          <div class="budget-header">
-            <div id="liveRates" class="muted"></div>
-            <div class="two">
-              <div class="stat">
-                <div class="label">תקציב USD</div>
-                <div class="value" id="statBudgetUSD">—</div>
+          <div class="card budget-card-grid">
+              <div class="card-header">
+                <h3>ניהול תקציב</h3>
               </div>
-              <div class="stat">
-                <div class="label">יתרה</div>
-                <div class="value" id="statRemaining">—</div>
+              <div class="budget-row">
+                <div class="budget-label">תקציב כולל</div>
+                <div class="currency-cell" id="budgetTotalUSD">USD</div>
+                <div class="currency-cell" id="budgetTotalEUR">EUR</div>
+                <div class="currency-cell" id="budgetTotalILS">ILS</div>
               </div>
-            </div>
+              <div class="budget-row">
+                <div class="budget-label">הוצאות בפועל</div>
+                <div class="currency-cell" id="expensesActualUSD">—</div>
+                <div class="currency-cell" id="expensesActualEUR">—</div>
+                <div class="currency-cell" id="expensesActualILS">—</div>
+              </div>
+              <div class="budget-row">
+                <div class="budget-label">יתרה</div>
+                <div class="currency-cell" id="remainingUSD">—</div>
+                <div class="currency-cell" id="remainingEUR">—</div>
+                <div class="currency-cell" id="remainingILS">—</div>
+              </div>
           </div>
 
           <div class="card">
             <div class="table-actions">
               <h3>הוצאות</h3>
               <button id="addExpenseBtn" class="btn">הוסף הוצאה</button>
+              <button id="sortExpensesBtn" class="btn"><span>&#9650;&#9660;</span> מיין</button>
             </div>
-            <table class="table" id="expenseTable">
-              <thead>
-                <tr>
-                  <th>תיאור</th>
-                  <th>קטגוריה</th>
-                  <th>סכום</th>
-                  <th>מטבע</th>
-                  <th>מקום</th>
-                  <th>זמן</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+            <div class="table-wrapper">
+              <table class="table" id="expenseTable">
+                <thead>
+                  <tr>
+                    <th>תיאור</th>
+                    <th>קטגוריה</th>
+                    <th>סכום</th>
+                    <th>מטבע</th>
+                    <th>מקום</th>
+                    <th>זמן</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -191,7 +208,7 @@
           <div id="mainMap" class="map"></div>
         </div>
 
-        <!-- EXPORT -->
+        <!-- EXPORT AND SHARE -->
         <div id="tab-export" class="panel">
           <div class="card">
             <h3>ייצוא</h3>
@@ -202,6 +219,17 @@
             <div class="two">
               <button id="exportGPX" class="btn">ייצוא GPX</button>
               <label><input type="checkbox" id="exportWithoutExpenses"> ללא הוצאות</label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>שיתוף נסיעה</h3>
+            <div class="share-controls">
+              <label><input type="checkbox" id="shareToggle"> הפעל שיתוף</label>
+              <select id="shareScope">
+                <option value="full">מלא (כולל הוצאות)</option>
+                <option value="partial">חלקי (ללא הוצאות)</option>
+              </select>
+              <button id="copyShareLink" class="btn ghost">העתק קישור</button>
             </div>
           </div>
         </div>
@@ -244,33 +272,40 @@
               <option>אחר</option>
             </select>
           </label>
-          <label>סכום <input id="expAmount" type="number" min="0" step="0.01" class="input" /></label>
+          <label>סכום <input type="number" min="0" step="0.01" class="input" id="expAmount" /></label>
         </div>
         <div class="two">
           <label>מטבע
             <select id="expCurrency" class="input">
-              <option>USD</option><option>EUR</option><option>ILS</option>
+              <option>USD</option>
+              <option>EUR</option>
+              <option>ILS</option>
+              <option>THB</option>
             </select>
           </label>
-          <button type="button" id="pickLocationBtn" class="btn ghost">בחר מיקום</button>
         </div>
         <input type="hidden" id="expLat"><input type="hidden" id="expLng">
-        <menu class="form-actions">
-          <button value="cancel" class="btn ghost">ביטול</button>
-          <button id="saveExpenseBtn" class="btn primary">שמור</button>
-        </menu>
+        <!-- New div for location button and form actions -->
+        <div class="form-actions-inline">
+            <button type="button" id="pickLocationBtn" class="btn ghost">בחר מיקום</button>
+            <div class="spacer"></div>
+            <menu class="form-actions">
+              <button value="cancel" class="btn ghost">ביטול</button>
+              <button id="saveExpenseBtn" class="btn primary">שמור</button>
+            </menu>
+        </div>
       </form>
     </dialog>
 
     <dialog id="locationDialog" class="dialog wide">
       <form method="dialog" id="locationForm" class="form">
         <h3>בחירת מיקום</h3>
-        <div class="two">
-          <button type="button" id="useCurrentLoc" class="btn">מיקום נוכחי</button>
-          <div class="two flat">
-            <input id="searchPlace" class="input" placeholder="חפש מקום (שם/כתובת)" />
-            <button type="button" id="searchPlaceBtn" class="btn">חפש</button>
-          </div>
+        <div class="dialog-actions-row">
+            <button type="button" id="useCurrentLoc" class="btn primary">מיקום נוכחי</button>
+            <div class="input-with-button">
+              <input id="searchPlace" class="input" placeholder="חפש מקום (שם/כתובת)" />
+              <button type="button" id="searchPlaceBtn" class="btn">חפש</button>
+            </div>
         </div>
         <div id="locationMap" class="map tall"></div>
         <menu class="form-actions">
