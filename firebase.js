@@ -31,7 +31,14 @@ window.firebaseConfig = {
           s.onload = res; s.onerror = rej; document.head.appendChild(s);
         });
       }
-      return firebase.auth().signInAnonymously();
+      
+// Ensure local persistence so UID remains stable across reloads
+await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+if (!firebase.auth().currentUser){
+  return firebase.auth().signInAnonymously();
+}
+return firebase.auth().currentUser;
+
     };
 
     window.AppDataLayer = { mode: "firebase", db, ensureAuth };
