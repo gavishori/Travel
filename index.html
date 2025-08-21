@@ -19,7 +19,6 @@
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
-      <!-- The 'saveAllBtn' was removed as requested -->
     </div>
   </header>
 
@@ -120,16 +119,13 @@
                 
                 <label>תקציב בסיס
                   <div class="two currency-inputs">
-                    <input type="number" id="tripBudgetUSD" class="input" placeholder="USD" min="0" step="0.01" />
-                    <input type="number" id="tripBudgetEUR" class="input" placeholder="EUR" min="0" step="0.01" />
-                    <input type="number" id="tripBudgetILS" class="input" placeholder="ILS" min="0" step="0.01" />
+                    <input type="text" id="tripBudgetUSD" class="input" placeholder="USD" min="0" step="0.01" />
+                    <input type="text" id="tripBudgetEUR" class="input" placeholder="EUR" min="0" step="0.01" />
+                    <input type="text" id="tripBudgetILS" class="input" placeholder="ILS" min="0" step="0.01" />
                   </div>
                 </label>
 
-                <label>
-                  <input type="checkbox" id="budgetLocked" />
-                  <span>נעילת תקציב</span>
-                </label>
+                <button type="button" id="toggleBudgetLock" class="btn">קבע תקציב</button>
               </div>
             </div>
             
@@ -193,14 +189,25 @@
         <!-- JOURNAL -->
         <div id="tab-journal" class="panel">
           <div class="card">
-            <h3>הוסף רישום</h3>
-            <div class="two">
-              <input id="journalText" class="input" placeholder="מה קרה היום?" />
-              <button id="addJournalBtn" class="btn">הוסף</button>
+            <div class="table-actions">
+              <h3>יומן יומי</h3>
+              <button id="addJournalBtn" class="btn">הוסף רישום</button>
+              <button id="sortJournalBtn" class="btn"><span>&#9650;&#9660;</span> מיין</button>
             </div>
-            <div class="muted">לאחר הוספה ייפתח חלון מיקום. ניתן לבטל ולשמור ללא מיקום.</div>
+            <div class="table-wrapper">
+              <table class="table" id="journalTable">
+                <thead>
+                  <tr>
+                    <th>תיאור</th>
+                    <th>מקום</th>
+                    <th>זמן</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
-          <ul id="journalList" class="list"></ul>
         </div>
 
         <!-- MAP -->
@@ -254,46 +261,99 @@
       </form>
     </dialog>
 
-    <dialog id="expenseDialog" class="dialog">
+    <dialog id="expenseDialog" class="dialog wide">
       <form method="dialog" id="expenseForm" class="form">
         <h3 id="expenseDialogTitle">הוספת הוצאה</h3>
-        <label>תיאור <input id="expDesc" class="input" /></label>
-        <div class="two">
-          <label>קטגוריה
-            <select id="expCat" class="input">
-              <option>טיסה</option>
-              <option>תקשורת</option>
-              <option>לינה</option>
-              <option>רכב</option>
-              <option>ביטוח רפואי</option>
-              <option>מזון</option>
-              <option>קניות</option>
-              <option>אטרקציות</option>
-              <option>אחר</option>
-            </select>
-          </label>
-          <label>סכום <input type="number" min="0" step="0.01" class="input" id="expAmount" /></label>
+        <div class="expense-dialog-grid">
+          <div class="map-side">
+            <div class="dialog-actions-row tight">
+              <button type="button" id="pickOnMapExp" class="btn">בחר מיקום ע"ג מפה</button>
+              <button type="button" id="useCurrentLocExp" class="btn primary">מיקום נוכחי</button>
+              <div class="input-with-button">
+                <input id="searchPlaceExp" class="input" placeholder="חפש שם מקום/כתובת" />
+                <button type="button" id="searchPlaceBtnExp" class="btn">חפש</button>
+              </div>
+              <button type="button" id="clearLocExp" class="btn ghost danger">נקה מיקום</button>
+            </div>
+            <div id="expenseMap" class="map tall"></div>
+          </div>
+          <div class="form-side">
+            <label>תיאור <input id="expDesc" class="input" /></label>
+            <div class="two">
+              <label>קטגוריה
+                <select id="expCat" class="input">
+                  <option>טיסה</option>
+                  <option>תקשורת</option>
+                  <option>לינה</option>
+                  <option>רכב</option>
+                  <option>ביטוח רפואי</option>
+                  <option>מזון</option>
+                  <option>קניות</option>
+                  <option>אטרקציות</option>
+                  <option>אחר</option>
+                </select>
+              </label>
+              <label>סכום <input type="number" min="0" step="0.01" class="input" id="expAmount" /></label>
+            </div>
+            <div class="two">
+              <label>מטבע
+                <select id="expCurrency" class="input"></select>
+              </label>
+            </div>
+            <div id="expDateTimeRow" class="two">
+              <label>תאריך
+                <input type="date" id="expDate" class="input" />
+              </label>
+              <label>שעה
+                <input type="time" id="expTime" class="input" />
+              </label>
+            </div>
+            <input type="hidden" id="expLat"><input type="hidden" id="expLng">
+          </div>
         </div>
-        <div class="two">
-          <label>מטבע
-            <select id="expCurrency" class="input">
-              <option>USD</option>
-              <option>EUR</option>
-              <option>ILS</option>
-              <option>THB</option>
-            </select>
-          </label>
+        <menu class="form-actions">
+          <button value="cancel" class="btn ghost">ביטול</button>
+          <button id="saveExpenseBtn" class="btn primary">שמור</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <!-- NEW JOURNAL DIALOG -->
+    <dialog id="journalDialog" class="dialog wide">
+      <form method="dialog" id="journalForm" class="form">
+        <h3 id="journalDialogTitle">הוספת תיעוד יומי</h3>
+        <div class="journal-dialog-grid">
+          <div class="map-side">
+            <div class="dialog-actions-row tight">
+              <button type="button" id="pickOnMapJournal" class="btn">בחר מיקום ע"ג מפה</button>
+              <button type="button" id="useCurrentLocJournal" class="btn primary">מיקום נוכחי</button>
+              <div class="input-with-button">
+                <input id="searchPlaceJournal" class="input" placeholder="חפש שם מקום/כתובת" />
+                <button type="button" id="searchPlaceBtnJournal" class="btn">חפש</button>
+              </div>
+              <button type="button" id="clearLocJournal" class="btn ghost danger">נקה מיקום</button>
+            </div>
+            <div id="journalMap" class="map tall"></div>
+          </div>
+          <div class="form-side">
+            <label>מה קרה היום?
+              <textarea id="journalTextarea" class="input" rows="10"></textarea>
+            </label>
+            <div id="journalDateTimeRow" class="two">
+              <label>תאריך
+                <input type="date" id="journalDate" class="input" />
+              </label>
+              <label>שעה
+                <input type="time" id="journalTime" class="input" />
+              </label>
+            </div>
+            <input type="hidden" id="journalLat"><input type="hidden" id="journalLng">
+          </div>
         </div>
-        <input type="hidden" id="expLat"><input type="hidden" id="expLng">
-        <!-- New div for location button and form actions -->
-        <div class="form-actions-inline">
-            <button type="button" id="pickLocationBtn" class="btn ghost">בחר מיקום</button>
-            <div class="spacer"></div>
-            <menu class="form-actions">
-              <button value="cancel" class="btn ghost">ביטול</button>
-              <button id="saveExpenseBtn" class="btn primary">שמור</button>
-            </menu>
-        </div>
+        <menu class="form-actions">
+          <button value="cancel" class="btn ghost">ביטול</button>
+          <button id="saveJournalBtn" class="btn primary">שמור</button>
+        </menu>
       </form>
     </dialog>
 
@@ -321,10 +381,34 @@
         <p id="confirmMsg">האם אתה בטוח?</p>
         <menu class="form-actions">
           <button value="cancel" class="btn ghost">ביטול</button>
-          <button id="confirmYes" class="btn danger">מחק</button>
+          <button id="confirmYes" class="btn danger" type="button">מחק</button>
         </menu>
       </form>
     </dialog>
+
+<dialog id="confirmExpenseDialog" class="dialog">
+  <form method="dialog" class="form">
+    <h3 id="confirmExpenseTitle">מחיקת הוצאה</h3>
+    <p id="confirmExpenseMsg">האם אתה בטוח שברצונך למחוק את ההוצאה?</p>
+    <menu class="form-actions">
+      <button value="cancel" class="btn ghost">ביטול</button>
+      <button id="confirmExpenseYes" class="btn danger" type="button">מחק</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="confirmJournalDialog" class="dialog">
+  <form method="dialog" class="form">
+    <h3 id="confirmJournalTitle">מחיקת רישום יומן</h3>
+    <p id="confirmJournalMsg">האם אתה בטוח שברצונך למחוק את הרישום?</p>
+    <menu class="form-actions">
+      <button value="cancel" class="btn ghost">ביטול</button>
+      <button id="confirmJournalYes" class="btn danger" type="button">מחק</button>
+    </menu>
+  </form>
+</dialog>
+
+
   </main>
 
   <footer class="app-footer">
@@ -340,6 +424,7 @@
 
   <!-- Firebase (compat for simpler setup) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script src="firebase.js"></script>
