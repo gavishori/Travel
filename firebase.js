@@ -51,3 +51,18 @@ window.firebaseConfig = {
     window.AppDataLayer = { mode: "local" };
   }
 })();
+
+;(() => {
+  try {
+    const app = firebase.app();
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+    // Provider for Google
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // Export to window for app use
+    window.fb = { app, auth, db, provider };
+    console.info("Firebase initialized.");
+  } catch (e) {
+    console.error("Firebase init error:", e);
+  }
+})();
