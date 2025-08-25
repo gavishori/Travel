@@ -1,4 +1,7 @@
-// firebase.js (updated with user's config + anonymous auth)
+// firebase.js — Google-only auth (no anonymous)
+// Uses Firebase compat SDK already included from index.html
+
+// --- Project config (as provided) ---
 window.firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
@@ -10,34 +13,41 @@ window.firebaseConfig = {
 };
 
 (function(){
-  const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
+  const hasConfig = !!(window.firebaseConfig && window.firebaseConfig.apiKey);
   if (!hasConfig){
-    console.info("Firebase config missing → running in local mode (localStorage).");
+    console.info("Firebase config missing → local mode");
     window.AppDataLayer = { mode: "local" };
     return;
   }
 
   try{
     const app = firebase.initializeApp(window.firebaseConfig);
-    const db = firebase.firestore();
+    const db  = firebase.firestore();
 
-    // Anonymous auth (keeps per-user isolation with rules)
-    // Uses v10 compat: firebase.auth() is available if auth-compat is loaded; we'll lazy load.
-    const ensureAuth = async () => {
-      if (!firebase.auth){ 
-        await new Promise((res,rej)=>{
+    // Lazy-load auth compat and expose globals used by script.js
+    async function loadAuth(){
+      if (!firebase.auth){
+        await new Promise((res, rej)=>{
           const s = document.createElement("script");
-          s.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
+          s.src   = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
           s.onload = res; s.onerror = rej; document.head.appendChild(s);
         });
       }
-      return firebase.auth().signInAnonymously();
-    };
+      if (!window.auth) {
+        window.auth = firebase.auth();
+        window.googleProvider = new firebase.auth.GoogleAuthProvider();
+      }
+    }
+
+    // Keep API shape the app expects, but do NOT auto sign-in
+    async function ensureAuth(){ await loadAuth(); /* no anonymous sign-in */ }
 
     window.AppDataLayer = { mode: "firebase", db, ensureAuth };
+    // Eagerly load auth so listeners can bind
+    loadAuth().catch(console.error);
     console.info("Firebase initialized.");
   }catch(err){
-    console.error("Firebase init error → fallback to local mode", err);
+    console.error("Firebase init error → local mode fallback", err);
     window.AppDataLayer = { mode: "local" };
   }
 })();
