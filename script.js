@@ -1537,7 +1537,7 @@ async function init(){
   applyTheme();
   if (window.AppDataLayer?.mode === "firebase") {
     await window.AppDataLayer.ensureAuth?.();
-    console.log("Auth UID:", firebase.auth().currentUser?.uid);
+    
   }
 
   // Buttons
@@ -1813,3 +1813,98 @@ window.debugAuth = async function(){
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+
+// Updated Google Sign-In flow: prefer Redirect, fallback to Popup
+async function signInWithGoogle() {
+  try {
+    auth.languageCode = 'he'; // Hebrew UI
+    await auth.signInWithRedirect(googleProvider);
+    const result = await auth.getRedirectResult();
+    if (result && result.user) {
+      console.log('Signed in via redirect:', result.user.uid);
+    }
+  } catch (err) {
+    console.warn('Redirect failed, trying popup...', err);
+    try {
+      const res = await auth.signInWithPopup(googleProvider);
+      console.log('Signed in via popup:', res.user.uid);
+    } catch (e) {
+      console.error('Google Sign-In failed:', e);
+      alert('שגיאת התחברות: ' + (e?.message || e));
+    }
+  }
+}
+
+
+
+// ---- Auth Flow (Redirect-first with Popup fallback) ----
+(function(){
+  if (window.__AUTH_WIRED__) return;  // avoid double listeners
+  window.__AUTH_WIRED__ = true;
+
+  if (!window.auth || !window.googleProvider) {
+    console.error('Auth provider not ready');
+    return;
+  }
+
+  auth.languageCode = 'he';
+
+  async function signInRedirectFirst() {
+    try {
+      await auth.signInWithRedirect(googleProvider);
+    } catch (err) {
+      console.warn('Redirect failed, trying popup...', err);
+      try {
+        await auth.signInWithPopup(googleProvider);
+      } catch (e) {
+        console.error('Popup signin failed', e);
+        alert('שגיאת התחברות: ' + (e?.message || e));
+      }
+    }
+  }
+
+  // Handle redirect result on load
+  auth.getRedirectResult()
+    .then(function(res){
+      if (res && res.user) {
+        console.log('Redirect result user:', res.user.uid);
+      }
+    })
+    .catch(function(e){
+      console.warn('Redirect result error:', e);
+    });
+
+  // Wire buttons if exist
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('googleSignInBtn');
+    if (btn && !btn.__WIRED__) {
+      btn.__WIRED__ = true;
+      btn.addEventListener('click', function(){
+        signInRedirectFirst();
+      });
+    }
+    var outBtn = document.getElementById('signOutBtn');
+    if (outBtn && !outBtn.__WIRED__) {
+      outBtn.__WIRED__ = true;
+      outBtn.addEventListener('click', function(){
+        auth.signOut().catch(console.error);
+      });
+    }
+  });
+
+  // Single onAuthStateChanged
+  if (!window.__AUTH_LISTENER__) {
+    window.__AUTH_LISTENER__ = auth.onAuthStateChanged(function(user){
+      console.log('Auth UID:', user ? user.uid : 'undefined');
+      try {
+        if (user && typeof enterApp === 'function') {
+          enterApp(user);
+        } else if (!user && typeof showSplash === 'function') {
+          showSplash();
+        }
+      } catch (e) { console.error(e); }
+    });
+  }
+})();
+// ---- End Auth Flow ----
