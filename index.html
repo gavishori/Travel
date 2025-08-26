@@ -1,46 +1,72 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>מנהל נסיעות</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <section id="splash" role="region" aria-label="מסך פתיחה">
-      <div class="splash-inner">
-        <h1>מנהל נסיעות</h1>
-        <p>התחבר/י עם Google כדי להזין טיולים</p>
-        <div class="actions">
-          <button id="signInWithGoogle" class="btn primary">התחברות עם Google</button>
-          <button id="signOut" class="btn" style="display:none">התנתק/י</button>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f1216" />
+  <title>FLYMILY</title>
+
+  <!-- Fonts & Styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Performance hints -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+</head>
+<body class="splash-mode">
+
+  <div class="bg-ornaments" aria-hidden="true"></div>
+
+  <!-- SPLASH -->
+  <section id="splash" role="region" aria-label="מסך פתיחה">
+    <div class="splash-card">
+      <img class="splash-logo" alt="FLYMILY" src="data:image/png;base64,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">
+      <h1 class="brand-title">FLYMILY</h1>
+      <p class="tagline">מנהל נסיעות, מפות, תקציב ויומן – במקום אחד</p>
+      <div class="cta-row">
+        <button id="googleSignInBtn" class="btn primary" type="button">התחבר עם Google</button>
+        <button id="enterBtn" class="btn" type="button">כניסה ידנית</button>
+        <button id="signOutBtn" class="btn" type="button" style="display:none">התנתק</button>
       </div>
-    </section>
-
-    <div id="app" style="display:none">
-      <header class="app-header">
-        <h2>מסך הבית</h2>
-        <p>כאן ניתן להזין טיולים 👇</p>
-      </header>
-      <main id="appMain">
-        <!-- TODO: טופס / כרטיסי טיולים -->
-        <div class="card">
-          <h3>טיול חדש</h3>
-          <p>כאן יבוא טופס ההזנה…</p>
-        </div>
-      </main>
     </div>
+  </section>
 
-    <!-- Firebase compat SDKs MUST load before your code -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- APP ROOT (hidden until auth) -->
+  <div id="app" style="display:none"></div>
 
-    <!-- Your Firebase init (kept as a separate file) -->
-    <script src="firebase.js"></script>
+  <footer class="app-footer">
+    <span id="statusLine">מוכן.</span>
+  </footer>
 
-    <!-- App code -->
-    <script src="script.js"></script>
-  </body>
+  <!-- External libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
+
+  <!-- Firebase SDKs (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase config (single source of truth) -->
+  <script>
+    window.firebaseConfig = {
+      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+      authDomain: "travel-416ff.firebaseapp.com",
+      projectId: "travel-416ff",
+      storageBucket: "travel-416ff.appspot.com",
+      messagingSenderId: "1075073511694",
+      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+      measurementId: "G-FT56H33X5J"
+    };
+  </script>
+
+  <!-- App scripts -->
+  <script src="./firebase.js" defer></script>
+  <script src="./script.js" defer></script>
+</body>
 </html>
