@@ -1,68 +1,39 @@
-// firebase.js — Google-only auth (no anonymous)
-// Uses Firebase compat SDK already included from index.html
-
-// --- Project config (as provided) ---
-window.firebaseConfig = {
-  apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-  authDomain: "travel-416ff.firebaseapp.com",
-  projectId: "travel-416ff",
-  storageBucket: "travel-416ff.appspot.com",
-  messagingSenderId: "1075073511694",
-  appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-  measurementId: "G-FT56H33X5J"
-};
-
+// firebase.js (production, compat)
 (function(){
-  const hasConfig = !!(window.firebaseConfig && window.firebaseConfig.apiKey);
-  if (!hasConfig){
-    console.info("Firebase config missing → local mode");
+  if (!window.firebase) {
+    console.error("Firebase SDK not loaded");
     window.AppDataLayer = { mode: "local" };
     return;
   }
-
+  // Respect existing config if provided in index.html
+  var cfg = window.firebaseConfig || null;
+  if (!cfg || !cfg.apiKey){
+    console.info("No Firebase config → local mode");
+    window.AppDataLayer = { mode: "local" };
+    return;
+  }
   try{
-    const app = firebase.initializeApp(window.firebaseConfig);
-    const db  = firebase.firestore();
-
-    // Lazy-load auth compat and expose globals used by script.js
-    async function loadAuth(){
-      if (!firebase.auth){
-        await new Promise((res, rej)=>{
-          const s = document.createElement("script");
-          s.src   = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
-          s.onload = res; s.onerror = rej; document.head.appendChild(s);
-        });
+    var app = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
+    var db  = firebase.firestore();
+    window.AppDataLayer = {
+      mode: "firebase",
+      db: db,
+      ensureAuth: async function(){
+        if (!firebase.auth){ 
+          await new Promise(function(res,rej){
+            var s = document.createElement("script");
+            s.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
+            s.onload = res; s.onerror = rej; document.head.appendChild(s);
+          });
+        }
       }
-      if (!window.auth) {
-        window.auth = firebase.auth();
-        window.googleProvider = new firebase.auth.GoogleAuthProvider();
-      }
-    }
-
-    // Keep API shape the app expects, but do NOT auto sign-in
-    async function ensureAuth(){ await loadAuth(); /* no anonymous sign-in */ }
-
-    window.AppDataLayer = { mode: "firebase", db, ensureAuth };
-    // Eagerly load auth so listeners can bind
-    loadAuth().catch(console.error);
+    };
+    // Export globals for script.js
+    window.auth = firebase.auth();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
     console.info("Firebase initialized.");
   }catch(err){
-    console.error("Firebase init error → local mode fallback", err);
+    console.error("Firebase init error → local mode", err);
     window.AppDataLayer = { mode: "local" };
-  }
-})();
-
-;(() => {
-  try {
-    const app = firebase.app();
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
-    // Provider for Google
-    const provider = new firebase.auth.GoogleAuthProvider();
-    // Export to window for app use
-    window.fb = { app, auth, db, provider };
-    console.info("Firebase initialized.");
-  } catch (e) {
-    console.error("Firebase init error:", e);
   }
 })();
