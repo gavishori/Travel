@@ -1813,3 +1813,92 @@ window.debugAuth = async function(){
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+
+
+// === Trips loader for iOS/Mobile (added) ===
+(function(){
+  try{
+    if (window.__TRIPS_LOADER_WIRED__) return;
+    window.__TRIPS_LOADER_WIRED__ = true;
+
+    function ensureTripsUI(){
+      var el = document.getElementById('trips');
+      if (!el){
+        el = document.createElement('div');
+        el.id = 'trips';
+        document.body.appendChild(el);
+      }
+      return el;
+    }
+
+    function renderEmpty(el){
+      el.innerHTML = '<section style="max-width:720px;margin:32px auto;text-align:center;opacity:.85">\
+        <h2>אין עדיין טיולים</h2>\
+        <p>לחץ על "טיול חדש" באפליקציה כדי ליצור טיול ראשון.</p>\
+      </section>';
+    }
+
+    function renderError(el, msg){
+      el.innerHTML = '<p style="color:#b00020">שגיאה: ' + (msg||'') + '</p>';
+    }
+
+    function renderList(el, docs){
+      var html = '<ul style="max-width:900px;margin:24px auto;list-style:none;padding:0">';
+      docs.forEach(function(d){
+        var t = d.data() || {};
+        html += '<li style="padding:12px 16px;margin:10px 0;border-radius:12px;background:rgba(0,0,0,.05)">\
+          <div style="display:flex;justify-content:space-between;align-items:center">\
+            <div><strong>'+(t.title||'טיול ללא שם')+'</strong><br><small>'+(t.destination||'')+'</small></div>\
+            <button data-id="'+d.id+'" style="padding:8px 12px;border:none;border-radius:8px;cursor:pointer">פתח</button>\
+          </div></li>';
+      });
+      html += '</ul>';
+      el.innerHTML = html;
+    }
+
+    function startTripsListener(uid){
+      var el = ensureTripsUI();
+      el.innerHTML = '<p style="text-align:center;opacity:.8;margin-top:24px">טוען טיולים…</p>';
+      // Prefer compat v8 API
+      try{
+        if (window.firebase && firebase.firestore){
+          var ref = firebase.firestore().collection('trips')
+            .where('ownerUid','==', uid)
+            .orderBy('createdAt','desc');
+          return ref.onSnapshot(function(snap){
+            if (!snap || snap.empty){ renderEmpty(el); return; }
+            renderList(el, snap.docs);
+          }, function(err){ console.error('trips onSnapshot', err); renderError(el, err && err.message); });
+        }
+      }catch(e){ console.warn('compat firestore path failed', e); }
+      // Fallback: one-time fetch if modular or no realtime
+      try{
+        if (window.db && window.firebaseFirestore){
+          var F = window.firebaseFirestore;
+          var q = F.query(F.collection(window.db,'trips'),
+                          F.where('ownerUid','==',uid),
+                          F.orderBy('createdAt','desc'));
+          return F.getDocs(q).then(function(snap){
+            if (!snap || snap.empty){ renderEmpty(el); return; }
+            renderList(el, snap.docs);
+          }).catch(function(err){ renderError(el, err && err.message); });
+        }
+      }catch(e){ console.warn('modular path failed', e); renderEmpty(el); }
+    }
+
+    // Wire to auth state
+    if (window.firebase && firebase.auth){
+      firebase.auth().onAuthStateChanged(function(user){
+        if (user){
+          console.log('[auth] signed in (mobile trips loader):', user.uid);
+          startTripsListener(user.uid);
+        }else{
+          var el = ensureTripsUI();
+          el.innerHTML = '<p style="text-align:center;margin-top:24px">יש להתחבר כדי לראות טיולים</p>';
+        }
+      });
+    }
+  }catch(e){ console.warn('Trips loader wire failed', e); }
+})();
+// === end trips loader (added) ===
