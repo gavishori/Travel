@@ -1,18 +1,19 @@
-// Firebase compat init (השלם כאן את הקונפיג שלך)
-// קבל את הפרטים מ- Firebase Console > Project settings
+// ----- Firebase bootstrap -----
+// פרטי הפרויקט שלך. אין כאן סודות — מפתח ה־Web של Firebase הוא ציבורי.
 const firebaseConfig = {
-  apiKey: "PUT_YOUR_KEY_HERE",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "0000000000",
-  appId: "1:0000000000:web:00000000000000"
+  apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmfrWtrWvXK-0", // מה-Console (Web API Key)
+  authDomain: "travel-416ff.firebaseapp.com",
+  projectId: "travel-416ff",
+  storageBucket: "travel-416ff.appspot.com"
+  // messagingSenderId / appId אינם הכרחיים ל־Auth/Firestore וניתן להוסיף בהמשך.
 };
 
-// אתחול האפליקציה
-firebase.initializeApp(firebaseConfig);
-
-// מופעים גלובליים
-window.auth = firebase.auth();
-window.googleProvider = new firebase.auth.GoogleAuthProvider();
-window.db = firebase.firestore();
+if (!firebaseConfig || !firebaseConfig.apiKey) {
+  console.error("No Firebase config → local mode");
+} else {
+  firebase.initializeApp(firebaseConfig);
+  // זמינים לכל הסקריפטים
+  window.auth = firebase.auth();
+  window.googleProvider = new firebase.auth.GoogleAuthProvider();
+  window.db = firebase.firestore();
+}

@@ -1,90 +1,136 @@
-// FLYMILY minimal mobile client (strict filter, compat SDK)
-(function(){
-  if (window.__FLY_MIN__) return; window.__FLY_MIN__ = true;
+// ----- App logic -----
 
-  const statusEl = document.getElementById('status');
-  const listEl = document.getElementById('trips');
-  const signinBtn = document.getElementById('signinBtn');
-  const signoutBtn = document.getElementById('signoutBtn');
+const els = {
+  loginBtn: document.getElementById('loginBtn'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  hint: document.getElementById('hint'),
+  trips: document.getElementById('trips'),
+  fab: document.getElementById('fab'),
+};
 
-  function setStatus(msg){ statusEl.textContent = msg||''; }
-  function clearList(){ listEl.innerHTML = ''; }
-  function renderEmpty(){ listEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;opacity:.7;margin:24px 0">אין עדיין טיולים</p>'; }
-  function cardHTML(trip){
-    const title = trip.title || 'טיול';
-    const dest = trip.destination || '';
-    const when = trip.dateText || '';
-    return `<article class="card">
-      <h3>${title}</h3>
-      <div class="meta">${dest}${when?(" • "+when):""}</div>
-      <div class="meta">${trip.tags||""}</div>
-    </article>`;
-  }
-  function renderTrips(docs, uid){
-    clearList();
-    let html = '';
-    docs.forEach(d => {
-      const t = typeof d.data === 'function' ? d.data() : d;
-      if (!t || t.ownerUid !== uid) return;       // רק של המשתמש
-      html += cardHTML(t);
-    });
-    listEl.innerHTML = html || '';
-    if (!html) renderEmpty();
-  }
-
-  function isMobile(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
-  function isStandalone(){
-    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
-  }
-  async function signInGoogle(){
-    try{
-      if (window.auth && window.googleProvider){
-        if (isMobile() || isStandalone()){
-          await auth.signInWithRedirect(googleProvider);
-        }else if (auth.signInWithPopup){
-          await auth.signInWithPopup(googleProvider);
-        }else{
-          await auth.signInWithRedirect(googleProvider);
-        }
+// Guard if Firebase didn't init
+if (!window.auth || !window.db) {
+  console.error('Auth provider not ready');
+} else {
+  // Sign-in handlers
+  els.loginBtn.addEventListener('click', async () => {
+    try {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        await auth.signInWithRedirect(googleProvider);
+      } else {
+        await auth.signInWithPopup(googleProvider);
       }
-    }catch(e){ console.error('signin', e); }
-  }
-  window.signInGoogle = signInGoogle;
-
-  signinBtn.onclick = signInGoogle;
-  signoutBtn.onclick = ()=>auth?.signOut?.();
-
-  function wireAuthCompat(){
-    if (!window.firebase?.auth) { setStatus('Firebase SDK not loaded'); return false; }
-    window.auth = window.auth || firebase.auth();
-    try{ auth.getRedirectResult().catch(()=>{}); }catch(_){}
-    auth.onAuthStateChanged(user => {
-      if (!user){
-        signinBtn.hidden = false; signoutBtn.hidden = true;
-        setStatus('יש להתחבר כדי לראות טיולים'); clearList();
-        return;
-      }
-      signinBtn.hidden = true; signoutBtn.hidden = false;
-      setStatus('');
-      startTripsCompat(user.uid);
-    });
-    return true;
-  }
-
-  function startTripsCompat(uid){
-    try{
-      const db = window.db || firebase.firestore();
-      const ref = db.collection('trips').where('ownerUid','==', uid).orderBy('createdAt','desc');
-      ref.onSnapshot(snap => {
-        if (!snap || snap.empty){ renderEmpty(); return; }
-        renderTrips(snap.docs, uid);
-      }, err => { console.error(err); setStatus('שגיאה בטעינה'); });
-    }catch(e){
-      console.warn('compat firestore failed', e); renderEmpty();
+    } catch (err) {
+      console.error('Sign-in error:', err);
+      alert('נכשל להתחבר: ' + err.message);
     }
-  }
+  });
 
-  if (!wireAuthCompat()){
-    // כבר כתבנו הודעת סטטוס בפונקציה.
+  els.logoutBtn.addEventListener('click', async () => {
+    try { await auth.signOut(); } catch(e) { console.error(e); }
+  });
+
+  // Auth state
+  auth.onAuthStateChanged(async (user) => {
+    console.log('[auth] state changed:', !!user);
+    els.loginBtn.hidden = !!user;
+    els.logoutBtn.hidden = !user;
+    els.fab.hidden = !user;
+    if (!user) {
+      els.hint.hidden = false;
+      els.trips.hidden = true;
+      els.trips.innerHTML = '';
+      return;
+    }
+    els.hint.hidden = true;
+    els.trips.hidden = false;
+    loadTrips(user.uid);
+  });
+
+  // Example FAB: create empty trip owned by user
+  els.fab.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const name = prompt('שם הטיול?');
+    if (name === null) return;
+    try {
+      await db.collection('trips').add({
+        name: name || 'ללא שם',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ownerUid: user.uid,
+        tags: [],
+        days: 0
+      });
+      loadTrips(user.uid);
+    } catch (e) {
+      console.error('Create trip failed', e);
+      alert('נכשל ליצור טיול');
+    }
+  });
+}
+
+// Load only trips of this user, skip unnamed without ownerUid
+async function loadTrips(uid) {
+  try {
+    // Prefer server then cache
+    const q = db.collection('trips')
+      .where('ownerUid', '==', uid)
+      .orderBy('createdAt', 'desc');
+    const snap = await q.get({ source: 'server' }).catch(async () => q.get({ source: 'default' }));
+
+    const trips = [];
+    snap.forEach(doc => {
+      const t = doc.data() || {};
+      // Double-guard
+      if (!t || t.ownerUid !== uid) return;
+      trips.push({ id: doc.id, ...t });
+    });
+
+    renderTrips(trips);
+  } catch (e) {
+    console.error('loadTrips failed', e);
+    alert('שגיאה בטעינת טיולים');
   }
-})();
+}
+
+function renderTrips(trips) {
+  const c = els.trips;
+  c.innerHTML = '';
+  if (!trips.length) {
+    c.innerHTML = `<div class="empty">אין טיולים עדיין • לחץ על ＋ כדי להוסיף</div>`;
+    return;
+  }
+  for (const t of trips) {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-title">${escapeHtml(t.name || 'ללא שם')}</div>
+      <div class="card-sub">${(t.days||0)} ימים • ${formatDateRange(t)}</div>
+      <div class="actions">
+        <button class="btn">ערוך</button>
+        <button class="btn danger" data-id="${t.id}">מחק</button>
+      </div>`;
+    c.appendChild(card);
+  }
+  c.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button[data-id]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (!confirm('למחוק את הטיול?')) return;
+    try { await db.collection('trips').doc(id).delete(); }
+    catch (e) { console.error(e); alert('מחיקה נכשלה'); }
+    loadTrips(auth.currentUser?.uid);
+  }, { once: true });
+}
+
+function formatDateRange(t) {
+  // placeholder – depends on your schema
+  return (t.range?.text) || '';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}

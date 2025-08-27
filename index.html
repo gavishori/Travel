@@ -1,32 +1,37 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
+<!doctype html>
+<html lang="he" dir="rtl" class="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>FLYMILY</title>
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Firebase SDK (compat) - סדר חובה -->
+  <meta name="theme-color" content="#111827" />
+  <title>מנהל נסיעות • FLYMILY</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <style>html,body{height:100%;margin:0;padding:0;background:#f5f7fb;color:#111827;font-family:'Rubik',system-ui,-apple-system,Segoe UI,Arial,sans-serif}</style>
+  <link rel="stylesheet" href="style.css?v=3" />
+  <!-- Firebase compat SDKs (stable for non-modular code) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-  <!-- הקבצים שלך -->
-  <script src="firebase.js"></script>
-  <script defer src="script.js"></script>
+  <!-- Your Firebase init (must come AFTER SDKs) -->
+  <script src="firebase.js?v=3"></script>
+  <!-- App code -->
+  <script defer src="script.js?v=3"></script>
 </head>
 <body>
   <header class="topbar">
-    <h1>הנסיעות שלי</h1>
-    <div class="actions">
-      <button id="signinBtn" class="btn" hidden>התחבר</button>
-      <button id="signoutBtn" class="btn btn-ghost" hidden>התנתק</button>
+    <div class="brand">מנהל נסיעות</div>
+    <div id="userSlot" class="user-slot">
+      <button id="loginBtn" class="btn primary">התחבר</button>
+      <button id="logoutBtn" class="btn danger" hidden>התנתק</button>
     </div>
   </header>
 
-  <main id="app">
-    <section id="status" class="status"></section>
-    <section id="trips" class="trips" aria-live="polite"></section>
+  <main class="container">
+    <h1 class="title">הנסיעות שלי</h1>
+    <p id="hint" class="hint">יש להתחבר כדי לראות טיולים</p>
+    <section id="trips" class="cards" hidden></section>
   </main>
+
+  <button id="fab" class="fab" title="טיול חדש" hidden>＋</button>
 </body>
 </html>
