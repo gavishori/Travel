@@ -1,10 +1,18 @@
-// Put your Firebase compat v8 sdk <script> tags in index.html normally.
-// This file expects firebase compat already loaded globally.
-// Provide your config + init + providers in this file.
+// Firebase compat init (השלם כאן את הקונפיג שלך)
+// קבל את הפרטים מ- Firebase Console > Project settings
+const firebaseConfig = {
+  apiKey: "PUT_YOUR_KEY_HERE",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "1:0000000000:web:00000000000000"
+};
 
-// Example (replace with your real config):
-// const firebaseConfig = { /* ... */ };
-// firebase.initializeApp(firebaseConfig);
+// אתחול האפליקציה
+firebase.initializeApp(firebaseConfig);
 
-window.auth = window.auth || (firebase && firebase.auth && firebase.auth());
-window.googleProvider = window.googleProvider || new firebase.auth.GoogleAuthProvider();
+// מופעים גלובליים
+window.auth = firebase.auth();
+window.googleProvider = new firebase.auth.GoogleAuthProvider();
+window.db = firebase.firestore();

@@ -1,8 +1,7 @@
-/* FLYMILY minimal mobile client (strict filter, no placeholders) */
+// FLYMILY minimal mobile client (strict filter, compat SDK)
 (function(){
   if (window.__FLY_MIN__) return; window.__FLY_MIN__ = true;
 
-  const $ = (s)=>document.querySelector(s);
   const statusEl = document.getElementById('status');
   const listEl = document.getElementById('trips');
   const signinBtn = document.getElementById('signinBtn');
@@ -21,13 +20,12 @@
       <div class="meta">${trip.tags||""}</div>
     </article>`;
   }
-
   function renderTrips(docs, uid){
     clearList();
     let html = '';
     docs.forEach(d => {
       const t = typeof d.data === 'function' ? d.data() : d;
-      if (!t || t.ownerUid !== uid) return;          // ← לא שלי? לא מציירים.
+      if (!t || t.ownerUid !== uid) return;       // רק של המשתמש
       html += cardHTML(t);
     });
     listEl.innerHTML = html || '';
@@ -38,7 +36,6 @@
   function isStandalone(){
     return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
   }
-
   async function signInGoogle(){
     try{
       if (window.auth && window.googleProvider){
@@ -54,19 +51,17 @@
   }
   window.signInGoogle = signInGoogle;
 
-  // UI buttons
   signinBtn.onclick = signInGoogle;
   signoutBtn.onclick = ()=>auth?.signOut?.();
 
   function wireAuthCompat(){
-    if (!window.firebase?.auth) return false;
-    auth = firebase.auth();
-    // pick redirect result quietly
+    if (!window.firebase?.auth) { setStatus('Firebase SDK not loaded'); return false; }
+    window.auth = window.auth || firebase.auth();
     try{ auth.getRedirectResult().catch(()=>{}); }catch(_){}
     auth.onAuthStateChanged(user => {
       if (!user){
-        setStatus('יש להתחבר כדי לראות טיולים'); clearList();
         signinBtn.hidden = false; signoutBtn.hidden = true;
+        setStatus('יש להתחבר כדי לראות טיולים'); clearList();
         return;
       }
       signinBtn.hidden = true; signoutBtn.hidden = false;
@@ -78,7 +73,7 @@
 
   function startTripsCompat(uid){
     try{
-      const db = firebase.firestore();
+      const db = window.db || firebase.firestore();
       const ref = db.collection('trips').where('ownerUid','==', uid).orderBy('createdAt','desc');
       ref.onSnapshot(snap => {
         if (!snap || snap.empty){ renderEmpty(); return; }
@@ -89,8 +84,7 @@
     }
   }
 
-  // Start
   if (!wireAuthCompat()){
-    setStatus('קונפיגורציה חסרה של Firebase (compat)');
+    // כבר כתבנו הודעת סטטוס בפונקציה.
   }
 })();

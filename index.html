@@ -5,19 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>FLYMILY</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="firebase.js" defer></script>
-  <script src="script.js" defer></script>
+
+  <!-- Firebase SDK (compat) - סדר חובה -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- הקבצים שלך -->
+  <script src="firebase.js"></script>
+  <script defer src="script.js"></script>
 </head>
 <body>
   <header class="topbar">
     <h1>הנסיעות שלי</h1>
-    <button id="signinBtn" class="btn" hidden>התחבר</button>
-    <button id="signoutBtn" class="btn btn-ghost" hidden>התנתק</button>
+    <div class="actions">
+      <button id="signinBtn" class="btn" hidden>התחבר</button>
+      <button id="signoutBtn" class="btn btn-ghost" hidden>התנתק</button>
+    </div>
   </header>
 
   <main id="app">
     <section id="status" class="status"></section>
-    <section id="trips" class="trips"></section>
+    <section id="trips" class="trips" aria-live="polite"></section>
   </main>
 </body>
 </html>
