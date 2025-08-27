@@ -1,0 +1,5 @@
+{
+  "css_braces_balance": true,
+  "has_firebase_app": true,
+  "firebase_init_in_fb": true
+}
