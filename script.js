@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded', () => {
 /* App bootstrap */
 let app, auth, db;
 try {
@@ -10,6 +11,40 @@ try {
 }
 
 /* Elements */
+
+  /* ===== Error/Toast Helpers ===== */
+  const toastEl = document.getElementById('toast');
+  function showToast(msg) {
+    if (!toastEl) { alert(msg); return; }
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toastEl.hidden = true; }, 4500);
+  }
+
+  function explainFirestoreError(err) {
+    const code = err && err.code ? String(err.code) : '';
+    const map = {
+      'permission-denied': 'אין לך הרשאה לבצע את הפעולה הזו (בדוק את חוקי Firestore והרשאות המשתמש).',
+      'unauthenticated': 'צריך להתחבר כדי לבצע את הפעולה הזו.',
+      'not-found': 'הנתון שביקשת לא נמצא.',
+      'already-exists': 'המסמך כבר קיים.',
+      'resource-exhausted': 'יותר מדי בקשות כרגע. נסה שוב עוד רגע.',
+      'unavailable': 'שירות Firestore לא זמין כרגע (רשת או שרת). נסה שוב.',
+      'deadline-exceeded': 'הבקשה לקחה יותר מדי זמן.',
+    };
+    return map[code] || ('שגיאה: ' + (err && (err.message || code) || 'לא ידועה'));
+  }
+
+  async function safeCall(promiseFactory) {
+    try {
+      return await promiseFactory();
+    } catch (err) {
+      console.error(err);
+      showToast(explainFirestoreError(err));
+      throw err;
+    }
+  }
 const loginBtn  = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const tripsEl   = document.getElementById('trips');
@@ -73,7 +108,7 @@ if (app) {
         .orderBy('startDate', 'desc')
         .onSnapshot(snap => renderTrips(snap.docs), (err) => {
           console.error(err);
-          alert('טעינת טיולים נכשלה. בדוק את חוקי Firestore.');
+          showToast(explainFirestoreError(err));
         });
     } else {
       // Signed out
@@ -85,3 +120,4 @@ if (app) {
     }
   });
 }
+});

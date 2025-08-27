@@ -1,32 +1,34 @@
-
 <!doctype html>
 <html lang="he" dir="rtl" class="light">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>מנהל נסיעות</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="topbar">
-    <button id="authBtn" class="btn"></button>
-    <h1>הנסיעות שלי</h1>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>מנהל נסיעות — הנסיעות שלי</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">מנהל נסיעות</div>
+      <button id="loginBtn" class="btn">התחבר</button>
+      <button id="logoutBtn" class="btn outline" hidden>התנתק</button>
+    </header>
 
-  <main class="container">
-    <p id="hint" class="muted">יש להתחבר כדי לראות טיולים</p>
-    <section id="trips" class="cards" hidden></section>
-  </main>
+    <main class="container">
+      <h1>הנסיעות שלי</h1>
+      <p id="hint">יש להתחבר כדי לראות טיולים</p>
+      <div id="trips" class="cards"></div>
+    </main>
 
-  <!-- Firebase SDKs (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase (compat) CDN v9 -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Your Firebase config + init -->
-  <script src="firebase.js"></script>
+    <!-- Your config (kept in a separate file) -->
+    <script defer src="firebase.js"></script>
 
-  <!-- App logic -->
-  <script src="script.js"></script>
-</body>
+    <!-- App logic -->
+    <script defer src="script.js"></script>
+    <div id="toast" class="toast" hidden></div>
+  </body>
 </html>
