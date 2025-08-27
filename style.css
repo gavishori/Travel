@@ -914,11 +914,3 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
   text-align: left;
   padding-left: 0;
 }
-
-
-
-/* === Fallback landing & empty state (added) === */
-#fallback-landing{max-width:800px;margin:32px auto;padding:24px;border:1px dashed rgba(0,0,0,.25);border-radius:16px;text-align:center;background:rgba(0,0,0,.03)}
-#fallback-landing h2{margin:0 0 8px}
-#fallback-landing p{margin:0 0 16px;opacity:.85}
-#fallback-landing .btn{padding:10px 16px;border:none;border-radius:10px;cursor:pointer;font-weight:600}
