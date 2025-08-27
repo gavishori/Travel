@@ -1537,7 +1537,7 @@ async function init(){
   applyTheme();
   if (window.AppDataLayer?.mode === "firebase") {
     await window.AppDataLayer.ensureAuth?.();
-    
+    console.log("Auth UID:", firebase.auth().currentUser?.uid);
   }
 
   // Buttons
@@ -1815,96 +1815,73 @@ window.debugAuth = async function(){
 })();
 
 
-// Updated Google Sign-In flow: prefer Redirect, fallback to Popup
-async function signInWithGoogle() {
-  try {
-    auth.languageCode = 'he'; // Hebrew UI
-    await auth.signInWithRedirect(googleProvider);
-    const result = await auth.getRedirectResult();
-    if (result && result.user) {
-      console.log('Signed in via redirect:', result.user.uid);
-    }
-  } catch (err) {
-    console.warn('Redirect failed, trying popup...', err);
-    try {
-      const res = await auth.signInWithPopup(googleProvider);
-      console.log('Signed in via popup:', res.user.uid);
-    } catch (e) {
-      console.error('Google Sign-In failed:', e);
-      alert('שגיאת התחברות: ' + (e?.message || e));
-    }
-  }
-}
 
+// === Fallback landing (added) ===
+(function setupFallbackLanding(){
+  try{
+    if (document.getElementById('fallback-landing')) return;
+    const sec = document.createElement('section');
+    sec.id = 'fallback-landing';
+    sec.hidden = true;
+    sec.innerHTML = '<h2>ברוך/ה הבא/ה 👋</h2>' +
+                    '<p>כאן יוצגו הטיולים שלך. אפשר להתחיל בטיול ראשון עכשיו.</p>' +
+                    '<button id="fallback-create" class="btn">טיול חדש</button>';
+    // Prefer inserting after any splash/hero; otherwise append to body
+    const anchor = document.querySelector('#splash') || document.body;
+    anchor.parentNode ? anchor.parentNode.insertBefore(sec, anchor.nextSibling) : document.body.appendChild(sec);
 
+    function show(){ sec.hidden = false; }
+    function hide(){ sec.hidden = true; }
 
-// ---- Auth Flow (Redirect-first with Popup fallback) ----
-(function(){
-  if (window.__AUTH_WIRED__) return;  // avoid double listeners
-  window.__AUTH_WIRED__ = true;
-
-  if (!window.auth || !window.googleProvider) {
-    console.error('Auth provider not ready');
-    return;
-  }
-
-  auth.languageCode = 'he';
-
-  async function signInRedirectFirst() {
-    try {
-      await auth.signInWithRedirect(googleProvider);
-    } catch (err) {
-      console.warn('Redirect failed, trying popup...', err);
+    function showBasedOnSnapshot(snap){
       try {
-        await auth.signInWithPopup(googleProvider);
-      } catch (e) {
-        console.error('Popup signin failed', e);
-        alert('שגיאת התחברות: ' + (e?.message || e));
-      }
+        const empty = (snap && (snap.empty || (Array.isArray(snap.docs) && snap.docs.length === 0)));
+        if (empty) show(); else hide();
+      } catch (e) { /* ignore; keep current */ }
     }
-  }
 
-  // Handle redirect result on load
-  auth.getRedirectResult()
-    .then(function(res){
-      if (res && res.user) {
-        console.log('Redirect result user:', res.user.uid);
-      }
-    })
-    .catch(function(e){
-      console.warn('Redirect result error:', e);
-    });
-
-  // Wire buttons if exist
-  document.addEventListener('DOMContentLoaded', function(){
-    var btn = document.getElementById('googleSignInBtn');
-    if (btn && !btn.__WIRED__) {
-      btn.__WIRED__ = true;
-      btn.addEventListener('click', function(){
-        signInRedirectFirst();
+    // Wire auth→data
+    if (window.auth && typeof auth.onAuthStateChanged === 'function') {
+      auth.onAuthStateChanged(function(user){
+        if (!user){ show(); return; }
+        try{
+          // v8 compat path
+          if (window.AppDataLayer && AppDataLayer.db && AppDataLayer.db.collection){
+            return AppDataLayer.db.collection('trips')
+              .where('ownerUid','==', user.uid)
+              .limit(1)
+              .onSnapshot(showBasedOnSnapshot, function(){ show(); });
+          }
+          // If no DB available, show a landing instead of blank
+          show();
+        } catch (e){ show(); }
       });
+    } else {
+      // No auth available yet → show landing to avoid blank
+      show();
     }
-    var outBtn = document.getElementById('signOutBtn');
-    if (outBtn && !outBtn.__WIRED__) {
-      outBtn.__WIRED__ = true;
-      outBtn.addEventListener('click', function(){
-        auth.signOut().catch(console.error);
-      });
-    }
-  });
 
-  // Single onAuthStateChanged
-  if (!window.__AUTH_LISTENER__) {
-    window.__AUTH_LISTENER__ = auth.onAuthStateChanged(function(user){
-      console.log('Auth UID:', user ? user.uid : 'undefined');
-      try {
-        if (user && typeof enterApp === 'function') {
-          enterApp(user);
-        } else if (!user && typeof showSplash === 'function') {
-          showSplash();
+    // Create-first-trip
+    document.addEventListener('click', async function(ev){
+      if (ev.target && ev.target.id === 'fallback-create'){
+        if (!(window.auth && auth.currentUser)) { alert('צריך להתחבר קודם'); return; }
+        const uid = auth.currentUser.uid;
+        const title = prompt('שם הטיול:', 'טיול חדש');
+        if (title === null) return;
+        try{
+          if (window.AppDataLayer && AppDataLayer.db && AppDataLayer.db.collection){
+            await AppDataLayer.db.collection('trips').add({
+              ownerUid: uid,
+              title: title || 'טיול חדש',
+              createdAt: Date.now()
+            });
+          }
+          hide();
+        }catch(e){
+          console.error('create-first-trip failed:', e);
+          alert('שמירה נכשלה: ' + (e.message || e));
         }
-      } catch (e) { console.error(e); }
+      }
     });
-  }
+  }catch(e){ console.warn('fallback landing setup failed', e); }
 })();
-// ---- End Auth Flow ----
