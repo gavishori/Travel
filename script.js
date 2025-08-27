@@ -1,105 +1,87 @@
+/* App bootstrap */
+let app, auth, db;
+try {
+  app = firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+} catch (e) {
+  console.error('Firebase init error:', e);
+  alert('שגיאת אתחול Firebase. בדוק את firebase.js.');
+}
 
-(function () {
-  const authBtn = document.getElementById('authBtn');
-  const hint = document.getElementById('hint');
-  const tripsEl = document.getElementById('trips');
+/* Elements */
+const loginBtn  = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const tripsEl   = document.getElementById('trips');
+const hintEl    = document.getElementById('hint');
 
-  function setAuthBtn(user){
-    if(user){
-      authBtn.textContent = 'התנתק';
-      authBtn.onclick = () => auth.signOut();
-    }else{
-      authBtn.textContent = 'התחבר';
-      authBtn.onclick = signIn;
-    }
-  }
+// Only run the app logic if Firebase was initialized successfully
+if (app) {
 
-  async function signIn(){
-    try{
+  /* Auth UI */
+  loginBtn.onclick = async () => {
+    loginBtn.disabled = true;
+    try {
       const provider = new firebase.auth.GoogleAuthProvider();
-      // Try popup, fallback to redirect on mobile/Safari
-      try{
-        await auth.signInWithPopup(provider);
-      }catch(e){
-        await auth.signInWithRedirect(provider);
-      }
-    }catch(err){
-      alert('נכשל להתחבר: ' + err.message);
-      console.error(err);
+      await auth.signInWithPopup(provider);
+    } catch (e) {
+      console.error(e);
+      alert('נכשל להתחבר: ' + (e.message || e));
+    } finally {
+      loginBtn.disabled = false;
     }
+  };
+
+  logoutBtn.onclick = () => auth.signOut();
+
+  /* Render */
+  function card(t) {
+    const start = t.startDate?.toDate?.() ? t.startDate.toDate() : (t.startDate || '');
+    const end   = t.endDate?.toDate?.()   ? t.endDate.toDate()   : (t.endDate || '');
+    return `<article class="card">
+      <h3>${t.title || 'טיול ללא שם'}</h3>
+      <div class="badges">
+        ${start ? `<span class="badge">מתחיל: ${new Date(start).toLocaleDateString('he-IL')}</span>` : ''}
+        ${end   ? `<span class="badge">מסתיים: ${new Date(end).toLocaleDateString('he-IL')}</span>` : ''}
+        ${Array.isArray(t.tags) ? t.tags.map(x=>`<span class="badge">${x}</span>`).join('') : ''}
+      </div>
+    </article>`;
   }
 
-  function renderTrips(list){
-    tripsEl.innerHTML = '';
-    for(const t of list){
-      const card = document.createElement('article');
-      card.className = 'card';
-      const title = document.createElement('h3');
-      title.textContent = t.title || 'טיול ללא שם';
-      const days = document.createElement('div');
-      const range = (t.start && t.end) ? `${t.start}–${t.end}` : '';
-      days.textContent = [range, t.days ? `ימים ${t.days}` : ''].filter(Boolean).join(' • ');
-
-      const badges = document.createElement('div');
-      badges.className = 'badges';
-      (t.tags || []).slice(0,4).forEach(tag=>{
-        const b = document.createElement('span');
-        b.className = 'badge';
-        b.textContent = tag;
-        badges.appendChild(b);
-      });
-
-      card.appendChild(title);
-      card.appendChild(days);
-      card.appendChild(badges);
-      tripsEl.appendChild(card);
+  function renderTrips(docs) {
+    if (!docs || !docs.length) {
+      tripsEl.innerHTML = '<p class="badge">אין טיולים עדיין.</p>';
+      return;
     }
+    tripsEl.innerHTML = docs.map(d => card({ id: d.id, ...d.data() })).join('');
   }
 
-  async function loadTrips(uid){
-    try{
-      // Defensive: if collection/security rules not ready, fail silently
-      const snap = await db.collection('trips')
-        .where('uid', '==', uid)
-        .orderBy('updatedAt','desc')
-        .limit(50)
-        .get()
-        .catch((e)=>{
-          console.warn('Cannot query trips (ignored):', e.message);
-          return null;
+  /* Data */
+  let unsub = null;
+
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      // Signed in
+      loginBtn.hidden  = true;
+      logoutBtn.hidden = false;
+      hintEl.hidden    = true;
+
+      // Live query: trips owned by the user (ownerUid field)
+      unsub && unsub();
+      unsub = db.collection('trips')
+        .where('ownerUid', '==', user.uid)
+        .orderBy('startDate', 'desc')
+        .onSnapshot(snap => renderTrips(snap.docs), (err) => {
+          console.error(err);
+          alert('טעינת טיולים נכשלה. בדוק את חוקי Firestore.');
         });
-
-      const items = [];
-      if(snap){
-        snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
-      }
-
-      if(items.length === 0){
-        hint.textContent = 'לא נמצאו טיולים עבור המשתמש.';
-        hint.hidden = false;
-        tripsEl.hidden = true;
-      }else{
-        hint.hidden = true;
-        tripsEl.hidden = false;
-        renderTrips(items);
-      }
-    }catch(err){
-      console.error(err);
-      hint.textContent = 'שגיאה בטעינת טיולים.';
-      hint.hidden = false;
-      tripsEl.hidden = true;
-    }
-  }
-
-  auth.onAuthStateChanged(async (user) => {
-    setAuthBtn(user);
-    if(!user){
-      hint.textContent = 'יש להתחבר כדי לראות טיולים';
-      hint.hidden = false;
-      tripsEl.hidden = true;
+    } else {
+      // Signed out
+      loginBtn.hidden  = false;
+      logoutBtn.hidden = true;
+      hintEl.hidden    = false;
       tripsEl.innerHTML = '';
-    }else{
-      await loadTrips(user.uid);
+      unsub && unsub(); unsub = null;
     }
   });
-})();
+}
