@@ -1,3 +1,27 @@
+
+// ---- Mobile-aware sign-in flow (popup fallback) ----
+
+async function mobileAwareSignIn(){
+  if (typeof auth === 'undefined' || typeof googleProvider === 'undefined') return;
+  try{
+    if (auth.signInWithRedirect){
+      await auth.signInWithRedirect(googleProvider);
+    } else {
+      console.error("Redirect not supported");
+    }
+  }catch(err){
+    console.error(err);
+    alert(err && err.message ? err.message : 'Sign-in failed');
+  }
+}
+
+// Collect redirect result on load (iOS/Safari)
+if (typeof auth !== 'undefined' && auth.getRedirectResult){
+  auth.getRedirectResult().catch(function(err){
+    console.error('redirect error', err);
+  });
+}
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1742,10 +1766,7 @@ function openJournalDeleteDialog(tripId, entry){
     }
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
-      if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { await auth.signInWithPopup(googleProvider); }
-        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
-      });
+      if (signInBtn) signInBtn.addEventListener('click', function(){ mobileAwareSignIn(); });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
         try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
       });
@@ -1780,7 +1801,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await auth.signInWithPopup(googleProvider);
+      await mobileAwareSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1807,7 +1828,7 @@ window.debugAuth = async function(){
           return window.debugAuth();
         }
         if (window.auth && window.googleProvider) {
-          auth.signInWithPopup(googleProvider);
+          mobileAwareSignIn();
         }
       });
     }
