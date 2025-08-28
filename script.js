@@ -145,6 +145,7 @@ const Store = (()=>{
 
   async function listTrips(){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listTrips blocked until sign-in");
     return [];
   }
 
@@ -162,6 +163,7 @@ const Store = (()=>{
 
   async function createTrip(meta){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] createTrip blocked until sign-in");
     return null;
   }
 
@@ -189,6 +191,7 @@ const Store = (()=>{
 
   async function getTrip(id){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] getTrip blocked until sign-in");
     return null;
   }
 
@@ -211,6 +214,7 @@ const Store = (()=>{
 
   async function updateTrip(id, updates){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateTrip blocked until sign-in");
     return null;
   }
 
@@ -226,6 +230,7 @@ const Store = (()=>{
 
   async function deleteTrip(id){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] deleteTrip blocked until sign-in");
     return null;
   }
 
@@ -241,6 +246,7 @@ const Store = (()=>{
   // Expenses
   async function listExpenses(tripId){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listExpenses blocked until sign-in");
     return [];
   }
 
@@ -250,6 +256,7 @@ const Store = (()=>{
   }
   async function addExpense(tripId, entry){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] addExpense blocked until sign-in");
     return null;
   }
 
@@ -270,6 +277,7 @@ const Store = (()=>{
   }
   async function updateExpense(tripId, expId, updates){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateExpense blocked until sign-in");
     return null;
   }
 
@@ -287,6 +295,7 @@ const Store = (()=>{
   }
   async function removeExpense(tripId, expId){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] removeExpense blocked until sign-in");
     return null;
   }
 
@@ -305,6 +314,7 @@ const Store = (()=>{
   // Journal
   async function listJournal(tripId){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listJournal blocked until sign-in");
     return [];
   }
 
@@ -314,6 +324,7 @@ const Store = (()=>{
   }
   async function addJournal(tripId, entry){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] addJournal blocked until sign-in");
     return null;
   }
 
@@ -334,6 +345,7 @@ const Store = (()=>{
   }
   async function updateJournal(tripId, jId, updates){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateJournal blocked until sign-in");
     return null;
   }
 
@@ -351,6 +363,7 @@ const Store = (()=>{
   }
   async function removeJournal(tripId, jId){
   if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] removeJournal blocked until sign-in");
     return null;
   }
 
@@ -1730,7 +1743,7 @@ function openJournalDeleteDialog(tripId, entry){
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { await auth.signInWithPopup(googleProvider); }
+        try { await auth.signInWithRedirect(googleProvider); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
@@ -1767,7 +1780,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await auth.signInWithPopup(googleProvider);
+      await auth.signInWithRedirect(googleProvider);
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1794,86 +1807,12 @@ window.debugAuth = async function(){
           return window.debugAuth();
         }
         if (window.auth && window.googleProvider) {
-          auth.signInWithPopup(googleProvider);
+          auth.signInWithRedirect(googleProvider);
         }
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
 
-
-// === Auth & Trips bootstrap (final) ===
-if (typeof auth !== 'undefined'){
-  auth.onAuthStateChanged(async function(user){
-    console.log('[auth] state changed:', !!user);
-    if (!user){
-      document.body.classList.remove('entered');
-      return;
-    }
-    console.log('[auth] uid:', user.uid, 'email:', user.email || '(no email)');
-    document.body.classList.add('entered');
-    try{
-      if (typeof db !== 'undefined'){
-        const tripsRef = db.collection('users').doc(user.uid).collection('trips');
-        // Create a sample trip if empty so UI isn't blank on first run
-        const first = await tripsRef.limit(1).get();
-        if (first.empty){
-          await tripsRef.add({
-            title: 'טיול לדוגמה',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-        await renderTripsFrom(tripsRef);
-      }
-    }catch(e){ console.error('[trips] load error', e); }
-  });
-}
-
-// Minimal renderer hook; replace with your own renderer if you already have one.
-async function renderTripsFrom(ref){
-  if (!ref) return;
-  const snap = await ref.orderBy('createdAt','desc').limit(50).get();
-  console.log('[trips] count:', snap.size);
-  // TODO: call your real render function here with snap.docs
-}
-
-
-// === Trips renderer ===
-function fmtDate(ts){
-  try{
-    if (!ts) return '';
-    var d = ts.toDate ? ts.toDate() : (typeof ts === 'number' ? new Date(ts) : new Date(ts));
-    return isNaN(d) ? '' : d.toLocaleDateString('he-IL', { year:'numeric', month:'short', day:'numeric' });
-  }catch(e){ return ''; }
-}
-
-async function renderTripsFrom(ref){
-  var list = document.getElementById('tripList');
-  var empty = document.getElementById('emptyState');
-  if (!ref || !list) return;
-
-  ref.orderBy('createdAt','desc').onSnapshot(function(snap){
-    list.innerHTML = '';
-    if (snap.empty){
-      if (empty) empty.hidden = false;
-      return;
-    }
-    if (empty) empty.hidden = true;
-    snap.forEach(function(doc){
-      var t = doc.data() || {};
-      var title = t.title || t.name || 'ללא שם';
-      var created = fmtDate(t.createdAt);
-      var dates = (t.startDate || t.endDate) ? (fmtDate(t.startDate) + (t.endDate ? '–' + fmtDate(t.endDate) : '')) : '';
-      var dest = t.destination || t.city || t.country || '';
-      var meta = [created, dates, dest].filter(Boolean).join(' · ');
-
-      var card = document.createElement('article');
-      card.className = 'trip-card';
-      card.setAttribute('role','listitem');
-      card.innerHTML = '<h3>'+title+'</h3>' + (meta ? '<div class="trip-meta">'+meta+'</div>' : '');
-      list.appendChild(card);
-    });
-  }, function(err){
-    console.error('[trips] snapshot error', err);
-  });
-}
+// handle redirect result once after load
+;(function(){ if(typeof auth!=="undefined" && auth && typeof auth.getRedirectResult==="function"){ auth.getRedirectResult().then(function(res){ if(res && res.user){ console.log("[auth] redirect result user:", res.user.email || res.user.uid); } }).catch(function(err){ if(err && err.code){ console.warn("[auth] redirect result error:", err.code); } }); }})();
