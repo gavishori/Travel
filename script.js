@@ -28,16 +28,14 @@ const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 // ---------- Global state ----------
-const COUNTRY_CCY = {
+window.COUNTRY_CCY = window.COUNTRY_CCY || {
   "IL":"ILS","US":"USD","GB":"GBP","DE":"EUR","FR":"EUR","ES":"EUR","IT":"EUR","PT":"EUR","NL":"EUR","BE":"EUR",
   "AT":"EUR","IE":"EUR","FI":"EUR","GR":"EUR","PL":"PLN","CZ":"CZK","SK":"EUR","HU":"HUF","RO":"RON","BG":"BGN",
   "HR":"EUR","SI":"EUR","SE":"SEK","NO":"NOK","DN":"DKK","DK":"DKK","CH":"CHF","TR":"TRY","IS":"ISK","CA":"CAD",
   "AU":"AUD","NZ":"NZD","JP":"JPY","CN":"CNY","HK":"HKD","SG":"SGD","TH":"THB","AE":"AED","SA":"SAR","EG":"EGP",
   "JO":"JOD","MA":"MAD","ZA":"ZAR","BR":"BRL","AR":"ARS","MX":"MXN"
-}
-
-
-// helper to extract just the city name from a place string
+};
+var COUNTRY_CCY = window.COUNTRY_CCY;// helper to extract just the city name from a place string
 function extractCityName(placeName){
   if (!placeName) return "—";
   const parts = placeName.split(",").map(p=>p.trim()).filter(Boolean);
