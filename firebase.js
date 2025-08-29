@@ -1,4 +1,4 @@
-/* firebase.js — Firebase compat + אליאסים לקוד הישן (drop-in) */
+/* firebase.js — Firebase compat + aliases */
 (function () {
   if (window.firebaseApp) return;
 
@@ -12,18 +12,16 @@
     measurementId: "G-FT56H33X5J"
   };
 
-  // Init compat SDKs (expects that CDN compat scripts are loaded in index.html)
   const app  = firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db   = firebase.firestore();
 
-  // Expose globals expected by your existing script.js
   window.firebaseApp    = app;
   window.firebaseAuth   = auth;
   window.firebaseDb     = db;
   window.googleProvider = new firebase.auth.GoogleAuthProvider();
 
-  // Aliases for legacy code
+  // legacy aliases
   window.auth     = auth;
   window.db       = db;
   window.provider = window.googleProvider;
