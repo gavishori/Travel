@@ -24,7 +24,7 @@
 
       var go = function (e) {
         if (e && e.preventDefault) e.preventDefault();
-        auth.signInWithRedirect(provider).catch(function (err) {
+        await auth.signInWithPopup(provider);.catch(function (err) {
           console.warn('[auth] redirect error:', err && err.code, err && err.message);
           alert('שגיאת התחברות: ' + (err && err.code ? err.code : err));
         });
@@ -35,10 +35,7 @@
     }
 
     if (typeof auth.getRedirectResult === 'function') {
-      auth.getRedirectResult().then(function (res) {
-        if (res && res.user) console.log('[auth] redirect user:', res.user.uid);
-      }).catch(function (err) {
-        console.warn('[auth] getRedirectResult:', err && err.code, err && err.message);
+      // removed redirect handling
       });
     }
 
