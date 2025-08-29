@@ -2,35 +2,24 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FLYMILY</title>
-  <link rel="icon" href="favicon.png" />
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase compat (as in your project) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script>
-    // your existing config here – placeholder; leave as-is if you already have firebase.js
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script defer src="script.js"></script>
 </head>
 <body class="splash-mode">
-  <section id="splash" role="region" aria-label="מסך פתיחה">
-    <div class="splash-card">
-      <img src="logo.png" class="splash-logo" alt="FLYMILY" />
-      <h1 class="brand-title">FLYMILY</h1>
-      <p class="brand-sub">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
-      <button id="googleSignInBtn" class="google-btn">המשך עם Google</button>
-    </div>
+  <section id="splash" class="splash-card">
+    <img src="logo.png" alt="FLYMILY" class="splash-logo" />
+    <h1 class="brand-title">FLYMILY</h1>
+    <p class="brand-subtitle">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
+    <button id="googleLogin" class="google-btn">המשך עם Google</button>
   </section>
-  <div id="app" style="display:none"></div>
-
-  <!-- Your existing app scripts -->
-  <script src="firebase.js"></script>
-  <script src="script.js"></script>
-
-  <!-- Hotfix: force redirect-only and UI toggle after auth -->
-  <script src="auth_patch_redirect_only.js"></script>
-  <script src="hotfix_toggle_ui.js"></script>
+  <div id="app" style="display:none;">
+    <h2>הנסיעות שלי</h2>
+    <p>מוכן.</p>
+  </div>
 </body>
 </html>
