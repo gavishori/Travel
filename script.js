@@ -1775,7 +1775,7 @@ function openJournalDeleteDialog(tripId, entry){
 
 
 // --- Debug helper to verify auth + rules ---
-window.debugAuth = async function(){ if (window.auth && window.googleProvider){ await auth.signInWithRedirect(googleProvider); return; } };
+window.debugAuth = async function(){ try{ await auth.signInWithRedirect(googleProvider); }catch(e){ console.warn('[auth] redirect error in debugAuth', e?.code, e?.message); } };
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
     if (!uid) return;
@@ -1808,17 +1808,51 @@ window.debugAuth = async function(){ if (window.auth && window.googleProvider){ 
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
 
-
-/* === Added by build: auth redirect handler === */
-try {
-  if (window.auth && typeof window.auth.getRedirectResult === 'function') {
+/* === injected: redirect result handler === */
+try{
+  if (window.auth && typeof window.auth.getRedirectResult === 'function'){
     window.auth.getRedirectResult().then(function(result){
       if (result && result.user){
-        console.log("[auth] redirect result user:", result.user.uid);
+        console.log('[auth] redirect result user:', result.user.uid);
       }
     }).catch(function(err){
-      console.warn("[auth] getRedirectResult error:", err && err.code, err && err.message);
+      console.warn('[auth] getRedirectResult error:', err && err.code, err && err.message);
     });
   }
-} catch(e){ console.warn("redirect handler init failed", e); }
-/* === End added === */
+}catch(e){ console.warn('redirect handler init failed', e); }
+
+/* === injected: safe mobile login (redirect-only) === */
+(function () {
+  var btn = document.getElementById('googleSignInBtn');
+  if (!btn) return;
+
+  // neutralize default navigation (anchor/form issues -> about:blank)
+  if (btn.tagName === 'A') {
+    btn.setAttribute('href','javascript:void(0)');
+    btn.removeAttribute('target');
+    btn.setAttribute('rel','nofollow');
+  }
+  btn.setAttribute('type','button');
+
+  // replace node to drop legacy listeners that might open popups
+  var clone = btn.cloneNode(true);
+  btn.parentNode.replaceChild(clone, btn);
+
+  function doRedirect(e){
+    try{ e && e.preventDefault && e.preventDefault(); }catch(_){}
+    try{ e && e.stopImmediatePropagation && e.stopImmediatePropagation(); }catch(_){}
+    try{ e && e.stopPropagation && e.stopPropagation(); }catch(_){}
+
+    try {
+      if (window.auth && window.googleProvider && typeof window.auth.signInWithRedirect === 'function') {
+        window.auth.signInWithRedirect(window.googleProvider);
+        return;
+      }
+    } catch(err) { console.warn('[auth] compat redirect error:', err && err.code, err && err.message); }
+
+    alert('שגיאת התחברות: לא נמצא Auth/Provider מתאים ל-Redirect');
+  }
+
+  clone.addEventListener('click', doRedirect, { once: true });
+  clone.addEventListener('touchend', doRedirect, { once: true });
+})();
