@@ -28,14 +28,16 @@ const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 // ---------- Global state ----------
-window.COUNTRY_CCY = window.COUNTRY_CCY || {
+const COUNTRY_CCY = {
   "IL":"ILS","US":"USD","GB":"GBP","DE":"EUR","FR":"EUR","ES":"EUR","IT":"EUR","PT":"EUR","NL":"EUR","BE":"EUR",
   "AT":"EUR","IE":"EUR","FI":"EUR","GR":"EUR","PL":"PLN","CZ":"CZK","SK":"EUR","HU":"HUF","RO":"RON","BG":"BGN",
   "HR":"EUR","SI":"EUR","SE":"SEK","NO":"NOK","DN":"DKK","DK":"DKK","CH":"CHF","TR":"TRY","IS":"ISK","CA":"CAD",
   "AU":"AUD","NZ":"NZD","JP":"JPY","CN":"CNY","HK":"HKD","SG":"SGD","TH":"THB","AE":"AED","SA":"SAR","EG":"EGP",
   "JO":"JOD","MA":"MAD","ZA":"ZAR","BR":"BRL","AR":"ARS","MX":"MXN"
-};
-var COUNTRY_CCY = window.COUNTRY_CCY;// helper to extract just the city name from a place string
+}
+
+
+// helper to extract just the city name from a place string
 function extractCityName(placeName){
   if (!placeName) return "—";
   const parts = placeName.split(",").map(p=>p.trim()).filter(Boolean);
@@ -1741,7 +1743,7 @@ function openJournalDeleteDialog(tripId, entry){
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { await auth.signInWithPopup(googleProvider); }
+        try { await auth.signInWithRedirect(googleProvider); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
@@ -1778,7 +1780,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await auth.signInWithPopup(googleProvider);
+      await auth.signInWithRedirect(googleProvider);
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1805,9 +1807,24 @@ window.debugAuth = async function(){
           return window.debugAuth();
         }
         if (window.auth && window.googleProvider) {
-          auth.signInWithPopup(googleProvider);
+          auth.signInWithRedirect(googleProvider);
         }
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+
+/* === Auth Redirect handler (added) === */
+try{
+  if (window.auth && typeof window.auth.getRedirectResult === 'function'){
+    window.auth.getRedirectResult().then(function(result){
+      if (result && result.user){
+        console.log('[auth] redirect result user:', result.user.uid);
+      }
+    }).catch(function(err){
+      console.warn('[auth] getRedirectResult error:', err && err.code, err && err.message);
+    });
+  }
+}catch(e){ console.warn('redirect handler init failed', e); }
+/* === End handler === */
