@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body class="splash-mode">
@@ -16,7 +16,7 @@
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
-        <button class="btn primary" id="googleSignInBtn" type="button">המשך עם Google</button>
+        <button class="btn primary" id="googleSignInBtn" onclick="debugAuth()">המשך עם Google</button>
         <button class="btn" id="signOutBtn" style="display:none">התנתק</button>
       </div>
     </div>
@@ -524,8 +524,8 @@
   </script>
 
   <!-- App scripts -->
-  <script src="./firebase.js?fix1"></script>
-  <script src="./script.js?fix1"></script>
+  <script src="./firebase.js"></script>
+  <script src="./script.js"></script>
 
 </body>
 </html>
