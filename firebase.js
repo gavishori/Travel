@@ -21,14 +21,11 @@
   window.firebaseDb     = db;
   window.googleProvider = new firebase.auth.GoogleAuthProvider();
 
-  // legacy aliases
   window.auth     = auth;
   window.db       = db;
   window.provider = window.googleProvider;
 
-  try {
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  } catch (e) {}
+  try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
 
   console.log("Firebase initialized (compat).");
 })();
