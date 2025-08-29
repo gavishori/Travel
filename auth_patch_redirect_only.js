@@ -8,7 +8,7 @@
   auth.getRedirectResult?.().catch(()=>{});
 
   // Replace popup with redirect globally
-  const originalPopup = auth.signInWithPopup ? auth.signInWithPopup.bind(auth) : null;
+  const orig = auth.signInWithPopup ? auth.signInWithPopup.bind(auth) : null;
   auth.signInWithPopup = function(provider){
     console.log("[auth_patch] forcing redirect (no popup)");
     return auth.signInWithRedirect(provider);
