@@ -1,29 +1,42 @@
-// script.js — clean, mobile-safe (Popup only), no redirects
+// script.js — DROP-IN FIX (redirect-only, no popups, no inline onclick required)
 (function () {
   function wire() {
     var auth = window.auth;
     var provider = window.googleProvider;
-    var btn = document.getElementById('googleSignInBtn') || document.querySelector('[data-google-btn]');
+    if (!auth || !provider) return setTimeout(wire, 50);
 
-    if (!auth || !provider || !btn) {
-      return setTimeout(wire, 50);
+    var btn = document.getElementById('googleSignInBtn') || document.querySelector('[data-google-btn]');
+    if (btn) {
+      // neutralize default navigation (anchors/forms)
+      if (btn.tagName === 'A') {
+        btn.href = 'javascript:void(0)';
+        btn.removeAttribute('target');
+      }
+      btn.setAttribute('type', 'button');
+
+      // drop legacy listeners
+      var clone = btn.cloneNode(true);
+      btn.parentNode.replaceChild(clone, btn);
+
+      var go = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
+        auth.signInWithRedirect(provider).catch(function (err) {
+          console.warn('[auth] redirect error:', err && err.code, err && err.message);
+          alert('שגיאת התחברות: ' + (err && err.code ? err.code : err));
+        });
+      };
+
+      clone.addEventListener('click', go, false);
+      clone.addEventListener('touchend', go, false);
     }
 
-    // remove any stale listeners
-    var clone = btn.cloneNode(true);
-    if (btn.parentNode) btn.parentNode.replaceChild(clone, btn);
-    btn = clone;
-
-    btn.addEventListener('click', async function (e) {
-      e.preventDefault();
-      try {
-        const res = await auth.signInWithPopup(provider);
-        console.log('[auth] popup success:', !!(res && res.user));
-      } catch (err) {
-        console.warn('[auth] popup error:', err && err.code, err && err.message);
-        alert('שגיאה בהתחברות: ' + (err && err.message || err));
-      }
-    });
+    if (typeof auth.getRedirectResult === 'function') {
+      auth.getRedirectResult().then(function (res) {
+        if (res && res.user) console.log('[auth] redirect user:', res.user.uid);
+      }).catch(function (err) {
+        console.warn('[auth] getRedirectResult:', err && err.code, err && err.message);
+      });
+    }
 
     if (typeof auth.onAuthStateChanged === 'function') {
       auth.onAuthStateChanged(function (user) {
@@ -32,10 +45,5 @@
       });
     }
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wire);
-  } else {
-    wire();
-  }
+  wire();
 })();
