@@ -1,6 +1,8 @@
 // script.js — DROP-IN FIX (redirect-only, no popups, no inline onclick required)
 (function () {
   function wire() {
+    function enterApp(){ try{ document.body.classList.add('entered'); }catch(e){} }
+
     var auth = window.auth;
     var provider = window.googleProvider;
     if (!auth || !provider) return setTimeout(wire, 50);
@@ -19,6 +21,7 @@
       btn.parentNode.replaceChild(clone, btn);
 
       var go = function (e) {
+        if (auth && auth.currentUser) { enterApp(); return; }
         if (e && e.preventDefault) e.preventDefault();
         auth.signInWithRedirect(provider).catch(function (err) {
           console.warn('[auth] redirect error:', err && err.code, err && err.message);
@@ -41,7 +44,7 @@
     if (typeof auth.onAuthStateChanged === 'function') {
       auth.onAuthStateChanged(function (user) {
         console.log('[auth] state changed:', !!user);
-        if (user && user.uid) console.log('Auth UID:', user.uid);
+        if (user && user.uid) { console.log('Auth UID:', user.uid); enterApp(); } else { try{ document.body.classList.remove('entered'); }catch(e){} }
       });
     }
   }
