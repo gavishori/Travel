@@ -1775,13 +1775,7 @@ function openJournalDeleteDialog(tripId, entry){
 
 
 // --- Debug helper to verify auth + rules ---
-window.debugAuth = async function(){
-  try {
-    console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
-    if (!auth.currentUser){
-      console.log("[dbg] no user → opening popup");
-      await auth.signInWithRedirect(googleProvider);
-    }
+window.debugAuth = async function(){ if (window.auth && window.googleProvider){ await auth.signInWithRedirect(googleProvider); return; } };
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
     if (!uid) return;
@@ -1815,7 +1809,7 @@ window.debugAuth = async function(){
 })();
 
 
-/* === Added: auth redirect handler === */
+/* === Added by build: auth redirect handler === */
 try {
   if (window.auth && typeof window.auth.getRedirectResult === 'function') {
     window.auth.getRedirectResult().then(function(result){
