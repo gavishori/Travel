@@ -1742,7 +1742,7 @@ function openJournalDeleteDialog(tripId, entry){
     }
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
-      if (signInBtn) signInBtn.addEventListener('click', async function(){
+      if (signInBtn && !signInBtn.__wired){ signInBtn.__wired = true; signInBtn.addEventListener('click', async function(){
         try { await auth.signInWithRedirect(googleProvider); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
@@ -1815,16 +1815,16 @@ window.debugAuth = async function(){
 })();
 
 
-/* === Auth Redirect handler (added) === */
-try{
-  if (window.auth && typeof window.auth.getRedirectResult === 'function'){
+/* === Added: auth redirect handler === */
+try {
+  if (window.auth && typeof window.auth.getRedirectResult === 'function') {
     window.auth.getRedirectResult().then(function(result){
       if (result && result.user){
-        console.log('[auth] redirect result user:', result.user.uid);
+        console.log("[auth] redirect result user:", result.user.uid);
       }
     }).catch(function(err){
-      console.warn('[auth] getRedirectResult error:', err && err.code, err && err.message);
+      console.warn("[auth] getRedirectResult error:", err && err.code, err && err.message);
     });
   }
-}catch(e){ console.warn('redirect handler init failed', e); }
-/* === End handler === */
+} catch(e){ console.warn("redirect handler init failed", e); }
+/* === End added === */
