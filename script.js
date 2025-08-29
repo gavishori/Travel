@@ -50,3 +50,47 @@
   }
   wire();
 })();
+// === Trip loading ===
+auth.onAuthStateChanged(async (user) => {
+  console.log('[auth] state changed:', !!user);
+  if (!user) { document.body.classList.remove('entered'); return; }
+  console.log('Auth UID:', user.uid);
+  document.body.classList.add('entered');
+  await loadTrips(user.uid);
+});
+
+async function loadTrips(uid){
+  try{
+    const db = firebase.firestore();
+    const snap = await db.collection('trips')
+      .where('ownerUid', '==', uid)
+      .orderBy('startDate', 'desc')
+      .get();
+    const list = document.getElementById('tripList');
+    list.innerHTML = '';
+    if (snap.empty){
+      list.innerHTML = '<li class="muted">אין עדיין נסיעות. לחץ על ＋ כדי ליצור.</li>';
+      return;
+    }
+    snap.forEach(doc => {
+      const t = doc.data();
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div class="trip-title">${t.destination || 'ללא יעד'}</div>
+        <div class="muted">${t.startDate || ''} – ${t.endDate || ''}</div>
+        <div class="row bottom-row">
+          <button class="btn primary" data-open="${doc.id}">פתח</button>
+        </div>`;
+      list.appendChild(li);
+    });
+    list.addEventListener('click', (e)=>{
+      const id = e.target?.getAttribute('data-open');
+      if (!id) return;
+      console.log('Open trip', id);
+      // implement loadTrip(id) if needed
+    }, { once: true });
+  }catch(err){
+    console.error('loadTrips error', err);
+    alert('שגיאה בטעינת נסיעות: ' + (err?.message || err));
+  }
+}
