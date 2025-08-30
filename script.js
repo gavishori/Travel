@@ -1,3 +1,73 @@
+// === Hardened helpers (no null crashes) ===
+(function(){
+  function get(id){ return document.getElementById(id); }
+  function safeLog(msg){
+    const el = get('logs');
+    if (el) { el.textContent += (msg + '\n'); }
+    else { console.log(msg); }
+  }
+  function safeStatus(msg){
+    const el = get('status');
+    if (el) { el.textContent = msg || ''; }
+  }
+
+  // expose globally (without clobbering if already defined)
+  window.__fly = window.__fly || {};
+  window.__fly.safeLog = safeLog;
+  window.__fly.safeStatus = safeStatus;
+
+  // === Mobile-safe Google sign-in ===
+  window.addEventListener('DOMContentLoaded', function(){
+    try{
+      const auth = firebase.auth();
+      const googleProvider = new firebase.auth.GoogleAuthProvider();
+      const signInBtn = document.getElementById('googleSignInBtn');
+      const signOutBtn = document.getElementById('signOutBtn');
+
+      if (signInBtn) signInBtn.addEventListener('click', async function(){
+        try{
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile){
+            try { await auth.signOut(); } catch(_){}
+            sessionStorage.setItem('auth_redirect','1');
+            await auth.signInWithRedirect(googleProvider);
+          }else{
+            await auth.signInWithPopup(googleProvider);
+          }
+        }catch(err){
+          window.__fly.safeLog('login error: ' + (err.code||err.message));
+          alert(err && err.message ? err.message : 'Login failed');
+        }
+      });
+
+      if (signOutBtn) signOutBtn.addEventListener('click', async ()=>{
+        try{ await auth.signOut(); }catch(e){ window.__fly.safeLog('logout error: '+(e.code||e.message)); }
+      });
+
+      auth.getRedirectResult().then(function(res){
+        window.__fly.safeLog('getRedirectResult: ' + (res && res.user ? 'ok' : 'no user'));
+      }).catch(function(e){ window.__fly.safeLog('redirect error: ' + (e.code||e.message)); });
+
+      auth.onAuthStateChanged(async function(user){
+        if (!user && sessionStorage.getItem('auth_redirect')){
+          try{
+            const rr = await auth.getRedirectResult();
+            if (rr && rr.user) user = rr.user;
+          }catch(e){ window.__fly.safeLog('redirectResult error: ' + (e.code||e.message)); }
+          sessionStorage.removeItem('auth_redirect');
+        }
+        if (user){
+          const dn = get('displayName'); if (dn) dn.textContent = user.displayName || '';
+          const em = get('email'); if (em) em.textContent = user.email || '';
+          const si = get('signedIn'); if (si) si.style.display = 'block';
+        }
+      });
+    }catch(e){
+      // in case firebase is not yet available on some pages
+      window.__fly.safeLog('bootstrap error: ' + (e.message||e));
+    }
+  });
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1831,3 +1901,7 @@ window.debugAuth = async function(){
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+
+})();
+// === end hardening ===
