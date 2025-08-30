@@ -5,6 +5,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import { firebaseConfig } from "./firebase.js";
 
+// --- UA detection (safe globals) ---
+if (typeof window !== 'undefined') {
+  if (typeof window.isIOS === 'undefined') window.isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  if (typeof window.isInApp === 'undefined') window.isInApp = /(FBAN|FBAV|Instagram|WhatsApp|Messenger|Line|Twitter|TikTok)/i.test(navigator.userAgent || '');
+}
+
+
 const $ = sel => document.querySelector(sel);
 const logEl = $("#log");
 const phaseEl = $("#phase");
@@ -197,7 +204,7 @@ if (!document.querySelector('meta[name="viewport"]')) {
 }
 
 // ---- In-App helper banner ----
-if (isInApp) {
+if (window.isInApp) {
   const bar = document.createElement("div");
   bar.style.cssText = "background:#1b2332;border:1px solid #2e3a52;color:#e6edf3;padding:10px 12px;border-radius:12px;margin:10px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap";
   const txt = document.createElement("div");
@@ -228,7 +235,7 @@ if (isInApp) {
       location.href = intent;
       // Fallback to new tab
       setTimeout(()=>window.open(url, "_blank", "noopener,noreferrer"), 500);
-    } else if (isIOS) {
+    } else if (window.isIOS) {
       // iOS often shows "Open in Safari" sheet for _blank
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(()=>{
