@@ -2,54 +2,27 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>FLYMILY · התחברות מאובטחת</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLYMILY · נסיעות</title>
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Firebase SDKs (Compat for CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase.js"></script>
 </head>
 <body>
   <main class="container">
-    <header class="header">
-      <h1>FLYMILY</h1>
-      <p class="sub">Production · Redirect Only · Mobile‑ready</p>
-    </header>
-
+    <header><h1>FLYMILY</h1><p>Desktop · Redirect only · Firestore auto-detect</p></header>
     <section class="card">
-      <div id="iab-warning" class="warn" style="display:none">
-        נראה שאתה בתוך דפדפן פנימי (למשל WhatsApp / Instagram). כדי להתחבר, פתח את הדף בדפדפן רגיל (Chrome/Safari).
+      <div id="signed-out"><button id="login">המשך עם Google</button></div>
+      <div id="signed-in" style="display:none;">
+        <div><span id="displayName"></span> (<span id="email"></span>)</div>
+        <button id="logout">התנתק</button> <button id="debug">מידע</button>
+        <h3>הנסיעות שלי</h3><div id="trips"></div>
       </div>
-
-      <div id="signed-out" class="stack">
-        <button id="login" class="btn primary">המשך עם Google</button>
-      </div>
-
-      <div id="signed-in" class="stack" style="display:none;">
-        <div class="user-row">
-          <img id="avatar" class="avatar" alt="avatar" />
-          <div class="grow">
-            <div id="displayName" class="title"></div>
-            <div id="email" class="muted"></div>
-          </div>
-        </div>
-        <div class="row gap">
-          <button id="logout" class="btn">התנתק</button>
-          <button id="debug" class="btn ghost">מידע</button>
-        </div>
-      </div>
-
-      <p id="status" class="status" aria-live="polite"></p>
-      <pre id="logs" class="errors" aria-live="polite"></pre>
+      <p id="status"></p><pre id="logs"></pre>
     </section>
   </main>
-
   <script src="script.js"></script>
 </body>
 </html>
