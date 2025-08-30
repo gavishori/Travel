@@ -1745,18 +1745,32 @@ function openJournalDeleteDialog(tripId, entry){
       if (app) app.style.display = 'none';
     }
 
-    if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
-      if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { if (useRedirect) { await auth.signInWithRedirect(googleProvider); } else { await if (useRedirect) { auth.signInWithRedirect(googleProvider); } else { auth.signInWithPopup(googleProvider); } } }
-        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
-      });
-      if (signOutBtn) signOutBtn.addEventListener('click', async function(){
-        try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
-      });
-      auth.getRedirectResult().then(function(res){
-  if (res && res.user) { console.log('[auth] redirect OK', res.user.uid); }
-}).catch(function(err){ console.warn('[auth] redirect error:', err && (err.code||err.message) || err); });
 
+if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
+  if (signInBtn) {
+    signInBtn.addEventListener('click', async function(){
+      try {
+        if (useRedirect) {
+          await auth.signInWithRedirect(googleProvider);
+        } else {
+          await auth.signInWithPopup(googleProvider);
+        }
+      } catch(err){
+        console.error(err);
+        alert(err && err.message ? err.message : 'Sign-in failed');
+      }
+    });
+  }
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', async function(){
+      try { await auth.signOut(); }
+      catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
+    });
+  }
+
+  auth.getRedirectResult().then(function(res){
+    if (res && res.user) { console.log('[auth] redirect OK', res.user.uid); }
+  }).catch(function(err){ console.warn('[auth] redirect error:', err && (err.code||err.message) || err); });
 auth.onAuthStateChanged(function(user){
       console.log("[auth] state changed:", !!user);
 
