@@ -1812,4 +1812,4 @@ window.debugAuth = async function(){
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
-})();
+)();
