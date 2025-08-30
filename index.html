@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY · נסיעות</title>
+  <title>FLYMILY · Firestore Discover</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -12,17 +12,31 @@
 </head>
 <body>
   <main class="container">
-    <header><h1>FLYMILY</h1><p>Desktop · Redirect only · Firestore auto-detect</p></header>
+    <header class="header">
+      <h1>FLYMILY</h1>
+      <p class="sub">גלאי מבנה Firestore (ללא קונסול – הכל מוצג על המסך)</p>
+    </header>
+
     <section class="card">
-      <div id="signed-out"><button id="login">המשך עם Google</button></div>
-      <div id="signed-in" style="display:none;">
-        <div><span id="displayName"></span> (<span id="email"></span>)</div>
-        <button id="logout">התנתק</button> <button id="debug">מידע</button>
-        <h3>הנסיעות שלי</h3><div id="trips"></div>
+      <div id="signed-out" class="stack">
+        <button id="login" class="btn primary">המשך עם Google</button>
       </div>
-      <p id="status"></p><pre id="logs"></pre>
+
+      <div id="signed-in" class="stack" style="display:none;">
+        <div class="row gap">
+          <div class="grow">
+            <div id="displayName" class="title"></div>
+            <div id="email" class="muted"></div>
+          </div>
+          <button id="logout" class="btn">התנתק</button>
+          <button id="discover" class="btn ghost">גלה נתונים</button>
+        </div>
+
+        <div id="out" class="out"></div>
+      </div>
     </section>
   </main>
+
   <script src="script.js"></script>
 </body>
 </html>

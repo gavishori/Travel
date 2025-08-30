@@ -1,21 +1,62 @@
+
+// Discover Firestore schema for the current user
 (function(){
-  const auth=firebase.auth(); const db=firebase.firestore();
-  const provider=new firebase.auth.GoogleAuthProvider();
-  const $=id=>document.getElementById(id);
-  const log=m=>{$("logs").textContent+=m+"\n"}; const status=m=>$("status").textContent=m||"";
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-  $("login").onclick=()=>auth.signInWithRedirect(provider);
-  $("logout").onclick=()=>auth.signOut();
-  $("debug").onclick=()=>alert(JSON.stringify({uid:auth.currentUser?.uid,email:auth.currentUser?.email,ua:navigator.userAgent},null,2));
+  const $ = (id)=>document.getElementById(id);
+  const outEl = $("out");
+  const out = (t)=>{ outEl.textContent += t + "\n"; };
 
-  auth.getRedirectResult().then(res=>log("getRedirectResult:"+(res.user?"ok":"no user"))).catch(e=>log("redirect error:"+e.message));
+  $("login").onclick = ()=>auth.signInWithRedirect(provider);
+  $("logout").onclick = ()=>auth.signOut();
 
-  function renderTrips(snap,label){let html="";snap.forEach(d=>{let t=d.data();html+=`<div class='trip'><b>${t.name||"ללא שם"}</b><br>${t.days||"?"} ימים</div>`}); if(html){$("trips").innerHTML=html;status("מקור:"+label);return true} return false}
+  auth.onAuthStateChanged((u)=>{
+    if(u){
+      $("signed-out").style.display = "none";
+      $("signed-in").style.display = "flex";
+      $("displayName").textContent = u.displayName || "";
+      $("email").textContent = u.email || "";
+    }else{
+      $("signed-in").style.display = "none";
+      $("signed-out").style.display = "flex";
+      outEl.textContent = "";
+    }
+  });
 
-  async function loadTrips(uid){status("טוען...");$("trips").innerHTML="";
-    try{let snapA=await db.collection("users").doc(uid).collection("trips").get(); if(renderTrips(snapA,"users/{uid}/trips"))return;}catch(e){log("A:"+e.message)}
-    try{let snapB=await db.collection("trips").where("ownerUid","==",uid).get(); if(renderTrips(snapB,"trips(ownerUid)"))return;}catch(e){log("B:"+e.message)}
-    status("לא נמצאו נסיעות");}
+  $("discover").onclick = async ()=>{
+    outEl.textContent = "";
+    const u = auth.currentUser;
+    if(!u){ out("לא מחובר"); return; }
+    out("UID: " + u.uid);
+    out("==== ניסיונות קריאת נתונים ====");
+    try{
+      // A) users/{uid}/trips
+      const a = await db.collection("users").doc(u.uid).collection("trips").limit(10).get();
+      out("[A] users/{uid}/trips -> " + a.size + " מסמכים");
+      a.forEach(doc=>out("  - " + doc.id + " | " + Object.keys(doc.data()||{}).join(",")));
+    }catch(e){ out("[A] error: " + (e.code||e.message)); }
 
-  auth.onAuthStateChanged(u=>{log("onAuthStateChanged:"+(u?"in":"out")); if(u){$("signed-out").style.display="none";$("signed-in").style.display="block";$("displayName").textContent=u.displayName;$("email").textContent=u.email;loadTrips(u.uid)}else{$("signed-in").style.display="none";$("signed-out").style.display="block"}});
+    try{
+      // B) trips where ownerUid == uid
+      const b = await db.collection("trips").where("ownerUid","==", u.uid).limit(10).get();
+      out("[B] trips(ownerUid==uid) -> " + b.size + " מסמכים");
+      b.forEach(doc=>out("  - " + doc.id + " | " + Object.keys(doc.data()||{}).join(",")));
+    }catch(e){ out("[B] error: " + (e.code||e.message)); }
+
+    try{
+      // C) כללית: 10 המסמכים הראשונים מכל קולקציית root שנקראת "trips" או "journeys"
+      const roots = ["trips","journeys","travels"];
+      for (const root of roots){
+        try{
+          const c = await db.collection(root).limit(10).get();
+          out("[C] " + root + " (root) -> " + c.size + " מסמכים");
+          c.forEach(doc=>out("  - " + doc.id + " | " + Object.keys(doc.data()||{}).join(",")));
+        }catch(e){ out("[C] " + root + " error: " + (e.code||e.message)); }
+      }
+    }catch(e){ out("[C] error: " + (e.code||e.message)); }
+
+    out("==== סוף הפלט ====");
+  };
 })();
