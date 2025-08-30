@@ -35,38 +35,36 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
 
-// Button handlers with mobile detection
+// Button handlers - try redirect first, popup as fallback
 if (loginBtn) {
   loginBtn.onclick = async () => {
     try {
       setPhase("authenticating");
       log("Starting authentication...");
+      log("User Agent:", navigator.userAgent);
+      log("Current URL:", window.location.href);
       
-      if (isMobile()) {
-        // Use popup for mobile
-        log("Using popup flow for mobile");
-        const result = await signInWithPopup(auth, provider);
-        log("signInWithPopup success:", { uid: result.user.uid });
-      } else {
-        // Use redirect for desktop
-        log("Using redirect flow for desktop");
-        await signInWithRedirect(auth, provider);
-      }
+      // Disable button to prevent multiple clicks
+      loginBtn.disabled = true;
+      loginBtn.textContent = "מתחבר...";
+      
+      // Always try redirect first (works better on mobile Chrome)
+      log("Using redirect flow");
+      await signInWithRedirect(auth, provider);
+      
     } catch (err) {
       log("Authentication error:", { code: err.code, message: err.message });
       
-      // Fallback to the other method if first fails
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      // Re-enable button
+      loginBtn.disabled = false;
+      loginBtn.textContent = "התחבר עם Google";
+      
+      // Try popup as fallback
+      if (err.code === 'auth/redirect-cancelled-by-user' || 
+          err.code === 'auth/unauthorized-domain' ||
+          err.code === 'auth/operation-not-allowed') {
         try {
-          log("Popup failed, trying redirect...");
-          await signInWithRedirect(auth, provider);
-        } catch (redirectErr) {
-          log("Redirect also failed:", { code: redirectErr.code, message: redirectErr.message });
-          alert("התחברות נכשלה: " + redirectErr.message);
-        }
-      } else if (err.code === 'auth/redirect-cancelled-by-user') {
-        try {
-          log("Redirect failed, trying popup...");
+          log("Redirect failed, trying popup fallback...");
           const result = await signInWithPopup(auth, provider);
           log("Popup fallback success:", { uid: result.user.uid });
         } catch (popupErr) {
@@ -95,27 +93,59 @@ if (logoutBtn) {
 // Main logic: handle redirect and auth state
 setPhase("boot");
 log("boot", new Date().toISOString());
-log("Is mobile:", isMobile());
+log("Current URL:", window.location.href);
+log("URL params:", window.location.search);
 
-// 1) Handle redirect result first (for desktop users)
+// Check if we're returning from OAuth redirect
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('code') || urlParams.get('state')) {
+  log("Detected OAuth redirect parameters");
+  setPhase("processing-redirect");
+}
+
+// 1) Handle redirect result first
 getRedirectResult(auth)
   .then((result) => {
     if (result && result.user) {
-      log("getRedirectResult -> success:", { uid: result.user.uid });
+      log("getRedirectResult -> success:", { uid: result.user.uid, email: result.user.email });
+      setPhase("redirect-success");
+      
+      // Clean up URL parameters after successful auth
+      if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
     } else {
       log("getRedirectResult -> no result");
     }
   })
   .catch((err) => {
     log("getRedirectResult error:", { code: err.code, message: err.message });
+    setPhase("redirect-error");
+    
+    // If we have OAuth params but getRedirectResult failed, try manual refresh
+    if (urlParams.get('code') || urlParams.get('state')) {
+      log("OAuth params present but redirect failed, will retry...");
+      setTimeout(() => {
+        log("Retrying authentication...");
+        window.location.reload();
+      }, 2000);
+    }
   })
   .finally(() => {
     // 2) Listen for auth state AFTER handling redirect
     onAuthStateChanged(auth, (user) => {
       if (user) {
         if (whoEl) whoEl.textContent = user.displayName ? `${user.displayName} · ${user.email}` : user.email || user.uid;
-        if (pfpEl) { pfpEl.src = user.photoURL; pfpEl.style.display = "block"; }
-        if (loginBtn) loginBtn.style.display = "none";
+        if (pfpEl) { 
+          pfpEl.src = user.photoURL || ''; 
+          pfpEl.style.display = user.photoURL ? "block" : "none"; 
+        }
+        if (loginBtn) {
+          loginBtn.style.display = "none";
+          loginBtn.disabled = false;
+          loginBtn.textContent = "התחבר עם Google";
+        }
         if (logoutBtn) logoutBtn.style.display = "inline-block";
         log("onAuthStateChanged: signed-in", { uid: user.uid, email: user.email });
         setPhase("authenticated");
@@ -124,7 +154,11 @@ getRedirectResult(auth)
       } else {
         if (whoEl) whoEl.textContent = "";
         if (pfpEl) pfpEl.style.display = "none";
-        if (loginBtn) loginBtn.style.display = "inline-block";
+        if (loginBtn) {
+          loginBtn.style.display = "inline-block";
+          loginBtn.disabled = false;
+          loginBtn.textContent = "התחבר עם Google";
+        }
         if (logoutBtn) logoutBtn.style.display = "none";
         log("onAuthStateChanged: signed-out");
         setPhase("ready");
