@@ -29,20 +29,34 @@ function isMobile() {
 
 if (uaEl) uaEl.textContent = navigator.userAgent;
 
+log("=== FIREBASE INITIALIZATION ===");
+log("Firebase config:", firebaseConfig);
+log("Current domain:", window.location.hostname);
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
 
+log("Firebase app initialized:", app);
+log("Auth initialized:", auth);
+log("Provider initialized:", provider);
+
 // Button handlers - try redirect first, popup as fallback
 if (loginBtn) {
   loginBtn.onclick = async () => {
+    log("=== BUTTON CLICKED ===");
+    log("Button element:", loginBtn);
+    log("Button disabled:", loginBtn.disabled);
+    
     try {
       setPhase("authenticating");
       log("Starting authentication...");
       log("User Agent:", navigator.userAgent);
       log("Current URL:", window.location.href);
+      log("Firebase Auth instance:", auth);
+      log("Provider instance:", provider);
       
       // Disable button to prevent multiple clicks
       loginBtn.disabled = true;
@@ -50,10 +64,12 @@ if (loginBtn) {
       
       // Always try redirect first (works better on mobile Chrome)
       log("Using redirect flow");
+      log("About to call signInWithRedirect...");
       await signInWithRedirect(auth, provider);
+      log("signInWithRedirect called successfully");
       
     } catch (err) {
-      log("Authentication error:", { code: err.code, message: err.message });
+      log("Authentication error:", { code: err.code, message: err.message, stack: err.stack });
       
       // Re-enable button
       loginBtn.disabled = false;
@@ -76,6 +92,10 @@ if (loginBtn) {
       }
     }
   };
+  
+  log("Button click handler attached to:", loginBtn);
+} else {
+  log("ERROR: loginBtn element not found!");
 }
 
 if (logoutBtn) {
