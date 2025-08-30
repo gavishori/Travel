@@ -1835,3 +1835,49 @@ window.debugAuth = async function(){
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+;(() => {
+  try {
+    const btn = document.getElementById('googleSignInBtn');
+
+    function googleSignIn() {
+      try {
+        if (!window.auth || !window.googleProvider) {
+          alert('Auth not ready');
+          return;
+        }
+        return auth.signInWithRedirect(window.googleProvider);
+      } catch (e) { console.error(e); }
+    }
+
+    // expose globals for any external calls
+    window.googleSignIn = googleSignIn;
+    window.debugAuth = googleSignIn;
+
+    // wire button safely
+    if (btn && !btn.__wired_redirect) {
+      btn.__wired_redirect = true;
+      btn.addEventListener('click', function(ev){
+        try { ev.preventDefault(); } catch(e) {}
+        googleSignIn();
+      });
+    }
+
+    // patch any direct popup calls to redirect
+    if (window.auth && typeof auth.signInWithPopup === 'function' && !auth.__forceRedirect) {
+      auth.__forceRedirect = true;
+      const orig = auth.signInWithPopup.bind(auth);
+      auth.signInWithPopup = function(provider) {
+        return auth.signInWithRedirect(provider);
+      };
+    }
+
+    // complete redirect result on load
+    if (window.auth && typeof auth.getRedirectResult === 'function') {
+      auth.getRedirectResult().then(function(res){
+        if (res && res.user) { /* signed-in after redirect */ }
+      }).catch(function(err){ /* silent */ });
+    }
+  } catch (e) { /* silent */ }
+})();
+
