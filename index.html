@@ -1,55 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY · כניסה</title>
+  <title>FLYMILY – Debug (Redirect only)</title>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.googleapis.com" crossorigin>
   <style>
-    :root{--bg:#0b1220;--card:#111827;--muted:#9ca3af;--text:#e5e7eb;--edge:#334155;--primary:#2563eb}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,Noto Sans}
-    main{max-width:720px;margin:0 auto;padding:20px}
-    .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    h1{margin:0 0 10px}
-    .row{display:flex;align-items:center;gap:12px}
-    .muted{color:var(--muted);font-size:13px}
-    .btn{appearance:none;border:0;border-radius:12px;padding:12px 14px;background:#1f2937;color:var(--text);font-weight:700}
-    .btn.primary{background:var(--primary)}
-    .avatar{width:52px;height:52px;border-radius:50%}
-    #signedIn{display:none}
-    #status{margin-top:10px;color:#cbd5e1;min-height:20px}
-    #logs{background:#0b1220;border:1px solid var(--edge);border-radius:12px;margin-top:10px;padding:10px;white-space:pre-wrap;max-height:220px;overflow:auto}
+    :root { color-scheme: dark; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji"; background:#0b1420; color:#e6edf3; }
+    .wrap { max-width: 840px; margin: 40px auto; padding: 16px; }
+    h1 { font-size: 32px; letter-spacing: 1px; margin: 0 0 12px 0; }
+    .card { background: #121a27; padding: 16px; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.25); }
+    button { background:#1f6feb; color:#fff; border:0; border-radius:12px; padding:14px 18px; font-size:16px; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .muted { color:#97a5b3; font-size:14px; }
+    #log { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0e1622; padding:12px; border-radius:12px; min-height:120px; }
+    .chip { background:#0e223a; padding:4px 8px; border-radius:100px; font-size:12px; }
+    img.pfp { width:40px; height:40px; border-radius:50%; }
   </style>
-
-  <!-- Firebase (modular v10) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-  <script src="firebase.js"></script>
-  <script type="module" src="script.js"></script>
 </head>
 <body>
-  <main>
-    <h1>FLYMILY</h1>
+  <div class="wrap">
+    <h1>FLYMILY – Debug (Redirect only)</h1>
     <div class="card">
-      <div id="signedOut" class="row">
-        <button id="loginBtn" class="btn primary">התחבר עם Google</button>
-      </div>
-
-      <div id="signedIn">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div id="ua" class="muted"></div>
+          <div class="row" style="margin-top:8px;">
+            <span id="flow" class="chip">flow: redirect</span>
+            <span id="phase" class="chip">phase: boot</span>
+          </div>
+        </div>
         <div class="row">
-          <img id="avatar" class="avatar" alt="avatar">
-          <div>
-            <div id="displayName" style="font-weight:800"></div>
-            <div id="email" class="muted"></div>
-          </div>
-          <div style="margin-inline-start:auto">
-            <button id="logoutBtn" class="btn">התנתק</button>
-          </div>
+          <img id="pfp" class="pfp" alt="" style="display:none"/>
+          <div id="who" class="muted"></div>
         </div>
       </div>
 
-      <div id="status"></div>
-      <pre id="logs"></pre>
+      <div style="margin:16px 0">
+        <button id="loginBtn">התחבר עם Google (Redirect)</button>
+        <button id="logoutBtn" style="display:none;background:#9a2d2d">התנתק</button>
+      </div>
+
+      <div id="log"></div>
     </div>
-  </main>
+  </div>
+
+  <script type="module" src="./script.js"></script>
 </body>
 </html>

@@ -1,84 +1,90 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider,
-  signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  getAuth, GoogleAuthProvider, signInWithRedirect,
+  getRedirectResult, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { firebaseConfig } from "./firebase.js";
 
-const auth = getAuth();
+const $ = sel => document.querySelector(sel);
+const logEl = $("#log");
+const phaseEl = $("#phase");
+const uaEl = $("#ua");
+const whoEl = $("#who");
+const pfpEl = $("#pfp");
+const loginBtn = $("#loginBtn");
+const logoutBtn = $("#logoutBtn");
+
+function log(...args) {
+  const line = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
+  console.log(line);
+  logEl.textContent += line + "\n";
+}
+
+function setPhase(p) { phaseEl.textContent = "phase: " + p; }
+
+uaEl.textContent = navigator.userAgent;
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
 
-const $ = (id) => document.getElementById(id);
-const logs = $("logs");
-const statusEl = $("status");
+await setPersistence(auth, browserLocalPersistence);
 
-function log(s){ if(logs) logs.textContent += s + "\n"; else console.log(s); }
-function setStatus(s){ if(statusEl) statusEl.textContent = s || ""; }
+setPhase("boot");
+log("boot", new Date().toISOString());
 
-function isMobile(){
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-}
-
-// UI elements
-const loginBtn = $("loginBtn");
-const logoutBtn = $("logoutBtn");
-const signedOut = $("signedOut");
-const signedIn = $("signedIn");
-const displayName = $("displayName");
-const email = $("email");
-const avatar = $("avatar");
-
-// Login handler
-if (loginBtn){
-  loginBtn.addEventListener("click", async () => {
-    try{
-      loginBtn.disabled = true;
-      setStatus("מתחבר...");
-      if (isMobile()){
-        sessionStorage.setItem("auth_redirect","1");
-        await signInWithRedirect(auth, provider);
-      }else{
-        await signInWithPopup(auth, provider);
-      }
-    }catch(e){
-      log("login error: " + (e.code || e.message));
-      setStatus("");
-    }finally{
-      loginBtn.disabled = false;
+// 1) Handle redirect result if returning from Google
+try {
+  setPhase("getRedirectResult");
+  const res = await getRedirectResult(auth);
+  if (res) {
+    log("getRedirectResult -> success");
+    if (res.user) {
+      log("user:", { uid: res.user.uid, email: res.user.email });
     }
-  });
-}
-
-// Logout
-if (logoutBtn){
-  logoutBtn.addEventListener("click", async () => {
-    try { await signOut(auth); } catch(e){ log("signOut error: " + (e.code||e.message)); }
-  });
-}
-
-// After redirect (mobile)
-getRedirectResult(auth)
-  .then(res => { if (res && res.user) log("redirect OK"); })
-  .catch(e => log("redirect error: " + (e.code||e.message)));
-
-// Update UI on auth state
-onAuthStateChanged(auth, async (user) => {
-  if (!user && sessionStorage.getItem("auth_redirect")){
-    try{
-      const rr = await getRedirectResult(auth);
-      if (rr && rr.user) user = rr.user;
-    }catch(e){ log("redirectResult error: " + (e.code||e.message)); }
-    sessionStorage.removeItem("auth_redirect");
-  }
-
-  if (user){
-    signedOut.style.display = "none";
-    signedIn.style.display = "block";
-    displayName.textContent = user.displayName || "מחובר";
-    email.textContent = user.email || "";
-    avatar.src = user.photoURL || "https://ssl.gstatic.com/accounts/ui/avatar_2x.png";
-    setStatus("מוכן.");
   } else {
-    signedIn.style.display = "none";
-    signedOut.style.display = "flex";
-    setStatus("");
+    log("getRedirectResult -> no result");
+  }
+} catch (err) {
+  log("getRedirectResult error:", { code: err.code, message: err.message });
+} finally {
+  setPhase("listen auth");
+}
+
+// 2) Listen for auth state
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    whoEl.textContent = user.displayName ? `${user.displayName} · ${user.email}` : user.email || user.uid;
+    if (user.photoURL) { pfpEl.src = user.photoURL; pfpEl.style.display="block"; }
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+    log("onAuthStateChanged: signed-in", { uid: user.uid, email: user.email });
+  } else {
+    whoEl.textContent = "";
+    pfpEl.style.display = "none";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    log("onAuthStateChanged: signed-out");
   }
 });
+
+// 3) Button handlers
+loginBtn.onclick = async () => {
+  try {
+    setPhase("redirecting");
+    log("signInWithRedirect...");
+    await signInWithRedirect(auth, provider);
+  } catch (err) {
+    log("signInWithRedirect error:", { code: err.code, message: err.message });
+  }
+};
+
+logoutBtn.onclick = async () => {
+  try {
+    await signOut(auth);
+    log("signOut ok");
+  } catch (err) {
+    log("signOut error:", { code: err.code, message: err.message });
+  }
+};
