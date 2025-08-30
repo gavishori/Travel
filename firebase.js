@@ -1,4 +1,4 @@
-// firebase.js – prod config (Compat)
+// firebase.js – הקונפיג התקין (Compat)
 const firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",

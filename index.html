@@ -3,18 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY · Firestore Discover</title>
+  <meta name="theme-color" content="#0b1220" />
+  <title>FLYMILY · הנסיעות שלי</title>
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
+
+  <!-- Firebase (Compat CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" defer></script>
+
+  <!-- קונפיג -->
+  <script src="firebase.js" defer></script>
+
+  <!-- האפליקציה -->
+  <script src="script.js" defer></script>
 </head>
 <body>
   <main class="container">
     <header class="header">
       <h1>FLYMILY</h1>
-      <p class="sub">גלאי מבנה Firestore (ללא קונסול – הכל מוצג על המסך)</p>
+      <p class="sub">Production · Redirect-only · trips(ownerUid)</p>
     </header>
 
     <section class="card">
@@ -23,20 +32,22 @@
       </div>
 
       <div id="signed-in" class="stack" style="display:none;">
-        <div class="row gap">
+        <div class="user-row">
+          <img id="avatar" class="avatar" alt="avatar" />
           <div class="grow">
             <div id="displayName" class="title"></div>
             <div id="email" class="muted"></div>
           </div>
           <button id="logout" class="btn">התנתק</button>
-          <button id="discover" class="btn ghost">גלה נתונים</button>
         </div>
 
-        <div id="out" class="out"></div>
+        <h3 style="margin:14px 0 6px">הנסיעות שלי</h3>
+        <div id="trips" class="trips"></div>
       </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+      <pre id="logs" class="errors" aria-live="polite"></pre>
     </section>
   </main>
-
-  <script src="script.js"></script>
 </body>
 </html>
