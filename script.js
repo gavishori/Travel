@@ -1838,3 +1838,13 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   });
 });
+
+
+// --- Show current email/uid in document title ---
+firebase.auth().onAuthStateChanged(function(user){
+  if (user) {
+    document.title = "🟢 " + (user.email || user.uid);
+  } else {
+    document.title = "🔴 לא מחובר";
+  }
+});
