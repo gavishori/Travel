@@ -1,51 +1,68 @@
-// firebase.js (updated with user's config + anonymous auth)
-window.firebaseConfig = {
-  apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-  authDomain: "travel-416ff.firebaseapp.com",
-  projectId: "travel-416ff",
-  storageBucket: "travel-416ff.appspot.com",
-  messagingSenderId: "1075073511694",
-  appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-  measurementId: "G-FT56H33X5J"
-};
-
+// firebase.js (final - 4 files package)
 (function(){
-  const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
-  if (!hasConfig){
-    console.info("Firebase config missing → running in local mode (localStorage).");
-    window.AppDataLayer = { mode: "local" };
-    return;
-  }
+  const cfg = {
+    apiKey: "AIzaSyArvkylwZg0mPjYYXUIOdilmfrWt7Wkx-0",
+    authDomain: "travel-416ff.firebaseapp.com",
+    projectId: "travel-416ff",
+    storageBucket: "travel-416ff.appspot.com",
+    messagingSenderId: "1075073511694",
+    appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+    measurementId: "G-FT56H33X5J"
+  };
+  const log = (...a)=>{ try{ (window._dbg||console.log)(...a);}catch(e){ console.log(...a);} };
 
-  try{
-    const app = firebase.initializeApp(window.firebaseConfig);
-    const db = firebase.firestore();
+  // Init Firebase
+  const app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(cfg);
+  const auth = firebase.auth();
+  const db   = firebase.firestore?.() || null;
 
-    // Anonymous auth (keeps per-user isolation with rules)
-    // Uses v10 compat: firebase.auth() is available if auth-compat is loaded; we'll lazy load.
-    const ensureAuth = async () => {
-      if (!firebase.auth){ 
-        await new Promise((res,rej)=>{
-          const s = document.createElement("script");
-          s.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
-          s.onload = res; s.onerror = rej; document.head.appendChild(s);
-        });
+  // Detect iOS/Safari -> redirect
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  const useRedirect = isIOS || isSafari;
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  // Handle redirect result exactly once
+  async function handleRedirectOnce(){
+    if (!sessionStorage.getItem("pendingRedirect")) return;
+    try {
+      const res = await auth.getRedirectResult();
+      sessionStorage.removeItem("pendingRedirect");
+      if (res && res.user) {
+        log("[auth] redirect result ->", res.user.uid);
       }
-    };
-
-    window.AppDataLayer = { mode: "firebase", db, ensureAuth };
-    console.info("Firebase initialized.");
-  }catch(err){
-    console.error("Firebase init error → fallback to local mode", err);
-    window.AppDataLayer = { mode: "local" };
+    } catch(err){
+      sessionStorage.removeItem("pendingRedirect");
+      log("[auth] redirect error:", err.message);
+    }
   }
+
+  // Expose login function for button
+  window.startGoogleLogin = async function startGoogleLogin(){
+    try{
+      if (useRedirect) {
+        log("[auth] using redirect (iOS/Safari)");
+        sessionStorage.setItem("pendingRedirect","1");
+        await auth.signInWithRedirect(provider);
+      } else {
+        log("[auth] using popup");
+        await auth.signInWithPopup(provider);
+      }
+    }catch(err){
+      log("[auth] sign-in error:", err.code || "", err.message || err);
+    }
+  };
+
+  auth.onAuthStateChanged(u => {
+    if (u) {
+      log("[auth] state: signed-in", "uid="+u.uid);
+    } else {
+      log("[auth] state: signed-out");
+      handleRedirectOnce(); // check if this load is a post-redirect
+    }
+  });
+
+  log("Firebase initialized.");
 })();
-
-
-// --- Ensure Firebase Auth + Provider are global ---
-try{
-  if (firebase && firebase.auth){
-    window.auth = firebase.auth();
-    window.googleProvider = new firebase.auth.GoogleAuthProvider();
-  }
-}catch(_){}
