@@ -43,5 +43,9 @@ window.firebaseConfig = {
 
 
 // --- Ensure Firebase Auth + Provider are global ---
-window.auth = firebase.auth();
-window.googleProvider = new firebase.auth.GoogleAuthProvider();
+try{
+  if (firebase && firebase.auth){
+    window.auth = firebase.auth();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
+  }
+}catch(_){}

@@ -527,5 +527,61 @@
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
 
+
+<script>
+// ---- Auth redirect bootstrap (iOS-safe) ----
+(function(){
+  function log(){ try{ console.log.apply(console, arguments);}catch(_){}
+    try{var b=document.getElementById('mobile-debug'); if(b){ b.textContent += Array.from(arguments).join(' ')+'\n'; }}catch(_){}
+  }
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn);} else { fn(); } }
+  onReady(function(){
+    if (window.firebase && firebase.auth) {
+      // Handle redirect result once after load
+      firebase.auth().getRedirectResult().then(function(res){
+        if (res && res.user){ log('[redirect] signed-in', res.user.uid); }
+      }).catch(function(err){ log('[redirect error]', err && (err.code+':'+err.message)); });
+      // Expose helpers
+      window.AppAuth = window.AppAuth || {};
+      window.AppAuth.login = function(){
+        try{
+          var p = firebase.auth.Auth.Persistence || firebase.auth.Auth.Persistence;
+        }catch(_){}
+        try{
+          firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .catch(function(){ return firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE); })
+            .finally(function(){
+              var prov = new firebase.auth.GoogleAuthProvider();
+              firebase.auth().signInWithRedirect(prov);
+            });
+        }catch(e){
+          log('[login error]', e && (e.code+':'+e.message));
+        }
+      };
+      window.AppAuth.logout = function(){
+        firebase.auth().signOut().catch(function(e){ log('[signout error]', e && (e.code+':'+e.message)); });
+      };
+      firebase.auth().onAuthStateChanged(function(u){
+        log('[auth state]', u?('uid='+u.uid):'signed-out');
+        document.documentElement.dataset.auth = u? 'in':'out';
+      });
+    } else {
+      log('[bootstrap] firebase.auth not ready');
+    }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  var box = document.createElement('div');
+  box.id='mobile-debug';
+  Object.assign(box.style,{position:'fixed',bottom:'8px',left:'8px',right:'8px',maxHeight:'35vh',overflow:'auto',background:'rgba(0,0,0,.8)',color:'#0f0',font:'12px/1.4 monospace',padding:'6px',border:'1px solid #333',borderRadius:'8px',zIndex:99999});
+  box.textContent='DEBUG:\n';
+  document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(box); });
+})();
+</script>
+
 </body>
 </html>
