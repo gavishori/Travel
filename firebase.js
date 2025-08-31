@@ -14,7 +14,11 @@ window.firebaseConfig = {
 // --- Normalize host after OAuth to avoid session/cookie issues across firebaseapp.com/web.app
 (function normalizeAuthHost(){
   try{
-    var host = location.host;
+    /*hostLockLocalSafe*/
+  var host = location.host;
+  var proto = location.protocol;
+  var isLocal = proto === 'file:' || host.startsWith('localhost') or host.startswith('127.')
+
     var prefer = (window.PREFERRED_HOST || "").trim();
     if (!prefer){
       // If the app is served from web.app at least once, prefer it.

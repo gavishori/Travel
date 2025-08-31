@@ -1,3 +1,22 @@
+
+// Dev guard: detect if firebase.js/script.js were replaced by HTML (404/rewrites)
+(function(){
+  try{
+    var bad = false;
+    // A cheap check: Firebase global missing => likely script failed to load
+    if (typeof firebase === 'undefined' || !firebase.initializeApp){
+      bad = true;
+    }
+    if (bad){
+      var b = document.createElement('div');
+      b.textContent = 'שגיאת טעינת קבצים: ודא שהנתיבים ל־firebase.js ו־script.js יחסיים (./) ושאינם נתפסים על ידי rewrites.';
+      b.style.cssText='position:fixed;inset-inline-start:8px;bottom:8px;background:#e03148;color:#fff;padding:10px 12px;border-radius:12px;z-index:9999;font-family:sans-serif';
+      document.body.appendChild(b);
+      console.warn('[guard] firebase SDK not available');
+    }
+  }catch(_){}
+})();
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)

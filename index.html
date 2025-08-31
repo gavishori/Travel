@@ -11,7 +11,7 @@
         // Don't interfere with Firebase's internal handler paths
         var isAuthHandler = location.pathname.indexOf("/__/auth/") !== -1;
         if (location.host !== prefer && !isAuthHandler){
-          location.replace(location.protocol + "//" + prefer + location.pathname + location.search + location.hash);
+          if(!(location.protocol==='file:' || location.hostname.startswith('localhost') || location.hostname.startswith('127.'))) location.replace(location.protocol + "//" + prefer + location.pathname + location.search + location.hash);
         }
       }catch(_){}
     })();
@@ -25,6 +25,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Local scripts (relative paths, defer) -->
+  <script src="./firebase.js" defer></script>
+  <script src="./script.js" defer></script>
+
 </head>
 <body class="splash-mode">
   <div class="bg-ornaments" aria-hidden="true"></div>
@@ -542,8 +547,8 @@
   </script>
 
   <!-- App scripts -->
-  <script src="./firebase.js"></script>
-  <script src="./script.js"></script>
+  
+  
 
 </body>
 </html>
