@@ -1,3 +1,22 @@
+
+// Dev guard: detect if firebase.js/script.js were replaced by HTML (404/rewrites)
+(function(){
+  try{
+    var bad = false;
+    // A cheap check: Firebase global missing => likely script failed to load
+    if (typeof firebase === 'undefined' || !firebase.initializeApp){
+      bad = true;
+    }
+    if (bad){
+      var b = document.createElement('div');
+      b.textContent = 'שגיאת טעינת קבצים: ודא שהנתיבים ל־firebase.js ו־script.js יחסיים (./) ושאינם נתפסים על ידי rewrites.';
+      b.style.cssText='position:fixed;inset-inline-start:8px;bottom:8px;background:#e03148;color:#fff;padding:10px 12px;border-radius:12px;z-index:9999;font-family:sans-serif';
+      document.body.appendChild(b);
+      console.warn('[guard] firebase SDK not available');
+    }
+  }catch(_){}
+})();
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1849,20 +1868,33 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 
-
-// --- UI: show connected account next to the title ---
-(function attachUserAccountLabel(){
+// --- Keep UI in sync with auth state /*[auth-ui-sync]*/
+(function(){
   try{
     if (!window.firebase || !firebase.auth) return;
     firebase.auth().onAuthStateChanged(function(user){
-      var el = document.getElementById('userAccount');
-      if (!el) return;
+      var splash = document.getElementById('splash');
+      var mainApp = document.querySelector('body');
       if (user){
-        var label = user.email || user.displayName || 'מחובר';
-        el.textContent = '(' + label + ')';
+        document.body.classList.remove('splash-mode');
+        if (splash && splash.remove) try{ splash.remove(); }catch(_){}
       } else {
-        el.textContent = '';
+        document.body.classList.add('splash-mode');
       }
     });
-  }catch(e){ console.warn('[ui] userAccount label failed', e); }
+  }catch(e){ console.warn('[ui] auth state sync failed', e); }
+})();
+// Create account label if missing /* ensureUserAccountSpan */
+(function(){
+  try{
+    var h1 = document.querySelector('.brand h1');
+    if (!h1) return;
+    if (!document.getElementById('userAccount')){
+      var span = document.createElement('span');
+      span.id = 'userAccount';
+      span.className = 'muted';
+      h1.appendChild(document.createTextNode(' '));
+      h1.appendChild(span);
+    }
+  }catch(_){}
 })();

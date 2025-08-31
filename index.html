@@ -1,12 +1,51 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+  <script>
+    // Keep a single origin to avoid iOS auth loops
+    window.PREFERRED_HOST = "travel-416ff.web.app";
+    (function enforcePreferredHost(){
+      try{
+        var prefer = window.PREFERRED_HOST;
+        if (!prefer) return;
+        // Don't interfere with Firebase's internal handler paths
+        var isAuthHandler = location.pathname.indexOf("/__/auth/") !== -1;
+        if (location.host !== prefer && !isAuthHandler){
+          if(!(location.protocol==='file:' || location.hostname.startswith('localhost') || location.hostname.startswith('127.'))) location.replace(location.protocol + "//" + prefer + location.pathname + location.search + location.hash);
+        }
+      }catch(_){}
+    })();
+  </script>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Local scripts (relative paths, defer) -->
+  
+  
+
+
+  <!-- Robust bootstrap: load Firebase CDN if needed, then local app scripts -->
+  <script>
+  (function(){
+    function add(src){ var s=document.createElement('script'); s.src=src; s.defer=true; document.head.appendChild(s); return s; }
+    var has = (window.firebase && window.firebase.initializeApp);
+    if(!has){
+      add('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+      add('https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js');
+      add('https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js');
+    }
+    add('./firebase.js');
+    add('./script.js');
+  })();
+  </script>
+
 </head>
 <body class="splash-mode">
   <div class="bg-ornaments" aria-hidden="true"></div>
@@ -26,7 +65,7 @@
 <header class="app-header">
     <div class="brand">
       <span class="logo">🧭</span>
-      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span></h1>
+      <h1>מנהל נסיעות</h1>
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
@@ -524,8 +563,8 @@
   </script>
 
   <!-- App scripts -->
-  <script src="./firebase.js"></script>
-  <script src="./script.js"></script>
+  
+  
 
 </body>
 </html>
