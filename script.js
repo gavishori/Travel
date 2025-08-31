@@ -9,10 +9,6 @@ if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
   });
 }
 
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-const isInApp = /(FBAN|FBAV|Instagram|WhatsApp|Messenger|Line|Twitter|TikTok)/i.test(navigator.userAgent);
-const useRedirect = isIOS || isInApp;
-
 // ---------- DOM helpers ----------
 
 // --- Replace URLs with a 🔗 icon link ---
@@ -1745,33 +1741,15 @@ function openJournalDeleteDialog(tripId, entry){
       if (app) app.style.display = 'none';
     }
 
-
-if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
-  if (signInBtn) {
-    signInBtn.addEventListener('click', async function(){
-      try {
-        if (useRedirect) {
-          await auth.signInWithRedirect(googleProvider);
-        } else {
-          await auth.signInWithPopup(googleProvider);
-        }
-      } catch(err){
-        console.error(err);
-        alert(err && err.message ? err.message : 'Sign-in failed');
-      }
-    });
-  }
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', async function(){
-      try { await auth.signOut(); }
-      catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
-    });
-  }
-
-  auth.getRedirectResult().then(function(res){
-    if (res && res.user) { console.log('[auth] redirect OK', res.user.uid); }
-  }).catch(function(err){ console.warn('[auth] redirect error:', err && (err.code||err.message) || err); });
-auth.onAuthStateChanged(function(user){
+    if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
+      if (signInBtn) signInBtn.addEventListener('click', async function(){
+        try { await auth.signInWithPopup(googleProvider); }
+        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
+      });
+      if (signOutBtn) signOutBtn.addEventListener('click', async function(){
+        try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
+      });
+      auth.onAuthStateChanged(function(user){
       console.log("[auth] state changed:", !!user);
 
         if (user){
@@ -1802,7 +1780,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      if (useRedirect) { await auth.signInWithRedirect(googleProvider); } else { await if (useRedirect) { auth.signInWithRedirect(googleProvider); } else { auth.signInWithPopup(googleProvider); } }
+      await auth.signInWithPopup(googleProvider);
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1829,55 +1807,9 @@ window.debugAuth = async function(){
           return window.debugAuth();
         }
         if (window.auth && window.googleProvider) {
-          if (useRedirect) { auth.signInWithRedirect(googleProvider); } else { auth.signInWithPopup(googleProvider); }
+          auth.signInWithPopup(googleProvider);
         }
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
-
-;(() => {
-  try {
-    const btn = document.getElementById('googleSignInBtn');
-
-    function googleSignIn() {
-      try {
-        if (!window.auth || !window.googleProvider) {
-          alert('Auth not ready');
-          return;
-        }
-        return auth.signInWithRedirect(window.googleProvider);
-      } catch (e) { console.error(e); }
-    }
-
-    // expose globals for any external calls
-    window.googleSignIn = googleSignIn;
-    window.debugAuth = googleSignIn;
-
-    // wire button safely
-    if (btn && !btn.__wired_redirect) {
-      btn.__wired_redirect = true;
-      btn.addEventListener('click', function(ev){
-        try { ev.preventDefault(); } catch(e) {}
-        googleSignIn();
-      });
-    }
-
-    // patch any direct popup calls to redirect
-    if (window.auth && typeof auth.signInWithPopup === 'function' && !auth.__forceRedirect) {
-      auth.__forceRedirect = true;
-      const orig = auth.signInWithPopup.bind(auth);
-      auth.signInWithPopup = function(provider) {
-        return auth.signInWithRedirect(provider);
-      };
-    }
-
-    // complete redirect result on load
-    if (window.auth && typeof auth.getRedirectResult === 'function') {
-      auth.getRedirectResult().then(function(res){
-        if (res && res.user) { /* signed-in after redirect */ }
-      }).catch(function(err){ /* silent */ });
-    }
-  } catch (e) { /* silent */ }
-})();
-
