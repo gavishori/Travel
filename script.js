@@ -1848,3 +1848,21 @@ firebase.auth().onAuthStateChanged(function(user){
     document.title = "🔴 לא מחובר";
   }
 });
+
+
+// --- UI: show connected account next to the title ---
+(function attachUserAccountLabel(){
+  try{
+    if (!window.firebase || !firebase.auth) return;
+    firebase.auth().onAuthStateChanged(function(user){
+      var el = document.getElementById('userAccount');
+      if (!el) return;
+      if (user){
+        var label = user.email || user.displayName || 'מחובר';
+        el.textContent = '(' + label + ')';
+      } else {
+        el.textContent = '';
+      }
+    });
+  }catch(e){ console.warn('[ui] userAccount label failed', e); }
+})();
