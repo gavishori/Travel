@@ -1813,3 +1813,28 @@ window.debugAuth = async function(){
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
+
+
+// --- Auth-aware UI bootstrap (avoid UI actions before user exists) ---
+document.addEventListener('DOMContentLoaded', function(){
+  if (!firebase || !firebase.auth) return;
+
+  var loginBtn = document.getElementById('googleSignInBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', function(){
+      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+    });
+  }
+
+  firebase.auth().onAuthStateChanged(async function(user){
+    document.body.classList.toggle('auth-ok', !!user);
+    document.body.classList.toggle('auth-anon', !user);
+    if (user) {
+      if (typeof window.onAuthReady === 'function') {
+        try { await window.onAuthReady(user); } catch(e){ console.warn('onAuthReady failed', e); }
+      }
+    } else {
+      // not signed in – show login UI only
+    }
+  });
+});
