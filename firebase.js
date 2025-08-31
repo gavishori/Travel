@@ -10,31 +10,6 @@ window.firebaseConfig = {
   measurementId: "G-FT56H33X5J"
 };
 
-
-// --- Normalize host after OAuth to avoid session/cookie issues across firebaseapp.com/web.app
-(function normalizeAuthHost(){
-  try{
-    /*hostLockLocalSafe*/
-  var host = location.host;
-  var proto = location.protocol;
-  var isLocal = proto === 'file:' || host.startsWith('localhost') or host.startswith('127.')
-
-    var prefer = (window.PREFERRED_HOST || "").trim();
-    if (!prefer){
-      // If the app is served from web.app at least once, prefer it.
-      if (host.endsWith(".web.app")) prefer = host;
-      else if (host.endsWith(".firebaseapp.com")) prefer = host.replace(".firebaseapp.com", ".web.app");
-    }
-    if (prefer && host !== prefer){
-      var newURL = location.protocol + "//" + prefer + location.pathname + location.search + location.hash;
-      // Only rewrite if we are on the auth handler or immediately after return
-      if (location.pathname.indexOf("/__/auth/") !== -1 || document.referrer.indexOf("accounts.google.com") !== -1){
-        location.replace(newURL);
-      }
-    }
-  }catch(e){ /* no-op */ }
-})();
-
 (function initFirebase(){
   const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
   if (!hasConfig){
@@ -72,44 +47,21 @@ window.firebaseConfig = {
     console.warn('[auth] init early failed', e);
   }
 
-  
   var FLAG = 'authRedirectPending';
-  var COOLDOWN_MS = 30000; // 30s cooldown to avoid loops
-
-  function canRedirectNow(){
-    try{
-      var ts = parseInt(sessionStorage.getItem(FLAG+'_ts')||'0',10);
-      if (!ts) return true;
-      return (Date.now() - ts) > COOLDOWN_MS;
-    }catch(_){ return true; }
-  }
-  function setRedirectPending(){
-    try{
-      sessionStorage.setItem(FLAG,'1');
-      sessionStorage.setItem(FLAG+'_ts', String(Date.now()));
-    }catch(_){}
-  }
-  function clearRedirectPending(){
-    try{
-      clearRedirectPending();
-      sessionStorage.removeItem(FLAG+'_ts');
-    }catch(_){}
-  }
-
 
   // Handle pending redirect ASAP and always clear the flag
   try{
     auth.getRedirectResult().then(function(result){
-      clearRedirectPending();
+      sessionStorage.removeItem(FLAG);
       if (result && result.user){
         console.log('[auth] redirect result ok:', result.user.uid);
       }
     }).catch(function(err){
-      clearRedirectPending();
+      sessionStorage.removeItem(FLAG);
       console.warn('[auth] redirect error', err && err.code, err && err.message);
     });
   }catch(e){
-    clearRedirectPending();
+    sessionStorage.removeItem(FLAG);
     console.warn('[auth] redirect init failed', e);
   }
 
@@ -150,7 +102,7 @@ window.firebaseConfig = {
         }
       }
     }catch(e){
-      clearRedirectPending();
+      sessionStorage.removeItem(FLAG);
       console.error('[auth] __attemptSignIn fatal', e);
     }
   };
