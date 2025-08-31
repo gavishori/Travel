@@ -1849,20 +1849,19 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 
-
-// --- UI: show connected account next to the title ---
-(function attachUserAccountLabel(){
+// --- Keep UI in sync with auth state /*[auth-ui-sync]*/
+(function(){
   try{
     if (!window.firebase || !firebase.auth) return;
     firebase.auth().onAuthStateChanged(function(user){
-      var el = document.getElementById('userAccount');
-      if (!el) return;
+      var splash = document.getElementById('splash');
+      var mainApp = document.querySelector('body');
       if (user){
-        var label = user.email || user.displayName || 'מחובר';
-        el.textContent = '(' + label + ')';
+        document.body.classList.remove('splash-mode');
+        if (splash && splash.remove) try{ splash.remove(); }catch(_){}
       } else {
-        el.textContent = '';
+        document.body.classList.add('splash-mode');
       }
     });
-  }catch(e){ console.warn('[ui] userAccount label failed', e); }
+  }catch(e){ console.warn('[ui] auth state sync failed', e); }
 })();
