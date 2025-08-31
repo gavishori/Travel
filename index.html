@@ -584,5 +584,42 @@
 </script>
 
 <button id="google-login" class="btn primary">המשך עם Google</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('google-login');
+  if(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      if (window.AppAuth && AppAuth.login) { AppAuth.login(); }
+      else if (window.login) { window.login(); }
+    });
+  }
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('google-login');
+  if(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.login) { window.login(); }
+      else if (window.AppAuth && AppAuth.login) { AppAuth.login(); }
+    }, {capture:true});
+  }
+  // Capture any legacy click handlers that might open popup links
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-login], .google-login, a[href*="google"]');
+    if(el){
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (window.login) { window.login(); }
+    }
+  }, {capture:true});
+});
+</script>
+
 </body>
 </html>

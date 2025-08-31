@@ -1,3 +1,93 @@
+
+// ===== Hard Override: FORCE Redirect on all environments (iOS safe) =====
+(function(){
+  function ready(f){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', f); } else { f(); } }
+  function log(){ try{ console.log.apply(console, arguments);}catch(_){}
+    try{var b=document.getElementById('mobile-debug'); if(b){ b.textContent += Array.from(arguments).join(' ')+'\n'; }}catch(_){}
+  }
+  ready(function(){
+    if (!(window.firebase && firebase.auth)) { log('[hard-override] firebase.auth not ready'); return; }
+    var auth = firebase.auth();
+    // Block popup entirely to avoid auth/cancelled-popup-request
+    try{
+      auth.signInWithPopup = function(){ 
+        log('[hard-override] Popup blocked → using redirect'); 
+        var provider = new firebase.auth.GoogleAuthProvider();
+        return auth.signInWithRedirect(provider);
+      };
+    }catch(e){ log('[hard-override] override popup failed', e && e.message); }
+    // Global login (single-flight)
+    window.__login_in_progress = false;
+    window.login = function(){
+      if(window.__login_in_progress) { log('[login] already in progress'); return; }
+      window.__login_in_progress = true;
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .catch(function(){ return auth.setPersistence(firebase.auth.Auth.Persistence.NONE); })
+        .finally(function(){ auth.signInWithRedirect(provider); });
+    };
+    // Handle redirect
+    auth.getRedirectResult().then(function(res){
+      if(res && res.user){ log('[redirect] signed-in', res.user.uid); }
+      window.__login_in_progress = false;
+    }).catch(function(e){
+      log('[redirect error]', e && (e.code+': '+e.message));
+      window.__login_in_progress = false;
+    });
+    // State
+    auth.onAuthStateChanged(function(u){ log('[auth state]', u?('uid='+u.uid):'signed-out'); });
+  });
+
+  // Kill stale SW/caches
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+    if (window.caches && caches.keys){ caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); }); }
+  }
+})();
+// =======================================================================
+
+
+// ===== Mobile-safe Auth Overrides (force redirect, disable popup) =====
+(function(){
+  function ready(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  function log(){ try{ console.log.apply(console, arguments);}catch(_){}
+    try{var b=document.getElementById('mobile-debug'); if(b){ b.textContent += Array.from(arguments).join(' ')+'\n'; }}catch(_){}
+  }
+  ready(function(){
+    if (window.firebase && firebase.auth) {
+      try{
+        // Convert any popup sign-in to redirect to avoid iOS issues
+        var auth = firebase.auth();
+        var origPopup = auth.signInWithPopup;
+        auth.signInWithPopup = function(provider){
+          log('[override] signInWithPopup → signInWithRedirect');
+          return auth.signInWithRedirect(provider);
+        };
+        // Make a simple global login() for any legacy code
+        window.login = function(){
+          var provider = new firebase.auth.GoogleAuthProvider();
+          return auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .catch(function(){ return auth.setPersistence(firebase.auth.Auth.Persistence.NONE); })
+            .finally(function(){ auth.signInWithRedirect(provider); });
+        };
+        // Handle redirect result
+        auth.getRedirectResult().then(function(res){
+          if(res && res.user){ log('[redirect] signed-in', res.user.uid); }
+        }).catch(function(e){ log('[redirect error]', e.code, e.message); });
+      }catch(e){ log('[override error]', e && e.message); }
+    } else {
+      log('[override] firebase.auth not ready');
+    }
+  });
+
+  // Optional: clear any stale service worker caches that may cause blank screens
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+    if (window.caches && caches.keys){ caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); }); }
+  }
+})();
+// ====================================================================
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
