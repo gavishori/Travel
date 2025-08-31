@@ -1,3 +1,48 @@
+
+
+// --- Mobile-safe sign-in helper (popup -> redirect fallback) ---
+(function(){
+  // handle pending redirect results early
+  try {
+    auth.getRedirectResult().then(function(result){
+      if (result && result.user) {
+        console.log('[auth] redirect result ok:', result.user.uid);
+      }
+    }).catch(function(err){
+      console.warn('[auth] redirect error', err && err.code, err && err.message);
+    });
+  } catch(e){ console.warn('[auth] redirect init failed', e); }
+
+  // expose a global helper that prefers redirect on iOS, and falls back to redirect on popup failures
+  window.__attemptSignIn = async function(){
+    var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+    try{
+      if (isiOS) {
+        // On iOS Safari, popups are flaky – go straight to redirect.
+        await auth.signInWithRedirect(googleProvider);
+        return;
+      }
+      await auth.signInWithPopup(googleProvider);
+    }catch(err){
+      var code = err && err.code || '';
+      var fallback = ['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].indexOf(code) !== -1;
+      if (fallback){
+        try {
+          await auth.signInWithRedirect(googleProvider);
+          return;
+        } catch(e2){
+          console.error('[auth] redirect failed after popup', e2);
+          if (typeof logLine === 'function') logLine('error '+(e2.code||'')+' '+(e2.message||''), 'auth');
+          return;
+        }
+      }
+      console.error('[auth] sign-in failed', code, err && err.message);
+      if (typeof logLine === 'function') logLine('error '+(code)+' '+(err && err.message || ''), 'auth');
+    }
+  };
+})();
+
 // firebase.js (updated with user's config + anonymous auth)
 window.firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
@@ -45,13 +90,3 @@ window.firebaseConfig = {
 // --- Ensure Firebase Auth + Provider are global ---
 window.auth = firebase.auth();
 window.googleProvider = new firebase.auth.GoogleAuthProvider();
-// Handle redirect result if present (for iOS / PWA)
-  try {
-    if (typeof auth !== 'undefined' && auth && typeof auth.getRedirectResult === 'function') {
-      var pending = false;
-      try { pending = sessionStorage.getItem('pendingRedirect') === '1'; } catch (_){}
-      if (pending) {
-        auth.getRedirectResult().finally(function(){ try{ sessionStorage.removeItem('pendingRedirect'); }catch(_){}});
-      }
-    }
-  } catch (e) { console.warn('[auth] redirect result processing skipped:', e && e.message || e); }

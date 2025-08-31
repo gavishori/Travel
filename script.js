@@ -1743,7 +1743,7 @@ function openJournalDeleteDialog(tripId, entry){
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { await auth.signInWithPopup(googleProvider); }
+        try { await window.__attemptSignIn && window.__attemptSignIn(); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
@@ -1780,7 +1780,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await auth.signInWithPopup(googleProvider);
+      await window.__attemptSignIn && window.__attemptSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1807,7 +1807,7 @@ window.debugAuth = async function(){
           return window.debugAuth();
         }
         if (window.auth && window.googleProvider) {
-          auth.signInWithPopup(googleProvider);
+          window.__attemptSignIn && window.__attemptSignIn();
         }
       });
     }
