@@ -919,3 +919,27 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 
 /* Improve hit targets on mobile */
 button, .btn{ min-height: 44px; }
+
+
+:root{
+  --btn-edit-dark: #4a6edb;   /* soft blue */
+  --btn-del-dark:  #6b778d;   /* slate */
+}
+:root.light{
+  --btn-edit-light: #5b8cff;  /* brighter but soft */
+  --btn-del-light:  #8a94a7;  /* light slate */
+}
+.btn.edit-btn{ 
+  background: var(--btn-edit-dark) !important; 
+  color:#fff !important; border-color:transparent !important;
+}
+:root.light .btn.edit-btn{
+  background: var(--btn-edit-light) !important;
+}
+.btn.danger{ 
+  background: var(--btn-del-dark) !important; 
+  color:#fff !important; border-color:transparent !important;
+}
+:root.light .btn.danger{
+  background: var(--btn-del-light) !important;
+}

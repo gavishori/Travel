@@ -1865,3 +1865,17 @@ firebase.auth().onAuthStateChanged(function(user){
     });
   }catch(e){ console.warn('[ui] auth state sync failed', e); }
 })();
+// Create account label if missing /* ensureUserAccountSpan */
+(function(){
+  try{
+    var h1 = document.querySelector('.brand h1');
+    if (!h1) return;
+    if (!document.getElementById('userAccount')){
+      var span = document.createElement('span');
+      span.id = 'userAccount';
+      span.className = 'muted';
+      h1.appendChild(document.createTextNode(' '));
+      h1.appendChild(span);
+    }
+  }catch(_){}
+})();

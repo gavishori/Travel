@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+  <script>
+    // Keep a single origin to avoid iOS auth loops
+    window.PREFERRED_HOST = "travel-416ff.web.app";
+    (function enforcePreferredHost(){
+      try{
+        var prefer = window.PREFERRED_HOST;
+        if (!prefer) return;
+        // Don't interfere with Firebase's internal handler paths
+        var isAuthHandler = location.pathname.indexOf("/__/auth/") !== -1;
+        if (location.host !== prefer && !isAuthHandler){
+          location.replace(location.protocol + "//" + prefer + location.pathname + location.search + location.hash);
+        }
+      }catch(_){}
+    })();
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
