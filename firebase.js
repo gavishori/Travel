@@ -11,6 +11,12 @@ window.firebaseConfig = {
 };
 
 (function initFirebase(){
+  function isIOS(){
+    var ua = navigator.userAgent || "";
+    var iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return !!iOS;
+  }
+
   const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
   if (!hasConfig){
     console.info("Firebase config missing → running in local mode (localStorage).");
@@ -40,7 +46,7 @@ window.firebaseConfig = {
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // Persistence is important on iOS
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
+    auth.setPersistence(isIOS() ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
       console.warn('[auth] setPersistence failed', e && e.code, e && e.message);
     });
   } catch(e){
@@ -48,20 +54,24 @@ window.firebaseConfig = {
   }
 
   var FLAG = 'authRedirectPending';
+  var LOOP_GUARD = 'authLoopGuardTs';
 
   // Handle pending redirect ASAP and always clear the flag
   try{
     auth.getRedirectResult().then(function(result){
       sessionStorage.removeItem(FLAG);
+      sessionStorage.removeItem(LOOP_GUARD);
       if (result && result.user){
         console.log('[auth] redirect result ok:', result.user.uid);
       }
     }).catch(function(err){
       sessionStorage.removeItem(FLAG);
+      sessionStorage.removeItem(LOOP_GUARD);
       console.warn('[auth] redirect error', err && err.code, err && err.message);
     });
   }catch(e){
     sessionStorage.removeItem(FLAG);
+      sessionStorage.removeItem(LOOP_GUARD);
     console.warn('[auth] redirect init failed', e);
   }
 
@@ -84,7 +94,7 @@ window.firebaseConfig = {
       }
 
       try{
-        await auth.signInWithPopup(googleProvider);
+        if (isIOS()) { await auth.signInWithRedirect(googleProvider); return; } else { await auth.signInWithPopup(googleProvider); };
       }catch(err){
         var code = err && err.code || '';
         var fallback = [
@@ -95,6 +105,7 @@ window.firebaseConfig = {
         ].indexOf(code) !== -1;
         if (fallback){
           sessionStorage.setItem(FLAG, '1');
+          sessionStorage.setItem(LOOP_GUARD, String(Date.now()));
           await auth.signInWithRedirect(googleProvider);
         } else {
           console.error('[auth] sign-in failed', code, err && err.message);
@@ -103,6 +114,7 @@ window.firebaseConfig = {
       }
     }catch(e){
       sessionStorage.removeItem(FLAG);
+      sessionStorage.removeItem(LOOP_GUARD);
       console.error('[auth] __attemptSignIn fatal', e);
     }
   };
