@@ -10,39 +10,10 @@ window.firebaseConfig = {
   measurementId: "G-FT56H33X5J"
 };
 
-// Log messages to an on-screen div for debugging on mobile
-function logToScreen(message) {
-  let logEl = document.getElementById('debug-log');
-  if (!logEl) {
-    logEl = document.createElement('div');
-    logEl.id = 'debug-log';
-    logEl.style.position = 'fixed';
-    logEl.style.bottom = '10px';
-    logEl.style.left = '10px';
-    logEl.style.width = '90%';
-    logEl.style.maxHeight = '200px';
-    logEl.style.overflowY = 'auto';
-    logEl.style.background = 'rgba(0, 0, 0, 0.8)';
-    logEl.style.color = 'white';
-    logEl.style.padding = '10px';
-    logEl.style.border = '1px solid #ccc';
-    logEl.style.borderRadius = '5px';
-    logEl.style.zIndex = '99999';
-    logEl.style.fontFamily = 'monospace';
-    logEl.style.fontSize = '12px';
-    logEl.style.direction = 'ltr';
-    document.body.appendChild(logEl);
-  }
-  const timestamp = new Date().toLocaleTimeString('en-US');
-  logEl.innerHTML += `<span>[${timestamp}] ${message}</span><br>`;
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-
 (function initFirebase(){
   const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
   if (!hasConfig){
-    logToScreen("Firebase config missing -> running in local mode (localStorage).");
+    console.info("Firebase config missing → running in local mode (localStorage).");
     window.AppDataLayer = { mode: "local" };
     return;
   }
@@ -51,79 +22,68 @@ function logToScreen(message) {
     firebase.initializeApp(window.firebaseConfig);
     const db = firebase.firestore();
     window.AppDataLayer = { mode: "firebase", db };
-    logToScreen("Firebase initialized.");
+    console.info("Firebase initialized.");
   }catch(err){
-    logToScreen("Firebase init error -> fallback to local mode: " + (err.message || err));
+    console.error("Firebase init error → fallback to local mode", err);
     window.AppDataLayer = { mode: "local" };
   }
 })();
 
 (function bootstrapAuth(){
+  // Platform detection – prefer redirect on iOS
   var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-  logToScreen("Platform detected: " + (isiOS ? "iOS" : "Non-iOS"));
 
   try {
+    // compat scripts are loaded in index.html
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
-    logToScreen("Auth and Google provider configured.");
-    
+
+    // Persistence is important on iOS
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
-      logToScreen('[auth] setPersistence failed: ' + (e.code || '') + ' ' + (e.message || ''));
+      console.warn('[auth] setPersistence failed', e && e.code, e && e.message);
     });
   } catch(e){
-    logToScreen('[auth] init early failed: ' + (e.message || e));
+    console.warn('[auth] init early failed', e);
   }
 
   var FLAG = 'authRedirectPending';
 
-  // This block is the crucial change. It runs on every page load to check for a redirect result.
-  // We wrap it in a function and call it immediately to ensure it's not missed.
-  async function handleRedirectResult() {
-      try {
-          const result = await auth.getRedirectResult();
-          if (result.user) {
-              logToScreen('[auth] redirect result OK: ' + result.user.uid);
-              // Clear the flag ONLY if a user was successfully authenticated.
-              sessionStorage.removeItem(FLAG);
-              // The onAuthStateChanged listener will now handle the rest.
-          } else if (sessionStorage.getItem(FLAG)) {
-              // If there's a flag but no user, something went wrong. Clear the flag to allow a new attempt.
-              logToScreen('[auth] No user after redirect, clearing flag to allow new sign-in attempt.');
-              sessionStorage.removeItem(FLAG);
-          } else {
-              logToScreen('[auth] No redirect result or user.');
-          }
-      } catch(err) {
-          logToScreen('[auth] redirect error: ' + (err.code || '') + ' ' + (err.message || ''));
-          // Clear the flag on error to allow a new sign-in attempt.
-          sessionStorage.removeItem(FLAG);
+  // Handle pending redirect ASAP and always clear the flag
+  try{
+    auth.getRedirectResult().then(function(result){
+      sessionStorage.removeItem(FLAG);
+      if (result && result.user){
+        console.log('[auth] redirect result ok:', result.user.uid);
       }
+    }).catch(function(err){
+      sessionStorage.removeItem(FLAG);
+      console.warn('[auth] redirect error', err && err.code, err && err.message);
+    });
+  }catch(e){
+    sessionStorage.removeItem(FLAG);
+    console.warn('[auth] redirect init failed', e);
   }
-  handleRedirectResult();
 
-
+  // Safe global sign-in helper
   window.__attemptSignIn = async function(){
     try{
       if (!window.auth) {
-        logToScreen('[auth] not ready yet, skipping sign-in.');
+        console.warn('[auth] not ready yet');
         return;
       }
-      
       if (sessionStorage.getItem(FLAG)) {
-        logToScreen('[auth] redirect already pending, skip.');
+        console.log('[auth] redirect already pending, skip');
         return;
       }
 
       if (isiOS) {
-        logToScreen('[auth] iOS detected, attempting signInWithRedirect.');
         sessionStorage.setItem(FLAG, '1');
         await auth.signInWithRedirect(googleProvider);
         return;
       }
 
       try{
-        logToScreen('[auth] Non-iOS, attempting signInWithPopup.');
         await auth.signInWithPopup(googleProvider);
       }catch(err){
         var code = err && err.code || '';
@@ -134,16 +94,51 @@ function logToScreen(message) {
           'auth/operation-not-supported-in-this-environment'
         ].indexOf(code) !== -1;
         if (fallback){
-          logToScreen('[auth] Popup failed, falling back to signInWithRedirect.');
           sessionStorage.setItem(FLAG, '1');
           await auth.signInWithRedirect(googleProvider);
         } else {
-          logToScreen('[auth] sign-in failed: ' + code + ' ' + (err && err.message || ''));
+          console.error('[auth] sign-in failed', code, err && err.message);
+          if (typeof logLine === 'function') logLine('error '+code+' '+(err && err.message || ''), 'auth');
         }
       }
     }catch(e){
       sessionStorage.removeItem(FLAG);
-      logToScreen('[auth] __attemptSignIn fatal: ' + (e.message || e));
+      console.error('[auth] __attemptSignIn fatal', e);
     }
   };
+})();
+/* DEBUG_IOS_INJECT */
+(function(){
+  try {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (typeof auth !== 'undefined' && auth && firebase && firebase.auth) {
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(function(){
+        if (window.logLine) logLine('persistence: SESSION set', 'auth');
+      }).catch(function(err){
+        if (window.logLine) logLine('persistence error: '+(err && err.message), 'auth');
+      });
+      auth.getRedirectResult().then(function(res){
+        if (window.logLine) logLine('getRedirectResult → user='+(res && res.user ? (res.user.email||res.user.uid) : 'null'), 'auth');
+        if (res && res.user && !auth.currentUser) {
+          return auth.updateCurrentUser(res.user).then(function(){
+            if (window.logLine) logLine('currentUser updated from redirect result', 'auth');
+          });
+        }
+      }).catch(function(err){
+        if (window.logLine) logLine('redirect error '+(err && err.code)+': '+(err && err.message), 'auth');
+      });
+      auth.onAuthStateChanged(function(u){
+        if (window.logLine) logLine('state → '+(u ? ('IN as '+(u.email||u.uid)) : 'OUT'), 'auth');
+      });
+      if (typeof window.__attemptSignIn === 'function') {
+        var __orig = window.__attemptSignIn;
+        window.__attemptSignIn = function(){
+          if (isIOS) { if (window.logLine) logLine('iOS redirect flow', 'auth'); }
+          return __orig.apply(this, arguments);
+        };
+      }
+    }
+  } catch(e) {
+    if (window.logLine) logLine('inject error: '+(e && e.message), 'auth');
+  }
 })();
