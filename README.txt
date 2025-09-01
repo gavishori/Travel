@@ -1,10 +1,12 @@
+🚀 הוראות שימוש בקובץ firebase.js
 
-Flymily - clean site build
---------------------------
-קבצים ל-GitHub Pages / כל אירוח סטטי:
-- site/index.html
-- site/style.css
-- site/firebase.js
-- site/script.js (כולל תיקון לולאת iOS)
-העלאה:
-- מחק את התוכן הישן מהרפו והעלה רק את תוכן התיקייה site/ לשורש הענף שמוגדר ל-Pages.
+1. חלץ את ה-ZIP הזה.
+2. קח את הקובץ firebase.js והעתק אותו לתיקייה:
+   C:\Users\gavis\Desktop\travel\src\firebase_hosting\public
+   (החלף את הקובץ הקיים).
+3. פתח את הקובץ firebase.js והכנס את ה-firebaseConfig שלך במקום ה-TODO.
+
+אחרי זה תריץ:
+   firebase deploy
+
+וזה אמור לפתור את בעיית duplicate-app.
