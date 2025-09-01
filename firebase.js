@@ -29,8 +29,8 @@ function logToScreen(message) {
     logEl.style.borderRadius = '5px';
     logEl.style.zIndex = '99999';
     logEl.style.fontFamily = 'monospace';
-logEl.style.fontSize = '12px';
-logEl.style.direction = 'ltr';
+    logEl.style.fontSize = '12px';
+    logEl.style.direction = 'ltr';
     document.body.appendChild(logEl);
   }
   const timestamp = new Date().toLocaleTimeString('en-US');
@@ -65,12 +65,11 @@ logEl.style.direction = 'ltr';
   logToScreen("Platform detected: " + (isiOS ? "iOS" : "Non-iOS"));
 
   try {
-    // compat scripts are loaded in index.html
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
     logToScreen("Auth and Google provider configured.");
-
-    // Persistence is important on iOS
+    
+    // Set persistence on load
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
       logToScreen('[auth] setPersistence failed: ' + (e.code || '') + ' ' + (e.message || ''));
     });
@@ -80,24 +79,23 @@ logEl.style.direction = 'ltr';
 
   var FLAG = 'authRedirectPending';
 
-  // Handle pending redirect ASAP and always clear the flag
-  try{
-    logToScreen("Checking for redirect result...");
-    auth.getRedirectResult().then(function(result){
-      sessionStorage.removeItem(FLAG);
-      if (result && result.user){
-        logToScreen('[auth] redirect result OK: ' + result.user.uid);
-      } else {
-        logToScreen('[auth] no redirect result or user.');
-      }
-    }).catch(function(err){
-      sessionStorage.removeItem(FLAG);
-      logToScreen('[auth] redirect error: ' + (err.code || '') + ' ' + (err.message || ''));
-    });
-  }catch(e){
-    sessionStorage.removeItem(FLAG);
-    logToScreen('[auth] redirect init failed: ' + (e.message || e));
+  // Handle pending redirect BEFORE any other auth logic runs
+  // This is a common pattern to ensure the redirect result is not missed.
+  if(sessionStorage.getItem(FLAG)) {
+      logToScreen('Redirect pending flag found, checking redirect result...');
+      auth.getRedirectResult().then(function(result) {
+          sessionStorage.removeItem(FLAG);
+          if (result.user) {
+              logToScreen('[auth] redirect result OK: ' + result.user.uid);
+          } else {
+              logToScreen('[auth] no user found after redirect.');
+          }
+      }).catch(function(err) {
+          sessionStorage.removeItem(FLAG);
+          logToScreen('[auth] redirect error: ' + (err.code || '') + ' ' + (err.message || ''));
+      });
   }
+
 
   // Safe global sign-in helper
   window.__attemptSignIn = async function(){
@@ -106,6 +104,8 @@ logEl.style.direction = 'ltr';
         logToScreen('[auth] not ready yet, skipping sign-in.');
         return;
       }
+      
+      // If the flag is set, don't try to sign in again.
       if (sessionStorage.getItem(FLAG)) {
         logToScreen('[auth] redirect already pending, skip.');
         return;
@@ -135,7 +135,6 @@ logEl.style.direction = 'ltr';
           await auth.signInWithRedirect(googleProvider);
         } else {
           logToScreen('[auth] sign-in failed: ' + code + ' ' + (err && err.message || ''));
-          if (typeof logLine === 'function') logLine('error '+code+' '+(err && err.message || ''), 'auth');
         }
       }
     }catch(e){
