@@ -1,5 +1,4 @@
-// --- iOS-safe Firebase Auth + Data Layer bootstrap ---
-
+// Firebase init (compat)
 window.firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
@@ -10,148 +9,11 @@ window.firebaseConfig = {
   measurementId: "G-FT56H33X5J"
 };
 
-
-// --- Normalize host after OAuth to avoid session/cookie issues across firebaseapp.com/web.app
-(function normalizeAuthHost(){
-  try{
-    /*hostLockLocalSafe*/
-  var host = location.host;
-  var proto = location.protocol;
-  var isLocal = proto === 'file:' || host.startsWith('localhost') or host.startswith('127.')
-
-    var prefer = (window.PREFERRED_HOST || "").trim();
-    if (!prefer){
-      // If the app is served from web.app at least once, prefer it.
-      if (host.endsWith(".web.app")) prefer = host;
-      else if (host.endsWith(".firebaseapp.com")) prefer = host.replace(".firebaseapp.com", ".web.app");
-    }
-    if (prefer && host !== prefer){
-      var newURL = location.protocol + "//" + prefer + location.pathname + location.search + location.hash;
-      // Only rewrite if we are on the auth handler or immediately after return
-      if (location.pathname.indexOf("/__/auth/") !== -1 || document.referrer.indexOf("accounts.google.com") !== -1){
-        location.replace(newURL);
-      }
-    }
-  }catch(e){ /* no-op */ }
-})();
-
-(function initFirebase(){
-  const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
-  if (!hasConfig){
-    console.info("Firebase config missing → running in local mode (localStorage).");
-    window.AppDataLayer = { mode: "local" };
-    return;
-  }
-
-  try{
-    firebase.initializeApp(window.firebaseConfig);
-    const db = firebase.firestore();
-    window.AppDataLayer = { mode: "firebase", db };
-    console.info("Firebase initialized.");
-  }catch(err){
-    console.error("Firebase init error → fallback to local mode", err);
-    window.AppDataLayer = { mode: "local" };
-  }
-})();
-
-(function bootstrapAuth(){
-  // Platform detection – prefer redirect on iOS
-  var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-
-  try {
-    // compat scripts are loaded in index.html
+(function(){
+  if (!window._app) {
+    window._app = firebase.initializeApp(window.firebaseConfig);
     window.auth = firebase.auth();
-    window.googleProvider = new firebase.auth.GoogleAuthProvider();
-
-    // Persistence is important on iOS
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
-      console.warn('[auth] setPersistence failed', e && e.code, e && e.message);
-    });
-  } catch(e){
-    console.warn('[auth] init early failed', e);
+    window.db = firebase.firestore();
+    auth.languageCode = 'he';
   }
-
-  
-  var FLAG = 'authRedirectPending';
-  var COOLDOWN_MS = 30000; // 30s cooldown to avoid loops
-
-  function canRedirectNow(){
-    try{
-      var ts = parseInt(sessionStorage.getItem(FLAG+'_ts')||'0',10);
-      if (!ts) return true;
-      return (Date.now() - ts) > COOLDOWN_MS;
-    }catch(_){ return true; }
-  }
-  function setRedirectPending(){
-    try{
-      sessionStorage.setItem(FLAG,'1');
-      sessionStorage.setItem(FLAG+'_ts', String(Date.now()));
-    }catch(_){}
-  }
-  function clearRedirectPending(){
-    try{
-      clearRedirectPending();
-      sessionStorage.removeItem(FLAG+'_ts');
-    }catch(_){}
-  }
-
-
-  // Handle pending redirect ASAP and always clear the flag
-  try{
-    auth.getRedirectResult().then(function(result){
-      clearRedirectPending();
-      if (result && result.user){
-        console.log('[auth] redirect result ok:', result.user.uid);
-      }
-    }).catch(function(err){
-      clearRedirectPending();
-      console.warn('[auth] redirect error', err && err.code, err && err.message);
-    });
-  }catch(e){
-    clearRedirectPending();
-    console.warn('[auth] redirect init failed', e);
-  }
-
-  // Safe global sign-in helper
-  window.__attemptSignIn = async function(){
-    try{
-      if (!window.auth) {
-        console.warn('[auth] not ready yet');
-        return;
-      }
-      if (sessionStorage.getItem(FLAG)) {
-        console.log('[auth] redirect already pending, skip');
-        return;
-      }
-
-      if (isiOS) {
-        sessionStorage.setItem(FLAG, '1');
-        await auth.signInWithRedirect(googleProvider);
-        return;
-      }
-
-      try{
-        await auth.signInWithPopup(googleProvider);
-      }catch(err){
-        var code = err && err.code || '';
-        var fallback = [
-          'auth/popup-blocked',
-          'auth/popup-closed-by-user',
-          'auth/cancelled-popup-request',
-          'auth/operation-not-supported-in-this-environment'
-        ].indexOf(code) !== -1;
-        if (fallback){
-          sessionStorage.setItem(FLAG, '1');
-          await auth.signInWithRedirect(googleProvider);
-        } else {
-          console.error('[auth] sign-in failed', code, err && err.message);
-          if (typeof logLine === 'function') logLine('error '+code+' '+(err && err.message || ''), 'auth');
-        }
-      }
-    }catch(e){
-      clearRedirectPending();
-      console.error('[auth] __attemptSignIn fatal', e);
-    }
-  };
 })();
