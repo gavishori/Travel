@@ -107,38 +107,3 @@ window.firebaseConfig = {
     }
   };
 })();
-/* DEBUG_IOS_INJECT */
-(function(){
-  try {
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (typeof auth !== 'undefined' && auth && firebase && firebase.auth) {
-      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(function(){
-        if (window.logLine) logLine('persistence: SESSION set', 'auth');
-      }).catch(function(err){
-        if (window.logLine) logLine('persistence error: '+(err && err.message), 'auth');
-      });
-      auth.getRedirectResult().then(function(res){
-        if (window.logLine) logLine('getRedirectResult → user='+(res && res.user ? (res.user.email||res.user.uid) : 'null'), 'auth');
-        if (res && res.user && !auth.currentUser) {
-          return auth.updateCurrentUser(res.user).then(function(){
-            if (window.logLine) logLine('currentUser updated from redirect result', 'auth');
-          });
-        }
-      }).catch(function(err){
-        if (window.logLine) logLine('redirect error '+(err && err.code)+': '+(err && err.message), 'auth');
-      });
-      auth.onAuthStateChanged(function(u){
-        if (window.logLine) logLine('state → '+(u ? ('IN as '+(u.email||u.uid)) : 'OUT'), 'auth');
-      });
-      if (typeof window.__attemptSignIn === 'function') {
-        var __orig = window.__attemptSignIn;
-        window.__attemptSignIn = function(){
-          if (isIOS) { if (window.logLine) logLine('iOS redirect flow', 'auth'); }
-          return __orig.apply(this, arguments);
-        };
-      }
-    }
-  } catch(e) {
-    if (window.logLine) logLine('inject error: '+(e && e.message), 'auth');
-  }
-})();

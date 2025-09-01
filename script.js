@@ -1,23 +1,3 @@
-
-// ====== visible logger (iPhone debug) ======
-window.logLine = function (msg, scope) {
-  try {
-    const box = document.getElementById('debugBox');
-    if (!box) return;
-    box.hidden = false;
-    const line = document.createElement('div');
-    const t = new Date().toISOString().split('T')[1].replace('Z','');
-    line.textContent = `[${t}]${scope?`[${scope}]`:''} ${msg}`;
-    if ((msg||'').toLowerCase().includes('error')) line.classList.add('err');
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-    const status = document.getElementById('statusLine');
-    if (status) status.textContent = msg;
-  } catch(e) {}
-};
-window.addEventListener('error', e => logLine('window.onerror: '+(e.message||e), 'js'));
-window.addEventListener('unhandledrejection', e => logLine('unhandledrejection: '+(e.reason && e.reason.message || e.reason || ''), 'js'));
-// ============================================
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
