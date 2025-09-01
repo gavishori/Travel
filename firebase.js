@@ -2,7 +2,7 @@
 
 window.firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-  authDomain: "travel-416ff.firebaseapp.com",
+  authDomain: "gavishori.github.io",
   projectId: "travel-416ff",
   storageBucket: "travel-416ff.appspot.com",
   messagingSenderId: "1075073511694",
