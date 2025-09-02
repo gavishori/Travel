@@ -17,6 +17,7 @@
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
     window.isIOS = window.isIOS || function(){
       try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
@@ -35,9 +36,16 @@
 
     // Public starter: must be called from the Google button (user gesture)
     window.startGoogleSignIn = function(){
-      try{ sessionStorage.setItem(ALLOW,'1'); }catch(e){}
-      if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
-    };
+  try{ sessionStorage.setItem('AUTH_ALLOW','1'); }catch(e){}
+  var isIOS = (window.isIOS && window.isIOS());
+  var onGithub = /\.github\.io$/.test(location.hostname);
+  if (isIOS && onGithub){
+    try{ sessionStorage.setItem('GO_WEBAPP','1'); }catch(e){}
+    location.href = 'https://travel-416ff.web.app/?go=1';
+    return;
+  }
+  if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
+};
 
     window.__attemptSignIn = async function(){
       try{

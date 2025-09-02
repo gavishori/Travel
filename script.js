@@ -1892,3 +1892,47 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 });
+
+/* signOut wiring */
+document.addEventListener('DOMContentLoaded', function(){
+  var out = document.getElementById('signOutBtn');
+  if (out && !out.__wired){
+    out.__wired = true;
+    out.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
+  }
+});
+
+
+// ---- global sign-out handler ----
+window.handleSignOut = async function(){
+  try{
+    if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
+    if (typeof startGoogleSignIn === 'function') { startGoogleSignIn(); return; }
+    if (typeof window.__attemptSignIn === 'function') { window.__attemptSignIn(); return; }
+  }catch(err){
+    console.error(err);
+    if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+  }
+};
+
+
+// iOS web.app handoff auto-continue (after user tapped button on github.io)
+document.addEventListener('DOMContentLoaded', function(){
+  var onWebapp = /travel-416ff\.web\.app$/.test(location.hostname);
+  try{
+    var came = sessionStorage.getItem('GO_WEBAPP');
+    if (onWebapp && came === '1'){
+      sessionStorage.removeItem('GO_WEBAPP');
+      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+    }
+  }catch(e){}
+});
