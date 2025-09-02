@@ -1867,58 +1867,21 @@ firebase.auth().onAuthStateChanged(function(user){
   }catch(e){ console.warn('[ui] userAccount label failed', e); }
 })();
 
-// ==== UI auth logger & wiring (v2) ====
-(function(){
-  if (window.__authUiWired2) return; window.__authUiWired2 = true;
-  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
-  window.logLine = window.logLine || function(msg, src){
-    try{
-      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
-      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
-      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>8000) pre.textContent=pre.textContent.slice(-8000); }
-      if(box) box.style.display='block';
-      console.log('[ui-log]', line);
-    }catch(e){}
-  };
-  document.addEventListener('DOMContentLoaded', function(){
-    var btn=document.getElementById('googleSignInBtn');
-    if(btn && !btn.__wired){
-      btn.__wired=true;
-      btn.addEventListener('click', function(){
-        if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
-        if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
-      });
-    }
-  });
-})();
-
-// iOS web.app handoff auto-continue using URL param (?ios=1)
-document.addEventListener('DOMContentLoaded', function(){
-  var hostOK = /travel-416ff\.web\.app$/.test(location.hostname);
-  var need = new URLSearchParams(location.search).get('ios') === '1';
-  if (hostOK && need){
-    try{
-      if (typeof logLine==='function') logLine('iOS handoff → starting redirect','auth');
-      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-    }catch(e){}
-  }
-});
 
 // global sign-out handler
 window.handleSignOut = async function(){
   try{
-    if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
-    if (typeof startGoogleSignIn === 'function') { startGoogleSignIn(); return; }
-    if (typeof window.__attemptSignIn === 'function') { window.__attemptSignIn(); return; }
-  }catch(err){
-    console.error(err); if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+    if (window.firebase && firebase.auth) await firebase.auth().signOut();
+    if (typeof startGoogleSignIn==='function') startGoogleSignIn();
+    else if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
+  }catch(e){
+    console.error(e); if (typeof logLine==='function') logLine('sign-out error: '+(e && (e.code||e.message)||e),'auth');
   }
 };
 
-
-// ==== UI auth logger & wiring (v3) ====
+// ==== UI auth logger & wiring (v4) ====
 (function(){
-  if (window.__uiAuthV3) return; window.__uiAuthV3 = true;
+  if (window.__uiAuthV4) return; window.__uiAuthV4 = true;
   function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
   window.logLine = window.logLine || function(msg, src){
     try{
@@ -1931,7 +1894,7 @@ window.handleSignOut = async function(){
   };
   document.addEventListener('DOMContentLoaded', function(){
     var g=document.getElementById('googleSignInBtn');
-    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){ 
+    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){
       if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
       if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
     });}
@@ -1947,3 +1910,15 @@ window.handleSignOut = async function(){
     }catch(e){}
   });
 })();
+
+// iOS web.app handoff auto-continue using URL param (?ios=1)
+document.addEventListener('DOMContentLoaded', function(){
+  var hostOK = /travel-416ff\.web\.app$/.test(location.hostname);
+  var need = new URLSearchParams(location.search).get('ios') === '1';
+  if (hostOK && need){
+    try{
+      if (typeof logLine==='function') logLine('iOS handoff → starting redirect','auth');
+      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+    }catch(e){}
+  }
+});
