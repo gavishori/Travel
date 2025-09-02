@@ -1536,14 +1536,8 @@ async function exportPDF(){
 async function init(){
   applyTheme();
   if (window.AppDataLayer?.mode === "firebase") {
-    // Wait for authentication before proceeding
-    const user = await new Promise(resolve => {
-      const unsubscribe = firebase.auth().onAuthStateChanged(u => {
-        unsubscribe();
-        resolve(u);
-      });
-    });
-    console.log("Auth UID:", user?.uid);
+    await window.AppDataLayer.ensureAuth?.();
+    console.log("Auth UID:", firebase.auth().currentUser?.uid);
   }
 
   // Buttons
@@ -1786,7 +1780,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await window.__attemptSignIn && window.g__attemptSignIn();
+      await window.__attemptSignIn && window.__attemptSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
