@@ -41,7 +41,10 @@ window.firebaseConfig = {
 
     // Handle redirect result (clear pending flag)
     var FLAG = "authRedirectPending";
+    var COUNT = "AUTH_REDIRECT_COUNT";
+    var WINDOW_MS = 60000;
     auth.getRedirectResult().then(function(res){
+      try{ sessionStorage.setItem(COUNT, "0"); }catch(e){}
       sessionStorage.removeItem(FLAG);
       if (res && res.user){ console.log("[auth] redirect ok:", res.user.uid); }
     }).catch(function(e){
@@ -55,6 +58,15 @@ window.firebaseConfig = {
       if (auth.currentUser) return;
 
       if (window.isIOS()){
+        try{
+          var n = parseInt(sessionStorage.getItem(COUNT)||"0",10);
+          var t0 = parseInt(sessionStorage.getItem(COUNT+"_ts")||"0",10);
+          var now = Date.now();
+          if (!t0 || now - t0 > WINDOW_MS){ n = 0; sessionStorage.setItem(COUNT+"_ts", String(now)); }
+          if (n >= 1){ if (typeof logLine==="function") logLine("stopped: iOS redirect loop guard", "auth"); return; }
+          sessionStorage.setItem(COUNT, String(n+1));
+        }catch(e){}
+
         sessionStorage.setItem(FLAG, "1");
         await auth.signInWithRedirect(googleProvider);
         return;

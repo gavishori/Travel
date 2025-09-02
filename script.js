@@ -1,4 +1,25 @@
 
+// --- iOS hosting helper ---
+(function(){
+  var isIOS = (function(){
+    try{
+      var ua = navigator.userAgent||'';
+      return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    }catch(e){return false;}
+  })();
+
+  var onGithub = /\.github\.io$/.test(location.hostname);
+  var iosBtn = document.getElementById('btnOpenIosHost');
+  if (iosBtn && isIOS && onGithub){
+    iosBtn.style.display = 'inline-flex';
+    iosBtn.addEventListener('click', function(){
+      // Prefer web.app (same-site with handler)
+      location.href = 'https://travel-416ff.web.app/';
+    });
+  }
+})();
+
+
 // ---- Auth UI logging ----
 (function(){
   var box = document.getElementById('authErrorsBox');
@@ -1842,6 +1863,20 @@ document.addEventListener('DOMContentLoaded', function(){
   if (loginBtn) {
     loginBtn.addEventListener('click', function(){
       if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+    });
+  }
+
+  var logoutBtn = document.getElementById('signOutBtn');
+  if (logoutBtn && !logoutBtn.signOutBtn__wired){
+    logoutBtn.signOutBtn__wired = true;
+    logoutBtn.addEventListener('click', async function(){
+      try{
+        await firebase.auth().signOut();
+        if (typeof logLine==='function') logLine('signed out','auth');
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+      }
     });
   }
 
