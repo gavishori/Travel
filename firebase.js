@@ -23,12 +23,11 @@
       try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
     };
 
-    var FLAG='authRedirectPending', COUNT='AUTH_REDIRECT_COUNT', WINDOW_MS=60000, ALLOW='AUTH_ALLOW';
+    var FLAG='authRedirectPending';
     var persistence = (window.isIOS && window.isIOS()) ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL;
     auth.setPersistence(persistence).catch(function(e){ console.warn('[auth] setPersistence failed', e&&e.code, e&&e.message); });
 
     auth.getRedirectResult().then(function(res){
-      try{ sessionStorage.removeItem(ALLOW); sessionStorage.setItem(COUNT,'0'); }catch(e){}
       if (res && res.user){ console.log('[auth] redirect ok', res.user.uid); }
     }).catch(function(e){
       if (typeof logLine==='function') logLine('redirect error: '+(e && (e.code||e.message)||e),'auth');
@@ -36,7 +35,6 @@
 
     // Public starter: must be called from the Google button (user gesture)
     window.startGoogleSignIn = function(){
-      try{ sessionStorage.setItem(ALLOW,'1'); }catch(e){}
       if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
     };
 
@@ -47,19 +45,11 @@
 
         if (window.isIOS && window.isIOS()){
           try{
-            if (!sessionStorage.getItem(ALLOW)){
-              if (typeof logLine==='function') logLine('blocked: iOS requires user tap on Google button','auth');
-              return;
-            }
-            var n=parseInt(sessionStorage.getItem(COUNT)||'0',10);
-            var t0=parseInt(sessionStorage.getItem(COUNT+'_ts')||'0',10);
-            var now=Date.now();
-            if (!t0 || now-t0>WINDOW_MS){ n=0; sessionStorage.setItem(COUNT+'_ts', String(now)); }
-            if (n>=1){ if (typeof logLine==='function') logLine('stopped: iOS redirect loop guard','auth'); return; }
-            sessionStorage.setItem(COUNT, String(n+1));
-          }catch(e){}
-          sessionStorage.setItem(FLAG,'1');
-          await auth.signInWithRedirect(googleProvider);
+            sessionStorage.setItem(FLAG,'1');
+            await auth.signInWithRedirect(googleProvider);
+          }catch(err){
+            console.error('[auth] iOS sign-in failed', err && err.code, err && err.message);
+          }
           return;
         }
 
@@ -73,7 +63,6 @@
             await auth.signInWithRedirect(googleProvider);
           } else {
             console.error('[auth] sign-in failed', code, err && err.message);
-            if (typeof logLine==='function') logLine('sign-in failed: '+code+' '+(err && err.message || ''),'auth');
           }
         }
       }catch(e){
