@@ -1,43 +1,3 @@
-
-// --- iOS hosting helper ---
-(function(){
-  var isIOS = (function(){
-    try{
-      var ua = navigator.userAgent||'';
-      return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-    }catch(e){return false;}
-  })();
-
-  var onGithub = /\.github\.io$/.test(location.hostname);
-  var iosBtn = document.getElementById('btnOpenIosHost');
-  if (iosBtn && isIOS && onGithub){
-    iosBtn.style.display = 'inline-flex';
-    iosBtn.addEventListener('click', function(){
-      // Prefer web.app (same-site with handler)
-      location.href = 'https://travel-416ff.web.app/';
-    });
-  }
-})();
-
-
-// ---- Auth UI logging ----
-(function(){
-  var box = document.getElementById('authErrorsBox');
-  var pre = document.getElementById('authErrorsPre');
-  function show(){ if (box) box.style.display = 'block'; }
-  function ts(){ try{ return new Date().toISOString().slice(11,19); }catch(e){ return ''; } }
-  window.logLine = function(msg, src){
-    try{
-      var line = (ts()) + (src?(" ["+src+"] "):" ") + String(msg);
-      if (pre){
-        pre.textContent = (pre.textContent ? pre.textContent + "\n" : "") + line;
-        if (pre.textContent.length > 8000) pre.textContent = pre.textContent.slice(-8000);
-        show();
-      }
-      console.log("[ui-log]", line);
-    }catch(e){ console.warn("logLine error", e); }
-  };
-})();
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -165,7 +125,7 @@ function addCurrencyToState(code){
 // ---------- Store (Firebase or Local) ----------
 const Store = (()=>{
   const mode = window.AppDataLayer?.mode || "local";
-  const db = window.AppDataLayer?.db;
+  const __db = () => (window.AppDataLayer && window.AppDataLayer.db) || window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
   let currentUid = null;
 
   const LS_KEY = "travel_journal_data_v2";
@@ -191,7 +151,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       const uid = await ensureAuthIfNeeded();
-      const snap = await db.collection("trips").where("ownerUid","==", uid).get();
+      const snap = await __db().collection("trips").where("ownerUid","==", uid).get();
       // Sort from newest to oldest
       return snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
     } else {
@@ -218,7 +178,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       const uid = await ensureAuthIfNeeded();
       const docData = { ...trip, ownerUid: uid, expenses: {}, journal: {} };
-      const ref = await db.collection("trips").add(docData);
+      const ref = await __db().collection("trips").add(docData);
       return { id: ref.id, ...docData };
     } else {
       const data = loadLS();
@@ -237,7 +197,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       await ensureAuthIfNeeded();
-      const doc = await db.collection("trips").doc(id).get();
+      const doc = await __db().collection("trips").doc(id).get();
       if (!doc.exists) return null;
       const trip = { id: doc.id, ...doc.data() };
       // ensure fields
@@ -260,7 +220,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       updates.updatedAt = Date.now();
-      await db.collection("trips").doc(id).set(updates, { merge:true });
+      await __db().collection("trips").doc(id).set(updates, { merge:true });
     } else {
       const data = loadLS();
       data.trips[id] = { ...(data.trips[id]||{}), ...updates, updatedAt: Date.now() };
@@ -275,7 +235,7 @@ const Store = (()=>{
   }
 
     if (mode === "firebase"){
-      await db.collection("trips").doc(id).delete();
+      await __db().collection("trips").doc(id).delete();
     } else {
       const data = loadLS();
       delete data.trips[id];
@@ -342,7 +302,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       // Properly delete a nested map key in Firestore
       const del = firebase.firestore.FieldValue.delete();
-      await db.collection("trips").doc(tripId).update({ [`expenses.${expId}`]: del, updatedAt: Date.now() });
+      await __db().collection("trips").doc(tripId).update({ [`expenses.${expId}`]: del, updatedAt: Date.now() });
     } else {
       const data = loadLS();
       if (data.trips[tripId]?.expenses){ delete data.trips[tripId].expenses[expId]; }
@@ -1784,13 +1744,13 @@ function openJournalDeleteDialog(tripId, entry){
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
         try { await window.__attemptSignIn && window.__attemptSignIn(); }
-        catch(err){ console.error(err); logLine('sign-in error: '+(err && (err.code||err.message)||err),'ui'); }
+        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
         try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
       });
       auth.onAuthStateChanged(function(user){
-      console.log("[auth] state changed:", !!user); try{ logLine('[auth] state changed → '+ (!!user?'signed-in':'signed-out'), 'auth'); }catch(e){}
+      console.log("[auth] state changed:", !!user);
 
         if (user){
           if (signInBtn)  signInBtn.style.display = 'none';
@@ -1826,7 +1786,7 @@ window.debugAuth = async function(){
     console.log("[dbg] uid:", uid || null);
     if (!uid) return;
 
-    const ref = AppDataLayer.db.collection("trips").doc("debug__" + uid.slice(0,6));
+    const ref = AppDataLayer.__db().collection("trips").doc("debug__" + uid.slice(0,6));
     await ref.set({ ownerUid: uid, createdAt: Date.now(), title: "DEBUG" });
     const snap = await ref.get();
     console.log("[dbg] read:", snap.exists, snap.data());
@@ -1863,20 +1823,6 @@ document.addEventListener('DOMContentLoaded', function(){
   if (loginBtn) {
     loginBtn.addEventListener('click', function(){
       if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-    });
-  }
-
-  var logoutBtn = document.getElementById('signOutBtn');
-  if (logoutBtn && !logoutBtn.signOutBtn__wired){
-    logoutBtn.signOutBtn__wired = true;
-    logoutBtn.addEventListener('click', async function(){
-      try{
-        await firebase.auth().signOut();
-        if (typeof logLine==='function') logLine('signed out','auth');
-      }catch(err){
-        console.error(err);
-        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
-      }
     });
   }
 
@@ -1920,3 +1866,61 @@ firebase.auth().onAuthStateChanged(function(user){
     });
   }catch(e){ console.warn('[ui] userAccount label failed', e); }
 })();
+
+
+// ==== UI auth logger & wiring (appended) ====
+(function(){
+  if (window.__authUiWired) return; window.__authUiWired = true;
+  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
+  window.logLine = window.logLine || function(msg, src){
+    try{
+      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
+      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
+      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>8000) pre.textContent=pre.textContent.slice(-8000); }
+      if(box) box.style.display='block';
+      console.log('[ui-log]', line);
+    }catch(e){ console.warn('logLine error', e); }
+  };
+  document.addEventListener('DOMContentLoaded', function(){
+    var loginBtn = document.getElementById('googleSignInBtn');
+    if (loginBtn && !loginBtn.__wired){
+      loginBtn.__wired = true;
+      loginBtn.addEventListener('click', function(){
+        if (typeof window.startGoogleSignIn === 'function') return window.startGoogleSignIn();
+        if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
+      });
+    }
+    var logoutBtn = document.getElementById('signOutBtn');
+    if (logoutBtn && !logoutBtn.__wired){
+      logoutBtn.__wired = true;
+      logoutBtn.addEventListener('click', async function(){
+        try{ await (firebase && firebase.auth && firebase.auth().signOut()); logLine('signed out','auth'); }
+        catch(err){ console.error(err); logLine('sign-out error: '+(err && (err.code||err.message)||err), 'auth'); }
+      });
+    }
+    try{
+      if (firebase && firebase.auth){
+        firebase.auth().onAuthStateChanged(function(u){
+          try{ logLine('[auth] state changed → '+(u?'signed-in':'signed-out'),'auth'); }catch(e){}
+        });
+      }
+    }catch(e){}
+  });
+})();
+// header "switch user" button
+document.addEventListener('DOMContentLoaded', function(){
+  var sw = document.getElementById('switchUserBtn');
+  if (sw && !sw.__wired){
+    sw.__wired = true;
+    sw.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('switch user error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
+  }
+});
