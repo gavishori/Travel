@@ -262,6 +262,7 @@ const Store = (()=>{
 
     entry.createdAt = Date.now();
     if (mode === "firebase"){
+      const uid = await ensureAuthIfNeeded();
       const trip = await getTrip(tripId);
       const id = "e_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
       const expenses = { ...(trip.expenses||{}), [id]: entry };
@@ -1411,6 +1412,7 @@ async function openJournalDialog(journalEntry) {
       };
     }
   }
+  el("expenseDialog").dataset.editId = exp?.id || "";
 }
 
 function collectJournalForm(){
@@ -1511,7 +1513,6 @@ async function exportPDF(){
   doc.text(`יתרה: $${formatMoney(rem)}`, margin, y); y+=20;
 
   if (!el("exportWithoutExpenses").checked && expenses.length){
-    doc.setFont("helvetica","bold"); doc.text("הוצאות", margin, y); y+=8;
     doc.autoTable({
       startY: y+8, margin:{ left:margin, right:margin },
       styles:{ fontSize:10 }, head:[["תיאור","קטגוריה","סכום","מטבע","זמן"]],
@@ -1683,15 +1684,7 @@ async function init(){
     // Hide add/edit buttons as well
     if (el("addExpenseBtn")) el("addExpenseBtn").classList.add("hidden");
     if (el("addJournalBtn")) el("addJournalBtn").classList.add("hidden");
-  } else {
-    // We already call renderHome() inside the onAuthStateChanged listener, so we don't need to call it here.
-    // await renderHome();
   }
-
-  // Listen for auth state changes and re-render the home view accordingly
-  firebase.auth().onAuthStateChanged(user => {
-    loadUserContent();
-  });
 }
 
 // boot
@@ -1839,23 +1832,37 @@ window.debugAuth = async function(){
 // --- Auth-aware UI bootstrap (avoid UI actions before user exists) ---
 document.addEventListener('DOMContentLoaded', function(){
   if (!firebase || !firebase.auth) return;
-
-  var loginBtn = document.getElementById('googleSignInBtn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', function(){
-      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-    });
-  }
-
+  // Use a global, single auth state listener
   firebase.auth().onAuthStateChanged(async function(user){
     document.body.classList.toggle('auth-ok', !!user);
     document.body.classList.toggle('auth-anon', !user);
     if (user) {
-      if (typeof window.onAuthReady === 'function') {
-        try { await window.onAuthReady(user); } catch(e){ console.warn('onAuthReady failed', e); }
-      }
+      document.body.classList.add('entered');
+      document.body.classList.remove('splash-mode');
+      const app = document.getElementById('app');
+      if (app) app.style.display = 'block';
+      
+      // Load user-specific content after successful sign-in
+      await renderHome();
+      // Update the user account display
+      const el = document.getElementById('userAccount');
+      if (el) el.textContent = '(' + (user.email || user.displayName || 'מחובר') + ')';
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) signOutBtn.style.display = 'inline-flex';
     } else {
-      // not signed in – show login UI only
+      document.body.classList.remove('entered');
+      document.body.classList.add('splash-mode');
+      const app = document.getElementById('app');
+      if (app) app.style.display = 'none';
+
+      const signInBtn = document.getElementById('googleSignInBtn');
+      if (signInBtn) signInBtn.style.display = 'inline-flex';
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) signOutBtn.style.display = 'none';
+
+      // Clear the trip list on sign-out
+      const list = el("tripList");
+      if (list) list.innerHTML = "";
     }
   });
 });
@@ -1867,68 +1874,6 @@ firebase.auth().onAuthStateChanged(function(user){
     document.title = "🟢 " + (user.email || user.uid);
   } else {
     document.title = "🔴 לא מחובר";
-  }
-});
-
-
-// --- UI: show connected account next to the title ---
-(function attachUserAccountLabel(){
-  try{
-    if (!window.firebase || !firebase.auth) return;
-    firebase.auth().onAuthStateChanged(function(user){
-      var el = document.getElementById('userAccount');
-      if (!el) return;
-      if (user){
-        var label = user.email || user.displayName || 'מחובר';
-        el.textContent = '(' + label + ')';
-      } else {
-        el.textContent = '';
-      }
-    });
-  }catch(e){ console.warn('[ui] userAccount label failed', e); }
-})();
-
-/* auth button wiring */
-document.addEventListener('DOMContentLoaded', function(){
-  var loginBtn = document.getElementById('googleSignInBtn');
-  if (loginBtn && !loginBtn.__wired){
-    loginBtn.__wired = true;
-    loginBtn.addEventListener('click', function(){
-      if (typeof startGoogleSignIn === 'function') return startGoogleSignIn();
-      if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
-    });
-  }
-  var sw = document.getElementById('switchUserBtn');
-  if (sw && !sw.__wired){
-    sw.__wired = true;
-    sw.addEventListener('click', async function(){
-      try{
-        if (firebase && firebase.auth) await firebase.auth().signOut();
-        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
-        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-      }catch(err){
-        console.error(err);
-        if (typeof logLine==='function') logLine('switch user error: '+(err && (err.code||err.message)||err),'auth');
-      }
-    });
-  }
-});
-
-/* signOut wiring */
-document.addEventListener('DOMContentLoaded', function(){
-  var out = document.getElementById('signOutBtn');
-  if (out && !out.__wired){
-    out.__wired = true;
-    out.addEventListener('click', async function(){
-      try{
-        if (firebase && firebase.auth) await firebase.auth().signOut();
-        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
-        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-      }catch(err){
-        console.error(err);
-        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
-      }
-    });
   }
 });
 
