@@ -1,5 +1,6 @@
-// --- iOS-safe Firebase Auth + Data Layer bootstrap ---
+// Clean Firebase bootstrap for web + iOS redirect (compat SDK)
 
+// Project config
 window.firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
@@ -10,112 +11,84 @@ window.firebaseConfig = {
   measurementId: "G-FT56H33X5J"
 };
 
-(function initFirebase(){
-  function isIOS(){
-    var ua = navigator.userAgent || "";
-    var iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    return !!iOS;
-  }
-
-  const hasConfig = window.firebaseConfig && window.firebaseConfig.apiKey;
-  if (!hasConfig){
-    console.info("Firebase config missing → running in local mode (localStorage).");
-    window.AppDataLayer = { mode: "local" };
-    return;
-  }
-
-  try{
-    firebase.initializeApp(window.firebaseConfig);
-    const db = firebase.firestore();
-    window.AppDataLayer = { mode: "firebase", db };
-    console.info("Firebase initialized.");
-  }catch(err){
-    console.error("Firebase init error → fallback to local mode", err);
-    window.AppDataLayer = { mode: "local" };
-  }
+// Global iOS helper (available for all IIFEs)
+(function(){
+  window.isIOS = function(){
+    try{
+      var ua = navigator.userAgent || "";
+      var iOSUA = /iPad|iPhone|iPod/.test(ua);
+      var iPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      return !!(iOSUA || iPadOS);
+    }catch(e){ return false; }
+  };
 })();
 
-(function bootstrapAuth(){
-  // Platform detection – prefer redirect on iOS
-  var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-
-  try {
-    // compat scripts are loaded in index.html
+// Init Firebase app / services
+(function(){
+  try{
+    if (!window.firebase || !window.firebase.apps) throw new Error("Firebase SDK not loaded");
+    if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+    window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    // Persistence is important on iOS
-    auth.setPersistence(isIOS() ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
-      console.warn('[auth] setPersistence failed', e && e.code, e && e.message);
+    // Persistence: SESSION on iOS to avoid ITP issues, LOCAL elsewhere
+    var persistence = window.isIOS() ? firebase.auth.Auth.Persistence.SESSION
+                                     : firebase.auth.Auth.Persistence.LOCAL;
+    auth.setPersistence(persistence).catch(function(e){
+      console.warn("[auth] setPersistence failed:", e && e.code, e && e.message);
     });
-  } catch(e){
-    console.warn('[auth] init early failed', e);
-  }
 
-  var FLAG = 'authRedirectPending';
-  var LOOP_GUARD = 'authLoopGuardTs';
-
-  // Handle pending redirect ASAP and always clear the flag
-  try{
-    auth.getRedirectResult().then(function(result){
+    // Handle redirect result (clear pending flag)
+    var FLAG = "authRedirectPending";
+    auth.getRedirectResult().then(function(res){
       sessionStorage.removeItem(FLAG);
-      sessionStorage.removeItem(LOOP_GUARD);
-      if (result && result.user){
-        console.log('[auth] redirect result ok:', result.user.uid);
-      }
-    }).catch(function(err){
+      if (res && res.user){ console.log("[auth] redirect ok:", res.user.uid); }
+    }).catch(function(e){
       sessionStorage.removeItem(FLAG);
-      sessionStorage.removeItem(LOOP_GUARD);
-      console.warn('[auth] redirect error', err && err.code, err && err.message);
+      console.warn("[auth] redirect result err:", e && e.code, e && e.message); if (typeof logLine==="function") logLine("redirect error: "+(e && (e.code||e.message)||e), "auth");
     });
-  }catch(e){
-    sessionStorage.removeItem(FLAG);
-      sessionStorage.removeItem(LOOP_GUARD);
-    console.warn('[auth] redirect init failed', e);
-  }
 
-  // Safe global sign-in helper
-  window.__attemptSignIn = async function(){
-    try{
-      if (!window.auth) {
-        console.warn('[auth] not ready yet');
-        return;
-      }
-      if (sessionStorage.getItem(FLAG)) {
-        console.log('[auth] redirect already pending, skip');
-        return;
-      }
+    // Public helper used by app
+    window.__attemptSignIn = async function(){
+      if (!window.auth || !window.googleProvider) return;
+      if (auth.currentUser) return;
 
-      if (isiOS) {
-        sessionStorage.setItem(FLAG, '1');
+      if (window.isIOS()){
+        sessionStorage.setItem(FLAG, "1");
         await auth.signInWithRedirect(googleProvider);
         return;
       }
-
       try{
-        if (isIOS()) { await auth.signInWithRedirect(googleProvider); return; } else { await auth.signInWithPopup(googleProvider); };
+        await auth.signInWithPopup(googleProvider);
       }catch(err){
-        var code = err && err.code || '';
+        var code = (err && err.code) || "";
         var fallback = [
-          'auth/popup-blocked',
-          'auth/popup-closed-by-user',
-          'auth/cancelled-popup-request',
-          'auth/operation-not-supported-in-this-environment'
+          "auth/popup-blocked",
+          "auth/popup-closed-by-user",
+          "auth/cancelled-popup-request",
+          "auth/operation-not-supported-in-this-environment"
         ].indexOf(code) !== -1;
         if (fallback){
-          sessionStorage.setItem(FLAG, '1');
-          sessionStorage.setItem(LOOP_GUARD, String(Date.now()));
+          sessionStorage.setItem(FLAG, "1");
           await auth.signInWithRedirect(googleProvider);
         } else {
-          console.error('[auth] sign-in failed', code, err && err.message);
-          if (typeof logLine === 'function') logLine('error '+code+' '+(err && err.message || ''), 'auth');
+          console.error("[auth] sign-in failed", code, err && err.message);
         }
       }
-    }catch(e){
-      sessionStorage.removeItem(FLAG);
-      sessionStorage.removeItem(LOOP_GUARD);
-      console.error('[auth] __attemptSignIn fatal', e);
-    }
-  };
+    };
+
+    // Minimal DataLayer surface expected by script.js
+    window.AppDataLayer = window.AppDataLayer || {};
+    window.AppDataLayer.mode = "firebase";
+    window.AppDataLayer.ensureAuth = async function(){
+      if (!auth.currentUser){ await window.__attemptSignIn(); }
+      return (auth.currentUser && auth.currentUser.uid) || null;
+    };
+
+    console.info("Firebase init complete.");
+  }catch(e){
+    console.error("Firebase init error → fallback to local mode", e);
+    window.AppDataLayer = { mode: "local" };
+  }
 })();

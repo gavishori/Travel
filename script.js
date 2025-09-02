@@ -1,3 +1,22 @@
+
+// ---- Auth UI logging ----
+(function(){
+  var box = document.getElementById('authErrorsBox');
+  var pre = document.getElementById('authErrorsPre');
+  function show(){ if (box) box.style.display = 'block'; }
+  function ts(){ try{ return new Date().toISOString().slice(11,19); }catch(e){ return ''; } }
+  window.logLine = function(msg, src){
+    try{
+      var line = (ts()) + (src?(" ["+src+"] "):" ") + String(msg);
+      if (pre){
+        pre.textContent = (pre.textContent ? pre.textContent + "\n" : "") + line;
+        if (pre.textContent.length > 8000) pre.textContent = pre.textContent.slice(-8000);
+        show();
+      }
+      console.log("[ui-log]", line);
+    }catch(e){ console.warn("logLine error", e); }
+  };
+})();
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1744,13 +1763,13 @@ function openJournalDeleteDialog(tripId, entry){
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
         try { await window.__attemptSignIn && window.__attemptSignIn(); }
-        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
+        catch(err){ console.error(err); logLine('sign-in error: '+(err && (err.code||err.message)||err),'ui'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
         try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
       });
       auth.onAuthStateChanged(function(user){
-      console.log("[auth] state changed:", !!user);
+      console.log("[auth] state changed:", !!user); try{ logLine('[auth] state changed → '+ (!!user?'signed-in':'signed-out'), 'auth'); }catch(e){}
 
         if (user){
           if (signInBtn)  signInBtn.style.display = 'none';

@@ -18,9 +18,13 @@
       <div class="cta-row">
         <button class="btn primary" id="googleSignInBtn" onclick="debugAuth()">המשך עם Google</button>
         <button class="btn" id="signOutBtn" style="display:none">התנתק</button>
+      
+        <div id="authErrorsBox" class="auth-errors" aria-live="polite" aria-atomic="true" style="display:none">
+          <div class="auth-errors-title">שגיאות התחברות</div>
+          <pre id="authErrorsPre" class="auth-errors-pre" dir="ltr"></pre>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
   <div id="app">
 <header class="app-header">

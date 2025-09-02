@@ -939,3 +939,8 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 :root.light .btn.edit-btn {
   background: var(--btn-secondary-light);
 }
+
+/* Auth errors box */
+.auth-errors{background:#141a22;border:1px solid #2a3440;border-radius:12px;margin-top:16px;padding:12px;color:#cbd5e1;max-height:180px;overflow:auto;}
+.auth-errors-title{font-weight:600;margin-bottom:6px;color:#94a3b8;}
+.auth-errors-pre{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.35;margin:0;}
