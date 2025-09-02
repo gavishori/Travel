@@ -1922,3 +1922,35 @@ document.addEventListener('DOMContentLoaded', function(){
     }catch(e){}
   }
 });
+
+
+// ==== UI auth logger & wiring (v5) ====
+(function(){
+  if (window.__uiAuthV5) return; window.__uiAuthV5 = true;
+  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
+  window.logLine = window.logLine || function(msg, src){
+    try{
+      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
+      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
+      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>12000) pre.textContent=pre.textContent.slice(-12000); }
+      if(box) box.style.display='block';
+      console.log('[ui-log]', line);
+    }catch(e){}
+  };
+  // pipe console.error / window errors
+  (function(){
+    var origErr = console.error;
+    console.error = function(){ try{ logLine([].map.call(arguments,String).join(' '),'console.error'); }catch(e){}; return origErr.apply(console, arguments); };
+    window.addEventListener('error', function(e){ try{ logLine((e.message||'window.error')+' @'+(e.filename||'')+':'+(e.lineno||''),'window'); }catch(_){}});
+    window.addEventListener('unhandledrejection', function(e){ try{ logLine('unhandledrejection: '+(e.reason && (e.reason.message||e.reason)||e),'promise'); }catch(_){}});
+  })();
+  document.addEventListener('DOMContentLoaded', function(){
+    var g=document.getElementById('googleSignInBtn');
+    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){
+      if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
+      if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
+    });}
+    var outInline=document.getElementById('signOutBtnInline');
+    if(outInline && !outInline.__wired){ outInline.__wired=true; outInline.addEventListener('click', window.handleSignOut); }
+  });
+})();

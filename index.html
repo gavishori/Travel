@@ -26,7 +26,7 @@
 <header class="app-header">
     <div class="brand">
       <span class="logo">🧭</span>
-      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span></h1>
+      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span> <button id="signOutBtnInline" class="inline-logout" onclick="handleSignOut()" title="התנתק" aria-label="התנתק">התנתק</button></h1>
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
@@ -529,7 +529,7 @@
 
 
   <button id="logoutFab" class="logout-fab" title="התנתק" aria-label="התנתק">התנתק</button>
-  <div id="authErrorsBox" class="auth-errors fixed" aria-live="polite" aria-atomic="true" style="display:none">
+  <div id="authErrorsBox" class="auth-errors fixed" aria-live="polite" aria-atomic="true" style="display:block">
     <div class="auth-errors-title">שגיאות התחברות</div>
     <pre id="authErrorsPre" class="auth-errors-pre" dir="ltr"></pre>
   </div>

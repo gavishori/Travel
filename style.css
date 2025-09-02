@@ -997,3 +997,20 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
   }
 }
 
+
+
+/* inline small logout button next to account name */
+.inline-logout{
+  display:inline-block;
+  margin-inline-start:8px;
+  padding:4px 10px;
+  font-size:13px;
+  background:#293445;
+  color:#e2e8f0;
+  border:1px solid #3a4758;
+  border-radius:9999px;
+}
+.inline-logout:hover{ filter:brightness(1.08); }
+/* if a floating fab exists from older build — hide it */
+#logoutFab{ display:none !important; }
+
