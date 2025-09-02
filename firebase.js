@@ -1,17 +1,16 @@
 // ==== Firebase bootstrap (compat) with iOS redirect & tap-gate ====
 (function(){
   try {
-    if (!window.firebaseConfig){
-      window.firebaseConfig = {
-        apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-        authDomain: "travel-416ff.firebaseapp.com",
-        projectId: "travel-416ff",
-        storageBucket: "travel-416ff.appspot.com",
-        messagingSenderId: "1075073511694",
-        appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-        measurementId: "G-FT56H33X5J"
-      };
-    }
+    window.firebaseConfig = window.firebaseConfig || {
+      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+      authDomain: "travel-416ff.firebaseapp.com",
+      projectId: "travel-416ff",
+      storageBucket: "travel-416ff.appspot.com",
+      messagingSenderId: "1075073511694",
+      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+      measurementId: "G-FT56H33X5J"
+    };
+
     if (!firebase || !firebase.apps) throw new Error('Firebase SDK not loaded');
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
@@ -34,6 +33,7 @@
       if (typeof logLine==='function') logLine('redirect error: '+(e && (e.code||e.message)||e),'auth');
     });
 
+    // Public starter: must be called from the Google button (user gesture)
     window.startGoogleSignIn = function(){
       try{ sessionStorage.setItem(ALLOW,'1'); }catch(e){}
       if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
@@ -80,12 +80,12 @@
       }
     };
 
-    // Minimal DataLayer expected by the app
+    // DataLayer surface
     window.AppDataLayer = window.AppDataLayer || {};
-    window.AppDataLayer.db = window.db;
     window.AppDataLayer.mode = 'firebase';
+    window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ await window.__attemptSignIn(); }
+      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
       return (auth.currentUser && auth.currentUser.uid) || null;
     };
 

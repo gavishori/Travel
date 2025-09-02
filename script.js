@@ -125,7 +125,7 @@ function addCurrencyToState(code){
 // ---------- Store (Firebase or Local) ----------
 const Store = (()=>{
   const mode = window.AppDataLayer?.mode || "local";
-  const __db = () => (window.AppDataLayer && window.AppDataLayer.db) || window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+  const db = window.AppDataLayer?.db;
   let currentUid = null;
 
   const LS_KEY = "travel_journal_data_v2";
@@ -151,7 +151,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       const uid = await ensureAuthIfNeeded();
-      const snap = await __db().collection("trips").where("ownerUid","==", uid).get();
+      const snap = await db.collection("trips").where("ownerUid","==", uid).get();
       // Sort from newest to oldest
       return snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
     } else {
@@ -178,7 +178,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       const uid = await ensureAuthIfNeeded();
       const docData = { ...trip, ownerUid: uid, expenses: {}, journal: {} };
-      const ref = await __db().collection("trips").add(docData);
+      const ref = await db.collection("trips").add(docData);
       return { id: ref.id, ...docData };
     } else {
       const data = loadLS();
@@ -197,7 +197,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       await ensureAuthIfNeeded();
-      const doc = await __db().collection("trips").doc(id).get();
+      const doc = await db.collection("trips").doc(id).get();
       if (!doc.exists) return null;
       const trip = { id: doc.id, ...doc.data() };
       // ensure fields
@@ -220,7 +220,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       updates.updatedAt = Date.now();
-      await __db().collection("trips").doc(id).set(updates, { merge:true });
+      await db.collection("trips").doc(id).set(updates, { merge:true });
     } else {
       const data = loadLS();
       data.trips[id] = { ...(data.trips[id]||{}), ...updates, updatedAt: Date.now() };
@@ -235,7 +235,7 @@ const Store = (()=>{
   }
 
     if (mode === "firebase"){
-      await __db().collection("trips").doc(id).delete();
+      await db.collection("trips").doc(id).delete();
     } else {
       const data = loadLS();
       delete data.trips[id];
@@ -302,7 +302,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       // Properly delete a nested map key in Firestore
       const del = firebase.firestore.FieldValue.delete();
-      await __db().collection("trips").doc(tripId).update({ [`expenses.${expId}`]: del, updatedAt: Date.now() });
+      await db.collection("trips").doc(tripId).update({ [`expenses.${expId}`]: del, updatedAt: Date.now() });
     } else {
       const data = loadLS();
       if (data.trips[tripId]?.expenses){ delete data.trips[tripId].expenses[expId]; }
@@ -1786,7 +1786,7 @@ window.debugAuth = async function(){
     console.log("[dbg] uid:", uid || null);
     if (!uid) return;
 
-    const ref = AppDataLayer.__db().collection("trips").doc("debug__" + uid.slice(0,6));
+    const ref = AppDataLayer.db.collection("trips").doc("debug__" + uid.slice(0,6));
     await ref.set({ ownerUid: uid, createdAt: Date.now(), title: "DEBUG" });
     const snap = await ref.get();
     console.log("[dbg] read:", snap.exists, snap.data());
@@ -1867,48 +1867,16 @@ firebase.auth().onAuthStateChanged(function(user){
   }catch(e){ console.warn('[ui] userAccount label failed', e); }
 })();
 
-
-// ==== UI auth logger & wiring (appended) ====
-(function(){
-  if (window.__authUiWired) return; window.__authUiWired = true;
-  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
-  window.logLine = window.logLine || function(msg, src){
-    try{
-      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
-      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
-      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>8000) pre.textContent=pre.textContent.slice(-8000); }
-      if(box) box.style.display='block';
-      console.log('[ui-log]', line);
-    }catch(e){ console.warn('logLine error', e); }
-  };
-  document.addEventListener('DOMContentLoaded', function(){
-    var loginBtn = document.getElementById('googleSignInBtn');
-    if (loginBtn && !loginBtn.__wired){
-      loginBtn.__wired = true;
-      loginBtn.addEventListener('click', function(){
-        if (typeof window.startGoogleSignIn === 'function') return window.startGoogleSignIn();
-        if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
-      });
-    }
-    var logoutBtn = document.getElementById('signOutBtn');
-    if (logoutBtn && !logoutBtn.__wired){
-      logoutBtn.__wired = true;
-      logoutBtn.addEventListener('click', async function(){
-        try{ await (firebase && firebase.auth && firebase.auth().signOut()); logLine('signed out','auth'); }
-        catch(err){ console.error(err); logLine('sign-out error: '+(err && (err.code||err.message)||err), 'auth'); }
-      });
-    }
-    try{
-      if (firebase && firebase.auth){
-        firebase.auth().onAuthStateChanged(function(u){
-          try{ logLine('[auth] state changed → '+(u?'signed-in':'signed-out'),'auth'); }catch(e){}
-        });
-      }
-    }catch(e){}
-  });
-})();
-// header "switch user" button
+/* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
+  var loginBtn = document.getElementById('googleSignInBtn');
+  if (loginBtn && !loginBtn.__wired){
+    loginBtn.__wired = true;
+    loginBtn.addEventListener('click', function(){
+      if (typeof startGoogleSignIn === 'function') return startGoogleSignIn();
+      if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
+    });
+  }
   var sw = document.getElementById('switchUserBtn');
   if (sw && !sw.__wired){
     sw.__wired = true;
