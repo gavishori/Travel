@@ -1536,8 +1536,14 @@ async function exportPDF(){
 async function init(){
   applyTheme();
   if (window.AppDataLayer?.mode === "firebase") {
-    await window.AppDataLayer.ensureAuth?.();
-    console.log("Auth UID:", firebase.auth().currentUser?.uid);
+    // Wait for authentication before proceeding
+    const user = await new Promise(resolve => {
+      const unsubscribe = firebase.auth().onAuthStateChanged(u => {
+        unsubscribe();
+        resolve(u);
+      });
+    });
+    console.log("Auth UID:", user?.uid);
   }
 
   // Buttons
@@ -1780,7 +1786,7 @@ window.debugAuth = async function(){
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
       console.log("[dbg] no user → opening popup");
-      await window.__attemptSignIn && window.__attemptSignIn();
+      await window.__attemptSignIn && window.g__attemptSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1867,90 +1873,59 @@ firebase.auth().onAuthStateChanged(function(user){
   }catch(e){ console.warn('[ui] userAccount label failed', e); }
 })();
 
-
-// global sign-out handler
-window.handleSignOut = async function(){
-  try{
-    if (window.firebase && firebase.auth) await firebase.auth().signOut();
-    if (typeof startGoogleSignIn==='function') startGoogleSignIn();
-    else if (typeof window.__attemptSignIn==='function') window.__attemptSignIn();
-  }catch(e){
-    console.error(e); if (typeof logLine==='function') logLine('sign-out error: '+(e && (e.code||e.message)||e),'auth');
-  }
-};
-
-// ==== UI auth logger & wiring (v4) ====
-(function(){
-  if (window.__uiAuthV4) return; window.__uiAuthV4 = true;
-  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
-  window.logLine = window.logLine || function(msg, src){
-    try{
-      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
-      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
-      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>8000) pre.textContent=pre.textContent.slice(-8000); }
-      if(box) box.style.display='block';
-      console.log('[ui-log]', line);
-    }catch(e){}
-  };
-  document.addEventListener('DOMContentLoaded', function(){
-    var g=document.getElementById('googleSignInBtn');
-    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){
-      if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
-      if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
-    });}
-    var out=document.getElementById('logoutFab');
-    if(out && !out.__wired){ out.__wired=true; out.addEventListener('click', window.handleSignOut); }
-    try{
-      if (window.firebase && firebase.auth){
-        firebase.auth().onAuthStateChanged(function(u){
-          var out=document.getElementById('logoutFab');
-          if(out) out.style.display = u ? 'block' : 'none';
-        });
-      }
-    }catch(e){}
-  });
-})();
-
-// iOS web.app handoff auto-continue using URL param (?ios=1)
+/* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
-  var hostOK = /travel-416ff\.web\.app$/.test(location.hostname);
-  var need = new URLSearchParams(location.search).get('ios') === '1';
-  if (hostOK && need){
-    try{
-      if (typeof logLine==='function') logLine('iOS handoff → starting redirect','auth');
-      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-    }catch(e){}
+  var loginBtn = document.getElementById('googleSignInBtn');
+  if (loginBtn && !loginBtn.__wired){
+    loginBtn.__wired = true;
+    loginBtn.addEventListener('click', function(){
+      if (typeof startGoogleSignIn === 'function') return startGoogleSignIn();
+      if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
+    });
+  }
+  var sw = document.getElementById('switchUserBtn');
+  if (sw && !sw.__wired){
+    sw.__wired = true;
+    sw.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('switch user error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
+  }
+});
+
+/* signOut wiring */
+document.addEventListener('DOMContentLoaded', function(){
+  var out = document.getElementById('signOutBtn');
+  if (out && !out.__wired){
+    out.__wired = true;
+    out.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
   }
 });
 
 
-// ==== UI auth logger & wiring (v5) ====
-(function(){
-  if (window.__uiAuthV5) return; window.__uiAuthV5 = true;
-  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
-  window.logLine = window.logLine || function(msg, src){
-    try{
-      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
-      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
-      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>12000) pre.textContent=pre.textContent.slice(-12000); }
-      if(box) box.style.display='block';
-      console.log('[ui-log]', line);
-    }catch(e){}
-  };
-  // pipe console.error / window errors
-  (function(){
-    var origErr = console.error;
-    console.error = function(){ try{ logLine([].map.call(arguments,String).join(' '),'console.error'); }catch(e){}; return origErr.apply(console, arguments); };
-    window.addEventListener('error', function(e){ try{ logLine((e.message||'window.error')+' @'+(e.filename||'')+':'+(e.lineno||''),'window'); }catch(_){}});
-    window.addEventListener('unhandledrejection', function(e){ try{ logLine('unhandledrejection: '+(e.reason && (e.reason.message||e.reason)||e),'promise'); }catch(_){}});
-  })();
-  document.addEventListener('DOMContentLoaded', function(){
-    var g=document.getElementById('googleSignInBtn');
-    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){
-      if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
-      if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
-    });}
-    var outInline=document.getElementById('signOutBtnInline');
-    if(outInline && !outInline.__wired){ outInline.__wired=true; outInline.addEventListener('click', window.handleSignOut); }
-  });
-})();
+// ---- global sign-out handler ----
+window.handleSignOut = async function(){
+  try{
+    if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
+    if (typeof startGoogleSignIn === 'function') { startGoogleSignIn(); return; }
+    if (typeof window.__attemptSignIn === 'function') { window.__attemptSignIn(); return; }
+  }catch(err){
+    console.error(err);
+    if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+  }
+};
