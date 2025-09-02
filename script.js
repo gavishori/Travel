@@ -1903,3 +1903,14 @@ document.addEventListener('DOMContentLoaded', function(){
     }catch(e){}
   }
 });
+
+// global sign-out handler
+window.handleSignOut = async function(){
+  try{
+    if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
+    if (typeof startGoogleSignIn === 'function') { startGoogleSignIn(); return; }
+    if (typeof window.__attemptSignIn === 'function') { window.__attemptSignIn(); return; }
+  }catch(err){
+    console.error(err); if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+  }
+};
