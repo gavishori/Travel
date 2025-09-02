@@ -17,7 +17,7 @@
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
         <button class="btn primary" id="googleSignInBtn" onclick="startGoogleSignIn()">המשך עם Google</button>
-        <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
+        <button class="btn" id="signOutBtn" style="display:none">התנתק</button>
       </div>
     </div>
   </section>
@@ -26,7 +26,7 @@
 <header class="app-header">
     <div class="brand">
       <span class="logo">🧭</span>
-      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span> <button id="signOutBtn" onclick="handleSignOut()" class="btn ghost small" title="החלף משתמש" style="margin-inline-start:8px;">התנתק</button></h1>
+      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span></h1>
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
@@ -527,5 +527,10 @@
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
 
+
+  <div id="authErrorsBox" class="auth-errors" aria-live="polite" aria-atomic="true" style="display:none;max-width:760px;margin:16px auto">
+    <div class="auth-errors-title">שגיאות התחברות</div>
+    <pre id="authErrorsPre" class="auth-errors-pre" dir="ltr"></pre>
+  </div>
 </body>
 </html>

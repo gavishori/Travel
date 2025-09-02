@@ -940,5 +940,7 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
   background: var(--btn-secondary-light);
 }
 
-.btn.ghost.small{font-size:12px;padding:4px 8px;opacity:.85}
-.btn.ghost.small:hover{opacity:1}
+/* Auth errors box */
+.auth-errors{background:#141a22;border:1px solid #2a3440;border-radius:12px;padding:12px;color:#cbd5e1;max-height:180px;overflow:auto}
+.auth-errors-title{font-weight:600;margin-bottom:6px;color:#94a3b8}
+.auth-errors-pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.35;margin:0}
