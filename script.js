@@ -1535,9 +1535,24 @@ async function exportPDF(){
 // ---------- Init ----------
 async function init(){
   applyTheme();
-  if (window.AppDataLayer?.mode === "firebase") {
-    await window.AppDataLayer.ensureAuth?.();
-    console.log("Auth UID:", firebase.auth().currentUser?.uid);
+  
+  // This is a new helper function to load data based on the current user.
+  async function loadUserContent(){
+    if (window.AppDataLayer?.mode === "firebase") {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        console.log("Auth UID:", user.uid);
+        await renderHome();
+      } else {
+        console.log("No user signed in.");
+        // Clear the trip list
+        const list = el("tripList");
+        if (list) list.innerHTML = "";
+      }
+    } else {
+      // In local mode, we just render home without checking auth
+      await renderHome();
+    }
   }
 
   // Buttons
@@ -1669,8 +1684,14 @@ async function init(){
     if (el("addExpenseBtn")) el("addExpenseBtn").classList.add("hidden");
     if (el("addJournalBtn")) el("addJournalBtn").classList.add("hidden");
   } else {
-    await renderHome();
+    // We already call renderHome() inside the onAuthStateChanged listener, so we don't need to call it here.
+    // await renderHome();
   }
+
+  // Listen for auth state changes and re-render the home view accordingly
+  firebase.auth().onAuthStateChanged(user => {
+    loadUserContent();
+  });
 }
 
 // boot
