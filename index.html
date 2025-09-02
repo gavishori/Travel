@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
-<body class="splash-mode">
+<body data-has-logout-fab="1" class="splash-mode">
   <div class="bg-ornaments" aria-hidden="true"></div>
   <section id="splash" role="region" aria-label="מסך פתיחה">
     <div class="splash-card">
@@ -529,6 +529,12 @@
 
 
   <div id="authErrorsBox" class="auth-errors" aria-live="polite" aria-atomic="true" style="display:none;max-width:760px;margin:16px auto">
+    <div class="auth-errors-title">שגיאות התחברות</div>
+    <pre id="authErrorsPre" class="auth-errors-pre" dir="ltr"></pre>
+  </div>
+
+  <button id="logoutFab" class="logout-fab" title="התנתק">התנתק</button>
+  <div id="authErrorsBox" class="auth-errors fixed" aria-live="polite" aria-atomic="true" style="display:none">
     <div class="auth-errors-title">שגיאות התחברות</div>
     <pre id="authErrorsPre" class="auth-errors-pre" dir="ltr"></pre>
   </div>

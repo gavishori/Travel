@@ -1914,3 +1914,36 @@ window.handleSignOut = async function(){
     console.error(err); if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// ==== UI auth logger & wiring (v3) ====
+(function(){
+  if (window.__uiAuthV3) return; window.__uiAuthV3 = true;
+  function ts(){ try{return new Date().toISOString().slice(11,19);}catch(e){return '';} }
+  window.logLine = window.logLine || function(msg, src){
+    try{
+      var box=document.getElementById('authErrorsBox'), pre=document.getElementById('authErrorsPre');
+      var line=(ts())+(src?(" ["+src+"] "):" ")+String(msg);
+      if(pre){ pre.textContent=(pre.textContent? pre.textContent+"\n":"")+line; if(pre.textContent.length>8000) pre.textContent=pre.textContent.slice(-8000); }
+      if(box) box.style.display='block';
+      console.log('[ui-log]', line);
+    }catch(e){}
+  };
+  document.addEventListener('DOMContentLoaded', function(){
+    var g=document.getElementById('googleSignInBtn');
+    if(g && !g.__wired){ g.__wired=true; g.addEventListener('click', function(){ 
+      if (typeof startGoogleSignIn==='function') return startGoogleSignIn();
+      if (typeof window.__attemptSignIn==='function') return window.__attemptSignIn();
+    });}
+    var out=document.getElementById('logoutFab');
+    if(out && !out.__wired){ out.__wired=true; out.addEventListener('click', window.handleSignOut); }
+    try{
+      if (window.firebase && firebase.auth){
+        firebase.auth().onAuthStateChanged(function(u){
+          var out=document.getElementById('logoutFab');
+          if(out) out.style.display = u ? 'block' : 'none';
+        });
+      }
+    }catch(e){}
+  });
+})();
