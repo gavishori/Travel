@@ -49,6 +49,7 @@
         if (!window.auth || !window.googleProvider) return;
         if (auth.currentUser) return;
 
+        // --- START FIX ---
         // On iOS, force a redirect sign-in to bypass pop-up issues.
         // The popup is often blocked on mobile browsers.
         if (window.isIOS && window.isIOS()){
@@ -56,6 +57,7 @@
           await auth.signInWithRedirect(googleProvider);
           return;
         }
+        // --- END FIX ---
 
         // On other platforms, first try sign-in with a pop-up.
         try{
