@@ -197,3 +197,96 @@
   } catch(e){ console.warn('wiring sign-in button failed', e); }
 })();
 // === end Single-flight guard ===
+
+
+// ===== Google Sign-In harden v4 =====
+(function(){
+  if (typeof window === 'undefined') return;
+  var BTN_ID = 'googleSignInBtn';
+  var LOCK_KEY = '__signin_lock';
+  var STATE_KEY = '__signin_state'; // 'inflight' | 'done'
+
+  function setStatus(msg){
+    try { var s=document.getElementById('statusLine'); if(s) s.textContent = msg||''; } catch(_){}
+  }
+
+  // Ensure single Firebase app (defensive; works with modular SDK)
+  try {
+    if (typeof getApps === 'function' && typeof getApp === 'function') {
+      if (getApps().length === 0) {
+        // assume initializeApp(firebaseConfig) already called elsewhere
+      }
+    }
+  } catch(_){}
+
+  // Persistence first
+  try { setPersistence(auth, browserLocalPersistence); } catch(_){}
+
+  // Handle iOS redirect result once
+  try {
+    getRedirectResult(auth).then(function(res){
+      if (res && res.user) {
+        sessionStorage.setItem(STATE_KEY, 'done');
+        enterUI(res.user);
+      }
+    }).catch(function(e){
+      console.error('redirect result error', e);
+      sessionStorage.removeItem(STATE_KEY);
+      setStatus('שגיאה (redirect): ' + (e && e.message ? e.message : e));
+    });
+  } catch(_){}
+
+  // Auth observer: enter UI when signed-in
+  try {
+    onAuthStateChanged(auth, function(u){
+      if (u) enterUI(u);
+    });
+  } catch(_){}
+
+  function enterUI(user){
+    try {
+      setStatus('מחובר: ' + (user.email || user.uid));
+      document.body.classList.add('entered');
+      document.body.classList.remove('splash-mode');
+      var app = document.getElementById('app'); if (app) app.style.display = 'block';
+      var splash = document.getElementById('splash'); if (splash) splash.style.display = 'none';
+    } catch(e){ console.warn('enterUI failed', e); }
+  }
+
+  // Single-flight
+  function lock(){ if (window[LOCK_KEY]) return false; window[LOCK_KEY]=true; return true; }
+  function unlock(){ window[LOCK_KEY]=false; }
+
+  function startGoogleSignInOnce(){
+    // iOS: redirect only; Desktop/Android: popup only
+    var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isiOS) {
+      try { sessionStorage.setItem(STATE_KEY, 'inflight'); } catch(_){}
+      return signInWithRedirect(auth, provider);
+    } else {
+      return signInWithPopup(auth, provider);
+    }
+  }
+
+  // Wire button (and remove duplicate handlers)
+  try {
+    var btn = document.getElementById(BTN_ID);
+    if (btn && !btn.__wired_v4) {
+      btn.__wired_v4 = true;
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        if (!lock()) return;
+        btn.disabled = true;
+        setTimeout(function(){ btn.disabled=false; unlock(); }, 5000);
+        startGoogleSignInOnce().catch(function(e){
+          console.error('sign-in error:', e);
+          setStatus('שגיאה בהתחברות: ' + (e && e.message ? e.message : e));
+          unlock();
+          btn.disabled=false;
+        });
+      }, { passive:false });
+    }
+  } catch(e){ console.warn('wiring failed', e); }
+
+})();
+// ===== end harden block =====
