@@ -91,3 +91,88 @@
     window.AppDataLayer = { mode: 'local' };
   }
 })();
+
+
+// ===== Google Sign-In (desktop: popup, iOS: redirect) =====
+(function(){
+  try {
+    // Guard for double inclusion
+    if (typeof window === 'undefined') return;
+
+    // Expose globals for button handlers
+    window.auth = window.auth || auth;
+    window.provider = window.provider || provider;
+
+    // Helper: write to status line
+    function setStatus(msg){
+      try {
+        var s = document.getElementById('statusLine');
+        if (s) s.textContent = msg || '';
+      } catch(e){}
+    }
+
+    // After redirect back from Google
+    try {
+      getRedirectResult(auth).then(function(result){
+        if (result && result.user) {
+          setStatus('מחובר: ' + (result.user.email || result.user.uid));
+          document.body.classList.add('entered');
+          document.body.classList.remove('splash-mode');
+          var app = document.getElementById('app'); if (app) app.style.display = 'block';
+          var splash = document.getElementById('splash'); if (splash) splash.style.display = 'none';
+        }
+      }).catch(function(e){
+        console.error('getRedirectResult error', e);
+        setStatus('שגיאה בהתחברות (redirect): ' + (e && e.message ? e.message : e));
+      });
+    } catch(e) {
+      console.warn('getRedirectResult not available', e);
+    }
+
+    // React to auth state anyway
+    onAuthStateChanged(auth, function(u){
+      if (u) {
+        setStatus('מחובר: ' + (u.email || u.uid));
+        document.body.classList.add('entered');
+        document.body.classList.remove('splash-mode');
+        var app = document.getElementById('app'); if (app) app.style.display = 'block';
+        var splash = document.getElementById('splash'); if (splash) splash.style.display = 'none';
+      } else {
+        setStatus('מצב: לא מחובר');
+      }
+    });
+
+    // Unified sign-in entry
+    window.startGoogleSignIn = function(){
+      try {
+        // iOS devices -> redirect
+        var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isiOS) {
+          signInWithRedirect(auth, provider);
+          return;
+        }
+        // Desktop/Android -> popup
+        signInWithPopup(auth, provider).catch(function(e){
+          console.error('Popup sign-in failed:', e);
+          setStatus('שגיאה בהתחברות (popup): ' + (e && e.message ? e.message : e));
+        });
+      } catch(e){
+        console.error('startGoogleSignIn error', e);
+        setStatus('שגיאה בהתחברות: ' + (e && e.message ? e.message : e));
+      }
+    };
+
+    // Expose sign-out to window if not already
+    if (typeof window.signOutNow !== 'function') {
+      window.signOutNow = function(){
+        signOut(auth).catch(function(e){
+          console.error('signOut error', e);
+        });
+      };
+    }
+  } catch(e){
+    console.error('Sign-in bootstrap error', e);
+  }
+})();
+// ===== end Google Sign-In block =====
+
