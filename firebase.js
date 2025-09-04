@@ -114,3 +114,16 @@ try {
   }
 } catch(_) {}
 // --- end iOS auth diagnostics patch ---
+\n\n
+function signIn() {
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // iOS -> redirect only
+    signInWithRedirect(auth, provider);
+  } else {
+    // Desktop/Android -> popup only
+    signInWithPopup(auth, provider)
+      .catch(function(e){
+        console.error("Popup sign-in failed:", e);
+      });
+  }
+}
