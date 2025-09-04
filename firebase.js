@@ -91,39 +91,3 @@
     window.AppDataLayer = { mode: 'local' };
   }
 })();
-
-
-// --- iOS auth diagnostics patch (safe) ---
-try {
-  if (typeof auth !== 'undefined' && auth && typeof auth.onAuthStateChanged === 'function') {
-    auth.onAuthStateChanged(function(u){
-      try {
-        var s = document.getElementById('statusLine');
-        if (s) s.textContent = u ? ('מחובר: ' + (u.email || u.uid)) : 'לא מחובר';
-        if (u) {
-          // Ensure app UI is entered after successful redirect
-          try {
-            document.body.classList.add('entered');
-            document.body.classList.remove('splash-mode');
-            var app = document.getElementById('app');
-            if (app) app.style.display = 'block';
-          } catch(_) {}
-        }
-      } catch(_) {}
-    });
-  }
-} catch(_) {}
-// --- end iOS auth diagnostics patch ---
-\n\n
-function signIn() {
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // iOS -> redirect only
-    signInWithRedirect(auth, provider);
-  } else {
-    // Desktop/Android -> popup only
-    signInWithPopup(auth, provider)
-      .catch(function(e){
-        console.error("Popup sign-in failed:", e);
-      });
-  }
-}
