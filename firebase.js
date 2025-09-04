@@ -81,14 +81,7 @@
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ 
-        if (!(window.isIOS&&window.isIOS())) {
-           await window.__attemptSignIn(); 
-        } else {
-           // For iOS, the redirect happens on a user gesture, so this function should
-           // not attempt a sign-in directly. It should rely on the redirect result.
-        }
-      }
+      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
       return (auth.currentUser && auth.currentUser.uid) || null;
     };
 
@@ -98,3 +91,26 @@
     window.AppDataLayer = { mode: 'local' };
   }
 })();
+
+
+// --- iOS auth diagnostics patch (safe) ---
+try {
+  if (typeof auth !== 'undefined' && auth && typeof auth.onAuthStateChanged === 'function') {
+    auth.onAuthStateChanged(function(u){
+      try {
+        var s = document.getElementById('statusLine');
+        if (s) s.textContent = u ? ('מחובר: ' + (u.email || u.uid)) : 'לא מחובר';
+        if (u) {
+          // Ensure app UI is entered after successful redirect
+          try {
+            document.body.classList.add('entered');
+            document.body.classList.remove('splash-mode');
+            var app = document.getElementById('app');
+            if (app) app.style.display = 'block';
+          } catch(_) {}
+        }
+      } catch(_) {}
+    });
+  }
+} catch(_) {}
+// --- end iOS auth diagnostics patch ---
