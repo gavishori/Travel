@@ -49,7 +49,6 @@
         if (!window.auth || !window.googleProvider) return;
         if (auth.currentUser) return;
 
-        // --- START FIX ---
         // On iOS, force a redirect sign-in to bypass pop-up issues.
         // The popup is often blocked on mobile browsers.
         if (window.isIOS && window.isIOS()){
@@ -57,7 +56,6 @@
           await auth.signInWithRedirect(googleProvider);
           return;
         }
-        // --- END FIX ---
 
         // On other platforms, first try sign-in with a pop-up.
         try{
@@ -83,7 +81,14 @@
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
+      if (!auth.currentUser){ 
+        if (!(window.isIOS&&window.isIOS())) {
+           await window.__attemptSignIn(); 
+        } else {
+           // For iOS, the redirect happens on a user gesture, so this function should
+           // not attempt a sign-in directly. It should rely on the redirect result.
+        }
+      }
       return (auth.currentUser && auth.currentUser.uid) || null;
     };
 
