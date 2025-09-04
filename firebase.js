@@ -176,3 +176,24 @@
 })();
 // ===== end Google Sign-In block =====
 
+
+
+// === Single-flight guard & button wiring ===
+(function(){
+  try{
+    var btn = document.getElementById('googleSignInBtn');
+    if (btn && !btn.__wired) {
+      btn.__wired = true;
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        if (window.__signin_lock) return;
+        window.__signin_lock = true;
+        try { btn.disabled = true; } catch(_){}
+        try { startGoogleSignIn(); } finally {
+          setTimeout(function(){ window.__signin_lock = false; try{ btn.disabled = false; }catch(_){} }, 5000);
+        }
+      }, { once: false });
+    }
+  } catch(e){ console.warn('wiring sign-in button failed', e); }
+})();
+// === end Single-flight guard ===
