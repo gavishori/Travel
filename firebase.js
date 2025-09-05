@@ -93,18 +93,50 @@
 })();
 
 
-// Adaptive persistence: iOS → SESSION; others → LOCAL with fallback to SESSION
-try {
+// --- iOS direct redirect logging (minimal) ---
+(function(){
+  if (typeof window === 'undefined' || !window.auth) return;
+  function setStatus(m){ try{var s=document.getElementById('statusLine'); if(s) s.textContent=m||'';}catch(_){} }
   var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (isiOS) {
-    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(e){
-      console.warn('[auth] set SESSION failed', e && e.message);
-    });
-  } else {
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e){
-      console.warn('[auth] LOCAL failed, falling back to SESSION', e && e.message);
-      return auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
-    });
-  }
-} catch(e) { console.warn('[auth] persistence setup error', e && e.message); }
 
+  // Ensure choose of SESSION persistence on iOS
+  try {
+    if (isiOS && auth.setPersistence) {
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(e){});
+    }
+  } catch(_){}
+
+  // Early redirect result handling
+  try {
+    auth.getRedirectResult().then(function(res){
+      if (res && res.user) {
+        setStatus('מחובר: ' + (res.user.email || res.user.uid));
+        document.body.classList.add('entered');
+        document.body.classList.remove('splash-mode');
+        var app=document.getElementById('app'); if(app) app.style.display='block';
+        var splash=document.getElementById('splash'); if(splash) splash.style.display='none';
+      }
+    }).catch(function(e){
+      setStatus('שגיאה (redirect): ' + (e && e.message ? e.message : e));
+      console.error('redirect result error', e);
+    });
+  } catch(_){}
+
+  // Force inline start handler to be present
+  window.startGoogleSignIn = function(){
+    try{
+      if (isiOS) {
+        setStatus('מתחיל התחברות (iOS redirect)...');
+        return auth.signInWithRedirect(googleProvider);
+      } else {
+        setStatus('מתחיל התחברות (popup)...');
+        return auth.signInWithPopup(googleProvider).catch(function(e){
+          setStatus('שגיאה (popup): ' + (e && e.message ? e.message : e));
+        });
+      }
+    }catch(e){
+      setStatus('שגיאה בהתחברות: ' + (e && e.message ? e.message : e));
+    }
+  };
+})();
+// --- end iOS direct redirect logging ---
