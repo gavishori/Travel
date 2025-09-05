@@ -1944,26 +1944,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// ---- Guest mode (auth bypass for diagnostics) ----
-function enterGuestMode() {
-  try {
-    window.currentUser = { uid: 'guest', displayName: 'אורח' };
-    document.body.classList.add('entered');
-    document.body.classList.remove('splash-mode');
-    var splash = document.getElementById('splash');
-    if (splash) splash.style.display = 'none';
-    var app = document.getElementById('app');
-    if (app) app.style.display = 'block';
-    var s = document.getElementById('statusLine');
-    if (s) s.textContent = 'מצב: אורח (ללא התחברות)';
-  } catch(e) {
-    try {
-      var s = document.getElementById('statusLine');
-      if (s) s.textContent = 'שגיאה במצב אורח: ' + (e && e.message ? e.message : e);
-    } catch(_) {}
-    console.error('enterGuestMode error', e);
-  }
-}
-// ---- end Guest mode ----
