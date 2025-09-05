@@ -7,6 +7,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- iOS first‑party handoff: ensure Google sign-in runs under Firebase Hosting -->
+  <script>
+  (function(){
+    try{
+      var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      var host = location.host;
+      var ok = host === "travel-416ff.web.app" || host === "travel-416ff.firebaseapp.com";
+      if(isiOS && !ok){
+        location.replace("https://travel-416ff.web.app" + location.pathname + location.search + location.hash);
+      }
+    }catch(_){};
+  })();
+  </script>
+
 </head>
 <body class="splash-mode">
   <div class="bg-ornaments" aria-hidden="true"></div>
