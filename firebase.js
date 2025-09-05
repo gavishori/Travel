@@ -140,3 +140,87 @@
   };
 })();
 // --- end iOS direct redirect logging ---
+
+
+// ===== iOS Diagnostics Box =====
+(function(){
+  var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  var box, logEl;
+  function ensureBox(){
+    if (!isiOS) return;
+    try {
+      box = box || document.getElementById('iosErrorBox');
+      logEl = logEl || document.getElementById('iosLog');
+      if (box) box.style.display = 'block';
+    } catch(_) {}
+  }
+  function log(msg){
+    try {
+      ensureBox();
+      if (!logEl) return;
+      var t = new Date().toISOString().replace('T',' ').replace('Z','');
+      logEl.textContent += "[" + t + "] " + msg + "\\n";
+    } catch(_) {}
+  }
+  // Expose minimal global for quick logging
+  window.__iosDiagLog = log;
+
+  // Basic environment diagnostics
+  try {
+    if (isiOS) {
+      var ssOK = false, lsOK = false, idbOK = false;
+      try { sessionStorage.setItem('__t','1'); ssOK = (sessionStorage.getItem('__t')==='1'); sessionStorage.removeItem('__t'); } catch(e){}
+      try { localStorage.setItem('__t','1'); lsOK = (localStorage.getItem('__t')==='1'); localStorage.removeItem('__t'); } catch(e){}
+      try {
+        var req = indexedDB && indexedDB.open ? indexedDB.open('diag_db',1) : null;
+        if (req) { req.onupgradeneeded = function(){}; req.onsuccess = function(){ idbOK=true; if (req.result) req.result.close(); log("IndexedDB: OK"); }; req.onerror=function(){ log("IndexedDB error: " + (req.error && req.error.message)); }; }
+      } catch(e){}
+      ensureBox();
+      log("UA: " + navigator.userAgent);
+      log("sessionStorage: " + (ssOK ? "OK" : "BLOCKED"));
+      log("localStorage: " + (lsOK ? "OK" : "BLOCKED"));
+    }
+  } catch(_) {}
+
+  // Catch global errors
+  window.addEventListener('error', function(e){
+    log("window.error: " + (e && (e.message || e.type)));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var m = (e && e.reason && (e.reason.message || e.reason)) || e;
+    log("unhandledrejection: " + m);
+  });
+
+  // Hook Firebase auth points if available (compat or modular)
+  function enterUI(user){
+    try {
+      document.body.classList.add('entered');
+      document.body.classList.remove('splash-mode');
+      var app = document.getElementById('app'); if (app) app.style.display='block';
+      var splash = document.getElementById('splash'); if (splash) splash.style.display='none';
+    } catch(_){}
+  }
+
+  setTimeout(function(){
+    try {
+      // compat API
+      if (window.firebase && firebase.auth && typeof firebase.auth === 'function') {
+        var _auth = window.auth || firebase.auth();
+        _auth.getRedirectResult().then(function(res){
+          if (res && res.user) { log("redirect result OK: " + (res.user.email || res.user.uid)); enterUI(res.user); }
+        }).catch(function(e){ log("redirect result error: " + (e && e.message ? e.message : e)); });
+        _auth.onAuthStateChanged(function(u){ if (u) log("onAuthStateChanged: " + (u.email || u.uid)); });
+        // wrap start function if exists
+        var prov = window.googleProvider || new firebase.auth.GoogleAuthProvider();
+        window.startGoogleSignIn = function(){
+          try {
+            if (isiOS) { log("start redirect…"); return _auth.signInWithRedirect(prov); }
+            else { log("start popup…"); return _auth.signInWithPopup(prov).catch(function(e){ log("popup error: " + (e && e.message ? e.message : e)); }); }
+          } catch(e){ log("start error: " + (e && e.message ? e.message : e)); }
+        };
+      }
+      // modular API fallback (no-op if not used here)
+    } catch(e){ log("diag init error: " + e.message); }
+  }, 0);
+})();
+// ===== end iOS Diagnostics Box =====
