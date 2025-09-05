@@ -89,3 +89,50 @@
     window.AppDataLayer = { mode: 'local' };
   }
 })();
+
+
+// ==== iOS redirect guards (early) ====
+(function(){
+  if (typeof window === 'undefined' || !window.auth) return;
+  var INF_KEY = '__auth_inflight';
+  var HANDLED_KEY = '__auth_handled';
+
+  function setStatus(msg){
+    try{ var s=document.getElementById('statusLine'); if(s) s.textContent=msg||''; }catch(_){}
+  }
+
+  // Mark that we're handling a redirect result ASAP
+  try {
+    setStatus('בודק תוצאת התחברות...');
+    auth.getRedirectResult().then(function(res){
+      if (res && res.user) {
+        sessionStorage.setItem(HANDLED_KEY, '1');
+        setStatus('מחובר: ' + (res.user.email || res.user.uid));
+        document.body.classList.add('entered');
+        document.body.classList.remove('splash-mode');
+        var app=document.getElementById('app'); if(app) app.style.display='block';
+        var splash=document.getElementById('splash'); if(splash) splash.style.display='none';
+      } else {
+        // no result, clear inflight to allow a new click
+        sessionStorage.removeItem(INF_KEY);
+      }
+    }).catch(function(e){
+      console.error('[auth] early redirect error:', e && e.message);
+      setStatus('שגיאה (redirect): ' + (e && e.message || e));
+      sessionStorage.removeItem(INF_KEY);
+    });
+  } catch(e){}
+
+  // Wrap startGoogleSignIn to guard iOS flows
+  var origStart = window.startGoogleSignIn;
+  window.startGoogleSignIn = function(){
+    var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isiOS) {
+      // Prevent multi-start loops
+      if (sessionStorage.getItem(INF_KEY)==='1') { return; }
+      sessionStorage.setItem(INF_KEY,'1');
+    }
+    return origStart.apply(this, arguments);
+  };
+})();
+// ==== end iOS redirect guards ====
