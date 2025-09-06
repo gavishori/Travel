@@ -1946,110 +1946,52 @@ window.handleSignOut = async function(){
 };
 
 
-// ==== EMAIL-ONLY UI (v10) ====
+// ==== EMAIL-ONLY v12: robust Sign-Out wiring ====
 (function(){
-  var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
-  function q(id){ return document.getElementById(id); }
-  function clearError(){ var e=q('email-auth-error'); if(e){ e.textContent=''; e.style.display='none'; } }
-  function showError(msg){ var e=q('email-auth-error'); if(e){ e.textContent=String(msg||'שגיאה'); e.style.display='block'; } else { alert(msg); } }
-  function showDialog(){ var b=q('email-auth-backdrop'); if(b){ clearError(); b.style.display='flex'; (q('email-auth-email')||{}).focus&&q('email-auth-email').focus(); } }
-  function hideDialog(){ var b=q('email-auth-backdrop'); if(b){ b.style.display='none'; } }
-
-  function normalizeCTA(){
-    // Replace any legacy Google CTA text and ids
-    var btns = Array.from(document.querySelectorAll('button, a'));
-    for (var b of btns){
-      var t = (b.textContent||'').trim();
-      if (/Google|גוגל/i.test(t)){
-        b.textContent = 'כניסה';
-      }
-      if (b.id === 'googleSignInBtn'){ b.id = 'emailSignInBtn'; }
-    }
+  function looksLikeSignOutText(t){ return /התנתק|יציאה|sign\s*out|log\s*out/i.test((t||'').trim()); }
+  function isSignOutCandidate(el){
+    if (!el) return false;
+    if (el.dataset && (el.dataset.action||'').toLowerCase() === 'signout') return true;
+    const id = (el.id||'') + ' ' + (el.name||'') + ' ' + (el.getAttribute && el.getAttribute('aria-label') || '');
+    if (/sign.?out|logout/i.test(id)) return true;
+    if (looksLikeSignOutText(el.textContent||el.innerText||'')) return true;
+    const href = (el.getAttribute && (el.getAttribute('href')||'')) || '';
+    if (/#logout|#signout|#exit/i.test(href)) return true;
+    return false;
   }
-
-  function wire(){
-    normalizeCTA();
-    var signBtn = q('emailSignInBtn') || document.querySelector('button');
-    if (signBtn && !signBtn.__wired){
-      signBtn.__wired = true;
-      signBtn.addEventListener('click', function(ev){ ev.preventDefault(); showDialog(); });
-    }
-    var closeBtn = q('email-auth-close'); if (closeBtn) closeBtn.onclick = hideDialog;
-    var bd = q('email-auth-backdrop'); if (bd){ bd.addEventListener('click', function(e){ if(e.target===bd) hideDialog(); }); }
-
-    var loginBtn = q('email-auth-login');
-    if (loginBtn && !loginBtn.__wired){
-      loginBtn.__wired = true;
-      loginBtn.onclick = async function(){
-        try{
-          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
-          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
-          if(!email) return showError('נא להקליד אימייל.');
-          if(!pass)  return showError('נא להקליד סיסמה.');
-          await _auth.signInWithEmailAndPassword(email, pass);
-          hideDialog();
-        }catch(e){
-          var code=e&&e.code||'';
-          var map={'auth/invalid-email':'אימייל לא תקין.','auth/user-not-found':'משתמש לא נמצא.','auth/wrong-password':'סיסמה שגויה.','auth/too-many-requests':'יותר מדי ניסיונות, נסה מאוחר יותר.'};
-          showError(map[code]||'שגיאה בכניסה.');
+  function bind(el){
+    if (el.__signoutBound) return;
+    el.__signoutBound = true;
+    el.addEventListener('click', function(ev){
+      try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){}
+      try{
+        const a = (window.firebase && firebase.auth) ? firebase.auth() : (window.auth || null);
+        if (a && a.signOut){
+          a.signOut().then(function(){
+            document.body.classList.remove('entered');
+            document.body.classList.add('splash-mode');
+            const app = document.getElementById('app'); if (app) app.style.display='none';
+          }).catch(function(e){ console.warn('signOut error', e && e.code, e && e.message); });
         }
-      };
-    }
-
-    var regBtn = q('email-auth-register');
-    if (regBtn && !regBtn.__wired){
-      regBtn.__wired = true;
-      regBtn.onclick = async function(){
-        try{
-          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
-          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
-          if(!email) return showError('נא להקליד אימייל.');
-          if(!pass)  return showError('נא להקליד סיסמה.');
-          await _auth.createUserWithEmailAndPassword(email, pass);
-          hideDialog();
-        }catch(e){
-          var code=e&&e.code||'';
-          var map={'auth/email-already-in-use':'האימייל כבר רשום.','auth/weak-password':'סיסמה חלשה (מינימום 6 תווים).'};
-          showError(map[code]||'שגיאה בהרשמה.');
-        }
-      };
-    }
-
-    var resetBtn = q('email-auth-reset');
-    if (resetBtn && !resetBtn.__wired){
-      resetBtn.__wired = true;
-      resetBtn.onclick = async function(){
-        try{
-          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
-          if(!email) return showError('נא להקליד אימייל לצורך איפוס.');
-          await _auth.sendPasswordResetEmail(email);
-          showError('נשלח מייל לאיפוס סיסמה.');
-        }catch(e){ showError('שגיאה בשליחת מייל איפוס.'); }
-      };
-    }
-
-    // expose helpers
-    window.startEmailDialog = showDialog;
-    window.__attemptSignIn = showDialog;
+      }catch(e){ console.warn('signOut handler failed', e); }
+      return false;
+    }, true);
+    try{ el.style.cursor = 'pointer'; }catch(_){}
   }
-
-  // Enter bridge: toggle app visibility by auth state
-  function enterBridge(){
-    function setEntered(on){
-      document.body.classList.toggle('entered', !!on);
-      document.body.classList.toggle('splash-mode', !on);
-      var app = document.getElementById('app');
-      if (app) app.style.display = on ? 'block' : 'none';
-    }
-    if (window.firebase && firebase.auth){
-      setEntered(!!firebase.auth().currentUser);
-      firebase.auth().onAuthStateChanged(function(user){ setEntered(!!user); });
-    }
+  function scanAndBind(root){
+    Array.from((root||document).querySelectorAll('a,button,[role="button"],[data-action]')).forEach(function(n){
+      if (isSignOutCandidate(n)) bind(n);
+    });
   }
-
-  if (document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', function(){ wire(); enterBridge(); });
-  } else { wire(); enterBridge(); }
-
-  console.log('EMAIL-ONLY BUILD v10');
+  function boot(){
+    scanAndBind(document);
+    const mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        Array.from(m.addedNodes||[]).forEach(function(n){ if(n.nodeType===1) scanAndBind(n); });
+      });
+    });
+    mo.observe(document.documentElement, { childList:true, subtree:true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  console.log('EMAIL-ONLY v12: logout wiring active');
 })();

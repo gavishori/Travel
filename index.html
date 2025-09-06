@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=v10" />
+  <link rel="stylesheet" href="style.css?v=v12" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body class="splash-mode">
@@ -16,8 +16,8 @@
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
-        <button class="btn primary" id="emailSignInBtn" >כניסה</button>
-        <button class="btn" id="signOutBtn"  style="display:none">התנתק</button>
+        <button class="btn primary" id="googleSignInBtn" onclick="startGoogleSignIn()">המשך עם Google</button>
+        <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
       </div>
     </div>
   </section>
@@ -26,7 +26,7 @@
 <header class="app-header">
     <div class="brand">
       <span class="logo">🧭</span>
-      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span> <button id="signOutBtn"  class="btn ghost small" title="החלף משתמש" style="margin-inline-start:8px;">התנתק</button></h1>
+      <h1>מנהל נסיעות <span id="userAccount" class="muted"></span> <button id="signOutBtn" onclick="handleSignOut()" class="btn ghost small" title="החלף משתמש" style="margin-inline-start:8px;">התנתק</button></h1>
     </div>
     <div class="header-actions">
       <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
@@ -491,7 +491,7 @@
   
   
 
-  <!-- Firebase config must be defined BEFORE firebase.js?v=v10 -->
+  <!-- Firebase config must be defined BEFORE firebase.js -->
   
 
   <!-- App scripts -->
@@ -502,7 +502,7 @@
   <!-- Firebase SDKs (compat) -->
 
 
-<!-- Firebase config must be defined BEFORE firebase.js?v=v10 -->
+<!-- Firebase config must be defined BEFORE firebase.js -->
 <!-- App scripts -->
 
   <!-- Firebase SDKs (compat) -->
@@ -510,7 +510,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-  <!-- Firebase config must be defined BEFORE firebase.js?v=v10 -->
+  <!-- Firebase config must be defined BEFORE firebase.js -->
   <script>
     window.firebaseConfig = {
       apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
@@ -524,30 +524,8 @@
   </script>
 
   <!-- App scripts -->
-  <script src="./firebase.js?v=v10"></script>
-  <script src="./script.js?v=v10"></script>
+  <script src="./firebase.js?v=v12"></script>
+  <script src="./script.js?v=v12"></script>
 
-
-<!-- Email/Password Auth Dialog -->
-<div id="email-auth-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:9999;">
-  <div id="email-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="email-auth-title" style="width:100%;max-width:420px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:16px;">
-    <button id="email-auth-close" title="סגור" style="float:inline-end;background:transparent;border:none;font-size:20px;cursor:pointer;">×</button>
-    <h3 id="email-auth-title" style="margin:0 0 8px">כניסה עם אימייל וסיסמה</h3>
-    <div id="email-auth-error" style="display:none;background:#ffe7e7;color:#b00020;border:1px solid #ffc2c2;border-radius:8px;padding:8px;margin-bottom:10px;font-size:13px;white-space:pre-wrap;"></div>
-    <form id="email-auth-form" onsubmit="return false;" style="display:grid;gap:8px;">
-      <label>אימייל
-        <input type="email" id="email-auth-email" placeholder="you@example.com" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;">
-      </label>
-      <label>סיסמה
-        <input type="password" id="email-auth-password" placeholder="••••••••" required minlength="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;">
-      </label>
-    </form>
-    <div id="email-auth-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-      <button id="email-auth-login" data-variant="primary" style="padding:10px 12px;border:none;border-radius:8px;background:#111;color:#fff;cursor:pointer;">כניסה</button>
-      <button id="email-auth-register" data-variant="ghost" style="padding:10px 12px;border:none;border-radius:8px;background:#f2f2f2;cursor:pointer;">הרשמה</button>
-      <button id="email-auth-reset" data-variant="ghost" style="padding:10px 12px;border:none;border-radius:8px;background:#f2f2f2;cursor:pointer;">שכחתי סיסמה</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
