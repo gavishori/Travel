@@ -1764,7 +1764,7 @@ function openJournalDeleteDialog(tripId, entry){
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { await window.__attemptSignIn && window.__attemptSignIn(); }
+        try { // auto-open removed }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
@@ -1800,8 +1800,8 @@ window.debugAuth = async function(){
   try {
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
-      console.log("[dbg] no user → opening popup");
-      await window.__attemptSignIn && window.__attemptSignIn();
+      console.log("[dbg] no user (no auto-open)");
+      // auto-open removed
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1827,9 +1827,7 @@ window.debugAuth = async function(){
         if (typeof window.debugAuth === 'function') {
           return window.debugAuth();
         }
-        if (window.auth && window.googleProvider) {
-          window.__attemptSignIn && window.__attemptSignIn();
-        }
+        /* auto-open via googleProvider removed */
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
@@ -1946,87 +1944,30 @@ window.handleSignOut = async function(){
 };
 
 
-// === iOS Debug + CTA Normalizer (temporary) ===
+// === Email-only: manual open wiring ===
 (function(){
-  function isIOS(){
-    const ua = navigator.userAgent || "";
-    return /iPhone|iPad|iPod/i.test(ua);
+  function openEmailDialogFallback(){
+    var el = document.getElementById('email-auth-backdrop');
+    if (el){ el.style.display = 'flex'; }
   }
-  function hasFlag(){
-    return /[?&]iosdbg=1\b/.test(location.search);
+  function tryOpen(){
+    if (typeof window.startEmailDialog === 'function') return window.startEmailDialog();
+    if (typeof window.__attemptSignIn === 'function')  return window.__attemptSignIn();
+    if (typeof window.showDialog === 'function')       return window.showDialog();
+    return openEmailDialogFallback();
   }
-  function el(id){ return document.getElementById(id); }
-  function print(line){
-    const pre = el('ios-error-pre');
-    if (!pre) return;
-    const now = new Date().toISOString().split('T')[1].split('.')[0];
-    pre.textContent += `[${now}] ${line}\n`;
-    pre.scrollTop = pre.scrollHeight;
-    if (pre.textContent.length > 4000){
-      pre.textContent = pre.textContent.slice(-4000);
+  function wire(){
+    var btn = document.getElementById('emailSignInBtn');
+    if (btn && !btn.__wired){
+      btn.__wired = true;
+      btn.addEventListener('click', function(ev){ ev.preventDefault(); tryOpen(); });
     }
   }
-  function normalizeCTA(){
-    // If we still have a Google CTA, convert it to email
-    var btns = Array.from(document.querySelectorAll('button, a'));
-    for (var b of btns){
-      var t = (b.textContent || '').trim();
-      if (/Google/.test(t) || /גוגל/.test(t)){
-        b.textContent = 'כניסה';
-        if (!b.id) b.id = 'emailSignInBtn';
-      }
-    }
-    var gById = document.getElementById('googleSignInBtn');
-    if (gById){
-      gById.id = 'emailSignInBtn';
-      gById.textContent = 'כניסה';
-    }
-    // Hook the button to open the dialog (if not yet wired)
-    var signBtn = document.getElementById('emailSignInBtn');
-    if (signBtn && !signBtn.__wired){
-      signBtn.__wired = true;
-      signBtn.addEventListener('click', function(ev){
-        ev.preventDefault();
-        if (typeof window.startEmailDialog === 'function') return window.startEmailDialog();
-        if (typeof window.__attemptSignIn === 'function')  return window.__attemptSignIn();
-        if (typeof window.showDialog === 'function')       return window.showDialog();
-      });
-    }
-  }
-
-  function activateIOSBox(){
-    document.body.classList.add('ios-debug');
-    print('iOS debug active. UA=' + navigator.userAgent);
-  }
-
   if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){
-      if (isIOS() || hasFlag()) activateIOSBox();
-      normalizeCTA();
-    });
+    document.addEventListener('DOMContentLoaded', wire);
   } else {
-    if (isIOS() || hasFlag()) activateIOSBox();
-    normalizeCTA();
+    wire();
   }
-
-  // Global error hooks
-  window.addEventListener('error', function(e){
-    print('onerror: ' + (e && e.message ? e.message : String(e)));
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    try{
-      const msg = e && e.reason && (e.reason.message || e.reason.code || e.reason.toString());
-      print('unhandledrejection: ' + msg);
-    }catch(_){ print('unhandledrejection'); }
-  });
-
-  // Minimal auth state echo
-  try{
-    var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
-    if (_auth){
-      _auth.onAuthStateChanged(function(u){
-        print('authStateChanged → ' + (u && u.uid ? u.uid : 'null'));
-      });
-    }
-  }catch(e){ print('auth observer hook failed: ' + e); }
+  // Back-compat: calls to startGoogleSignIn should open the same dialog
+  window.startGoogleSignIn = function(){ tryOpen(); };
 })();
