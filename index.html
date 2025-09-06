@@ -3,59 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY — כניסה</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>FLYMILY – כניסה</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body class="light">
-  <section id="auth" class="card">
-    <h1 class="brand-title">FLYMILY</h1>
+  <main class="card">
+    <h1 class="brand">FLYMILY</h1>
     <p class="subtitle">התחברות באמצעות אימייל וסיסמה</p>
 
-    <form id="auth-form" class="form" autocomplete="on">
-      <label class="field">
-        <span>אימייל</span>
-        <input id="email" type="email" placeholder="name@example.com" required />
-      </label>
+    <form id="auth-form" novalidate>
+      <input id="email" type="email" placeholder="אימייל" autocomplete="username" />
 
-      <label class="field">
-        <span>סיסמה</span>
-        <input id="password" type="password" placeholder="••••••••" required minlength="6" />
-      </label>
+      <div class="password-wrap">
+        <input id="password" type="password" placeholder="סיסמה" autocomplete="current-password" />
+        <button type="button" id="togglePass" class="eye" aria-label="הצג סיסמה" aria-pressed="false">👁</button>
+      </div>
 
       <div class="actions">
-        <button type="button" id="signup">יצירת חשבון</button>
-        <button type="submit" id="signin" class="primary">התחברות</button>
+        <button type="button" id="btnSignIn" class="primary">התחברות</button>
+        <button type="button" id="btnSignUp" class="secondary">יצירת חשבון</button>
       </div>
 
-      <div class="row">
-        <button type="button" id="reset" class="link">שכחת סיסמה?</button>
-      </div>
+      <a href="#" id="btnReset" class="link">שכחת סיסמה?</a>
+      <div id="msg" class="msg" role="alert" aria-live="polite"></div>
     </form>
+  </main>
 
-    <div id="msg" class="msg" role="status" aria-live="polite"></div>
-  </section>
-
-  <section id="app" class="card" hidden>
-    <header class="app-header">
-      <div>
-        <h2>הנסיעות שלי</h2>
-        <p id="who"></p>
-      </div>
-      <button id="logout">יציאה</button>
-    </header>
-
-    <div class="empty">
-      <p>אתה מחובר. זה מסך דמה כדי לא לשבור לך את שאר האפליקציה.</p>
-      <p>אחרי שנאשר שהכניסה באייפון ובמחשב יציבה, נחבר את זה למסך האמיתי שלך.</p>
-    </div>
-  </section>
-
-  <!-- Firebase (modular) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-
-  <!-- Your project config -->
-  <script src="firebase.js"></script>
-  <script src="script.js"></script>
+  <script src="./firebase.js"></script>
+  <script type="module" src="./script.js"></script>
 </body>
 </html>
