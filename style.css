@@ -1032,54 +1032,44 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:14px; }
 dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
 
-input[type=password], input[type=email]{ font-size:17px; }
 
+/* ===================== MOBILE-FIRST ENHANCEMENTS ===================== */
 
-/* === MOBILE: stack Edit/Delete vertically for more description space === */
+/* 2. Tabs → Tiles grid on mobile */
 @media (max-width: 600px){
-  #tab-journal #journalTable .row-actions{
-    display:flex; flex-direction:column; gap:8px; align-items:stretch;
-  }
-  #tab-journal #journalTable .row-actions .btn{ width:100%; }
-  #tab-journal #journalTable td, 
-  #tab-journal #journalTable th{ font-size:14px; line-height:1.35; }
+  .tabs{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
+  .tab{ display:block; text-align:center; padding:14px 12px; border-radius:16px; font-size:16px; }
 }
 
-
-/* === JOURNAL ACTIONS: unified look & size === */
-#tab-journal #journalTable .row-actions .btn{
-  font-size: 14px;
-  line-height: 1.25;
-  padding: 8px 12px;
-  border-radius: 10px;
-  min-width: auto;
-  width: auto;
-}
-
-/* Make Edit filled secondary and Delete filled primary (not ghost) */
-#tab-journal #journalTable .row-actions .btn.edit{
-  background: var(--btn-secondary-dark);
-  color: #fff;
-  border-color: transparent;
-}
-:root.light #tab-journal #journalTable .row-actions .btn.edit{
-  background: var(--btn-secondary-light);
-}
-#tab-journal #journalTable .row-actions .btn.danger,
-#tab-journal #journalTable .row-actions .btn.del{
-  background: var(--btn-primary-dark);
-  color: #fff;
-  border-color: transparent;
-}
-:root.light #tab-journal #journalTable .row-actions .btn.danger,
-:root.light #tab-journal #journalTable .row-actions .btn.del{
-  background: var(--btn-primary-light);
-}
-
-/* Mobile stacking stays in place */
+/* 3. Email login dialog: full-screen on mobile, no "login" button */
 @media (max-width: 600px){
-  #tab-journal #journalTable .row-actions{
-    display:flex; flex-direction:column; gap:8px; align-items:stretch;
+  dialog#emailAuthDialog.dialog{
+    width:100vw; height:100vh; max-height:100vh; border-radius:0; margin:0;
   }
-  #tab-journal #journalTable .row-actions .btn{ width:100%; }
+  dialog#emailAuthDialog .dialog-content{
+    height:100%; display:flex; flex-direction:column; gap:10px; padding:16px;
+  }
+  #email-auth-login{ display:none; } /* auto-login on filled fields */
+}
+
+/* 6. Expenses table – keep actions visible (no horizontal scroll) */
+@media (max-width: 600px){
+  #expenseTable{ table-layout: fixed; width:100%; }
+  #expenseTable th, #expenseTable td{ font-size:14px; }
+  /* Hide 'מקום' column to create space */
+  #expenseTable th:nth-child(5), #expenseTable td:nth-child(5){ display:none; }
+  /* Tight widths for numeric cols */
+  #expenseTable th:nth-child(2), #expenseTable td:nth-child(2){ width:22%; }
+  #expenseTable th:nth-child(3), #expenseTable td:nth-child(3){ width:18%; }
+  #expenseTable th:nth-child(4), #expenseTable td:nth-child(4){ width:14%; }
+  #expenseTable th:nth-child(6), #expenseTable td:nth-child(6){ width:18%; }
+  #expenseTable th:nth-child(7), #expenseTable td:nth-child(7){ width:28%; }
+  #tab-budget .row-actions{ display:flex; flex-direction:column; gap:6px; }
+  #tab-budget .row-actions .btn{ width:100%; padding:8px 10px; font-size:14px; }
+  .table-wrapper{ overflow-x:hidden; }
+}
+
+/* 6b. Fullscreen add dialogs for expenses/journal on mobile (opaque) */
+@media (max-width: 600px){
+  .dialog.wide{ width:100vw; height:100vh; max-height:100vh; border-radius:0; margin:0; background: var(--card, #fff); }
 }

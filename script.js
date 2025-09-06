@@ -533,6 +533,24 @@ function toUSD(amount, from="USD"){
   return Number(amount);
 }
 
+
+// Auto-open active trip when dates cover 'now'
+window.onAuthReady = async function(user){
+  try{
+    const trips = await Store.listTrips();
+    const now = Date.now();
+    const active = trips.find(t => t.start && t.end && now >= new Date(t.start).getTime() && now <= new Date(t.end).getTime());
+    if (active){
+      await openTrip(active.id);
+      return;
+    }
+    await renderHome();
+  }catch(e){
+    console.warn('onAuthReady auto-open failed', e);
+    try{ await renderHome(); }catch(_){}
+  }
+};
+
 // ---------- Rendering ----------
 async function renderHome(){
   $("#homeView")?.classList.add("active");
@@ -829,7 +847,7 @@ async function renderOverviewMiniMap(){
     const map = state.maps.mini;
     const group = L.featureGroup();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius: 5, weight: 2, color: (p.type==="expense"?"#ff3b6b":"#3b82f6") , fillOpacity: 0.9, fillColor: '#3b82f6'}).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1089,12 +1107,12 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius: 5, color, weight: 2 , fillOpacity: 0.9, fillColor: '#3b82f6'}).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff3b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#3b82f6"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
