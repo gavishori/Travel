@@ -322,17 +322,103 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .map.tall{ height:420px; }
 
 .dialog::backdrop{ background: rgba(0,0,0,0.45); }
+
+/* ===== AUTH DIALOG RESTYLE (vA) ===== */
 .dialog{
-  border:none;
-  padding:0;
-  border-radius:16px;
-  width:min(980px, 96vw);
-  height:92vh;
-  max-height:92vh;
-  overflow:hidden; /* no internal scroll */
+  border: none;
+  padding: 24px 24px 18px;
+  margin: 0;
+  background: var(--card, #ffffff);
+  color: var(--text, #0f172a);
+  border-radius: 20px;
+  width: min(520px, 92vw);
+  height: auto;
+  max-height: min(92vh, 640px);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.24);
 }
+.dialog .dialog-title{
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 12px;
+  text-align: right;
+}
+.dialog .dialog-content{
+  padding: 0;
+}
+dialog#emailAuthDialog::backdrop{
+  background: rgba(2,6,23,.6);
+  backdrop-filter: blur(6px);
+}
+/* fields */
+dialog#emailAuthDialog label{
+  display: block;
+  text-align: right;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+dialog#emailAuthDialog input[type="email"],
+dialog#emailAuthDialog input[type="password"]{
+  display: block;
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  padding: 0 14px;
+  background: #fff;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+dialog#emailAuthDialog input[type="email"]:focus,
+dialog#emailAuthDialog input[type="password"]:focus{
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.25);
+}
+dialog#emailAuthDialog .dialog-actions, .dialog-actions-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+dialog#emailAuthDialog .dialog-actions, .dialog-actions-row .left-actions{
+  display:flex;
+  gap:16px;
+}
+dialog#emailAuthDialog button.link{
+  background: transparent;
+  border: none;
+  color: #4338ca;
+  font-weight: 700;
+  padding: 0;
+  height: auto;
+  cursor: pointer;
+}
+dialog#emailAuthDialog .dialog-close-btn{
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+dialog#emailAuthDialog .dialog-error{
+  display: none;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #fecaca;
+  margin-bottom: 8px;
+}
+dialog#emailAuthDialog .dialog-error.show{ display:block; }
+
 .dialog .form{ padding:16px; }
-.dialog-actions-row {
+.dialog-actions, .dialog-actions-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -340,7 +426,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.dialog-actions-row .input-with-button {
+.dialog-actions, .dialog-actions-row .input-with-button {
   flex-grow: 1;
 }
 
@@ -563,7 +649,7 @@ dialog#unsavedDialog::backdrop { background: rgba(0,0,0,.45); }
   height:100%;
 }
 .expense-dialog-grid .map-side .map{ flex:1; }
-.dialog .dialog-actions-row.tight{ margin-bottom:8px; }
+.dialog .dialog-actions, .dialog-actions-row.tight{ margin-bottom:8px; }
 @media (max-width: 900px){
   .expense-dialog-grid{ grid-template-columns: 1fr; height:auto; }
   .expense-dialog-grid .map-side .map{ height: 50vh; }
@@ -943,160 +1029,5 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 .btn.ghost.small{font-size:12px;padding:4px 8px;opacity:.85}
 .btn.ghost.small:hover{opacity:1}
 
-
-
-/* === Auth dialog polish (v13) ============================================= */
-#emailAuthDialog.dialog{
-  width: min(480px, 92vw);
-  max-height: 92vh;
-  padding: 0;
-  border: none;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--card);
-  box-shadow: 0 24px 80px rgba(0,0,0,.38);
-}
-
-#emailAuthDialog::backdrop{
-  background: radial-gradient(1200px 700px at 50% -10%, rgba(16,24,40,.45), rgba(2,6,23,.85));
-  backdrop-filter: blur(4px);
-}
-
-#emailAuthDialog .dialog-content{
-  display: grid;
-  gap: 16px;
-  padding: 18px;
-  direction: rtl;
-  background: var(--card);
-}
-
-#emailAuthDialog .dialog-title{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  margin: -2px -2px 4px;
-}
-
-#emailAuthDialog .dialog-title h3{
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  margin: 0;
-  color: var(--text);
-}
-
-#emailAuthDialog .dialog-close{
-  width: 36px; height: 36px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.1));
-  color: var(--muted-text);
-  cursor: pointer;
-  transition: transform .12s ease, background .2s ease;
-}
-#emailAuthDialog .dialog-close:hover{ transform: scale(1.04); }
-#emailAuthDialog .dialog-close:active{ transform: scale(.98); }
-
-#emailAuthDialog .alert{
-  display:none;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.45;
-  background: #fef2f2;
-  border: 1px solid #fee2e2;
-  color: #991b1b;
-}
-#emailAuthDialog .alert.show{ display:block; }
-
-#emailAuthDialog .input-row{
-  display: grid;
-  gap: 6px;
-}
-#emailAuthDialog label{
-  font-size: 13px;
-  color: var(--muted-text);
-  user-select: none;
-}
-
-#emailAuthDialog input[type=email],
-#emailAuthDialog input[type=password]{
-  appearance: none;
-  direction: ltr;
-  width: 100%;
-  padding: 14px 44px 14px 14px; /* leave room for eye button on the left in RTL */
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  outline: none;
-  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-  font-size: 16px;
-}
-#emailAuthDialog input[type=email]::placeholder,
-#emailAuthDialog input[type=password]::placeholder{
-  color: #9aa3af;
-}
-#emailAuthDialog input[type=email]:focus,
-#emailAuthDialog input[type=password]:focus{
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
-  background: var(--card);
-}
-
-#emailAuthDialog .toggle-password{
-  position: absolute;
-  left: 10px; /* in RTL this is the "end" side for visual placement */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 34px; height: 34px;
-  border-radius: 10px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.1));
-  color: var(--muted-text);
-  cursor: pointer;
-  transition: transform .12s ease, background .2s ease;
-}
-#emailAuthDialog .toggle-password:hover{ transform: translateY(-50%) scale(1.04); }
-#emailAuthDialog .toggle-password:active{ transform: translateY(-50%) scale(.98); }
-
-#emailAuthDialog .dialog-actions{
-  display:flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-#emailAuthDialog .actions-left{ display:flex; gap: 10px; }
-
-#emailAuthDialog .btn{
-  height: 44px;
-  padding: 0 18px;
-  font-size: 16px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  cursor: pointer;
-  transition: transform .12s ease, background .2s ease, border-color .2s ease;
-}
-#emailAuthDialog .btn:hover{ transform: translateY(-1px); }
-#emailAuthDialog .btn:active{ transform: translateY(0); }
-
-#emailAuthDialog .btn.primary{
-  border: 0;
-  color: #fff;
-  background: linear-gradient(90deg, #6d28d9, #2563eb);
-  box-shadow: 0 10px 30px rgba(79,70,229,.35);
-}
-#emailAuthDialog .btn.ghost{
-  background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.1));
-  color: var(--text);
-}
-/* End auth dialog polish */
+dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:14px; }
+dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
