@@ -942,3 +942,41 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 
 .btn.ghost.small{font-size:12px;padding:4px 8px;opacity:.85}
 .btn.ghost.small:hover{opacity:1}
+
+
+/* iOS Auth Debug (temporary) */
+#ios-error-box{
+  position: relative;
+  max-width: 520px;
+  margin: 12px auto 0;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+  overflow: hidden;
+  z-index: 1000;
+}
+#ios-error-box .ios-err-head{
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 14px;
+  background: #fff7e6;
+  border-bottom: 1px solid #f7e0b5;
+  direction: rtl;
+  text-align: right;
+}
+#ios-error-pre{
+  max-height: 240px;
+  overflow: auto;
+  font-size: 12px;
+  padding: 10px 12px;
+  margin: 0;
+  direction: ltr;
+  background: #fafafa;
+  color: #222;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* On iOS login screen, hide splash logo and show debug box */
+body.ios-debug #splash img[alt="FLYMILY"]{ display:none !important; }
+body.ios-debug #ios-error-box{ display:block !important; }

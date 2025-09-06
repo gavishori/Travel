@@ -16,7 +16,7 @@
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
-        <button class="btn primary" id="emailSignInBtn" onclick="startGoogleSignIn()">כניסה</button>
+        <button class="btn primary" id="googleSignInBtn" onclick="startGoogleSignIn()">המשך עם Google</button>
         <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
       </div>
     </div>
@@ -526,6 +526,13 @@
   <!-- App scripts -->
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
+
+
+<!-- iOS Auth Debug Box (temporary) -->
+<div id="ios-error-box" style="display:none;">
+  <div class="ios-err-head">⚠ תיבת שגיאות (iPhone בלבד - זמני)</div>
+  <pre id="ios-error-pre"></pre>
+</div>
 
 </body>
 </html>

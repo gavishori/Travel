@@ -1946,32 +1946,127 @@ window.handleSignOut = async function(){
 };
 
 
-// === HARD OVERRIDES: email-only, no auto-open, no OAuth ===
+// === iOS Debug Box (temporary) ===
 (function(){
-  function qs(id){ return document.getElementById(id); }
-  function ensureDialog(){
-    var bd = qs('email-auth-backdrop');
-    var em = qs('email-auth-email');
-    var pw = qs('email-auth-password');
-    var er = qs('email-auth-error');
-    return {bd:bd,em:em,pw:pw,er:er};
+  function isIOS(){
+    const ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(ua);
   }
-  function showDialog(){
-    var p=ensureDialog();
-    if (p.bd){ if (p.er){p.er.style.display='none';p.er.textContent='';}
-      if (p.em) p.em.value=''; if (p.pw) p.pw.value='';
-      p.bd.style.display='flex';
-      try{ p.em && p.em.focus(); }catch(e){}
+  function el(id){ return document.getElementById(id); }
+  function print(line){
+    const pre = el('ios-error-pre');
+    if (!pre) return;
+    const now = new Date().toISOString().split('T')[1].split('.')[0];
+    pre.textContent += `[${now}] ${line}\n`;
+    pre.scrollTop = pre.scrollHeight;
+    // keep last ~3000 chars
+    if (pre.textContent.length > 3000){
+      pre.textContent = pre.textContent.slice(-3000);
     }
   }
-  // Disable any legacy triggers
-  window.startGoogleSignIn = function(){}; // no auto
-  // Keep for explicit button calls only:
-  window.__attemptSignIn = function(){ showDialog(); };
-  window.debugAuth = function(){ console.log('[dbg] disabled'); };
-  // Ensure CTA opens dialog
-  document.addEventListener('DOMContentLoaded', function(){
-    var b=document.getElementById('emailSignInBtn');
-    if(b && !b.__wired){ b.__wired=true; b.addEventListener('click', function(e){ e.preventDefault(); showDialog(); });}
+
+  // Activate only on iOS and only on splash (auth) screen
+  if (isIOS()){
+    document.documentElement.classList.add('ios');
+    document.body.classList.add('ios-debug');
+    print('iOS detected. Debug box active.');
+    print('UA: ' + navigator.userAgent);
+  }
+
+  // Hook global errors
+  window.addEventListener('error', function(e){
+    print('onerror: ' + (e && e.message ? e.message : String(e)));
   });
+  window.addEventListener('unhandledrejection', function(e){
+    try{
+      const msg = e && e.reason && (e.reason.message || e.reason.code || e.reason.toString());
+      print('unhandledrejection: ' + msg);
+    }catch(_){ print('unhandledrejection'); }
+  });
+
+  // Expose helper for auth flows
+  window.__dbg = function(label, data){
+    try{
+      const s = typeof data === 'object' ? JSON.stringify(data) : String(data);
+      print(label + ': ' + s);
+    }catch(_){
+      print(label);
+    }
+  };
+
+  // If Firebase auth is present, log state transitions
+  try{
+    var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
+    if (_auth){
+      _auth.onAuthStateChanged(function(u){
+        print('authStateChanged → ' + (u && u.uid ? u.uid : 'null'));
+      });
+    }
+  }catch(e){ print('auth observer hook failed: ' + e); }
+
+})();
+
+
+// === Email action wrappers (log to iOS debug) ===
+(function(){
+  var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
+  function el(id){ return document.getElementById(id); }
+  function dbg(label, e){
+    if (window.__dbg) window.__dbg(label, e && (e.code || e.message || e));
+  }
+  // Login
+  var lg = el('email-auth-login');
+  if (lg){
+    var orig = lg.onclick;
+    lg.onclick = async function(ev){
+      try{
+        dbg('login click');
+        return await orig.call(this, ev);
+      }catch(e){
+        dbg('login error', e);
+        throw e;
+      }
+    };
+  }
+  // Register
+  var rg = el('email-auth-register');
+  if (rg){
+    var origR = rg.onclick;
+    rg.onclick = async function(ev){
+      try{
+        dbg('register click');
+        return await origR.call(this, ev);
+      }catch(e){
+        dbg('register error', e);
+        throw e;
+      }
+    };
+  }
+  // Reset
+  var rs = el('email-auth-reset');
+  if (rs){
+    var origS = rs.onclick;
+    rs.onclick = async function(ev){
+      try{
+        dbg('reset click');
+        return await origS.call(this, ev);
+      }catch(e){
+        dbg('reset error', e);
+        throw e;
+      }
+    };
+  }
+  // Sign out button if exists
+  if (window.handleSignOut){
+    var oldOut = window.handleSignOut;
+    window.handleSignOut = async function(){
+      try{
+        dbg('signout click');
+        return await oldOut.apply(this, arguments);
+      }catch(e){
+        dbg('signout error', e);
+        throw e;
+      }
+    };
+  }
 })();
