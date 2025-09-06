@@ -1764,7 +1764,7 @@ function openJournalDeleteDialog(tripId, entry){
 
     if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
-        try { // auto-open removed }
+        try { await window.__attemptSignIn && window.__attemptSignIn(); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
       });
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
@@ -1800,8 +1800,8 @@ window.debugAuth = async function(){
   try {
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
-      console.log("[dbg] no user (no auto-open)");
-      // auto-open removed
+      console.log("[dbg] no user → opening popup");
+      await window.__attemptSignIn && window.__attemptSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1827,7 +1827,9 @@ window.debugAuth = async function(){
         if (typeof window.debugAuth === 'function') {
           return window.debugAuth();
         }
-        /* auto-open via googleProvider removed */
+        if (window.auth && window.googleProvider) {
+          window.__attemptSignIn && window.__attemptSignIn();
+        }
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
@@ -1944,30 +1946,79 @@ window.handleSignOut = async function(){
 };
 
 
-// === Email-only: manual open wiring ===
+// === Email-only Auth UI & Wiring ===
 (function(){
-  function openEmailDialogFallback(){
-    var el = document.getElementById('email-auth-backdrop');
-    if (el){ el.style.display = 'flex'; }
-  }
-  function tryOpen(){
-    if (typeof window.startEmailDialog === 'function') return window.startEmailDialog();
-    if (typeof window.__attemptSignIn === 'function')  return window.__attemptSignIn();
-    if (typeof window.showDialog === 'function')       return window.showDialog();
-    return openEmailDialogFallback();
-  }
+  var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
+  function q(id){ return document.getElementById(id); }
+  function clearError(){ var e=q('email-auth-error'); if(e){ e.textContent=''; e.style.display='none'; } }
+  function showError(msg){ var e=q('email-auth-error'); if(e){ e.textContent=String(msg||'שגיאה'); e.style.display='block'; } else { alert(msg); } }
+  function showDialog(){ var b=q('email-auth-backdrop'); if(b){ clearError(); b.style.display='flex'; (q('email-auth-email')||{}).focus&&q('email-auth-email').focus(); } }
+  function hideDialog(){ var b=q('email-auth-backdrop'); if(b){ b.style.display='none'; } }
+
   function wire(){
-    var btn = document.getElementById('emailSignInBtn');
-    if (btn && !btn.__wired){
-      btn.__wired = true;
-      btn.addEventListener('click', function(ev){ ev.preventDefault(); tryOpen(); });
+    var signBtn = q('emailSignInBtn');
+    if (signBtn && !signBtn.__wired){
+      signBtn.__wired = true;
+      signBtn.addEventListener('click', function(ev){ ev.preventDefault(); showDialog(); });
     }
+    var closeBtn = q('email-auth-close'); if (closeBtn) closeBtn.onclick = hideDialog;
+    var bd = q('email-auth-backdrop'); if (bd){ bd.addEventListener('click', function(e){ if(e.target===bd) hideDialog(); }); }
+
+    var loginBtn = q('email-auth-login');
+    if (loginBtn && !loginBtn.__wired){
+      loginBtn.__wired = true;
+      loginBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
+          if(!email) return showError('נא להקליד אימייל.');
+          if(!pass)  return showError('נא להקליד סיסמה.');
+          await _auth.signInWithEmailAndPassword(email, pass);
+          hideDialog();
+        }catch(e){
+          var code=e&&e.code||'';
+          var map={'auth/invalid-email':'אימייל לא תקין.','auth/user-not-found':'משתמש לא נמצא.','auth/wrong-password':'סיסמה שגויה.','auth/too-many-requests':'יותר מדי ניסיונות, נסה מאוחר יותר.'};
+          showError(map[code]||'שגיאה בכניסה.');
+        }
+      };
+    }
+
+    var regBtn = q('email-auth-register');
+    if (regBtn && !regBtn.__wired){
+      regBtn.__wired = true;
+      regBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
+          if(!email) return showError('נא להקליד אימייל.');
+          if(!pass)  return showError('נא להקליד סיסמה.');
+          await _auth.createUserWithEmailAndPassword(email, pass);
+          hideDialog();
+        }catch(e){
+          var code=e&&e.code||'';
+          var map={'auth/email-already-in-use':'האימייל כבר רשום.','auth/weak-password':'סיסמה חלשה (מינימום 6 תווים).'};
+          showError(map[code]||'שגיאה בהרשמה.');
+        }
+      };
+    }
+
+    var resetBtn = q('email-auth-reset');
+    if (resetBtn && !resetBtn.__wired){
+      resetBtn.__wired = true;
+      resetBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          if(!email) return showError('נא להקליד אימייל לצורך איפוס.');
+          await _auth.sendPasswordResetEmail(email);
+          showError('נשלח מייל לאיפוס סיסמה.');
+        }catch(e){ showError('שגיאה בשליחת מייל איפוס.'); }
+      };
+    }
+
+    // expose helpers
+    window.startEmailDialog = showDialog;
+    window.__attemptSignIn = showDialog;
   }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', wire);
-  } else {
-    wire();
-  }
-  // Back-compat: calls to startGoogleSignIn should open the same dialog
-  window.startGoogleSignIn = function(){ tryOpen(); };
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 })();
