@@ -23,12 +23,7 @@
       console.warn('[auth] setPersistence failed', e && e.code, e && e.message);
     });
 
-    // Kill any legacy Google flow
-    window.startGoogleSignIn = function(){
-      if (typeof window.startEmailDialog === 'function') return window.startEmailDialog();
-      if (typeof window.__attemptSignIn === 'function')  return window.__attemptSignIn();
-      alert('הכניסה נעשית רק באמצעות אימייל וסיסמה.');
-    };
+    window.startGoogleSignIn = function(){ if (window.startEmailDialog) return window.startEmailDialog(); alert('כניסה רק באמצעות אימייל וסיסמה.'); };
 
     window.AppDataLayer = window.AppDataLayer || {};
     window.AppDataLayer.mode = 'firebase';
