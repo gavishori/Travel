@@ -1746,7 +1746,7 @@ function openJournalDeleteDialog(tripId, entry){
 // Google Auth
 (function(){
   try {
-    var signInBtn  = document.getElementById('emailSignInBtn');
+    var signInBtn  = document.getElementById('googleSignInBtn');
     var signOutBtn = document.getElementById('signOutBtn');
 
     function enterApp(){
@@ -1762,7 +1762,7 @@ function openJournalDeleteDialog(tripId, entry){
       if (app) app.style.display = 'none';
     }
 
-    if (typeof auth !== 'undefined' && typeof /*googleProvider*/void 0 !== 'undefined') {
+    if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
         try { await window.__attemptSignIn && window.__attemptSignIn(); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
@@ -1798,9 +1798,10 @@ function openJournalDeleteDialog(tripId, entry){
 // --- Debug helper to verify auth + rules ---
 window.debugAuth = async function(){
   try {
-    console.log("[dbg] auth?", !!window.auth, "provider?", !!window./*googleProvider*/void 0);
+    console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
     if (!auth.currentUser){
-      console.log("[dbg] no user (no auto-open)");
+      console.log("[dbg] no user → opening popup");
+      await window.__attemptSignIn && window.__attemptSignIn();
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1819,14 +1820,16 @@ window.debugAuth = async function(){
 // Attach Google sign-in handler safely (works with or without inline onclick)
 (function(){
   try{
-    var btn = document.getElementById('emailSignInBtn');
+    var btn = document.getElementById('googleSignInBtn');
     if (btn && !btn.__wired){
       btn.__wired = true;
       btn.addEventListener('click', function(e){
         if (typeof window.debugAuth === 'function') {
           return window.debugAuth();
         }
-        /* auto-open removed */
+        if (window.auth && window.googleProvider) {
+          window.__attemptSignIn && window.__attemptSignIn();
+        }
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
@@ -1837,7 +1840,7 @@ window.debugAuth = async function(){
 document.addEventListener('DOMContentLoaded', function(){
   if (!firebase || !firebase.auth) return;
 
-  var loginBtn = document.getElementById('emailSignInBtn');
+  var loginBtn = document.getElementById('googleSignInBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', function(){
       if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
@@ -1887,7 +1890,7 @@ firebase.auth().onAuthStateChanged(function(user){
 
 /* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
-  var loginBtn = document.getElementById('emailSignInBtn');
+  var loginBtn = document.getElementById('googleSignInBtn');
   if (loginBtn && !loginBtn.__wired){
     loginBtn.__wired = true;
     loginBtn.addEventListener('click', function(){
@@ -1941,3 +1944,34 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// === HARD OVERRIDES: email-only, no auto-open, no OAuth ===
+(function(){
+  function qs(id){ return document.getElementById(id); }
+  function ensureDialog(){
+    var bd = qs('email-auth-backdrop');
+    var em = qs('email-auth-email');
+    var pw = qs('email-auth-password');
+    var er = qs('email-auth-error');
+    return {bd:bd,em:em,pw:pw,er:er};
+  }
+  function showDialog(){
+    var p=ensureDialog();
+    if (p.bd){ if (p.er){p.er.style.display='none';p.er.textContent='';}
+      if (p.em) p.em.value=''; if (p.pw) p.pw.value='';
+      p.bd.style.display='flex';
+      try{ p.em && p.em.focus(); }catch(e){}
+    }
+  }
+  // Disable any legacy triggers
+  window.startGoogleSignIn = function(){}; // no auto
+  // Keep for explicit button calls only:
+  window.__attemptSignIn = function(){ showDialog(); };
+  window.debugAuth = function(){ console.log('[dbg] disabled'); };
+  // Ensure CTA opens dialog
+  document.addEventListener('DOMContentLoaded', function(){
+    var b=document.getElementById('emailSignInBtn');
+    if(b && !b.__wired){ b.__wired=true; b.addEventListener('click', function(e){ e.preventDefault(); showDialog(); });}
+  });
+})();
