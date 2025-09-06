@@ -1,47 +1,27 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY – התחברות</title>
+  <title>FLYMILY - התחברות</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase compat (עובד מצוין גם ב‑iOS) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
 </head>
 <body class="light">
-  <main class="card">
-    <h1 class="brand">FLYMILY</h1>
-    <p class="subtitle">התחברות באמצעות אימייל וסיסמה</p>
-
-    <label class="label" for="emailInput">אימייל</label>
-    <input id="emailInput" class="input" type="email" placeholder="name@example.com" autocomplete="email" />
-
-    <label class="label" for="passwordInput">סיסמה</label>
-    <div class="input input--password">
-      <input id="passwordInput" type="password" placeholder="••••••" autocomplete="current-password" />
-      <button id="togglePwdBtn" class="icon-btn" aria-label="הצג סיסמה" title="הצג/הסתר סיסמה">👁️</button>
+  <div class="login-box">
+    <h1>FLYMILY</h1>
+    <p>התחברות באמצעות אימייל וסיסמה</p>
+    <input type="email" id="email" placeholder="אימייל" />
+    <div class="password-wrapper">
+      <input type="password" id="password" placeholder="סיסמה" />
+      <span id="togglePassword" class="toggle-eye">👁️</span>
     </div>
-
-    <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
-
-    <div class="actions">
-      <button id="loginBtn" class="btn btn-primary">התחברות</button>
-      <button id="registerOpenBtn" class="btn">יצירת חשבון</button>
+    <div class="btn-row">
+      <button id="registerBtn">יצירת חשבון</button>
+      <button id="loginBtn">התחברות</button>
     </div>
-
-    <p class="muted"><a id="resetLink" href="#">שכחת סיסמה?</a></p>
-    <p class="footnote">קישור לאיפוס סיסמה נשלח למייל (לעיתים מגיע לדואר זבל).</p>
-  </main>
-
-  <script src="script.js"></script>
-  <script>
-    // פתיחת דף חדש ליצירת חשבון
-    document.getElementById('registerOpenBtn').addEventListener('click', () => {
-      window.open('register.html', '_blank', 'noopener,noreferrer,width=480,height=720');
-    });
-  </script>
+    <a href="#" id="forgotPassword">שכחת סיסמה?</a>
+    <p id="resetMsg"></p>
+  </div>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

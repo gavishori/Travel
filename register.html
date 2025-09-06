@@ -1,40 +1,19 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY – יצירת חשבון</title>
+  <title>FLYMILY - יצירת חשבון</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
 </head>
 <body class="light">
-  <main class="card">
-    <h1 class="brand">FLYMILY</h1>
-    <p class="subtitle">יצירת חשבון חדש</p>
-
-    <label class="label" for="regEmail">אימייל</label>
-    <input id="regEmail" class="input" type="email" placeholder="name@example.com" autocomplete="email" />
-
-    <label class="label" for="regPass">סיסמה</label>
-    <div class="input input--password">
-      <input id="regPass" type="password" placeholder="••••••" autocomplete="new-password" />
-      <button id="toggleRegPwdBtn" class="icon-btn" aria-label="הצג סיסמה" title="הצג/הסתר סיסמה">👁️</button>
-    </div>
-
-    <div id="regError" class="error" role="alert" aria-live="polite"></div>
-
-    <div class="actions">
-      <button id="doRegister" class="btn btn-primary">יצירת חשבון</button>
-      <a href="#" id="closeWin" class="btn btn-link">סגור חלון</a>
-    </div>
-
-    <p class="footnote">בסיום היצירה ניתן לסגור חלון זה ולחזור למסך ההתחברות.</p>
-  </main>
-
-  <script src="script-register.js"></script>
+  <div class="login-box">
+    <h1>יצירת חשבון</h1>
+    <input type="email" id="regEmail" placeholder="אימייל" />
+    <input type="password" id="regPassword" placeholder="סיסמה" />
+    <button id="createAccountBtn">צור חשבון</button>
+    <p id="registerMsg"></p>
+  </div>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script-register.js"></script>
 </body>
 </html>
