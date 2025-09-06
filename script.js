@@ -1,15 +1,3 @@
-
-// === BOOTSTRAP: Restore last screen early for better UX on mobile ===
-(function(){
-  try{
-    var last = localStorage.getItem('lastScreen');
-    if(last){
-      var btn = document.querySelector('[data-screen="'+last+'"]');
-      if(btn && typeof btn.click === 'function'){ btn.click(); }
-    }
-  }catch(e){}
-})();
-
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -841,7 +829,7 @@ async function renderOverviewMiniMap(){
     const map = state.maps.mini;
     const group = L.featureGroup();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius: 5, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1101,12 +1089,12 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius: 5, color, fillColor: color, fillOpacity: 0.85, weight: 2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff3b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#3b82f6"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
@@ -1154,7 +1142,7 @@ function openLocationPicker(forType){
       const lat = Number(r.lat), lng = Number(r.lon);
       state.locationPick.lat = lat; state.locationPick.lng = lng;
       state.maps.location.setView([lat,lng], 14);
-      L.circleMarker([lat,lng], {radius: 5, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight: 2}).addTo(state.maps.location);
+      L.marker([lat,lng]).addTo(state.maps.location);
       setStatus(r.display_name);
     } else {
       alert("לא נמצא מיקום מתאים");
@@ -1226,7 +1214,7 @@ async function openExpenseDialog(exp){
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.circleMarker([lat,lng], {radius: 5, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight: 2}).addTo(map); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
@@ -1370,7 +1358,7 @@ async function openJournalDialog(journalEntry) {
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.circleMarker([lat,lng], {radius: 5, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight: 2}).addTo(map); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
       el("journalLat").value = lat;
       el("journalLng").value = lng;
     }
@@ -1956,22 +1944,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-/* PERSIST LAST TAB */
-try {
-  document.querySelectorAll('[data-screen]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      try{ localStorage.setItem('lastScreen', btn.getAttribute('data-screen')); }catch(e){}
-    });
-  });
-  window.addEventListener('load', function(){
-    try {
-      var last = localStorage.getItem('lastScreen');
-      if(last){
-        var el = document.querySelector('[data-screen="'+last+'"]');
-        if(el){ el.click(); }
-      }
-    } catch(e){}
-  });
-} catch(e){}

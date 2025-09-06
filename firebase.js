@@ -18,30 +18,6 @@
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
-    /* AUTO SIGN-OUT AFTER 7 DAYS */
-    try{
-      (function(){
-        var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-        // On bootstrap: if last login older than a week → sign out
-        try{
-          var last = Number(localStorage.getItem('lastLoginAt')||'0');
-          if (last && (Date.now() - last > ONE_WEEK)){
-            auth.signOut().catch(function(){});
-            localStorage.removeItem('lastLoginAt');
-          }
-        }catch(e){}
-
-        // Keep 'lastLoginAt' updated whenever user becomes available
-        try{
-          auth.onAuthStateChanged(function(user){
-            if (user){
-              try{ localStorage.setItem('lastLoginAt', String(Date.now())); }catch(e){}
-            }
-          });
-        }catch(e){}
-      })();
-    }catch(e){}
-
     try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
     // A utility function to detect if the user is on an iOS device.
