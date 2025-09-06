@@ -1946,9 +1946,95 @@ window.handleSignOut = async function(){
 };
 
 
-// === Enter-mode bridge (email-only compatible) ===
+// ==== EMAIL-ONLY UI (v10) ====
 (function(){
-  try{
+  var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
+  function q(id){ return document.getElementById(id); }
+  function clearError(){ var e=q('email-auth-error'); if(e){ e.textContent=''; e.style.display='none'; } }
+  function showError(msg){ var e=q('email-auth-error'); if(e){ e.textContent=String(msg||'שגיאה'); e.style.display='block'; } else { alert(msg); } }
+  function showDialog(){ var b=q('email-auth-backdrop'); if(b){ clearError(); b.style.display='flex'; (q('email-auth-email')||{}).focus&&q('email-auth-email').focus(); } }
+  function hideDialog(){ var b=q('email-auth-backdrop'); if(b){ b.style.display='none'; } }
+
+  function normalizeCTA(){
+    // Replace any legacy Google CTA text and ids
+    var btns = Array.from(document.querySelectorAll('button, a'));
+    for (var b of btns){
+      var t = (b.textContent||'').trim();
+      if (/Google|גוגל/i.test(t)){
+        b.textContent = 'כניסה';
+      }
+      if (b.id === 'googleSignInBtn'){ b.id = 'emailSignInBtn'; }
+    }
+  }
+
+  function wire(){
+    normalizeCTA();
+    var signBtn = q('emailSignInBtn') || document.querySelector('button');
+    if (signBtn && !signBtn.__wired){
+      signBtn.__wired = true;
+      signBtn.addEventListener('click', function(ev){ ev.preventDefault(); showDialog(); });
+    }
+    var closeBtn = q('email-auth-close'); if (closeBtn) closeBtn.onclick = hideDialog;
+    var bd = q('email-auth-backdrop'); if (bd){ bd.addEventListener('click', function(e){ if(e.target===bd) hideDialog(); }); }
+
+    var loginBtn = q('email-auth-login');
+    if (loginBtn && !loginBtn.__wired){
+      loginBtn.__wired = true;
+      loginBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
+          if(!email) return showError('נא להקליד אימייל.');
+          if(!pass)  return showError('נא להקליד סיסמה.');
+          await _auth.signInWithEmailAndPassword(email, pass);
+          hideDialog();
+        }catch(e){
+          var code=e&&e.code||'';
+          var map={'auth/invalid-email':'אימייל לא תקין.','auth/user-not-found':'משתמש לא נמצא.','auth/wrong-password':'סיסמה שגויה.','auth/too-many-requests':'יותר מדי ניסיונות, נסה מאוחר יותר.'};
+          showError(map[code]||'שגיאה בכניסה.');
+        }
+      };
+    }
+
+    var regBtn = q('email-auth-register');
+    if (regBtn && !regBtn.__wired){
+      regBtn.__wired = true;
+      regBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          var pass =(q('email-auth-password')&&q('email-auth-password').value)||'';
+          if(!email) return showError('נא להקליד אימייל.');
+          if(!pass)  return showError('נא להקליד סיסמה.');
+          await _auth.createUserWithEmailAndPassword(email, pass);
+          hideDialog();
+        }catch(e){
+          var code=e&&e.code||'';
+          var map={'auth/email-already-in-use':'האימייל כבר רשום.','auth/weak-password':'סיסמה חלשה (מינימום 6 תווים).'};
+          showError(map[code]||'שגיאה בהרשמה.');
+        }
+      };
+    }
+
+    var resetBtn = q('email-auth-reset');
+    if (resetBtn && !resetBtn.__wired){
+      resetBtn.__wired = true;
+      resetBtn.onclick = async function(){
+        try{
+          var email=(q('email-auth-email')&&q('email-auth-email').value.trim())||'';
+          if(!email) return showError('נא להקליד אימייל לצורך איפוס.');
+          await _auth.sendPasswordResetEmail(email);
+          showError('נשלח מייל לאיפוס סיסמה.');
+        }catch(e){ showError('שגיאה בשליחת מייל איפוס.'); }
+      };
+    }
+
+    // expose helpers
+    window.startEmailDialog = showDialog;
+    window.__attemptSignIn = showDialog;
+  }
+
+  // Enter bridge: toggle app visibility by auth state
+  function enterBridge(){
     function setEntered(on){
       document.body.classList.toggle('entered', !!on);
       document.body.classList.toggle('splash-mode', !on);
@@ -1956,9 +2042,14 @@ window.handleSignOut = async function(){
       if (app) app.style.display = on ? 'block' : 'none';
     }
     if (window.firebase && firebase.auth){
-      // Apply immediately and on every change
       setEntered(!!firebase.auth().currentUser);
       firebase.auth().onAuthStateChanged(function(user){ setEntered(!!user); });
     }
-  }catch(e){ console.warn('enter bridge failed', e); }
+  }
+
+  if (document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ wire(); enterBridge(); });
+  } else { wire(); enterBridge(); }
+
+  console.log('EMAIL-ONLY BUILD v10');
 })();
