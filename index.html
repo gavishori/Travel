@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=v12" />
+  <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body class="splash-mode">
@@ -16,7 +16,7 @@
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
-        <button class="btn primary" id="googleSignInBtn" onclick="startGoogleSignIn()">המשך עם Google</button>
+        <button class="btn primary" id="openEmailAuthBtn">כניסה</button>
         <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
       </div>
     </div>
@@ -524,8 +524,92 @@
   </script>
 
   <!-- App scripts -->
-  <script src="./firebase.js?v=v12"></script>
-  <script src="./script.js?v=v12"></script>
+  <script src="./firebase.js"></script>
+  <script src="./script.js"></script>
+
+
+  <!-- Email/Password Auth Dialog -->
+  <dialog id="emailAuthDialog" class="dialog">
+    <div class="dialog-content">
+      <button class="dialog-close" id="email-auth-close" aria-label="סגור">×</button>
+      <h2 class="dialog-title">כניסה עם אימייל וסיסמה</h2>
+      <div id="email-auth-error" class="alert" style="display:none"></div>
+      <label for="email-auth-email">אימייל</label>
+      <input id="email-auth-email" type="email" placeholder="you@example.com" autocomplete="email" />
+      <label for="email-auth-password">סיסמה</label>
+      <input id="email-auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <div class="dialog-actions">
+        <button class="btn" id="email-auth-reset">שכחתי סיסמה</button>
+        <button class="btn" id="email-auth-register">הרשמה</button>
+        <button class="btn primary" id="email-auth-login">כניסה</button>
+      </div>
+    </div>
+  </dialog>
+
+
+  <script>
+  (function(){
+    const $ = (sel)=>document.querySelector(sel);
+    const openBtn = $('#openEmailAuthBtn');
+    const dlg = $('#emailAuthDialog');
+    const emailInput = $('#email-auth-email');
+    const passInput = $('#email-auth-password');
+    const err = $('#email-auth-error');
+    const closeBtn = $('#email-auth-close');
+
+    function showErr(msg){
+      if(!err) return;
+      if(msg){ err.textContent = msg; err.style.display = 'block'; }
+      else { err.textContent = ''; err.style.display = 'none'; }
+    }
+    function openDlg(){ if(dlg && typeof dlg.showModal==='function') dlg.showModal(); }
+    function closeDlg(){ if(dlg) dlg.close(); showErr(''); }
+
+    if(openBtn && dlg) openBtn.addEventListener('click', openDlg);
+    if(closeBtn) closeBtn.addEventListener('click', closeDlg);
+
+    const loginBtn = $('#email-auth-login');
+    const registerBtn = $('#email-auth-register');
+    const resetBtn = $('#email-auth-reset');
+
+    if(loginBtn) loginBtn.addEventListener('click', async ()=>{
+      try{
+        await firebase.auth().signInWithEmailAndPassword(emailInput.value.trim(), passInput.value);
+        closeDlg();
+      }catch(e){ showErr(e.message || String(e)); }
+    });
+
+    if(registerBtn) registerBtn.addEventListener('click', async ()=>{
+      try{
+        await firebase.auth().createUserWithEmailAndPassword(emailInput.value.trim(), passInput.value);
+        closeDlg();
+      }catch(e){ showErr(e.message || String(e)); }
+    });
+
+    if(resetBtn) resetBtn.addEventListener('click', async ()=>{
+      try{
+        await firebase.auth().sendPasswordResetEmail(emailInput.value.trim());
+        showErr('קישור איפוס סיסמה נשלח אליך במייל.');
+      }catch(e){ showErr(e.message || String(e)); }
+    });
+
+    firebase.auth().onAuthStateChanged((user)=>{
+      console.log('[auth] state changed:', !!user);
+      const splash = $('#splash');
+      const home = $('#homeView');
+      if(user){ if(splash) splash.style.display='none'; if(home) home.style.display=''; }
+      else { if(splash) splash.style.display=''; if(home) home.style.display='none'; }
+    });
+
+    const signOutBtn = $('#signOutBtn');
+    if(signOutBtn){
+      signOutBtn.addEventListener('click', async ()=>{
+        try{ await firebase.auth().signOut(); }
+        catch(e){ console.warn('signOut error', e); }
+      });
+    }
+  })();
+  </script>
 
 </body>
 </html>
