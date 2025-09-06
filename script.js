@@ -1089,12 +1089,12 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius: 9, color, fillColor: color, fillOpacity: 0.85, weight: 3 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff3b6b"); });
+      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#3b82f6"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
@@ -1142,7 +1142,7 @@ function openLocationPicker(forType){
       const lat = Number(r.lat), lng = Number(r.lon);
       state.locationPick.lat = lat; state.locationPick.lng = lng;
       state.maps.location.setView([lat,lng], 14);
-      L.marker([lat,lng]).addTo(state.maps.location);
+      L.circleMarker([lat,lng], {radius:10, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight:3}).addTo(state.maps.location);
       setStatus(r.display_name);
     } else {
       alert("לא נמצא מיקום מתאים");
@@ -1214,7 +1214,7 @@ async function openExpenseDialog(exp){
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight:3}).addTo(map); }
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
@@ -1358,7 +1358,7 @@ async function openJournalDialog(journalEntry) {
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#10b981', fillColor:'#10b981', fillOpacity:0.9, weight:3}).addTo(map); }
       el("journalLat").value = lat;
       el("journalLng").value = lng;
     }

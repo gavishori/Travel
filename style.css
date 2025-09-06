@@ -35,8 +35,6 @@ body{
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  direction: rtl; /* For Hebrew */
-  text-align: right;
 }
 
 .app-header, .app-footer{
@@ -112,7 +110,6 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .btn{
   appearance:none; border:none; border-radius:12px; padding:10px 14px; cursor:pointer;
   background: var(--card); color: var(--text); border:1px solid var(--border);
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 .btn.primary{ background: var(--primary); color:#fff; border-color:transparent; }
 .btn.ghost{ background: transparent; }
@@ -122,7 +119,6 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .input, select.input, textarea.input{
   width:100%; padding:10px 12px; border-radius:12px;
   background: var(--panel); border:1px solid var(--border); color: var(--text);
-  transition: border-color 0.2s, outline-color 0.2s;
 }
 .input:focus{ outline:2px solid var(--primary-600); }
 
@@ -1036,4 +1032,19 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:14px; }
 dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
 
+
+/* === MOBILE STABILITY PATCH (avoid iOS zoom/jumps) === */
+html{ -webkit-text-size-adjust:100%; }
+input, select, textarea { font-size:16px; }
+.dialog { contain: layout paint; }
+@media (max-width: 600px){
+  dialog#emailAuthDialog input[type="email"],
+  dialog#emailAuthDialog input[type="password"]{ height:48px; }
 }
+
+:root{ --danger-strong:#e11d48; }
+.value.negative{ color: var(--danger-strong) !important; }
+
+
+/* === MOBILE UX HARDENING === */
+.dialog{max-width:480px;width:92vw;transition:none;will-change:auto;}
