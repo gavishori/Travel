@@ -1746,7 +1746,7 @@ function openJournalDeleteDialog(tripId, entry){
 // Google Auth
 (function(){
   try {
-    var signInBtn  = document.getElementById('googleSignInBtn');
+    var signInBtn  = document.getElementById('emailSignInBtn');
     var signOutBtn = document.getElementById('signOutBtn');
 
     function enterApp(){
@@ -1762,7 +1762,7 @@ function openJournalDeleteDialog(tripId, entry){
       if (app) app.style.display = 'none';
     }
 
-    if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
+    if (typeof auth !== 'undefined' && typeof /*googleProvider*/void 0 !== 'undefined') {
       if (signInBtn) signInBtn.addEventListener('click', async function(){
         try { await window.__attemptSignIn && window.__attemptSignIn(); }
         catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
@@ -1798,10 +1798,9 @@ function openJournalDeleteDialog(tripId, entry){
 // --- Debug helper to verify auth + rules ---
 window.debugAuth = async function(){
   try {
-    console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
+    console.log("[dbg] auth?", !!window.auth, "provider?", !!window./*googleProvider*/void 0);
     if (!auth.currentUser){
-      console.log("[dbg] no user → opening popup");
-      await window.__attemptSignIn && window.__attemptSignIn();
+      console.log("[dbg] no user (no auto-open)");
     }
     const uid = auth.currentUser && auth.currentUser.uid;
     console.log("[dbg] uid:", uid || null);
@@ -1820,16 +1819,14 @@ window.debugAuth = async function(){
 // Attach Google sign-in handler safely (works with or without inline onclick)
 (function(){
   try{
-    var btn = document.getElementById('googleSignInBtn');
+    var btn = document.getElementById('emailSignInBtn');
     if (btn && !btn.__wired){
       btn.__wired = true;
       btn.addEventListener('click', function(e){
         if (typeof window.debugAuth === 'function') {
           return window.debugAuth();
         }
-        if (window.auth && window.googleProvider) {
-          window.__attemptSignIn && window.__attemptSignIn();
-        }
+        /* auto-open removed */
       });
     }
   }catch(e){ console.warn('sign-in wiring failed', e); }
@@ -1840,7 +1837,7 @@ window.debugAuth = async function(){
 document.addEventListener('DOMContentLoaded', function(){
   if (!firebase || !firebase.auth) return;
 
-  var loginBtn = document.getElementById('googleSignInBtn');
+  var loginBtn = document.getElementById('emailSignInBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', function(){
       if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
@@ -1890,7 +1887,7 @@ firebase.auth().onAuthStateChanged(function(user){
 
 /* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
-  var loginBtn = document.getElementById('googleSignInBtn');
+  var loginBtn = document.getElementById('emailSignInBtn');
   if (loginBtn && !loginBtn.__wired){
     loginBtn.__wired = true;
     loginBtn.addEventListener('click', function(){
@@ -1944,125 +1941,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// === Email-only Auth UI & Logic (robust) ===
-(function(){
-  // Grab Firebase Auth
-  var _auth = (window.auth) ? window.auth : (window.firebase && firebase.auth ? firebase.auth() : null);
-
-  function qs(id){ return document.getElementById(id); }
-  function ensureDialog(){
-    var bd = qs('email-auth-backdrop');
-    var er = qs('email-auth-error');
-    var em = qs('email-auth-email');
-    var pw = qs('email-auth-password');
-    var lg = qs('email-auth-login');
-    var rg = qs('email-auth-register');
-    var rs = qs('email-auth-reset');
-    var cl = qs('email-auth-close');
-    return {bd:bd, er:er, em:em, pw:pw, lg:lg, rg:rg, rs:rs, cl:cl};
-  }
-  function clearError(){
-    var parts = ensureDialog();
-    if (parts.er){ parts.er.style.display='none'; parts.er.textContent=''; }
-  }
-  function showError(msg){
-    var parts = ensureDialog();
-    if (parts.er){ parts.er.textContent= (typeof msg==='string'? msg : 'שגיאה'); parts.er.style.display='block'; }
-    else { alert(msg); }
-  }
-  function showDialog(){
-    var parts = ensureDialog();
-    if (parts.bd){
-      clearError();
-      if (parts.em) parts.em.value = '';
-      if (parts.pw) parts.pw.value = '';
-      parts.bd.style.display = 'flex';
-      if (parts.em) try{ parts.em.focus(); }catch(e){}
-    } else {
-      alert('טופס אימייל לא נטען.');
-    }
-  }
-  function hideDialog(){
-    var parts = ensureDialog();
-    if (parts.bd){ parts.bd.style.display='none'; }
-  }
-
-  // Wire once DOM is ready
-  function wire(){
-    var parts = ensureDialog();
-    if (parts.cl) parts.cl.addEventListener('click', hideDialog);
-    if (parts.bd) parts.bd.addEventListener('click', function(e){ if (e.target === parts.bd) hideDialog(); });
-
-    if (parts.lg) parts.lg.onclick = async function(){
-      clearError();
-      try{
-        if (!_auth) throw 'בעיה באתחול אימות.';
-        var email = (parts.em && parts.em.value.trim()) || '';
-        var pass  = (parts.pw && parts.pw.value) || '';
-        if (!email) return showError('נא להקליד אימייל.');
-        if (!pass)  return showError('נא להקליד סיסמה.');
-        await _auth.signInWithEmailAndPassword(email, pass);
-        hideDialog();
-      }catch(e){
-        var code = e && e.code || '';
-        var map = {
-          'auth/invalid-email':'אימייל לא תקין.',
-          'auth/user-not-found':'משתמש לא נמצא.',
-          'auth/wrong-password':'סיסמה שגויה.',
-          'auth/too-many-requests':'יותר מדי ניסיונות, נסה מאוחר יותר.'
-        };
-        showError(map[code] || 'שגיאה בכניסה.');
-      }
-    };
-
-    if (parts.rg) parts.rg.onclick = async function(){
-      clearError();
-      try{
-        if (!_auth) throw 'בעיה באתחול אימות.';
-        var email = (parts.em && parts.em.value.trim()) || '';
-        var pass  = (parts.pw && parts.pw.value) || '';
-        if (!email) return showError('נא להקליד אימייל.');
-        if (!pass)  return showError('נא להקליד סיסמה.');
-        await _auth.createUserWithEmailAndPassword(email, pass);
-        hideDialog();
-      }catch(e){
-        var code = e && e.code || '';
-        var map = {
-          'auth/email-already-in-use':'האימייל כבר רשום.',
-          'auth/weak-password':'סיסמה חלשה (מינימום 6 תווים).'
-        };
-        showError(map[code] || 'שגיאה בהרשמה.');
-      }
-    };
-
-    if (parts.rs) parts.rs.onclick = async function(){
-      clearError();
-      try{
-        if (!_auth) throw 'בעיה באתחול אימות.';
-        var email = (parts.em && parts.em.value.trim()) || '';
-        if (!email) return showError('נא להקליד אימייל לצורך איפוס.');
-        await _auth.sendPasswordResetEmail(email);
-        showError('נשלח מייל לאיפוס סיסמה.');
-      }catch(e){
-        showError('שגיאה בשליחת מייל איפוס.');
-      }
-    };
-
-    // Hook the main "כניסה" button (id=emailSignInBtn) if exists
-    var signBtn = document.getElementById('emailSignInBtn');
-    if (signBtn) signBtn.onclick = function(ev){ ev.preventDefault(); showDialog(); };
-
-    // Backward-compat: if some legacy call tries to open Google flow
-    window.startGoogleSignIn = function(){ showDialog(); };
-    window.startEmailDialog = function(){ showDialog(); };
-    window.__attemptSignIn = function(){ showDialog(); };
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wire);
-  } else {
-    wire();
-  }
-})();

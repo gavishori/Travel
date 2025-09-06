@@ -942,7 +942,3 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 
 .btn.ghost.small{font-size:12px;padding:4px 8px;opacity:.85}
 .btn.ghost.small:hover{opacity:1}
-
-
-/* Email-only auth dialog helpers (kept minimal; main styles inline in HTML) */
-#email-auth-backdrop.hidden { display: none !important; }
