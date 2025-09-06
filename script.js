@@ -1746,7 +1746,7 @@ function openJournalDeleteDialog(tripId, entry){
 // Google Auth
 (function(){
   try {
-    var signInBtn  = document.getElementById('googleSignInBtn');
+    var signInBtn  = document.getElementById('emailSignInBtn');
     var signOutBtn = document.getElementById('signOutBtn');
 
     function enterApp(){
@@ -1820,7 +1820,7 @@ window.debugAuth = async function(){
 // Attach Google sign-in handler safely (works with or without inline onclick)
 (function(){
   try{
-    var btn = document.getElementById('googleSignInBtn');
+    var btn = document.getElementById('emailSignInBtn');
     if (btn && !btn.__wired){
       btn.__wired = true;
       btn.addEventListener('click', function(e){
@@ -1840,7 +1840,7 @@ window.debugAuth = async function(){
 document.addEventListener('DOMContentLoaded', function(){
   if (!firebase || !firebase.auth) return;
 
-  var loginBtn = document.getElementById('googleSignInBtn');
+  var loginBtn = document.getElementById('emailSignInBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', function(){
       if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
@@ -1890,7 +1890,7 @@ firebase.auth().onAuthStateChanged(function(user){
 
 /* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
-  var loginBtn = document.getElementById('googleSignInBtn');
+  var loginBtn = document.getElementById('emailSignInBtn');
   if (loginBtn && !loginBtn.__wired){
     loginBtn.__wired = true;
     loginBtn.addEventListener('click', function(){
@@ -1944,3 +1944,116 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+/* ===== Email/Password Auth (Google removed) ===== */
+(function(){
+  if (!(window.firebase && firebase.auth)) { console.error('Firebase Auth not found'); return; }
+  const auth = firebase.auth();
+
+  const $ = sel => document.querySelector(sel);
+  const $backdrop = $('#email-auth-backdrop');
+  const $close = $('#email-auth-close');
+  const $error = $('#email-auth-error');
+  const $email = $('#email-auth-email');
+  const $pass = $('#email-auth-password');
+  const $login = $('#email-auth-login');
+  const $register = $('#email-auth-register');
+  const $reset = $('#email-auth-reset');
+  const $signInBtn = document.getElementById('emailSignInBtn');
+  const $signOutBtn = document.getElementById('signOutBtn');
+
+  function showError(msg){
+    $error.textContent = (typeof msg==='string')?msg:(msg && (msg.message||msg.code))||'שגיאה כללית';
+    $error.style.display='block';
+  }
+  function clearError(){ $error.style.display='none'; $error.textContent=''; }
+
+  function openDialog(){ clearError(); if ($backdrop) { $backdrop.style.display='flex'; if($email) $email.focus(); } }
+  function closeDialog(){ if ($backdrop) $backdrop.style.display='none'; }
+
+  window.startEmailDialog = openDialog;
+  window.startGoogleSignIn = openDialog; // backward-compat: open email dialog instead
+  window.__attemptSignIn = openDialog;
+
+  async function doLogin(){
+    try{
+      clearError();
+      const em = ($email && $email.value||'').trim();
+      const pw = ($pass && $pass.value)||'';
+      if (!em) return showError('נא להזין אימייל');
+      if (!pw) return showError('נא להזין סיסמה');
+      await auth.signInWithEmailAndPassword(em, pw);
+      closeDialog();
+    }catch(e){
+      const map = {
+        'auth/invalid-email':'אימייל לא תקין',
+        'auth/user-not-found':'משתמש לא קיים',
+        'auth/wrong-password':'סיסמה שגויה',
+        'auth/too-many-requests':'יותר מדי ניסיונות, נסה מאוחר יותר'
+      };
+      showError(map[e.code]||e);
+    }
+  }
+  async function doRegister(){
+    try{
+      clearError();
+      const em = ($email && $email.value||'').trim();
+      const pw = ($pass && $pass.value)||'';
+      if (!em) return showError('נא להזין אימייל');
+      if (!pw || pw.length<6) return showError('סיסמה חייבת 6 תווים לפחות');
+      await auth.createUserWithEmailAndPassword(em, pw);
+      closeDialog();
+    }catch(e){
+      const map = {
+        'auth/email-already-in-use':'האימייל כבר רשום',
+        'auth/weak-password':'סיסמה חלשה (מינימום 6 תווים)',
+        'auth/invalid-email':'אימייל לא תקין'
+      };
+      showError(map[e.code]||e);
+    }
+  }
+  async function doReset(){
+    try{
+      clearError();
+      const em = ($email && $email.value||'').trim();
+      if (!em) return showError('נא להזין אימייל לאיפוס');
+      await auth.sendPasswordResetEmail(em);
+      showError('נשלח מייל לאיפוס סיסמה');
+    }catch(e){
+      showError(e);
+    }
+  }
+
+  if ($close) $close.addEventListener('click', closeDialog);
+  if ($backdrop) $backdrop.addEventListener('click', (e)=>{ if (e.target===$backdrop) closeDialog(); });
+  if ($login) $login.addEventListener('click', doLogin);
+  if ($register) $register.addEventListener('click', doRegister);
+  if ($reset) $reset.addEventListener('click', doReset);
+
+  if ($signInBtn && !$signInBtn.__wired){
+    $signInBtn.__wired = true;
+    $signInBtn.addEventListener('click', openDialog);
+  }
+  if ($signOutBtn && !$signOutBtn.__wired2){
+    $signOutBtn.__wired2 = true;
+    $signOutBtn.addEventListener('click', async function(){
+      try{ await auth.signOut(); }catch(e){ console.error(e); }
+    });
+  }
+
+  auth.onAuthStateChanged(function(user){
+    // toggle splash vs app handled elsewhere; make sure the sign-in/out visibility matches
+    try{
+      var btnIn = document.getElementById('emailSignInBtn');
+      var btnOut = document.getElementById('signOutBtn');
+      if (user){
+        if (btnIn) btnIn.style.display='none';
+        if (btnOut) btnOut.style.display='inline-flex';
+      } else {
+        if (btnIn) btnIn.style.display='inline-flex';
+        if (btnOut) btnOut.style.display='none';
+      }
+    }catch(_){}
+  });
+})();

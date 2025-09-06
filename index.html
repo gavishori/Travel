@@ -16,7 +16,7 @@
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
-        <button class="btn primary" id="googleSignInBtn" onclick="startGoogleSignIn()">המשך עם Google</button>
+        <button class="btn primary" id="emailSignInBtn" onclick="startEmailDialog()">כניסה</button>
         <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
       </div>
     </div>
@@ -526,6 +526,29 @@
   <!-- App scripts -->
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
+
+
+  <!-- Email Auth Dialog -->
+  <div id="email-auth-backdrop" class="dialog-backdrop" style="display:none">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="email-auth-title">
+      <button class="dialog-close" id="email-auth-close" title="סגור">×</button>
+      <h3 id="email-auth-title">כניסה עם אימייל וסיסמה</h3>
+      <div id="email-auth-error" class="alert" style="display:none"></div>
+      <form id="email-auth-form" novalidate>
+        <label class="form-label">אימייל
+          <input type="email" id="email-auth-email" class="input" placeholder="you@example.com" required />
+        </label>
+        <label class="form-label">סיסמה
+          <input type="password" id="email-auth-password" class="input" placeholder="••••••••" minlength="6" required />
+        </label>
+        <div class="form-actions">
+          <button type="button" id="email-auth-login" class="btn primary">כניסה</button>
+          <button type="button" id="email-auth-register" class="btn">הרשמה</button>
+          <button type="button" id="email-auth-reset" class="btn">שכחתי סיסמה</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 </body>
 </html>
