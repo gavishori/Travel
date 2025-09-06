@@ -1031,3 +1031,5 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 
 dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:14px; }
 dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
+
+input[type=password], input[type=email]{ font-size:17px; }

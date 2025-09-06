@@ -81,7 +81,7 @@
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
+      if (!auth.currentUser){ /* do not auto-popup login; wait for explicit user gesture */ }
       return (auth.currentUser && auth.currentUser.uid) || null;
     };
 
