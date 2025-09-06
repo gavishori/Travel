@@ -1,10 +1,7 @@
-
-// === Firebase Auth Redirect-Only (stable across iOS) ===
+// ==== Firebase bootstrap (compat) with iOS redirect & tap-gate ====
 (function(){
-  try{
-    if (!window.firebase) { console.error('Firebase SDK not loaded'); return; }
-
-    // Use existing config if defined on page
+  try {
+    // Firebase config must be defined
     window.firebaseConfig = window.firebaseConfig || {
       apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
       authDomain: "travel-416ff.firebaseapp.com",
@@ -15,66 +12,82 @@
       measurementId: "G-FT56H33X5J"
     };
 
+    if (!firebase || !firebase.apps) throw new Error('Firebase SDK not loaded');
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
-    var auth = firebase.auth();
-    var provider = new firebase.auth.GoogleAuthProvider();
-    try { provider.setCustomParameters({ prompt: 'select_account' }); } catch(_){}
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
-    function setStatus(m){
-      try { var s=document.getElementById('statusLine'); if(s) s.textContent=m||''; } catch(_){}
-    }
-    function enterUI(user){
-      try{
-        document.body.classList.add('entered');
-        document.body.classList.remove('splash-mode');
-        var app=document.getElementById('app'); if(app) app.style.display='block';
-        var splash=document.getElementById('splash'); if(splash) splash.style.display='none';
-        setStatus('');
-      }catch(_){}
-    }
+    // A utility function to detect if the user is on an iOS device.
+    window.isIOS = window.isIOS || function(){
+      try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
+    };
 
-    // Session persistence is safest for redirect across platforms
-    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
+    // Use session persistence for iOS and local persistence for other platforms.
+    var persistence = (window.isIOS&&window.isIOS()) ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL;
+    auth.setPersistence(persistence).catch(function(e){ console.warn('[auth] setPersistence failed', e&&e.code, e&&e.message); });
 
-    // Handle redirect result once we come back from Google
+    // Check for a redirect result after sign-in.
     auth.getRedirectResult().then(function(res){
-      if (res && res.user) {
-        enterUI(res.user);
+      if (res && res.user){ 
+        console.log('[auth] redirect ok', res.user.uid); 
       }
     }).catch(function(e){
-      setStatus((e && e.message) || String(e));
-      console.error('redirect result error', e);
+      console.error('[auth] redirect error: ', e);
     });
 
-    // Also take user if already signed in
-    auth.onAuthStateChanged(function(u){ if (u) enterUI(u); });
-
-    // Single-flight guard: a single redirect per click
-    var inflight=false;
+    // Public starter: must be called from the Google button (user gesture)
     window.startGoogleSignIn = function(){
-      if (inflight) return;
-      inflight = true;
-      try {
-        setStatus('');
-        auth.signInWithRedirect(provider);
-      } catch(e){
-        inflight=false;
-        setStatus((e && e.message) || String(e));
+        window.__attemptSignIn();
+    };
+
+    // The core sign-in logic
+    window.__attemptSignIn = async function(){
+      try{
+        if (!window.auth || !window.googleProvider) return;
+        if (auth.currentUser) return;
+
+        // On iOS, force a redirect sign-in to bypass pop-up issues.
+        // The popup is often blocked on mobile browsers.
+        if (window.isIOS && window.isIOS()){
+          console.log('[auth] iOS detected, attempting signInWithRedirect');
+          await auth.signInWithRedirect(googleProvider);
+          return;
+        }
+
+        // On other platforms, first try sign-in with a pop-up.
+        try{
+          await auth.signInWithPopup(googleProvider);
+        }catch(err){
+          var code=(err && err.code) || '';
+          // If the pop-up fails for known reasons (e.g., blocked), fall back to a redirect.
+          var fallback=(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].indexOf(code)!==-1);
+          if (fallback){
+            console.log('[auth] Pop-up blocked or cancelled, falling back to redirect');
+            await auth.signInWithRedirect(googleProvider);
+          } else {
+            console.error('[auth] sign-in failed', code, err && err.message);
+          }
+        }
+      }catch(e){
+        console.error('[auth] __attemptSignIn fatal: ', e);
       }
     };
 
-    // Defensive wiring for the button (in addition to inline)
-    document.addEventListener('DOMContentLoaded', function(){
-      var b = document.getElementById('googleSignInBtn');
-      if (b && !b.__wired_redirect_only){
-        b.__wired_redirect_only = true;
-        b.addEventListener('click', function(ev){ /* inline handles; keep silent */ }, {passive:false});
-      }
-    });
+    // DataLayer surface
+    window.AppDataLayer = window.AppDataLayer || {};
+    window.AppDataLayer.mode = 'firebase';
+    window.AppDataLayer.db = window.db;
+    window.AppDataLayer.ensureAuth = async function(){
+      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
+      return (auth.currentUser && auth.currentUser.uid) || null;
+    };
 
-    console.info('Firebase auth (redirect-only) ready');
-  }catch(e){
-    console.error('Auth init error', e);
+    console.info('Firebase init complete');
+  } catch(e){
+    console.error('Firebase init error → local mode', e);
+    window.AppDataLayer = { mode: 'local' };
   }
 })();
