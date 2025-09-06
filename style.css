@@ -1033,3 +1033,14 @@ dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:
 dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
 
 input[type=password], input[type=email]{ font-size:17px; }
+
+
+/* === MOBILE: stack Edit/Delete vertically for more description space === */
+@media (max-width: 600px){
+  #tab-journal #journalTable .row-actions{
+    display:flex; flex-direction:column; gap:8px; align-items:stretch;
+  }
+  #tab-journal #journalTable .row-actions .btn{ width:100%; }
+  #tab-journal #journalTable td, 
+  #tab-journal #journalTable th{ font-size:14px; line-height:1.35; }
+}

@@ -81,9 +81,11 @@
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ /* do not auto-popup login; wait for explicit user gesture */ }
-      return (auth.currentUser && auth.currentUser.uid) || null;
-    };
+  try{
+    var user = await (window.authReady || Promise.resolve(firebase.auth().currentUser));
+    return (user && user.uid) || null;
+  }catch(e){ return null; }
+};
 
     console.info('Firebase init complete');
   } catch(e){
