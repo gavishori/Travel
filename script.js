@@ -1,3 +1,18 @@
+
+// DOUBLE-TAP-ZOOM-GUARD (mobile): prevent accidental zoom on fast taps
+(function(){
+  var last = 0;
+  document.addEventListener('touchend', function(e){
+    try{
+      var now = Date.now();
+      if (now - last < 350){
+        e.preventDefault();
+      }
+      last = now;
+    }catch(_){}
+  }, {passive:false, capture:true});
+})();
+
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
