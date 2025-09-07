@@ -1956,3 +1956,15 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// === Mobile binder: 'בחר מיקום' buttons open the full location dialog ===
+(function(){
+  function onReady(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  onReady(function(){
+    var eBtn = document.getElementById('openLocPickerFromExpense');
+    if (eBtn){ eBtn.addEventListener('click', function(){ try{ openLocationPicker('expense'); }catch(_){ /* fallback */ var dlg=document.getElementById('locationDialog'); if(dlg) dlg.showModal(); } }); }
+    var jBtn = document.getElementById('openLocPickerFromJournal');
+    if (jBtn){ jBtn.addEventListener('click', function(){ try{ openLocationPicker('journal'); }catch(_){ var dlg=document.getElementById('locationDialog'); if(dlg) dlg.showModal(); } }); }
+  });
+})();

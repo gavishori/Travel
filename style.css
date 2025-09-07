@@ -1120,3 +1120,26 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 @media (min-width: 769px){
   .mobile-only{ display:none; }
 }
+
+
+/* === Mobile: match 'הוסף רישום' to 'הוסף הוצאה' === */
+@media (max-width: 768px){
+  #addExpenseBtn, #addJournalBtn{
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+}
+
+
+/* === Mobile: emphasize only 'תקציב כולל' === */
+@media (max-width: 768px){
+  .budget-card-grid .budget-row .budget-label,
+  .budget-card-grid .budget-row .currency-cell{ font-weight: 500; }
+  .budget-card-grid .budget-total .budget-label,
+  .budget-card-grid .budget-total .currency-cell{ font-weight: 700; }
+}
