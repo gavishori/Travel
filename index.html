@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>ניהול תקציב טיול — גרסת תיקון</title>
+    <title>ניהול תקציב טיול — מובייל בלבד</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -16,9 +16,7 @@
       </nav>
     </header>
 
-    <!-- Screens -->
     <main id="screens">
-      <!-- Budget summary screen -->
       <section id="screen-budget" class="screen active">
         <div class="card shadow">
           <h2 class="card-title">סיכום תקציב</h2>
@@ -37,25 +35,11 @@
             </div>
           </div>
         </div>
-
-        <div class="card shadow">
-          <h3 class="card-title">מה חדש בגרסת התיקון</h3>
-          <ul class="fix-list">
-            <li>הדגשה נשארת <strong>רק</strong> על סכום התקציב. הוצאות ויתרה — ללא הדגשה.</li>
-            <li>כפתור <em>הוסף הוצאה</em> מעוצב ונגיש במובייל.</li>
-            <li>ביטול שקיפות, ללא פסי גלילה מיותרים.</li>
-            <li>בחירת מיקום במסך ייעודי נפרד עם שמירה/ביטול.</li>
-            <li>מסך הוספת תיעוד ליומן — זהה בהגדרות למסך ההוצאה.</li>
-          </ul>
-        </div>
       </section>
 
-      <!-- Add Expense screen -->
       <section id="screen-add-expense" class="screen">
         <form id="expense-form" class="form card shadow" autocomplete="off">
-          <div class="form-header">
-            <h2>הוספת הוצאה</h2>
-          </div>
+          <div class="form-header"><h2>הוספת הוצאה</h2></div>
 
           <label class="field">
             <span>קטגוריה</span>
@@ -103,7 +87,6 @@
         </form>
       </section>
 
-      <!-- Location screen (dedicated) -->
       <section id="screen-set-location" class="screen">
         <form id="location-form" class="form card shadow">
           <div class="form-header">
@@ -136,12 +119,9 @@
         </form>
       </section>
 
-      <!-- Add Journal Entry screen -->
       <section id="screen-add-journal" class="screen">
         <form id="journal-form" class="form card shadow" autocomplete="off">
-          <div class="form-header">
-            <h2>הוספת תיעוד יומי</h2>
-          </div>
+          <div class="form-header"><h2>הוספת תיעוד יומי</h2></div>
 
           <label class="field">
             <span>כותרת</span>
@@ -179,7 +159,7 @@
     </main>
 
     <footer class="app-footer">
-      <small>גרסת תיקון 07/09 — UI מותאם מובייל, ללא שקיפות/גלילה, מיקום במסך נפרד.</small>
+      <small>גרסת מובייל בלבד — שינויים חלים רק במסכים צרים.</small>
     </footer>
 
     <script src="script.js"></script>
