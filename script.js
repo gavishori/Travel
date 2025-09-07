@@ -533,24 +533,6 @@ function toUSD(amount, from="USD"){
   return Number(amount);
 }
 
-
-// Auto-open active trip when dates cover 'now'
-window.onAuthReady = async function(user){
-  try{
-    const trips = await Store.listTrips();
-    const now = Date.now();
-    const active = trips.find(t => t.start && t.end && now >= new Date(t.start).getTime() && now <= new Date(t.end).getTime());
-    if (active){
-      await openTrip(active.id);
-      return;
-    }
-    await renderHome();
-  }catch(e){
-    console.warn('onAuthReady auto-open failed', e);
-    try{ await renderHome(); }catch(_){}
-  }
-};
-
 // ---------- Rendering ----------
 async function renderHome(){
   $("#homeView")?.classList.add("active");
@@ -1962,3 +1944,21 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// FAILSAFE: ensure app visible after auth
+setTimeout(function(){
+  try{
+    if (firebase && firebase.auth && firebase.auth().currentUser){
+      document.body.classList.add('entered');
+      var app = document.getElementById('app');
+      if (app) app.style.display = 'block';
+      if (typeof renderHome === 'function'){
+        var main = document.getElementById('main');
+        if (!main || !main.children || main.children.length === 0){
+          renderHome();
+        }
+      }
+    }
+  }catch(e){}
+}, 800);
