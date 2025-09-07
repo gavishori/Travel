@@ -1,18 +1,3 @@
-
-// DOUBLE-TAP-ZOOM-GUARD (mobile): prevent accidental zoom on fast taps
-(function(){
-  var last = 0;
-  document.addEventListener('touchend', function(e){
-    try{
-      var now = Date.now();
-      if (now - last < 350){
-        e.preventDefault();
-      }
-      last = now;
-    }catch(_){}
-  }, {passive:false, capture:true});
-})();
-
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1959,21 +1944,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// FAILSAFE: ensure app visible after auth
-setTimeout(function(){
-  try{
-    if (firebase && firebase.auth && firebase.auth().currentUser){
-      document.body.classList.add('entered');
-      var app = document.getElementById('app');
-      if (app) app.style.display = 'block';
-      if (typeof renderHome === 'function'){
-        var main = document.getElementById('main');
-        if (!main || !main.children || main.children.length === 0){
-          renderHome();
-        }
-      }
-    }
-  }catch(e){}
-}, 800);

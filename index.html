@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
@@ -537,8 +537,7 @@
       <label for="email-auth-email">אימייל</label>
       <input id="email-auth-email" type="email" placeholder="you@example.com" autocomplete="email" />
       <label for="email-auth-password">סיסמה</label>
-      <input id="email-auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
-      <div class="dialog-actions">
+      <div class="input-with-icon"><input id="email-auth-password" type="password" placeholder="••••••••" autocomplete="current-password" /><button type="button" id="toggle-pass-visibility" class="icon-eye" aria-label="הצג סיסמה" aria-pressed="false"><svg class="eye-open" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 5c5.05 0 9.27 3.11 11 7-1.73 3.89-5.95 7-11 7S2.73 15.89 1 12c1.73-3.89 5.95-7 11-7zm0 2C8.14 7 4.9 9.22 3.25 12 4.9 14.78 8.14 17 12 17s7.1-2.22 8.75-5C19.1 9.22 15.86 7 12 7zm0 2a3 3 0 110 6 3 3 0 010-6z"></path></svg><svg class="eye-closed" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M3.28 2.22L2.22 3.28 5.1 6.16A12.8 12.8 0 001 12c1.73 3.89 5.95 7 11 7 2.02 0 3.93-.44 5.6-1.24l2.12 2.12 1.06-1.06L3.28 2.22zM12 17c-3.86 0-7.1-2.22-8.75-5 .95-1.7 2.5-3.12 4.45-4.02l1.62 1.62A4 4 0 0012 16c.52 0 1.02-.1 1.48-.28L15.3 17.5c-1.03.33-2.14.5-3.3.5zm8.75-5c-.62 1.1-1.45 2.07-2.44 2.87l1.42 1.42A12.9 12.9 0 0023 12c-1.73-3.89-5.95-7-11-7-1.05 0-2.06.12-3.03.35l1.67 1.67A9.4 9.4 0 0112 7c3.86 0 7.1 2.22 8.75 5z"></path></svg></button></div><div class="dialog-actions">
         <button class="btn" id="email-auth-reset">שכחתי סיסמה</button>
         <button class="btn" id="email-auth-register">הרשמה</button>
         <button class="btn primary" id="email-auth-login">כניסה</button>
@@ -556,6 +555,8 @@
     const passInput = $('#email-auth-password');
     const err = $('#email-auth-error');
     const closeBtn = $('#email-auth-close');
+    const cancelBtn = $('#email-auth-cancel');
+    const eyeBtn = $('#toggle-pass-visibility');
 
     function showErr(msg){
       if(!err) return;
@@ -567,6 +568,16 @@
 
     if(openBtn && dlg) openBtn.addEventListener('click', openDlg);
     if(closeBtn) closeBtn.addEventListener('click', closeDlg);
+    if(cancelBtn) cancelBtn.addEventListener('click', closeDlg);
+    if(eyeBtn) eyeBtn.addEventListener('click', function(){
+      try{
+        var visible = passInput.type === 'text';
+        passInput.type = visible ? 'password' : 'text';
+        eyeBtn.classList.toggle('active', !visible);
+        eyeBtn.setAttribute('aria-label', visible ? 'הצג סיסמה' : 'הסתר סיסמה');
+        eyeBtn.setAttribute('aria-pressed', String(!visible));
+      }catch(_){}
+    });
 
     const loginBtn = $('#email-auth-login');
     const registerBtn = $('#email-auth-register');

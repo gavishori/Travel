@@ -1032,44 +1032,12 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 dialog#emailAuthDialog .dialog-fields{ display:flex; flex-direction:column; gap:14px; }
 dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px; }
 
-
-/* ======== MOBILE POLISH v2 ======== */
-/* Avoid double-tap zoom + text auto-scaling */
-html, body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
-
-/* Tabs → Tiles (match mock) */
-@media (max-width: 600px){
-  .tabs{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
-  .tabs .tab{
-    background:#3b6fd8; color:#fff; border:none;
-    display:flex; align-items:center; justify-content:center;
-    min-height:72px; border-radius:22px;
-    font-size:20px; font-weight:800; letter-spacing:0;
-    padding:14px 10px; text-align:center;
-    box-shadow: 0 6px 20px rgba(59,111,216,.25);
-  }
-  .tabs .tab.active{ background:#6d28d9; }
-}
-
-/* Email/password dialog: full-screen layout already; ensure fields are large enough */
-@media (max-width: 600px){
-  #emailAuthDialog input{ font-size:17px; }
-  #email-auth-login{ display:none; } /* auto-login */
-}
-
-/* Expenses table: keep actions visible; no side scroll */
-@media (max-width: 600px){
-  #expensesTable{ table-layout: fixed; width:100%; }
-  #expensesTable th, #expensesTable td{ font-size:14px; }
-  /* Hide 'מקום' column (5th) for space */
-  #expensesTable th:nth-child(5), #expensesTable td:nth-child(5){ display:none; }
-  /* tighter numeric columns */
-  #expensesTable th:nth-child(2), #expensesTable td:nth-child(2){ width:22%; }
-  #expensesTable th:nth-child(3), #expensesTable td:nth-child(3){ width:18%; }
-  #expensesTable th:nth-child(4), #expensesTable td:nth-child(4){ width:14%; }
-  #expensesTable th:nth-child(6), #expensesTable td:nth-child(6){ width:18%; }
-  #expensesTable th:nth-child(7), #expensesTable td:nth-child(7){ width:28%; }
-  #tab-budget .row-actions{ display:flex; flex-direction:column; gap:6px; }
-  #tab-budget .row-actions .btn{ width:100%; padding:8px 10px; font-size:14px; }
-  .table-wrapper{ overflow-x:hidden; }
-}
+/* === Password eye toggle === */
+.input-with-icon{ position:relative; }
+.input-with-icon input{ padding-inline-end:44px; }
+.icon-eye{ position:absolute; inset-inline-end:10px; top:50%; transform:translateY(-50%); width:32px; height:32px;
+  display:grid; place-items:center; background:transparent; border:none; color:var(--fg,#fff); opacity:.9; }
+.icon-eye:active{ transform:translateY(-50%) scale(.98); }
+.icon-eye .eye-closed{ display:none; }
+.icon-eye.active .eye-open{ display:none; }
+.icon-eye.active .eye-closed{ display:block; }
