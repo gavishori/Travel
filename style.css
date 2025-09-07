@@ -1087,3 +1087,36 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 }
 /* iOS: avoid double-tap zoom */
 html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+
+
+/* === Mobile-only UI fixes (applied per your spec) === */
+@media (max-width: 768px){
+  .budget-card-grid .budget-row .budget-label,
+  .budget-card-grid .budget-row .currency-cell{ font-weight: 500; }
+  .budget-card-grid .budget-row:first-of-type .budget-label,
+  .budget-card-grid .budget-row:first-of-type .currency-cell{ font-weight: 700; }
+
+  #addExpenseBtn{
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .dialog::backdrop{ background: rgba(0,0,0,0.85) !important; }
+  *::-webkit-scrollbar{ display:none; }
+  *{ scrollbar-width: none; }
+
+  .expense-dialog-grid .map-side,
+  .journal-dialog-grid .map-side{ display:none !important; }
+
+  .mobile-only{ display:block; }
+
+  #sortExpensesBtn span, #sortJournalBtn span{ display:none !important; }
+}
+@media (min-width: 769px){
+  .mobile-only{ display:none; }
+}

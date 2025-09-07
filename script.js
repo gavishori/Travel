@@ -1167,7 +1167,7 @@ function openLocationPicker(forType){
       if (state.locationPick.forType === "expense"){
         el("expLat").value = state.locationPick.lat;
         el("expLng").value = state.locationPick.lng;
-      }
+      } else if (state.locationPick.forType === "journal"){ el("journalLat").value = state.locationPick.lat; el("journalLng").value = state.locationPick.lng; }
       dlg.close();
     } else {
       alert("בחר מיקום ע\"י לחיצה על המפה או חיפוש.");
