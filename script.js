@@ -1165,6 +1165,7 @@ function openLocationPicker(forType){
       alert("בחר מיקום ע\"י לחיצה על המפה או חיפוש.");
     }
   };
+  async function openExpenseDialog(exp){
   el("expenseDialogTitle").textContent = exp? "עריכת הוצאה" : "הוספת הוצאה";
   el("expDesc").value = exp?.desc || "";
   el("expCat").value = exp?.category || lastUsed.category;
@@ -1608,29 +1609,11 @@ async function init(){
     await renderOverviewMiniMap();
   };
 
-  if (el("addExpenseBtn")) el("addExpenseBtn").onclick = ()=> openExpenseDialog(null);
+    if (el("addExpenseBtn")) el("addExpenseBtn").onclick = ()=> openExpenseDialog(null);
   if (el("addJournalBtn")) el("addJournalBtn").onclick = () => openJournalDialog(null);
-if (el("openLocationPickerExp")) el("openLocationPickerExp").onclick = ()=> openLocationPicker("expense");
-if (el("openLocationPickerJournal")) el("openLocationPickerJournal").onclick = ()=> openLocationPicker("journal");
   if (el("openLocationPickerExp")) el("openLocationPickerExp").onclick = ()=> openLocationPicker("expense");
   if (el("openLocationPickerJournal")) el("openLocationPickerJournal").onclick = ()=> openLocationPicker("journal");
-  if (el("pickLocationBtn")) el("pickLocationBtn").onclick = ()=> openLocationPicker("expense");
-  if (el("saveExpenseBtn")) el("saveExpenseBtn").onclick = async (e)=>{
-    e.preventDefault();
-    const id = state.currentTripId;
-    const entry = collectExpenseForm();
-    if (!entry) return;
-    if (entry.id){
-      const { id:expId, ...rest } = entry;
-      await Store.updateExpense(id, expId, rest);
-      setStatus("הוצאה עודכנה");
-    } else {
-      await Store.addExpense(id, entry);
-      setStatus("הוצאה נוספה");
-    }
-    el("expenseDialog").close();
-    renderBudget(); refreshMainMap();
-  };
+
 
   // SAVE JOURNAL BUTTON HANDLER
   if (el("saveJournalBtn")) el("saveJournalBtn").onclick = async (e)=>{
