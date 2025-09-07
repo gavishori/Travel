@@ -842,7 +842,7 @@ async function renderOverviewMiniMap(){
     const map = state.maps.mini;
     const group = L.featureGroup();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
+      const marker = L.marker([p.lat,p.lng]).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1102,7 +1102,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.marker([p.lat,p.lng]).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
