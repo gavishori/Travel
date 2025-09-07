@@ -1087,3 +1087,51 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 }
 /* iOS: avoid double-tap zoom */
 html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+
+
+/* === Mobile-specific tweaks (0907) === */
+@media (max-width: 768px){
+  /* (1) Budget font-weights: only the first row (תקציב כולל) stays bold */
+  .budget-card-grid .budget-row .currency-cell{ font-weight: 500; }
+  .budget-card-grid .budget-row:first-of-type .currency-cell{ font-weight: 700; }
+
+  /* (2) Style the 'הוסף הוצאה' call-to-action */
+  #addExpenseBtn{
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  /* (3) Remove transparency + scrollbars for dialogs/panels */
+  .dialog::backdrop{ background: var(--bg); }
+  *::-webkit-scrollbar{ display: none; }
+  *{ scrollbar-width: none; }
+
+  /* (4) Hide embedded map controls inside expense/journal dialogs on mobile (we'll use a dedicated picker) */
+  .expense-dialog-grid .map-side,
+  .journal-dialog-grid .map-side{
+    display: none !important;
+  }
+
+  /* (5) Make the dedicated location picker full-screen and clean */
+  .dialog.full-mobile{
+    width: 100vw; max-width: 100vw;
+    height: 100vh; max-height: 100vh;
+    margin: 0; padding: 0;
+    border-radius: 0;
+  }
+  .dialog.full-mobile .form{
+    height: 100vh; display: grid; grid-template-rows: auto 1fr auto;
+    gap: 10px; padding: 14px;
+  }
+  #locationPickerMap{ height: calc(100vh - 140px); border-radius: 12px; }
+}
+
+
+@media (min-width: 769px){
+  #openLocPickerFromExpense, #openLocPickerFromJournal{ display: none; }
+}

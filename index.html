@@ -345,6 +345,7 @@
     <input type="time" id="expTime" class="input" />
   </label>
 </div>
+            <div class="input-with-button"><button type="button" id="openLocPickerFromExpense" class="btn primary">בחר מיקום</button></div>
             <input type="hidden" id="expLat"><input type="hidden" id="expLng">
           </div>
         </div>
@@ -384,6 +385,7 @@
                 <input type="time" id="journalTime" class="input" />
               </label>
             </div>
+            <div class="input-with-button"><button type="button" id="openLocPickerFromJournal" class="btn primary">בחר מיקום</button></div>
             <input type="hidden" id="journalLat"><input type="hidden" id="journalLng">
           </div>
         </div>
@@ -622,5 +624,18 @@
   })();
   </script>
 
+
+    <!-- MOBILE LOCATION PICKER -->
+    <dialog id="locationPickerDialog" class="dialog full-mobile">
+      <form method="dialog" class="form compact">
+        <h3>בחר מיקום</h3>
+        <div id="locationPickerMap" class="map tall"></div>
+        <menu class="form-actions">
+          <button value="cancel" id="locPickCancel" class="btn ghost">ביטול</button>
+          <button id="locPickSave" class="btn primary" value="default">שמור</button>
+        </menu>
+      </form>
+    </dialog>
+    
 </body>
 </html>
