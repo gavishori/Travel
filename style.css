@@ -1143,3 +1143,14 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   .budget-card-grid .budget-total .budget-label,
   .budget-card-grid .budget-total .currency-cell{ font-weight: 700; }
 }
+
+
+/* === Mobile polish: dialog layout + map interaction === */
+@media (max-width: 768px){
+  #journalDateTimeRow{ display:grid; grid-template-columns: 1fr; gap:10px; }
+  #journalTable td.row-actions, #overviewJournalTable td.row-actions{ display:flex; flex-direction:column; gap:8px; }
+  #journalDialog textarea#journalTextarea{ min-height: 32vh; }
+  #journalDialog h3{ font-size: 1.2rem; }
+  #journalDialog label{ font-size: 1rem; }
+  #locationMap{ pointer-events:auto; touch-action: manipulation; }
+}

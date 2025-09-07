@@ -108,7 +108,7 @@ const state = {
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
   theme: localStorage.getItem("theme") || "dark",
-  maps: { mini:null, main:null, location:null, expense:null, journal: null },
+  maps: { mini:null, main:null, location:null, expense:null, journal: null, locationMarker:null },
   locationPick: { lat:null, lng:null, forType:null, tempId:null },
   lastStatusTimer: null,
   sortAsc: false,
@@ -626,6 +626,7 @@ function activateTabs(){
 
 
 async function openTrip(id){
+  setupRealtimeForTrip(id);
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
   if (!trip){ alert("נסיעה לא נמצאה"); return; }
@@ -1127,6 +1128,8 @@ function openLocationPicker(forType){
     state.maps.location.on("click", (e)=>{
       state.locationPick.lat = e.latlng.lat;
       state.locationPick.lng = e.latlng.lng;
+      if (state.maps.locationMarker){ state.maps.locationMarker.setLatLng([e.latlng.lat, e.latlng.lng]); }
+      else { state.maps.locationMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(state.maps.location); }
       setStatus(`נבחר: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`);
     });
   }
@@ -1968,3 +1971,49 @@ window.handleSignOut = async function(){
     if (jBtn){ jBtn.addEventListener('click', function(){ try{ openLocationPicker('journal'); }catch(_){ var dlg=document.getElementById('locationDialog'); if(dlg) dlg.showModal(); } }); }
   });
 })();
+
+
+// delegate: journal table actions (mobile robust)
+(function(){
+  const tbody = document.querySelector("#journalTable tbody");
+  if (!tbody) return;
+  tbody.addEventListener("click", function(ev){
+    const delBtn = ev.target.closest("button.del");
+    const editBtn = delBtn ? null : ev.target.closest("button.edit");
+    const tr = ev.target.closest("tr");
+    if (!tr) return;
+    const jid = tr.dataset.journalid;
+    if (delBtn){
+      ev.preventDefault(); ev.stopPropagation();
+      try{
+        openJournalDeleteDialog(state.currentTripId, (state._journalById && state._journalById[jid]) || { id: jid, text: tr.cells[0]?.innerText || "" });
+      }catch(err){ console.error(err); }
+      return;
+    }
+    if (editBtn){
+      ev.preventDefault(); ev.stopPropagation();
+      try{
+        openJournalDialog((state._journalById && state._journalById[jid]) || { id: jid });
+      }catch(err){ console.error(err); }
+      return;
+    }
+  }, true);
+})();
+
+
+// realtime updates: auto-refresh when trip changes (firebase)
+function setupRealtimeForTrip(tripId){
+  try{
+    if (state._unsubTrip){ state._unsubTrip(); state._unsubTrip = null; }
+    if (window.AppDataLayer?.mode !== "firebase" || !window.AppDataLayer?.db){ return; }
+    const db = window.AppDataLayer.db;
+    state._unsubTrip = db.collection("trips").doc(tripId).onSnapshot((doc)=>{
+      if (!doc.exists) return;
+      renderBudget?.();
+      renderOverviewExpenses?.();
+      renderJournal?.();
+      renderExpenses?.();
+      refreshMainMap?.();
+    });
+  }catch(err){ console.warn("realtime subscribe failed", err); }
+}
