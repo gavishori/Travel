@@ -1,3 +1,15 @@
+
+// DOUBLE_TAP_GUARD_v2
+(function(){
+  var last = 0;
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if (now - last < 350){
+      e.preventDefault();
+    }
+    last = now;
+  }, {passive:false, capture:true});
+})();
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -690,7 +702,7 @@ async function openTrip(id){
     };
   }
   setupBudgetLock(trip);
-
+}
 
 function setupBudgetLock(trip) {
   const btn = el("toggleBudgetLock");
