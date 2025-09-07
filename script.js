@@ -1,15 +1,3 @@
-
-// DOUBLE_TAP_GUARD_v2
-(function(){
-  var last = 0;
-  document.addEventListener('touchend', function(e){
-    var now = Date.now();
-    if (now - last < 350){
-      e.preventDefault();
-    }
-    last = now;
-  }, {passive:false, capture:true});
-})();
 // script.js (clean rebuild)
 
 // Ensure Leaflet default marker assets resolve correctly (prevent 404s)
@@ -1167,19 +1155,16 @@ function openLocationPicker(forType){
       if (state.locationPick.forType === "expense"){
         el("expLat").value = state.locationPick.lat;
         el("expLng").value = state.locationPick.lng;
+      } else if (state.locationPick.forType === "journal"){
+        el("journalLat").value = state.locationPick.lat;
+        el("journalLng").value = state.locationPick.lng;
       }
       dlg.close();
+      setStatus("מיקום נשמר");
     } else {
       alert("בחר מיקום ע\"י לחיצה על המפה או חיפוש.");
     }
   };
-}
-
-// Expense dialog
-// Expense dialog
-async function openExpenseDialog(exp){
-  // prepare map + controls inside the expense dialog
-
   el("expenseDialogTitle").textContent = exp? "עריכת הוצאה" : "הוספת הוצאה";
   el("expDesc").value = exp?.desc || "";
   el("expCat").value = exp?.category || lastUsed.category;
@@ -1625,6 +1610,10 @@ async function init(){
 
   if (el("addExpenseBtn")) el("addExpenseBtn").onclick = ()=> openExpenseDialog(null);
   if (el("addJournalBtn")) el("addJournalBtn").onclick = () => openJournalDialog(null);
+if (el("openLocationPickerExp")) el("openLocationPickerExp").onclick = ()=> openLocationPicker("expense");
+if (el("openLocationPickerJournal")) el("openLocationPickerJournal").onclick = ()=> openLocationPicker("journal");
+  if (el("openLocationPickerExp")) el("openLocationPickerExp").onclick = ()=> openLocationPicker("expense");
+  if (el("openLocationPickerJournal")) el("openLocationPickerJournal").onclick = ()=> openLocationPicker("journal");
   if (el("pickLocationBtn")) el("pickLocationBtn").onclick = ()=> openLocationPicker("expense");
   if (el("saveExpenseBtn")) el("saveExpenseBtn").onclick = async (e)=>{
     e.preventDefault();
