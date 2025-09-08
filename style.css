@@ -1108,3 +1108,17 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #addJournal:active, #addJournalTop:active {
   transform: translateY(1px);
 }
+
+
+/* === CTA styling for actual Add buttons === */
+#addExpenseBtn, #addJournalBtn {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 12px 18px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12) !important;
+}
+#addExpenseBtn:hover, #addJournalBtn:hover { filter: brightness(0.97); }
+#addExpenseBtn:active, #addJournalBtn:active { transform: translateY(1px); }

@@ -841,7 +841,7 @@ async function renderOverviewMiniMap(){
     const map = state.maps.mini;
     const group = L.featureGroup();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:8, color: color, weight:2, fillColor: color, fillOpacity: 0.95 }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1101,7 +1101,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:8, color: color, weight:2, fillColor: color, fillOpacity: 0.95 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
@@ -1154,7 +1154,7 @@ function openLocationPicker(forType){
       const lat = Number(r.lat), lng = Number(r.lon);
       state.locationPick.lat = lat; state.locationPick.lng = lng;
       state.maps.location.setView([lat,lng], 14);
-      L.marker([lat,lng]).addTo(state.maps.location);
+      L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(state.maps.location);
       setStatus(r.display_name);
     } else {
       alert("לא נמצא מיקום מתאים");
@@ -1226,7 +1226,7 @@ async function openExpenseDialog(exp){
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(map); }
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
@@ -1370,7 +1370,7 @@ async function openJournalDialog(journalEntry) {
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(map); }
       el("journalLat").value = lat;
       el("journalLng").value = lng;
     }
@@ -1989,4 +1989,25 @@ window.handleSignOut = async function(){
     };
     return wrapper;
   };
+})();
+
+
+// Map trip type codes to Hebrew
+function typeToHeb(v){
+  const map = { "city":"עירוני", "urban":"עירוני", "nature":"טבע", "beach":"ים", "family":"משפחתי", "work":"עסקי", "other":"אחר" };
+  return map[v] || v;
+}
+
+// Replace any plain 'urban' text nodes with Hebrew as a safety net
+(function hebrewizeUrban(){
+  function walk(node){
+    if (node.nodeType===3){ // text
+      node.nodeValue = node.nodeValue.replace(/\burban\b/g, "עירוני");
+    } else {
+      node.childNodes && node.childNodes.forEach(walk);
+    }
+  }
+  walk(document.body);
+  const mo = new MutationObserver(muts=> muts.forEach(m=> m.addedNodes && m.addedNodes.forEach(walk)));
+  mo.observe(document.body, {childList:true, subtree:true, characterData:true});
 })();
