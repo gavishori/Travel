@@ -17,6 +17,7 @@
       <h1>FLYMILY</h1>
     </div>
     <div class="header-actions">
+      <span id="authStatus" class="muted" aria-live="polite">אורח</span>
       <button id="themeToggle" class="icon-btn" title="מצב כהה/בהיר" aria-label="החלף מצב תאורה">🌗</button>
       <button id="openAuth" class="btn primary small">התחברות</button>
     </div>
@@ -161,12 +162,22 @@
     <button data-nav="settings" class="bn-item">הגדרות</button>
   </nav>
 
-  <!-- Dialogs -->
+  <!-- Auth Dialog (Email/Password only) -->
   <dialog id="authDialog" class="dialog" aria-label="התחברות">
-    <h3 class="dialog-title">התחברות</h3>
-    <div class="dialog-content">
-      <p class="muted">כדי לשמור ולסנכרן, התחבר עם Google.</p>
-      <button id="googleBtn" class="btn primary wide">התחבר עם Google</button>
+    <h3 class="dialog-title">התחברות עם מייל וסיסמה</h3>
+    <div class="dialog-content form compact">
+      <label>אימייל
+        <input id="authEmail" class="input" type="email" placeholder="name@example.com" autocomplete="username">
+      </label>
+      <label>סיסמה
+        <input id="authPassword" class="input" type="password" placeholder="••••••••" autocomplete="current-password">
+      </label>
+      <p id="authError" class="muted" style="min-height:1.25em"></p>
+      <div class="row gap">
+        <button id="authSignIn" class="btn primary">התחבר</button>
+        <button id="authRegister" class="btn">הרשמה</button>
+        <button id="authReset" class="btn ghost">איפוס סיסמה</button>
+      </div>
     </div>
     <div class="dialog-actions">
       <button class="btn ghost" data-close>סגור</button>

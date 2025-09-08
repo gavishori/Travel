@@ -2,7 +2,7 @@
 // DOUBLE_TAP_GUARD
 (function(){let last=0;document.addEventListener('touchend',e=>{const now=Date.now();if(now-last<350){e.preventDefault();}last=now;},{passive:false,capture:true});})();
 
-// Leaflet marker assets (avoid 404s)
+// Leaflet marker assets
 if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
   L.Icon.Default.mergeOptions({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -40,11 +40,41 @@ function linkifyToIcon(text){
   });
 })();
 
+// ---------- Auth (Email/Password only) ----------
+const Auth = (function(){
+  function isFirebaseReady(){
+    return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+  }
+  function user(){ return isFirebaseReady() ? firebase.auth().currentUser : null; }
+  function onChange(cb){
+    if (!isFirebaseReady()) { cb(null); return; }
+    firebase.auth().onAuthStateChanged(cb);
+  }
+  async function signIn(email, password){
+    if (!isFirebaseReady()) throw new Error('Firebase לא מאותחל.');
+    return firebase.auth().signInWithEmailAndPassword(email, password);
+  }
+  async function register(email, password){
+    if (!isFirebaseReady()) throw new Error('Firebase לא מאותחל.');
+    return firebase.auth().createUserWithEmailAndPassword(email, password);
+  }
+  async function reset(email){
+    if (!isFirebaseReady()) throw new Error('Firebase לא מאותחל.');
+    return firebase.auth().sendPasswordResetEmail(email);
+  }
+  async function signOut(){
+    if (!isFirebaseReady()) return;
+    await firebase.auth().signOut();
+  }
+  return { isFirebaseReady, user, onChange, signIn, register, reset, signOut };
+})();
+
 // ---------- Data Layer ----------
 const Store = (function(){
-  const mode = window.AppDataLayer?.mode || 'local';
-  const db   = window.AppDataLayer?.db;
-  let uid    = null;
+  function useFirebase(){
+    return Auth.isFirebaseReady() && Auth.user();
+  }
+  function db(){ return firebase.firestore(); }
 
   function loadLS(){
     try{ return JSON.parse(localStorage.getItem('travel_journal_data_v3')) || { trips:{} }; }
@@ -52,19 +82,10 @@ const Store = (function(){
   }
   function saveLS(data){ localStorage.setItem('travel_journal_data_v3', JSON.stringify(data)); }
 
-  async function ensureAuth(){
-    if (mode === 'firebase'){
-      await window.AppDataLayer.ensureAuth?.();
-      uid = (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
-    }
-    return uid;
-  }
-
   async function listTrips(){
-    if (mode==='firebase' && !firebase.auth().currentUser){ console.warn('[guard] listTrips blocked until sign-in'); return []; }
-    if (mode==='firebase'){
-      const _uid = await ensureAuth();
-      const snap = await db.collection('trips').where('ownerUid','==',_uid).get();
+    if (useFirebase()){
+      const uid = Auth.user().uid;
+      const snap = await db().collection('trips').where('ownerUid','==',uid).get();
       return snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     }else{
       const data = loadLS();
@@ -73,13 +94,12 @@ const Store = (function(){
   }
 
   async function createTrip(meta){
-    if (mode==='firebase' && !firebase.auth().currentUser){ console.warn('[guard] createTrip blocked until sign-in'); return null; }
     const now = Date.now();
     const trip = { ...meta, createdAt: now, updatedAt: now, budget: { USD: Number(meta.budgetUSD||0) }, budgetLocked: !!meta.budgetLocked, expenses:{}, journal:{}, share:{enabled:false,scope:'full'} };
-    if (mode==='firebase'){
-      const _uid = await ensureAuth();
-      const ref = await db.collection('trips').add({ ...trip, ownerUid: _uid });
-      return { id: ref.id, ...trip, ownerUid:_uid };
+    if (useFirebase()){
+      const uid = Auth.user().uid;
+      const ref = await db().collection('trips').add({ ...trip, ownerUid: uid });
+      return { id: ref.id, ...trip, ownerUid: uid };
     }else{
       const data = loadLS();
       const id = 't_' + (crypto.randomUUID ? crypto.randomUUID() : String(now));
@@ -90,10 +110,8 @@ const Store = (function(){
   }
 
   async function getTrip(id){
-    if (mode==='firebase' && !firebase.auth().currentUser){ console.warn('[guard] getTrip blocked until sign-in'); return null; }
-    if (mode==='firebase'){
-      await ensureAuth();
-      const doc = await db.collection('trips').doc(id).get();
+    if (useFirebase()){
+      const doc = await db().collection('trips').doc(id).get();
       if (!doc.exists) return null;
       const t = { id: doc.id, ...doc.data() };
       t.expenses ||= {}; t.journal ||= {}; t.budget ||= {USD:0}; t.share ||= {enabled:false,scope:'full'};
@@ -106,10 +124,9 @@ const Store = (function(){
   }
 
   async function updateTrip(id, updates){
-    if (mode==='firebase' && !firebase.auth().currentUser){ console.warn('[guard] updateTrip blocked until sign-in'); return null; }
     updates.updatedAt = Date.now();
-    if (mode==='firebase'){
-      await db.collection('trips').doc(id).set(updates, { merge:true });
+    if (useFirebase()){
+      await db().collection('trips').doc(id).set(updates, { merge:true });
     }else{
       const data = loadLS();
       data.trips[id] = { ...(data.trips[id]||{}), ...updates };
@@ -118,9 +135,8 @@ const Store = (function(){
   }
 
   async function deleteTrip(id){
-    if (mode==='firebase' && !firebase.auth().currentUser){ console.warn('[guard] deleteTrip blocked until sign-in'); return null; }
-    if (mode==='firebase'){
-      await db.collection('trips').doc(id).delete();
+    if (useFirebase()){
+      await db().collection('trips').doc(id).delete();
     }else{
       const data = loadLS();
       delete data.trips[id];
@@ -229,7 +245,7 @@ function sumExpenses(trip){
   let total = 0;
   Object.values(exp).forEach(e=>{
     const amt = Number(e.amount||0);
-    if (!isNaN(amt)) total += amt; // assume USD baseline for summary
+    if (!isNaN(amt)) total += amt;
   });
   return total;
 }
@@ -244,9 +260,7 @@ async function openTrip(id){
   renderRecent(t);
   await renderExpenses();
   await renderJournal();
-  // Map
   setTimeout(initMap, 50);
-  // Switch views
   $('#view-trips').classList.remove('active');
   $('#view-trip').classList.add('active');
 }
@@ -316,7 +330,6 @@ function initMap(){
     state.maps.main = L.map('mainMap',{ zoomControl:true, scrollWheelZoom:false }).setView([31.77,35.21], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap'}).addTo(state.maps.main);
   }
-  // Fit markers from expenses (if any lat/lng provided)
   Store.getTrip(state.currentTripId).then(t=>{
     const exp = Object.values(t.expenses||{});
     const markers = [];
@@ -337,7 +350,6 @@ function initMap(){
 $('#tripSearch')?.addEventListener('input', refreshTrips);
 
 $('#bnAdd')?.addEventListener('click', async ()=>{
-  // Quick new trip
   const t = await Store.createTrip({ name:'טיול חדש', destination:'', budgetUSD:0 });
   await refreshTrips();
   openTrip(t.id);
@@ -378,10 +390,9 @@ $('#tripList')?.addEventListener('click', (e)=>{
   if (delBtn){ if (confirm('למחוק את הטיול?')){ Store.deleteTrip(delBtn.dataset.delTrip).then(refreshTrips); } }
 });
 
-// Add expense from Overview or Expenses
+// Add expense
 $('#quickAddExpense')?.addEventListener('click', ()=> openExpenseDialog());
 $('#addExpense')?.addEventListener('click', ()=> openExpenseDialog());
-
 $('#categoryFilter')?.addEventListener('change', renderExpenses);
 
 // Expense list actions
@@ -424,12 +435,73 @@ $('#deleteTrip')?.addEventListener('click', async ()=>{
   }
 });
 
-// Auth dialog
-$('#openAuth')?.addEventListener('click', ()=>$('#authDialog').showModal());
-$('#googleBtn')?.addEventListener('click', ()=>{ try{ window.startGoogleSignIn?.(); }catch(_){ } });
+// Auth button
+$('#openAuth')?.addEventListener('click', async ()=>{
+  if (Auth.user()){
+    if (confirm('להתנתק?')){
+      await Auth.signOut();
+    }
+  } else {
+    $('#authDialog').showModal();
+  }
+});
 $$('dialog [data-close]').forEach(b=> b.addEventListener('click', (e)=> e.target.closest('dialog').close() ));
 
-// Populate currency choices dynamically (USD/EUR/ILS baseline)
+// Auth actions
+$('#authSignIn')?.addEventListener('click', async ()=>{
+  const email = $('#authEmail').value.trim();
+  const pass  = $('#authPassword').value;
+  const errEl = $('#authError');
+  errEl.textContent = '';
+  try{
+    await Auth.signIn(email, pass);
+    $('#authDialog').close();
+  }catch(err){
+    errEl.textContent = normAuthErr(err);
+  }
+});
+$('#authRegister')?.addEventListener('click', async ()=>{
+  const email = $('#authEmail').value.trim();
+  const pass  = $('#authPassword').value;
+  const errEl = $('#authError');
+  errEl.textContent = '';
+  try{
+    await Auth.register(email, pass);
+    $('#authDialog').close();
+  }catch(err){
+    errEl.textContent = normAuthErr(err);
+  }
+});
+$('#authReset')?.addEventListener('click', async ()=>{
+  const email = $('#authEmail').value.trim();
+  const errEl = $('#authError');
+  errEl.textContent = '';
+  try{
+    await Auth.reset(email);
+    errEl.textContent = 'קישור לאיפוס סיסמה נשלח למייל.';
+  }catch(err){
+    errEl.textContent = normAuthErr(err);
+  }
+});
+
+function normAuthErr(e){
+  const code = e && e.code || '';
+  if (code.includes('auth/invalid-email')) return 'אימייל לא תקין.';
+  if (code.includes('auth/user-not-found')) return 'משתמש לא נמצא. אפשר להירשם.';
+  if (code.includes('auth/wrong-password')) return 'סיסמה שגויה.';
+  if (code.includes('auth/weak-password')) return 'סיסמה חלשה. השתמש/י בסיסמה חזקה יותר.';
+  if (code.includes('auth/email-already-in-use')) return 'האימייל כבר בשימוש.';
+  return e && e.message ? e.message : 'שגיאת התחברות.';
+}
+
+// Auth state -> UI
+Auth.onChange(async (user)=>{
+  $('#authStatus').textContent = user ? (user.email || 'מחובר') : 'אורח';
+  $('#openAuth').textContent = user ? 'התנתק' : 'התחברות';
+  await refreshTrips();
+});
+
+// Populate currency choices
 function populateCurrencies(selectEl, ensure){
   const base = new Set(['USD','EUR','ILS']);
   if (ensure) base.add(ensure);
