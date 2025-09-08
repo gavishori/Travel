@@ -1,4 +1,4 @@
-/* אפשרות 1: מודרני ונקי */
+/* אפשרות 2: כהה ואלגנטי */
 @media (max-width: 768px) {
   body {
     background: var(--bg);
@@ -10,42 +10,38 @@
     background: var(--panel);
     border: 1px solid var(--border);
     color: var(--text);
-    border-radius: 999px; /* כפתורים עגולים */
-    padding: 12px 18px;
+    border-radius: 12px; /* פינות מרובעות יותר */
     font-weight: 400;
+    box-shadow: none;
+    padding: 10px 14px;
   }
 
   .tabs .tab.active {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary), #6d28d9); /* גרדיאנט עדין */
     color: #fff;
-    font-weight: 600;
     border-color: transparent;
+    font-weight: 600;
   }
 
   .cards li {
-    border-radius: 20px; /* פינות מעוגלות יותר */
-    background: var(--panel);
-    box-shadow: none;
-    border: none;
-    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    padding: 14px;
   }
 
   .btn {
-    border-radius: 999px;
+    border-radius: 10px;
     font-weight: 500;
-    padding: 10px 16px;
+  }
+  
+  .table-wrapper {
+    background: var(--panel);
+    border-radius: 12px;
   }
 
-  .table-actions h3,
-  .breadcrumbs h2 {
-    font-weight: 600;
-    font-size: 20px;
-  }
-
-  /* כפתורים בטבלאות קטנים יותר */
-  .table-wrapper .btn {
-    padding: 6px 12px;
-    font-size: 14px;
-    border-radius: 8px;
+  .table th, .table td {
+    border-bottom: 1px solid var(--border);
   }
 }
