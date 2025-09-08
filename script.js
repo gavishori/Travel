@@ -108,7 +108,7 @@ const state = {
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
   theme: localStorage.getItem("theme") || "dark",
-  maps: { mini:null, main:null, location:null, expense:null, journal: null, locationMarker:null },
+  maps: { mini:null, main:null, location:null, expense:null, journal: null },
   locationPick: { lat:null, lng:null, forType:null, tempId:null },
   lastStatusTimer: null,
   sortAsc: false,
@@ -626,7 +626,6 @@ function activateTabs(){
 
 
 async function openTrip(id){
-  setupRealtimeForTrip(id);
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
   if (!trip){ alert("נסיעה לא נמצאה"); return; }
@@ -842,7 +841,7 @@ async function renderOverviewMiniMap(){
     const map = state.maps.mini;
     const group = L.featureGroup();
     points.forEach(p=>{
-      const marker = L.marker([p.lat,p.lng]).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1102,7 +1101,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.marker([p.lat,p.lng]).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
@@ -1128,8 +1127,6 @@ function openLocationPicker(forType){
     state.maps.location.on("click", (e)=>{
       state.locationPick.lat = e.latlng.lat;
       state.locationPick.lng = e.latlng.lng;
-      if (state.maps.locationMarker){ state.maps.locationMarker.setLatLng([e.latlng.lat, e.latlng.lng]); }
-      else { state.maps.locationMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(state.maps.location); }
       setStatus(`נבחר: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`);
     });
   }
@@ -1170,7 +1167,7 @@ function openLocationPicker(forType){
       if (state.locationPick.forType === "expense"){
         el("expLat").value = state.locationPick.lat;
         el("expLng").value = state.locationPick.lng;
-      } else if (state.locationPick.forType === "journal"){ el("journalLat").value = state.locationPick.lat; el("journalLng").value = state.locationPick.lng; }
+      }
       dlg.close();
     } else {
       alert("בחר מיקום ע\"י לחיצה על המפה או חיפוש.");
@@ -1959,61 +1956,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// === Mobile binder: 'בחר מיקום' buttons open the full location dialog ===
-(function(){
-  function onReady(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  onReady(function(){
-    var eBtn = document.getElementById('openLocPickerFromExpense');
-    if (eBtn){ eBtn.addEventListener('click', function(){ try{ openLocationPicker('expense'); }catch(_){ /* fallback */ var dlg=document.getElementById('locationDialog'); if(dlg) dlg.showModal(); } }); }
-    var jBtn = document.getElementById('openLocPickerFromJournal');
-    if (jBtn){ jBtn.addEventListener('click', function(){ try{ openLocationPicker('journal'); }catch(_){ var dlg=document.getElementById('locationDialog'); if(dlg) dlg.showModal(); } }); }
-  });
-})();
-
-
-// delegate: journal table actions (mobile robust)
-(function(){
-  const tbody = document.querySelector("#journalTable tbody");
-  if (!tbody) return;
-  tbody.addEventListener("click", function(ev){
-    const delBtn = ev.target.closest("button.del");
-    const editBtn = delBtn ? null : ev.target.closest("button.edit");
-    const tr = ev.target.closest("tr");
-    if (!tr) return;
-    const jid = tr.dataset.journalid;
-    if (delBtn){
-      ev.preventDefault(); ev.stopPropagation();
-      try{
-        openJournalDeleteDialog(state.currentTripId, (state._journalById && state._journalById[jid]) || { id: jid, text: tr.cells[0]?.innerText || "" });
-      }catch(err){ console.error(err); }
-      return;
-    }
-    if (editBtn){
-      ev.preventDefault(); ev.stopPropagation();
-      try{
-        openJournalDialog((state._journalById && state._journalById[jid]) || { id: jid });
-      }catch(err){ console.error(err); }
-      return;
-    }
-  }, true);
-})();
-
-
-// realtime updates: auto-refresh when trip changes (firebase)
-function setupRealtimeForTrip(tripId){
-  try{
-    if (state._unsubTrip){ state._unsubTrip(); state._unsubTrip = null; }
-    if (window.AppDataLayer?.mode !== "firebase" || !window.AppDataLayer?.db){ return; }
-    const db = window.AppDataLayer.db;
-    state._unsubTrip = db.collection("trips").doc(tripId).onSnapshot((doc)=>{
-      if (!doc.exists) return;
-      renderBudget?.();
-      renderOverviewExpenses?.();
-      renderJournal?.();
-      renderExpenses?.();
-      refreshMainMap?.();
-    });
-  }catch(err){ console.warn("realtime subscribe failed", err); }
-}
