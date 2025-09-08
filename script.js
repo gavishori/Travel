@@ -120,7 +120,8 @@ const TRIP_TYPE_HEBREW = {
   "beach": "בטן-גב",
   "ski": "סקי",
   "trek": "טרקים",
-  "other": "אחר"
+  "other": "אחר",
+  "urban": "עירוני"
 };
 
 // Store last used category and currency in local storage

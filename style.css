@@ -1087,3 +1087,10 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 }
 /* iOS: avoid double-tap zoom */
 html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+
+
+/* === Overrides per request: no bold for actual expenses & remaining === */
+#expensesActualUSD, #expensesActualEUR, #expensesActualILS,
+#remainingUSD, #remainingEUR, #remainingILS {
+  font-weight: 500; /* normal/medium */
+}
