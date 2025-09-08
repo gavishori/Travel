@@ -1094,3 +1094,41 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #remainingUSD, #remainingEUR, #remainingILS {
   font-weight: 500; /* normal/medium */
 }
+
+
+/* === Contrast tweaks (light & dark) === */
+/* Ensure strong readable numbers in budget metrics */
+html.light #expensesActualUSD, html.light #expensesActualEUR, html.light #expensesActualILS,
+html.light #remainingUSD,     html.light #remainingEUR,     html.light #remainingILS {
+  color: #0f172a; /* near-black on light background */
+}
+html:not(.light) #expensesActualUSD, html:not(.light) #expensesActualEUR, html:not(.light) #expensesActualILS,
+html:not(.light) #remainingUSD,     html:not(.light) #remainingEUR,     html:not(.light) #remainingILS {
+  color: #eaf0ff; /* near-white on dark background */
+}
+
+/* Slightly stronger "muted" text for better AA contrast */
+html.light .muted { color: #475569; }         /* Slate 600 */
+html:not(.light) .muted { color: #9fb0c3; }   /* soft light blue-gray */
+
+
+/* === CTA buttons (clearly buttons) === */
+.btn.cta{
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+.btn.cta:hover{ filter: brightness(0.97); }
+.btn.cta:active{ transform: translateY(1px); }
+
+/* Place CTA next to titles on wide screens, stack on mobile */
+.table-actions h3{ margin: 0; }
+.table-actions{ flex-wrap: wrap; }
+.table-actions .btn.cta{ order: 3; } /* after filters */
+@media (max-width: 600px){
+  .table-actions .btn.cta{ width: 100%; }
+}

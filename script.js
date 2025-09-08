@@ -1957,3 +1957,30 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+$('#addExpenseTop')?.addEventListener('click', ()=> openExpenseDialog());
+
+$('#addJournalTop')?.addEventListener('click', ()=> openJournalDialog());
+
+
+function createStrongMarker(lat, lng, popupHtml){
+  const outer = L.circleMarker([lat,lng], {
+    radius: 10,
+    color: '#3b5bdb',      // stroke
+    weight: 3,
+    fillColor: '#5b7cff',  // fill
+    fillOpacity: 0.75
+  });
+  const halo = L.circleMarker([lat,lng], {
+    radius: 16,
+    color: '#5b7cff',
+    weight: 1,
+    fillColor: '#5b7cff',
+    fillOpacity: 0.18,
+    interactive: false
+  });
+  const group = L.layerGroup([halo, outer]);
+  if (popupHtml) outer.bindPopup(popupHtml);
+  return { group, outer, halo };
+}
+
