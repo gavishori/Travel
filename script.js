@@ -120,7 +120,8 @@ const TRIP_TYPE_HEBREW = {
   "beach": "בטן-גב",
   "ski": "סקי",
   "trek": "טרקים",
-  "other": "אחר"
+  "other": "אחר",
+  "urban": "עירוני"
 };
 
 // Store last used category and currency in local storage
@@ -668,10 +669,10 @@ async function openTrip(id){
 
   
   await renderBudget();
-  try{ await renderOverviewExpenses(); }catch(e){ console.error('overview expenses', e);} 
-  try{ await renderOverviewJournal(); }catch(e){ console.error('overview journal', e);} 
-  try{ await renderJournal(); }catch(e){ console.error('journal', e);} 
-  try{ await renderOverviewMiniMap(); }catch(e){ console.error('overview map', e);}
+  await renderOverviewExpenses();
+  await renderOverviewJournal();
+  await renderJournal();
+  await renderOverviewMiniMap();
 
   // Add event listeners for new budget fields
   if (el("tripBudgetUSD")) el("tripBudgetUSD").oninput = (e) => updateBudgetConversion(e.target.value, 'USD');
@@ -797,11 +798,12 @@ async function renderOverviewExpenses() {
   }
 }
 
-async function renderOverviewJournal(){
+async function renderOverviewJournal() {
   const tripId = state.currentTripId;
   const entries = await Store.listJournal(tripId);
-  const tbody = $(\"#overviewJournalTable tbody\");
-  if (tbody) { tbody.innerHTML = \"\"; }
+  const tbody = $("#overviewJournalTable tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
   // Sort newest → oldest
   entries.sort((a,b) => b.createdAt - a.createdAt);
@@ -825,10 +827,10 @@ async function renderOverviewMiniMap(){
   if (!trip) return;
   const points = [];
   if (trip.expenses){
-    Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) points.push({ ...e, type:"expense" }); });
+    Object.values(trip.expenses).forEach(e=>{ const lat=Number(e.lat), lng=Number(e.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...e, lat, lng, type:"expense" }); });
   }
   if (trip.journal){
-    Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) points.push({ ...j, type:"journal" }); });
+    Object.values(trip.journal).forEach(j=>{ const lat=Number(j.lat), lng=Number(j.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...j, lat, lng, type:"journal" }); });
   }
 
   const mapEl = el("miniMap");
@@ -838,9 +840,11 @@ async function renderOverviewMiniMap(){
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.mini);
     }
     const map = state.maps.mini;
-    const group = L.featureGroup();
+    if (!state.miniGroup) { state.miniGroup = L.featureGroup(); }
+    const group = state.miniGroup;
+    if (group && group.clearLayers) group.clearLayers();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius:8, color: color, weight:2, fillColor: color, fillOpacity: 0.95 }).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1100,7 +1104,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius:8, color: color, weight:2, fillColor: color, fillOpacity: 0.95 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
@@ -1153,7 +1157,7 @@ function openLocationPicker(forType){
       const lat = Number(r.lat), lng = Number(r.lon);
       state.locationPick.lat = lat; state.locationPick.lng = lng;
       state.maps.location.setView([lat,lng], 14);
-      L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(state.maps.location);
+      L.marker([lat,lng]).addTo(state.maps.location);
       setStatus(r.display_name);
     } else {
       alert("לא נמצא מיקום מתאים");
@@ -1225,7 +1229,7 @@ async function openExpenseDialog(exp){
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(map); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
@@ -1369,7 +1373,7 @@ async function openJournalDialog(journalEntry) {
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.circleMarker([lat,lng], {radius:10, color:'#3b5bdb', weight:3, fillColor:'#5b7cff', fillOpacity: 0.95}).addTo(map); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
       el("journalLat").value = lat;
       el("journalLng").value = lng;
     }
@@ -1610,11 +1614,12 @@ async function init(){
     const updates = {
       destination: el("tripDestination").value.trim(),
       participants: el("tripParticipants").value.trim(),
-      tripType: selectedTripTypes,
+      
       start: el("tripStart").value,
       end: el("tripEnd").value,
       budget: { USD: budgetUSD },
 };
+    if (selectedTripTypes && selectedTripTypes.length) { updates.tripType = selectedTripTypes; }
     await Store.updateTrip(id, updates);
     setStatus("נתוני נסיעה נשמרו ✔");
     el("tripTitle").textContent = updates.destination || "נסיעה";
@@ -1955,58 +1960,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-
-// === Strengthen map markers globally ===
-(function strengthenMarkers(){
-  if (typeof L === 'undefined' || L.__strongMarkersPatched) return;
-  L.__strongMarkersPatched = true;
-  const origMarker = L.marker;
-  L.marker = function(latlng, options){
-    const core = L.circleMarker(latlng, {
-      radius: 10,
-      color: '#3b5bdb',
-      weight: 3,
-      fillColor: '#5b7cff',
-      fillOpacity: 0.80
-    });
-    const halo = L.circleMarker(latlng, {
-      radius: 16,
-      color: '#5b7cff',
-      weight: 1,
-      fillColor: '#5b7cff',
-      fillOpacity: 0.20,
-      interactive: false
-    });
-    const group = L.layerGroup([halo, core]);
-    const wrapper = {
-      addTo(map){ group.addTo(map); return wrapper; },
-      bindPopup(html){ core.bindPopup(html); return wrapper; },
-      openPopup(){ core.openPopup(); return wrapper; },
-      closePopup(){ core.closePopup(); return wrapper; }
-    };
-    return wrapper;
-  };
-})();
-
-
-// Map trip type codes to Hebrew
-function typeToHeb(v){
-  const map = { "city":"עירוני", "urban":"עירוני", "nature":"טבע", "beach":"ים", "family":"משפחתי", "work":"עסקי", "other":"אחר" };
-  return map[v] || v;
-}
-
-// Replace any plain 'urban' text nodes with Hebrew as a safety net
-(function hebrewizeUrban(){
-  function walk(node){
-    if (node.nodeType===3){ // text
-      node.nodeValue = node.nodeValue.replace(/\burban\b/g, "עירוני");
-    } else {
-      node.childNodes && node.childNodes.forEach(walk);
-    }
-  }
-  walk(document.body);
-  const mo = new MutationObserver(muts=> muts.forEach(m=> m.addedNodes && m.addedNodes.forEach(walk)));
-  mo.observe(document.body, {childList:true, subtree:true, characterData:true});
-})();

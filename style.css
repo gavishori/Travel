@@ -1046,7 +1046,7 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 /* ===== MOBILE-ONLY FIXES (auth + tiles) ===== */
 @media (max-width: 600px){
   /* Prevent side scroll anywhere */
-  html, body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; overflow-y: hidden; }
   /* Auth dialog: full screen, no inner scroll */
   dialog#emailAuthDialog{
     max-width: none; width: 100vw; margin: 0;
@@ -1089,42 +1089,8 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
 
-/* === CTA: make Add buttons obvious === */
-#addExpense, #addExpenseTop, #quickAddExpense,
-#addJournal, #addJournalTop {
-  background: var(--primary) !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 999px !important;
-  padding: 12px 18px !important;
-  font-weight: 700 !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.12) !important;
+/* === Overrides per request: no bold for actual expenses & remaining === */
+#expensesActualUSD, #expensesActualEUR, #expensesActualILS,
+#remainingUSD, #remainingEUR, #remainingILS {
+  font-weight: 500; /* normal/medium */
 }
-#addExpense:hover, #addExpenseTop:hover, #quickAddExpense:hover,
-#addJournal:hover, #addJournalTop:hover {
-  filter: brightness(0.97);
-}
-#addExpense:active, #addExpenseTop:active, #quickAddExpense:active,
-#addJournal:active, #addJournalTop:active {
-  transform: translateY(1px);
-}
-
-
-/* === CTA styling for actual Add buttons === */
-#addExpenseBtn, #addJournalBtn {
-  background: var(--primary) !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 999px !important;
-  padding: 12px 18px !important;
-  font-weight: 700 !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.12) !important;
-}
-#addExpenseBtn:hover, #addJournalBtn:hover { filter: brightness(0.97); }
-#addExpenseBtn:active, #addJournalBtn:active { transform: translateY(1px); }
-
-
-/* === Remove vertical scrollbar shimmer on Expenses/Journal panels === */
-#tab-expenses, #tab-journal { overflow-y: visible; }
-#tab-expenses .card, #tab-journal .card { overflow: visible; max-height: none; }
-#tab-expenses .table-wrapper, #tab-journal .table-wrapper { overflow-y: visible; }
