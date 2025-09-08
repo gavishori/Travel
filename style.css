@@ -1145,3 +1145,53 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   /* no horizontal scroll within the card */
   #journalTable tbody tr{ max-width: 100%; overflow-x: hidden; }
 }
+
+
+/* === Mobile: Journal row layout per sketch (desc|place on top, actions|datetime bottom) === */
+@media (max-width: 768px){
+  #journalTable thead{ display:none; }
+  #journalTable{ border-collapse: separate; border-spacing: 0 12px; width: 100%; }
+
+  #journalTable tbody tr{
+    display:grid !important;
+    grid-template-columns: 60% 40%;
+    grid-template-areas:
+      "desc place"
+      "actions datetime";
+    row-gap: 12px;
+    column-gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    background: var(--card, #141b23);
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  #journalTable tbody td{
+    background: transparent; border: none; padding: 0;
+    font-size: 1rem; line-height: 1.4;
+    word-break: break-word; white-space: normal;
+  }
+
+  /* Map each cell to its area (assumes DOM order: desc, place, datetime, actions) */
+  #journalTable tbody td:nth-child(1){ grid-area: desc; text-align: right; }
+  #journalTable tbody td:nth-child(2){ grid-area: place; text-align: left; }
+  #journalTable tbody td:nth-child(3){ grid-area: datetime; text-align: right; }
+  #journalTable tbody td:nth-child(4){
+    grid-area: actions;
+    display:flex; gap: 16px; align-items:center; justify-content:flex-start;
+  }
+
+  /* Time + date on a single line, at the bottom-right, time first then date */
+  #journalTable .expense-datetime{
+    display:flex; flex-direction: row; gap: 12px; align-items:center; justify-content:flex-end;
+  }
+  #journalTable .expense-datetime .time{ order:1; }
+  #journalTable .expense-datetime .date{ order:2; }
+
+  /* Make action buttons compact and on one line */
+  #journalTable td.row-actions .btn{ width: auto; padding-inline: 14px; }
+
+  /* Kill any horizontal scrolling just in case */
+  .table-wrapper{ overflow-x:hidden; }
+}
