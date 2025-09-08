@@ -1089,46 +1089,22 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
 
-/* === Overrides per request: no bold for actual expenses & remaining === */
-#expensesActualUSD, #expensesActualEUR, #expensesActualILS,
-#remainingUSD, #remainingEUR, #remainingILS {
-  font-weight: 500; /* normal/medium */
+/* === CTA: make Add buttons obvious === */
+#addExpense, #addExpenseTop, #quickAddExpense,
+#addJournal, #addJournalTop {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 12px 18px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12) !important;
 }
-
-
-/* === Contrast tweaks (light & dark) === */
-/* Ensure strong readable numbers in budget metrics */
-html.light #expensesActualUSD, html.light #expensesActualEUR, html.light #expensesActualILS,
-html.light #remainingUSD,     html.light #remainingEUR,     html.light #remainingILS {
-  color: #0f172a; /* near-black on light background */
+#addExpense:hover, #addExpenseTop:hover, #quickAddExpense:hover,
+#addJournal:hover, #addJournalTop:hover {
+  filter: brightness(0.97);
 }
-html:not(.light) #expensesActualUSD, html:not(.light) #expensesActualEUR, html:not(.light) #expensesActualILS,
-html:not(.light) #remainingUSD,     html:not(.light) #remainingEUR,     html:not(.light) #remainingILS {
-  color: #eaf0ff; /* near-white on dark background */
-}
-
-/* Slightly stronger "muted" text for better AA contrast */
-html.light .muted { color: #475569; }         /* Slate 600 */
-html:not(.light) .muted { color: #9fb0c3; }   /* soft light blue-gray */
-
-
-/* === CTA buttons (clearly buttons) === */
-.btn.cta{
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgba(0,0,0,.12);
-}
-.btn.cta:hover{ filter: brightness(0.97); }
-.btn.cta:active{ transform: translateY(1px); }
-
-/* Place CTA next to titles on wide screens, stack on mobile */
-.table-actions h3{ margin: 0; }
-.table-actions{ flex-wrap: wrap; }
-.table-actions .btn.cta{ order: 3; } /* after filters */
-@media (max-width: 600px){
-  .table-actions .btn.cta{ width: 100%; }
+#addExpense:active, #addExpenseTop:active, #quickAddExpense:active,
+#addJournal:active, #addJournalTop:active {
+  transform: translateY(1px);
 }

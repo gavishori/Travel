@@ -120,8 +120,7 @@ const TRIP_TYPE_HEBREW = {
   "beach": "בטן-גב",
   "ski": "סקי",
   "trek": "טרקים",
-  "other": "אחר",
-  "urban": "עירוני"
+  "other": "אחר"
 };
 
 // Store last used category and currency in local storage
@@ -1958,29 +1957,36 @@ window.handleSignOut = async function(){
   }
 };
 
-$('#addExpenseTop')?.addEventListener('click', ()=> openExpenseDialog());
-
-$('#addJournalTop')?.addEventListener('click', ()=> openJournalDialog());
 
 
-function createStrongMarker(lat, lng, popupHtml){
-  const outer = L.circleMarker([lat,lng], {
-    radius: 10,
-    color: '#3b5bdb',      // stroke
-    weight: 3,
-    fillColor: '#5b7cff',  // fill
-    fillOpacity: 0.75
-  });
-  const halo = L.circleMarker([lat,lng], {
-    radius: 16,
-    color: '#5b7cff',
-    weight: 1,
-    fillColor: '#5b7cff',
-    fillOpacity: 0.18,
-    interactive: false
-  });
-  const group = L.layerGroup([halo, outer]);
-  if (popupHtml) outer.bindPopup(popupHtml);
-  return { group, outer, halo };
-}
-
+// === Strengthen map markers globally ===
+(function strengthenMarkers(){
+  if (typeof L === 'undefined' || L.__strongMarkersPatched) return;
+  L.__strongMarkersPatched = true;
+  const origMarker = L.marker;
+  L.marker = function(latlng, options){
+    const core = L.circleMarker(latlng, {
+      radius: 10,
+      color: '#3b5bdb',
+      weight: 3,
+      fillColor: '#5b7cff',
+      fillOpacity: 0.80
+    });
+    const halo = L.circleMarker(latlng, {
+      radius: 16,
+      color: '#5b7cff',
+      weight: 1,
+      fillColor: '#5b7cff',
+      fillOpacity: 0.20,
+      interactive: false
+    });
+    const group = L.layerGroup([halo, core]);
+    const wrapper = {
+      addTo(map){ group.addTo(map); return wrapper; },
+      bindPopup(html){ core.bindPopup(html); return wrapper; },
+      openPopup(){ core.openPopup(); return wrapper; },
+      closePopup(){ core.closePopup(); return wrapper; }
+    };
+    return wrapper;
+  };
+})();
