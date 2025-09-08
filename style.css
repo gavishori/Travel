@@ -1195,3 +1195,98 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   /* Kill any horizontal scrolling just in case */
   .table-wrapper{ overflow-x:hidden; }
 }
+
+
+/* === Mobile: Journal row layout (2 rows, 2 cols) – refined === */
+@media (max-width: 768px){
+  #journalTable thead{ display:none; }
+  #journalTable{ border-collapse: separate; border-spacing: 0 12px; width: 100%; }
+
+  #journalTable tbody tr{
+    display:grid !important;
+    grid-template-columns: minmax(0,68%) minmax(0,32%);
+    grid-template-areas:
+      "desc place"
+      "actions datetime";
+    row-gap: 10px;
+    column-gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    background: var(--card, #141b23);
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  #journalTable tbody td{
+    background: transparent; border: none; padding: 0;
+    font-size: 1rem; line-height: 1.4;
+    white-space: normal; word-break: normal; overflow-wrap: break-word;
+  }
+
+  /* Map cells to areas (DOM order: desc, place, datetime, actions) */
+  #journalTable tbody td:nth-child(1){ grid-area: desc; text-align: right; }
+  #journalTable tbody td:nth-child(2){ grid-area: place; text-align: left; }
+  #journalTable tbody td:nth-child(3){ grid-area: datetime; text-align: right; }
+  #journalTable tbody td:nth-child(4){ grid-area: actions; }
+
+  /* Bottom-right: time + date on one line */
+  #journalTable .expense-datetime{
+    display:flex; flex-direction: row; gap: 12px; align-items:center; justify-content:flex-end;
+  }
+
+  /* Bottom-left: actions on one line (Edit | Delete) */
+  #journalTable td.row-actions{
+    display:flex; flex-direction: row; gap: 12px; align-items:center; justify-content:flex-start;
+  }
+  #journalTable td.row-actions .btn{ width: auto; min-width: 84px; padding-inline: 14px; }
+
+  /* Safety: no horizontal scroll anywhere */
+  .table-wrapper{ overflow-x:hidden; }
+}
+
+
+/* === Mobile: Journal exact 2-row layout (desc|place, actions|datetime) === */
+@media (max-width: 768px){
+  #journalTable thead{ display:none; }
+  #journalTable{ border-collapse: separate; border-spacing: 0 12px; width: 100%; }
+
+  #journalTable tbody tr{
+    display:grid !important;
+    grid-template-columns: 35% 65%; /* left: place/actions, right: description/datetime */
+    grid-template-areas:
+      "place desc"
+      "actions datetime";
+    row-gap: 10px;
+    column-gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    background: var(--card, #141b23);
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  #journalTable tbody td{
+    background: transparent; border: none; padding: 0;
+    font-size: 1rem; line-height: 1.45;
+    white-space: normal; word-break: normal; overflow-wrap: anywhere;
+  }
+
+  /* Map DOM cells to grid areas: [1]=desc, [2]=place, [3]=datetime, [4]=actions */
+  #journalTable tbody td:nth-child(1){ grid-area: desc; text-align: right; }
+  #journalTable tbody td:nth-child(2){ grid-area: place; text-align: left; }
+  #journalTable tbody td:nth-child(3){ grid-area: datetime; text-align: right; }
+  #journalTable tbody td:nth-child(4){
+    grid-area: actions;
+    display:flex; flex-direction: row; gap:16px;
+    align-items:center; justify-content:flex-start;
+    direction: ltr; /* keep button order readable */
+  }
+
+  /* Datetime inline on one row: time then date, aligned to the right */
+  #journalTable .expense-datetime{
+    display:flex; flex-direction: row; gap: 12px;
+    align-items:center; justify-content:flex-end;
+  }
+  #journalTable .expense-datetime .time{ order:1; }
+  #journalTable .expense-datetime .date{ order:2; }
+}
