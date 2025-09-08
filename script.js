@@ -668,10 +668,10 @@ async function openTrip(id){
 
   
   await renderBudget();
-  await renderOverviewExpenses();
-  await renderOverviewJournal();
-  await renderJournal();
-  await renderOverviewMiniMap();
+  try{ await renderOverviewExpenses(); }catch(e){ console.error('overview expenses', e);} 
+  try{ await renderOverviewJournal(); }catch(e){ console.error('overview journal', e);} 
+  try{ await renderJournal(); }catch(e){ console.error('journal', e);} 
+  try{ await renderOverviewMiniMap(); }catch(e){ console.error('overview map', e);}
 
   // Add event listeners for new budget fields
   if (el("tripBudgetUSD")) el("tripBudgetUSD").oninput = (e) => updateBudgetConversion(e.target.value, 'USD');
@@ -797,12 +797,11 @@ async function renderOverviewExpenses() {
   }
 }
 
-async function renderOverviewJournal() {
+async function renderOverviewJournal(){
   const tripId = state.currentTripId;
   const entries = await Store.listJournal(tripId);
-  const tbody = $("#overviewJournalTable tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
+  const tbody = $(\"#overviewJournalTable tbody\");
+  if (tbody) { tbody.innerHTML = \"\"; }
 
   // Sort newest → oldest
   entries.sort((a,b) => b.createdAt - a.createdAt);

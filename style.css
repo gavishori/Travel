@@ -1122,3 +1122,9 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 }
 #addExpenseBtn:hover, #addJournalBtn:hover { filter: brightness(0.97); }
 #addExpenseBtn:active, #addJournalBtn:active { transform: translateY(1px); }
+
+
+/* === Remove vertical scrollbar shimmer on Expenses/Journal panels === */
+#tab-expenses, #tab-journal { overflow-y: visible; }
+#tab-expenses .card, #tab-journal .card { overflow: visible; max-height: none; }
+#tab-expenses .table-wrapper, #tab-journal .table-wrapper { overflow-y: visible; }
