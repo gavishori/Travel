@@ -1,1 +1,141 @@
-<!DOCTYPE html><html><body>Email/Password Auth Version</body></html>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>FLYMILY — הטיולים שלי</title>
+
+  <!-- Prevent favicon 404 -->
+  <link rel="icon" href="data:,">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- ===== Login Screen (email/password only) ===== -->
+  <section id="authView" class="auth-view hidden" aria-label="התחברות">
+    <div class="auth-card">
+      <div class="brand-row">
+        <div class="logo">🧭</div>
+        <h1>FLYMILY</h1>
+      </div>
+      <h2>כניסה עם מייל וסיסמה</h2>
+      <form id="authForm" class="form compact" novalidate>
+        <label>מייל
+          <input id="authEmail" type="email" class="input" required placeholder="you@example.com" autocomplete="username">
+        </label>
+        <label>סיסמה
+          <input id="authPassword" type="password" class="input" required minlength="6" placeholder="••••••" autocomplete="current-password">
+        </label>
+        <div class="row gap">
+          <button id="loginBtn" class="btn primary" type="submit">כניסה</button>
+          <button id="registerBtn" class="btn" type="button">הרשמה</button>
+        </div>
+        <p id="authError" class="error" aria-live="polite"></p>
+      </form>
+      <div class="muted small">
+        אין חשבון? לחץ/י על "הרשמה". אין שימוש בגוגל. אימייל/סיסמה בלבד.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== App Screen ===== -->
+  <section id="appView" class="app-view hidden">
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo">🧭</div>
+        <h1>הטיולים שלי</h1>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌓</button>
+        <button id="signOutBtn" class="btn">התנתקות</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="toolbar">
+        <div class="toolbar-group">
+          <input id="tripSearch" class="input" type="search" placeholder="חפש יעד / סוג / הערה…" />
+        </div>
+        <div class="toolbar-group">
+          <label class="sort-control">
+            <span>סידור לפי:</span>
+            <select id="sortBy" class="input">
+              <option value="start">תאריך יציאה</option>
+              <option value="end">תאריך חזרה</option>
+              <option value="updated">עודכן לאחרונה</option>
+              <option value="created">נוצר לאחרונה</option>
+            </select>
+            <button id="toggleAsc" class="btn ghost" title="סדר עולה/יורד">⬍</button>
+          </label>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <ul id="tripTimeline" class="trip-timeline" aria-live="polite"></ul>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="empty hidden">
+        <div class="empty-emoji">🗺️</div>
+        <div class="empty-title">עדיין אין טיולים</div>
+        <div class="empty-sub">לחצו על + כדי להוסיף טיול ראשון</div>
+      </div>
+    </main>
+
+    <!-- FAB -->
+    <button id="addTripFab" class="fab" aria-label="הוסף טיול">+</button>
+
+    <!-- Trip dialog -->
+    <dialog id="tripDialog" class="dialog">
+      <form method="dialog" id="tripForm" class="form compact">
+        <h3 id="tripDialogTitle">טופס טיול</h3>
+        <div class="form-grid">
+          <label>יעד
+            <input id="fldDestination" class="input" required placeholder="למשל: מילאנו, איטליה">
+          </label>
+          <label>סוג טיול
+            <select id="fldType" class="input">
+              <option value="urban">עירוני</option>
+              <option value="ski">סקי</option>
+              <option value="beach">בטן-גב</option>
+              <option value="trek">טרקים</option>
+              <option value="other">אחר</option>
+            </select>
+          </label>
+          <label>תאריך יציאה
+            <input id="fldStart" type="date" class="input">
+          </label>
+          <label>תאריך חזרה
+            <input id="fldEnd" type="date" class="input">
+          </label>
+          <label>תקציב (EUR)
+            <input id="fldBudget" type="number" min="0" class="input" placeholder="0">
+          </label>
+          <label>הערות
+            <input id="fldNotes" class="input" placeholder="שדות חופשיים (טיסות/מלון/קישורים)">
+          </label>
+        </div>
+        <menu class="dialog-actions">
+          <button value="cancel" class="btn">ביטול</button>
+          <button id="saveTripBtn" value="default" class="btn primary">שמור</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <footer class="app-footer">
+      <small class="muted">© 2025 FLYMILY</small>
+    </footer>
+  </section>
+
+  <!-- Firebase v8 compat (only app/auth/firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- App bootstrap (email/password only) -->
+  <script src="./firebase.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
