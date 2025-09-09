@@ -2095,3 +2095,188 @@ window.handleSignOut = async function(){
     btn.classList.toggle('active', isPwd);
   });
 })();
+/*__TIMELINE_FINAL__*/
+(function(){
+  const $ = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+  const ICONS = {
+    "סקי":"🎿","טרקים":"🥾","בטן-גב":"🏖️","עירוני":"🏙️","אחר":"🧳",
+    "ski":"🎿","trek":"🥾","beach":"🏖️","urban":"🏙️","other":"🧳"
+  };
+  const state = { sortAsc:true, byId:new Map() };
+
+  function fmtRange(a,b){
+    try{
+      const f = (d)=> new Date(d).toLocaleDateString('he-IL', { day:'2-digit', month:'long', year:'2-digit' });
+      return (a?f(a):"") + (b?` – ${f(b)}`:"");
+    }catch(_){ return [a,b].filter(Boolean).join(" – "); }
+  }
+  function parseDate(str){
+    if (!str) return NaN;
+    // support YYYY-MM-DD or DD/MM/YY patterns
+    const iso = Date.parse(str);
+    if (!Number.isNaN(iso)) return iso;
+    const m = String(str).match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+    if (m){ const [_,d,mo,y]=m; const Y = y.length===2?('20'+y):y; return new Date(+Y, +mo-1, +d).getTime(); }
+    return NaN;
+  }
+  function sortTrips(arr){
+    return arr.slice().sort((a,b)=>{
+      const d1 = parseDate(a.startDate || a.start || a.from || a.createdAt);
+      const d2 = parseDate(b.startDate || b.start || b.from || b.createdAt);
+      return state.sortAsc ? d1-d2 : d2-d1;
+    });
+  }
+
+  // Scrape current cards if Store isn't ready
+  function scrapeTripsFromCards(){
+    const trips = [];
+    $$(".cards li").forEach((li,idx)=>{
+      const title = li.querySelector(".trip-title, h3, [data-title]")?.textContent?.trim() || "";
+      const type  = li.querySelector(".badge, .chip, [data-type]")?.textContent?.trim() || "";
+      const meta  = li.textContent;
+      // try to find date range like DD/MM/YY–DD/MM/YY or YYYY-MM-DD–YYYY-MM-DD
+      const m = meta.match(/(\d{2}[./-]\d{2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2}).{0,5}(\d{2}[./-]\d{2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2})/);
+      const start = m?.[1] || "";
+      const end = m?.[2] || "";
+      const id = li.getAttribute("data-id") || li.id || ("card_"+idx);
+      trips.push({ id, title, destination:title, type, startDate:start, endDate:end, _card: li });
+    });
+    return trips;
+  }
+
+  async function fetchTrips(){
+    // Prefer Store if available
+    try{
+      if (window.Store && Store.listTrips){
+        // wait a little for auth
+        if (window.auth && !auth.currentUser && window.AppDataLayer?.ensureAuth){
+          try{ await window.AppDataLayer.ensureAuth(); }catch(_){}
+        }
+        const out = await Store.listTrips();
+        if (Array.isArray(out) && out.length) return out;
+      }
+    }catch(e){ console.warn("Store.listTrips failed", e); }
+    // fallback: scrape cards
+    const scraped = scrapeTripsFromCards();
+    return scraped;
+  }
+
+  function findCardForTrip(t){
+    if (t._card) return t._card;
+    // try to match by title
+    const cards = $$(".cards li");
+    for (const li of cards){
+      const ttl = li.querySelector(".trip-title, h3, [data-title]")?.textContent?.trim();
+      if (ttl && ttl === (t.title || t.destination)) return li;
+    }
+    return null;
+  }
+
+  async function openEditor(id, trip){
+    // use project native editor if available
+    if (typeof window.openTripEditor === "function"){ window.openTripEditor(id); return; }
+    // else try to click the original card's "ערוך"
+    const card = findCardForTrip(trip);
+    const editBtn = card?.querySelector('button, .btn, [role="button"]');
+    const editMatch = Array.from(card?.querySelectorAll('button, .btn, [role="button"]')||[]).find(b=>/ערוך/.test(b.textContent||""));
+    if (editMatch){ editMatch.click(); return; }
+    // else fallback prompt + Store.updateTrip
+    try{
+      const t = (id && Store && Store.getTrip) ? (await Store.getTrip(id) || {}) : (trip||{});
+      const title = prompt("כותרת הטיול:", t.title||""); if (title===null) return;
+      const destination = prompt("יעד:", t.destination||""); if (destination===null) return;
+      const startDate = prompt("תאריך התחלה (YYYY-MM-DD):", t.startDate||""); if (startDate===null) return;
+      const endDate = prompt("תאריך סיום (YYYY-MM-DD):", t.endDate||""); if (endDate===null) return;
+      const type = prompt("סוג (urban/ski/trek/beach/other/סקי/טרקים/בטן-גב/עירוני/אחר):", t.type||"urban"); if (type===null) return;
+      if (Store && Store.updateTrip && id) await Store.updateTrip(id, { title, destination, startDate, endDate, type });
+    }catch(err){ console.warn("edit fallback failed", err); }
+  }
+
+  async function deleteTrip(id, trip){
+    if (typeof window.openTripDelete === "function"){ window.openTripDelete(id); return; }
+    const card = findCardForTrip(trip);
+    const delMatch = Array.from(card?.querySelectorAll('button, .btn, [role="button"]')||[]).find(b=>/מחק/.test(b.textContent||""));
+    if (delMatch){ delMatch.click(); return; }
+    try{
+      if (id && confirm("למחוק את הטיול?")){
+        if (Store && Store.deleteTrip) await Store.deleteTrip(id);
+      }
+    }catch(err){ console.warn("delete fallback failed", err); }
+  }
+
+  async function render(){
+    const host = $("#timeline"); if (!host) return;
+    const q = $("#tripSearch")?.value?.trim().toLowerCase() || "";
+    let trips = await fetchTrips();
+    if (q) trips = trips.filter(t=>[t.title,t.destination,t.type].some(v=>String(v||"").toLowerCase().includes(q)));
+    trips = sortTrips(trips);
+
+    state.byId.clear();
+    host.innerHTML = "";
+    for (const t of trips){
+      state.byId.set(t.id, t);
+      const li = document.createElement("li");
+
+      const dot = document.createElement("div");
+      dot.className = "timeline-dot";
+      const icon = ICONS[t.type] || ICONS[(t.type||"").trim()] || "🧳";
+      dot.innerHTML = `<span>${icon}</span>`;
+
+      const info = document.createElement("div");
+      info.className = "trip-info";
+      const title = t.title || t.destination || "טיול";
+      const dest  = t.destination || "—";
+      info.innerHTML = `
+        <h3>${title}</h3>
+        <div class="trip-meta">
+          <span class="badge">${dest}</span>
+          <span class="muted">${fmtRange(t.startDate, t.endDate)}</span>
+        </div>
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.innerHTML = `
+        <button class="menu-btn" aria-label="עוד פעולות" title="עוד פעולות">⋮</button>
+        <div class="menu" role="menu">
+          <button class="edit" data-id="${t.id}">ערוך</button>
+          <button class="delete" data-id="${t.id}">מחק</button>
+        </div>`;
+
+      li.append(dot, info, actions);
+      host.appendChild(li);
+    }
+    document.body.classList.toggle("timeline-ready", trips.length>0);
+  }
+
+  document.addEventListener("click", async (e)=>{
+    const actions = e.target.closest(".actions");
+    $$(".actions.open").forEach(a=>{ if (a!==actions) a.classList.remove("open"); });
+    if (actions && e.target.classList.contains("menu-btn")) actions.classList.toggle("open");
+
+    if (e.target.matches(".menu .edit")){
+      const id = e.target.getAttribute("data-id"); const t = state.byId.get(id) || {};
+      await openEditor(id, t); setTimeout(render, 500);
+    }
+    if (e.target.matches(".menu .delete")){
+      const id = e.target.getAttribute("data-id"); const t = state.byId.get(id) || {};
+      await deleteTrip(id, t); setTimeout(render, 700);
+    }
+  });
+
+  $("#tripSearch")?.addEventListener("input", ()=> render());
+  $("#sortBtn")?.addEventListener("click", ()=>{
+    state.sortAsc = !state.sortAsc;
+    $("#sortBtn").textContent = state.sortAsc ? "סדר: מהקרוב לרחוק" : "סדר: מהרחוק לקרוב";
+    render();
+  });
+
+  // Observe DOM changes (in case the app draws cards after auth/nav)
+  const obs = new MutationObserver(()=>{ render(); });
+  obs.observe(document.body, { childList:true, subtree:true });
+
+  // Boot
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render);
+  else render();
+})();
