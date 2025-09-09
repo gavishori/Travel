@@ -1,38 +1,39 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>FLYMILY</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="app-header">
-    <div class="brand">
-      <div class="logo">🧭</div>
-      <h1>הטיולים שלי</h1>
-    </div>
-    <div class="toolbar-actions">
-      <input id="tripSearch" class="input" placeholder="חפש טיול..." />
-    </div>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>FLYMILY — רשימת טיולים</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo">🧭</div>
+        <h1>הטיולים שלי</h1>
+      </div>
+      <div class="toolbar-actions">
+        <input id="tripSearch" class="input" placeholder="חפש יעד, עיר או סוג טיול…" />
+      </div>
+    </header>
 
-  <main>
-    <section class="toolbar">
-      <button id="sortBtn" class="btn ghost">סדר: מהקרוב לרחוק</button>
-      <button id="addTripBtn" class="btn primary">+ טיול חדש</button>
-    </section>
+    <main>
+      <section class="toolbar">
+        <div class="filters">
+          <button id="sortBtn" class="btn ghost" title="סדר כרונולוגי">סדר: מהקרוב לרחוק</button>
+        </div>
+        <button id="addTripBtn" class="btn primary">+ טיול חדש</button>
+      </section>
 
-    <ul id="tripTimeline" class="trip-timeline"></ul>
-    <ul id="timeline" class="trip-timeline" aria-label="ציר זמן של טיולים"></ul>
-</main>
+      <ul id="timeline" class="trip-timeline" aria-label="ציר זמן של טיולים"></ul>
+    </main>
 
-  <footer class="app-footer">
-    <small class="muted">כל הפונקציונליות נשמרה. תצוגה חדשה בצורת ציר זמן.</small>
-  </footer>
+    <footer class="app-footer">
+      <small class="muted">כל הפונקציות נשמרו. התצוגה: ציר זמן עם תפריט ⋮ לפעולות.</small>
+    </footer>
 
-  <script src="firebase.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="firebase.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>

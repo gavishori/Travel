@@ -1,188 +1,166 @@
-const $ = (s,r=document)=>r.querySelector(s);
-const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
-
-const icons = { ski:"🎿", trek:"🥾", beach:"🏖️", urban:"🏙️", other:"🧳" };
-
-async function renderTrips(){
-  const list = $("#tripTimeline");
-  list.innerHTML = "";
-  const q = ($("#tripSearch").value||"").toLowerCase();
-  let trips = await Store.listTrips();
-  trips = trips.filter(t=>[t.title,t.destination,t.type].some(v=>String(v||"").toLowerCase().includes(q)));
-  trips.sort((a,b)=> new Date(a.startDate)-new Date(b.startDate));
-  if (!state.sortAsc) trips.reverse();
-
-  for(const t of trips){
-    const li=document.createElement("li");
-    const dot=document.createElement("div");
-    dot.className="timeline-dot";
-    dot.innerHTML=`<span>${icons[t.type]||icons.other}</span>`;
-    const info=document.createElement("div");
-    info.className="trip-info";
-    info.innerHTML=`<h3>${t.title||t.destination||"טיול"}</h3><div class="trip-meta">${t.destination||""} • <span class="muted">${t.startDate||""} – ${t.endDate||""}</span></div>`;
-    const actions=document.createElement("div");
-    actions.className="actions";
-    actions.innerHTML=`<button class="menu-btn">⋮</button><div class="menu"><button class="edit" data-id="${t.id}">ערוך</button><button class="delete" data-id="${t.id}">מחק</button></div>`;
-    li.append(dot,info,actions); list.append(li);
-  }
-}
-
-const state={ sortAsc:true };
-
-document.addEventListener("click",e=>{
-  const actions=e.target.closest(".actions");
-  $$(".actions.open").forEach(a=>{ if(a!==actions) a.classList.remove("open"); });
-  if(e.target.classList.contains("menu-btn")){ actions.classList.toggle("open"); }
-  if(e.target.classList.contains("edit")){ openEdit(e.target.dataset.id); }
-  if(e.target.classList.contains("delete")){ Store.deleteTrip(e.target.dataset.id).then(renderTrips); }
-});
-
-$("#sortBtn").addEventListener("click",()=>{ state.sortAsc=!state.sortAsc; renderTrips(); });
-$("#tripSearch").addEventListener("input",renderTrips);
-$("#addTripBtn").addEventListener("click",()=> openEdit(null));
-
-async function openEdit(id){
-  const trip=id? await Store.getTrip(id): null;
-  // כאן אפשר לפתוח דיאלוג עריכה כמו בקוד המקורי שלך
-  alert(trip? "עריכה עדיין לא ממומשת כאן" : "יצירה חדשה עדיין לא ממומשת כאן");
-}
-
-renderTrips();
-
-
-/*__TIMELINE_INJECT__*/
+// StoreCompat: uses Firebase if available; falls back to localStorage
 (function(){
-  // Minimal DOM helpers
-  const $ = (sel, root=document)=> root.querySelector(sel);
+  const LS_KEY = "travel_journal_data_v2";
+  function loadLS(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || { trips:{} }; }catch{ return { trips:{} }; } }
+  function saveLS(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
-  // Respect RTL and existing theme; use existing Store + AppDataLayer as-is
+  async function ensureAuth(){
+    try{
+      if (window.auth && window.googleProvider){
+        if (!auth.currentUser){
+          await window.AppDataLayer.ensureAuth?.();
+        }
+        return auth.currentUser?.uid || null;
+      }
+    }catch(_){}
+    return null;
+  }
+
+  window.StoreCompat = {
+    async listTrips(){
+      // Firebase first
+      try{
+        if (window.db){
+          const uid = await ensureAuth();
+          if (!uid) return [];
+          const snap = await db.collection("trips").where("ownerUid","==", uid).get();
+          return snap.docs.map(d=>({ id:d.id, ...d.data() }));
+        }
+      }catch(e){ console.warn("Firebase listTrips failed", e); }
+      // Local fallback
+      const data = loadLS();
+      return Object.entries(data.trips).map(([id,t])=>({ id, ...t }));
+    },
+    async getTrip(id){
+      try{
+        if (window.db){
+          const uid = await ensureAuth(); if (!uid) return null;
+          const doc = await db.collection("trips").doc(id).get();
+          return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        }
+      }catch(e){}
+      const data = loadLS(); const t = data.trips[id]; return t ? { id, ...t } : null;
+    },
+    async updateTrip(id, updates){
+      try{
+        if (window.db){
+          updates.updatedAt = Date.now();
+          await db.collection("trips").doc(id).set(updates, { merge:true });
+          return;
+        }
+      }catch(e){}
+      const data = loadLS(); data.trips[id] = { ...(data.trips[id]||{}), ...updates, updatedAt: Date.now() }; saveLS(data);
+    },
+    async deleteTrip(id){
+      try{
+        if (window.db){ await db.collection("trips").doc(id).delete(); return; }
+      }catch(e){}
+      const data = loadLS(); delete data.trips[id]; saveLS(data);
+    },
+    async createTrip(meta){
+      const nowTs = Date.now();
+      const trip = { ...meta, createdAt: nowTs, updatedAt: nowTs };
+      try{
+        if (window.db){
+          const uid = await ensureAuth(); if (!uid) return null;
+          const doc = await db.collection("trips").add({ ...trip, ownerUid: uid });
+          return { id: doc.id, ...trip, ownerUid: uid };
+        }
+      }catch(e){}
+      const data = loadLS();
+      const id = "t_"+ (crypto.randomUUID ? crypto.randomUUID() : String(nowTs));
+      data.trips[id] = trip; saveLS(data);
+      return { id, ...trip };
+    }
+  };
+})();
+
+// Timeline UI
+(function(){
+  const $ = (s,r=document)=>r.querySelector(s);
   const ICONS = { ski:"🎿", trek:"🥾", beach:"🏖️", urban:"🏙️", other:"🧳" };
+  const state = { sortAsc:true };
 
-  // Utilities
   function fmtRange(a,b){
     try{
       const f = (d)=> new Date(d).toLocaleDateString('he-IL', { day:'2-digit', month:'long', year:'numeric' });
       return `${f(a)} – ${f(b)}`;
     }catch(_){ return `${a||''} – ${b||''}`; }
   }
-  function matches(trip, q){
-    if (!q) return true;
-    q = q.trim().toLowerCase();
-    return [trip.title, trip.destination, trip.type].some(v => String(v||'').toLowerCase().includes(q));
+  function matches(t,q){
+    if (!q) return true; q=q.trim().toLowerCase();
+    return [t.title, t.destination, t.type].some(v=> String(v||'').toLowerCase().includes(q));
   }
   function sortTrips(arr){
     return arr.slice().sort((a,b)=>{
       const d1 = new Date(a.startDate||a.start||a.from||0).getTime();
       const d2 = new Date(b.startDate||b.start||b.from||0).getTime();
-      return d1 - d2;
+      return state.sortAsc ? d1-d2 : d2-d1;
     });
-  }
-  async function fetchTrips(){
-    try{
-      if (window.Store && Store.listTrips) return await Store.listTrips();
-    }catch(e){}
-    // Fallback to local (very unlikely if original works)
-    try{ return JSON.parse(localStorage.getItem('travel_journal_data_v2'))?.trips || []; }catch(_){ return []; }
   }
 
   async function render(){
-    const host = $("#timeline");
-    if (!host) return;
-    const q = $("#tripSearch") ? $("#tripSearch").value : "";
-    const tripsRaw = await fetchTrips();
-    // normalize format: Store.listTrips() returns array of {id, ...}
-    const trips = Array.isArray(tripsRaw) ? tripsRaw.map(t=> t.id ? t : { id: t[0], ...t[1] }) : [];
+    const host = $("#timeline"); if (!host) return;
+    const q = $("#tripSearch")?.value || "";
+    const trips = await window.StoreCompat.listTrips();
     const filtered = sortTrips(trips).filter(t=>matches(t,q));
-
     host.innerHTML = "";
     for (const t of filtered){
       const li = document.createElement("li");
-
-      const dot = document.createElement("div");
-      dot.className = "timeline-dot";
-      const icon = ICONS[t.type] || ICONS.other;
-      dot.innerHTML = `<span>${icon}</span>`;
-
-      const info = document.createElement("div");
-      info.className = "trip-info";
-      const title = t.title || t.destination || "טיול";
-      const dest  = t.destination || "—";
-      const sd = t.startDate || t.start || t.from;
-      const ed = t.endDate || t.end || t.to;
-      info.innerHTML = `
-        <h3>${title}</h3>
-        <div class="trip-meta">
-          <span class="badge">${dest}</span>
-          <span class="muted">${fmtRange(sd, ed)}</span>
-        </div>
-      `;
-
-      const actions = document.createElement("div");
-      actions.className = "actions";
-      actions.innerHTML = `
-        <button class="menu-btn" aria-label="עוד פעולות" title="עוד פעולות">⋮</button>
+      const dot = document.createElement("div"); dot.className="timeline-dot"; dot.innerHTML=`<span>${ICONS[t.type]||ICONS.other}</span>`;
+      const info = document.createElement("div"); info.className="trip-info";
+      const sd=t.startDate||t.start||t.from, ed=t.endDate||t.end||t.to;
+      info.innerHTML = `<h3>${t.title||t.destination||"טיול"}</h3><div class="trip-meta"><span class="badge">${t.destination||"—"}</span><span class="muted">${fmtRange(sd,ed)}</span></div>`;
+      const actions = document.createElement("div"); actions.className="actions";
+      actions.innerHTML = `<button class="menu-btn" aria-label="עוד פעולות" title="עוד פעולות">⋮</button>
         <div class="menu" role="menu">
-          <button class="edit" data-id="${t.id||''}">ערוך</button>
-          <button class="delete" data-id="${t.id||''}">מחק</button>
-        </div>
-      `;
-
-      li.appendChild(dot);
-      li.appendChild(info);
-      li.appendChild(actions);
-      host.appendChild(li);
+          <button class="edit" data-id="${t.id}">ערוך</button>
+          <button class="delete" data-id="${t.id}">מחק</button>
+        </div>`;
+      li.append(dot,info,actions); host.appendChild(li);
     }
   }
 
-  // Global click handler for menu open/close and actions
   document.addEventListener("click", async (e)=>{
     const actions = e.target.closest(".actions");
-    // Close others
     document.querySelectorAll(".actions.open").forEach(a=>{ if (a!==actions) a.classList.remove("open"); });
-    if (actions && e.target.classList.contains("menu-btn")){
-      actions.classList.toggle("open");
-    }
+    if (actions && e.target.classList.contains("menu-btn")) actions.classList.toggle("open");
 
     if (e.target.matches(".menu .delete")){
       const id = e.target.getAttribute("data-id");
-      if (id && confirm("למחוק את הטיול?")){
-        try{
-          if (window.Store && Store.deleteTrip) { await Store.deleteTrip(id); }
-        }catch(err){ console.warn("deleteTrip failed", err); }
-        render();
-      }
+      if (id && confirm("למחוק את הטיול?")){ await StoreCompat.deleteTrip(id); render(); }
     }
-
     if (e.target.matches(".menu .edit")){
       const id = e.target.getAttribute("data-id");
-      // Try to use an existing edit dialog if available:
-      if (typeof window.openTripEditor === "function"){ window.openTripEditor(id); return; }
-      // Fallback: open a lightweight prompt-based editor (keeps functionality alive without לשבור):
-      try{
-        const trips = await (window.Store && Store.getTrip ? Store.getTrip(id) : null);
-        const cur = trips || {};
-        const title = prompt("כותרת הטיול:", cur.title || "");
-        if (title===null) return;
-        const destination = prompt("יעד:", cur.destination || "");
-        if (destination===null) return;
-        const startDate = prompt("תאריך התחלה (YYYY-MM-DD):", cur.startDate || "");
-        if (startDate===null) return;
-        const endDate = prompt("תאריך סיום (YYYY-MM-DD):", cur.endDate || "");
-        if (endDate===null) return;
-        const type = prompt("סוג (urban/ski/trek/beach/other):", cur.type || "urban");
-        if (window.Store && Store.updateTrip) await Store.updateTrip(id, { title, destination, startDate, endDate, type });
-        render();
-      }catch(err){ console.warn("edit fallback failed", err); }
+      const t = await StoreCompat.getTrip(id) || {};
+      const title = prompt("כותרת הטיול:", t.title||""); if (title===null) return;
+      const destination = prompt("יעד:", t.destination||""); if (destination===null) return;
+      const startDate = prompt("תאריך התחלה (YYYY-MM-DD):", t.startDate||""); if (startDate===null) return;
+      const endDate = prompt("תאריך סיום (YYYY-MM-DD):", t.endDate||""); if (endDate===null) return;
+      const type = prompt("סוג (urban/ski/trek/beach/other):", t.type||"urban"); if (type===null) return;
+      await StoreCompat.updateTrip(id, { title, destination, startDate, endDate, type });
+      render();
     }
   });
 
-  // Search binding
-  const searchEl = $("#tripSearch");
-  if (searchEl) searchEl.addEventListener("input", ()=> render());
+  $("#sortBtn")?.addEventListener("click", ()=>{
+    state.sortAsc = !state.sortAsc;
+    $("#sortBtn").textContent = state.sortAsc ? "סדר: מהקרוב לרחוק" : "סדר: מהרחוק לקרוב";
+    render();
+  });
+  $("#tripSearch")?.addEventListener("input", ()=> render());
+  $("#addTripBtn")?.addEventListener("click", async ()=>{
+    const title = prompt("כותרת הטיול:"); if (title===null || !title.trim()) return;
+    const destination = prompt("יעד:"); if (destination===null) return;
+    const startDate = prompt("תאריך התחלה (YYYY-MM-DD):"); if (startDate===null) return;
+    const endDate = prompt("תאריך סיום (YYYY-MM-DD):"); if (endDate===null) return;
+    const type = prompt("סוג (urban/ski/trek/beach/other):","urban"); if (type===null) return;
+    await StoreCompat.createTrip({ title, destination, startDate, endDate, type });
+    render();
+  });
 
-  // First paint + periodic refresh to reflect external edits
+  // initial paint + small delays to allow Firebase auth redirect
   render();
-  // Refresh after sign-in if Firebase mode uses redirect
-  setTimeout(render, 1000);
+  setTimeout(render, 1200);
   setInterval(render, 15000);
 })();
