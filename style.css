@@ -1128,3 +1128,40 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 .table .row-actions .btn.delete:hover {
   background-color: #dc2626;
 }
+
+
+
+/* === כפתורי ערוך/מחק מעוצבים מחדש === */
+.btn.edit {
+  min-width: 90px;
+  height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3b82f6;
+  color: #fff;
+  border: none;
+}
+.btn.edit:hover {
+  background-color: #2563eb;
+}
+
+.btn.delete {
+  min-width: 90px;
+  height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ef4444;
+  color: #fff;
+  border: none;
+}
+.btn.delete:hover {
+  background-color: #dc2626;
+}
