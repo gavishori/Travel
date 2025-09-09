@@ -22,41 +22,36 @@ function labelForType(type){ return ({ beach:"בטן-גב", ski:"סקי", trek:"
 function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 /* ===== Data layer ===== */
-const Store = (() => {
-  const mode = window.AppDataLayer?.mode || "local";
-  const db = window.AppDataLayer?.db;
-  let uid = null;
-
+const Data = (() => {
+  const hasFirebase = !!(window.firebase && firebase.apps && firebase.apps.length);
+  const db  = hasFirebase ? firebase.firestore() : null;
+  const auth = hasFirebase ? firebase.auth() : null;
   const LS_KEY = "travel_journal_data_v2";
+
   function loadLS(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || { trips:{} }; }catch{ return { trips:{} }; } }
   function saveLS(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
 
-  async function ensureAuth(){
-    if (mode === "firebase"){
-      uid = await window.AppDataLayer.ensureAuth?.() || null;
-    }
-    return uid;
-  }
+  function onAuth(cb){ if (auth && auth.onAuthStateChanged) auth.onAuthStateChanged(cb); else cb(null); }
+  function uid(){ return auth && auth.currentUser ? auth.currentUser.uid : null; }
+
+  async function signIn(email, pass){ if (!auth) throw new Error("local-mode"); return auth.signInWithEmailAndPassword(email, pass); }
+  async function register(email, pass){ if (!auth) throw new Error("local-mode"); return auth.createUserWithEmailAndPassword(email, pass); }
+  async function signOut(){ if (!auth) return; return auth.signOut(); }
 
   async function listTrips(){
-    if (mode === "firebase"){
-      await ensureAuth();
-      if (!uid) return [];
-      const snap = await db.collection("trips").where("ownerUid","==", uid).get();
+    if (auth && uid()){
+      const snap = await db.collection("trips").where("ownerUid","==", uid()).get();
       return snap.docs.map(d => ({ id:d.id, ...d.data() }));
     } else {
       const data = loadLS();
       return Object.entries(data.trips).map(([id,t]) => ({ id, ...t }));
     }
   }
-
   async function createTrip(meta){
     const now = Date.now();
     const trip = { ...meta, createdAt: now, updatedAt: now };
-    if (mode === "firebase"){
-      await ensureAuth();
-      if (!uid) throw new Error("not-authenticated");
-      const docData = { ...trip, ownerUid: uid, expenses:{}, journal:{} };
+    if (auth && uid()){
+      const docData = { ...trip, ownerUid: uid(), expenses:{}, journal:{} };
       const ref = await db.collection("trips").add(docData);
       return { id: ref.id, ...docData };
     } else {
@@ -67,11 +62,8 @@ const Store = (() => {
       return { id, ...data.trips[id] };
     }
   }
-
   async function updateTrip(id, updates){
-    if (mode === "firebase"){
-      await ensureAuth();
-      if (!uid) throw new Error("not-authenticated");
+    if (auth && uid()){
       updates.updatedAt = Date.now();
       await db.collection("trips").doc(id).set(updates,{ merge:true });
     } else {
@@ -80,11 +72,8 @@ const Store = (() => {
       saveLS(data);
     }
   }
-
   async function deleteTrip(id){
-    if (mode === "firebase"){
-      await ensureAuth();
-      if (!uid) throw new Error("not-authenticated");
+    if (auth && uid()){
       await db.collection("trips").doc(id).delete();
     } else {
       const data = loadLS();
@@ -93,13 +82,12 @@ const Store = (() => {
     }
   }
 
-  return { listTrips, createTrip, updateTrip, deleteTrip };
+  return { hasFirebase, onAuth, uid, signIn, register, signOut, listTrips, createTrip, updateTrip, deleteTrip };
 })();
 
-/* ===== UI State ===== */
+/* ===== UI State & Views ===== */
 const state = { trips: [], sortBy: "start", asc: true, editingId: null, uid: null };
 
-/* ===== Views ===== */
 const authView = byId("authView");
 const appView  = byId("appView");
 function showAuth(){ authView.classList.remove("hidden"); appView.classList.add("hidden"); }
@@ -154,7 +142,7 @@ function renderTrips(){
 
     const editBtn = document.createElement("button"); editBtn.textContent = "ערוך"; editBtn.addEventListener("click", () => openEdit(t));
     const delBtn = document.createElement("button"); delBtn.textContent = "מחק"; delBtn.style.color = "var(--danger)";
-    delBtn.addEventListener("click", async () => { if (confirm("למחוק את הטיול הזה?")) { await Store.deleteTrip(t.id); await refresh(); } });
+    delBtn.addEventListener("click", async () => { if (confirm("למחוק את הטיול הזה?")) { await Data.deleteTrip(t.id); await refresh(); } });
     dropdown.append(editBtn, delBtn); menu.append(menuBtn, dropdown);
     header.append(dateEl, iconEl, destEl, menu);
     content.append(header);
@@ -176,7 +164,7 @@ function renderTrips(){
   }
 }
 
-/* ===== Events (global) ===== */
+/* ===== Events ===== */
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".menu-btn");
   $$(".trip-menu").forEach(m => m.classList.remove("open"));
@@ -201,18 +189,15 @@ const authForm = byId("authForm");
 const authEmail = byId("authEmail");
 const authPassword = byId("authPassword");
 const authError = byId("authError");
-const loginBtn = byId("loginBtn");
 const registerBtn = byId("registerBtn");
 
-function setAuthState(uid){
-  state.uid = uid || null;
+function setAuthState(u){
+  state.uid = u ? (u.uid || u) : null;
   if (state.uid){ showApp(); } else { showAuth(); }
 }
 
 signOutBtn.addEventListener("click", async () => {
-  try{
-    await window.AppDataLayer?.emailAuth?.signOut();
-  }catch(e){}
+  try{ await Data.signOut(); }catch(e){}
   setAuthState(null);
   await refresh();
 });
@@ -220,24 +205,40 @@ signOutBtn.addEventListener("click", async () => {
 authForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   try{
-    await window.AppDataLayer?.emailAuth?.signIn(authEmail.value, authPassword.value);
-    setAuthState(window.AppDataLayer?._auth?.currentUser?.uid);
+    await Data.signIn(authEmail.value, authPassword.value);
+    setAuthState(firebase?.auth?.().currentUser);
     authError.textContent = "";
     await refresh();
   }catch(err){
-    authError.textContent = err && err.message ? err.message : "Login failed";
+    // If in local-mode: create a fake session and continue
+    if (String(err).includes("local-mode")){
+      localStorage.setItem("local_auth_user", authEmail.value);
+      setAuthState(authEmail.value);
+      authError.textContent = "";
+      await refresh();
+    } else {
+      authError.textContent = err && err.message ? err.message : "Login failed";
+    }
   }
 });
 
 registerBtn.addEventListener("click", async (e) => {
   e.preventDefault();
   try{
-    await window.AppDataLayer?.emailAuth?.register(authEmail.value, authPassword.value);
-    setAuthState(window.AppDataLayer?._auth?.currentUser?.uid);
+    await Data.register(authEmail.value, authPassword.value);
+    setAuthState(firebase?.auth?.().currentUser);
     authError.textContent = "";
     await refresh();
   }catch(err){
-    authError.textContent = err && err.message ? err.message : "Registration failed";
+    if (String(err).includes("local-mode")){
+      // Local "registration": just store a minimal flag
+      localStorage.setItem("local_auth_user", authEmail.value);
+      setAuthState(authEmail.value);
+      authError.textContent = "";
+      await refresh();
+    } else {
+      authError.textContent = err && err.message ? err.message : "Registration failed";
+    }
   }
 });
 
@@ -249,10 +250,6 @@ const titleEl = byId("tripDialogTitle");
 byId("addTripFab").addEventListener("click", () => openAdd());
 
 function openAdd(){
-  if (window.AppDataLayer?.mode === "firebase" && !state.uid){
-    alert("יש להתחבר עם מייל וסיסמה לפני יצירת טיול.");
-    return;
-  }
   state.editingId = null;
   titleEl.textContent = "הוספת טיול";
   form.reset();
@@ -280,36 +277,23 @@ form.addEventListener("submit", async (e) => {
     notes: byId("fldNotes").value.trim() || null
   };
   try{
-    if (state.editingId){ await Store.updateTrip(state.editingId, payload); }
-    else { await Store.createTrip(payload); }
+    if (state.editingId){ await Data.updateTrip(state.editingId, payload); }
+    else { await Data.createTrip(payload); }
     dlg.close(); await refresh();
   }catch(err){
-    alert("נדרש להתחבר כדי לשמור לענן. אפשר לעבוד לוקאלית אם Firebase לא מוגדר.");
+    alert("שמירה נכשלה."); console.warn(err);
   }
 });
 
 /* ===== Load & refresh ===== */
 async function refresh(){
   try{
-    const uid = await window.AppDataLayer?.ensureAuth?.();
-    setAuthState(uid);
-    state.trips = await Store.listTrips();
-    if (uid) {
-      // Normalize legacy dates
-      await Promise.all(state.trips.map(async t => {
-        const s = parseAnyDate(t.startDate), e = parseAnyDate(t.endDate);
-        const norm = {};
-        if (s && typeof t.startDate !== "string") norm.startDate = s.toISOString().slice(0,10);
-        if (e && typeof t.endDate !== "string") norm.endDate = e.toISOString().slice(0,10);
-        if (Object.keys(norm).length) await Store.updateTrip(t.id, norm);
-      }));
-    }
+    state.trips = await Data.listTrips();
   }catch(e){
-    // Local mode
-    setAuthState(null);
     state.trips = [];
   }
-  if (!state.trips.length && (window.AppDataLayer?.mode !== "firebase" || !state.uid)){
+  if (!state.trips.length){
+    // Seed demo once (local mode)
     state.trips = [
       { id:"demo1", destination:"מילאנו, איטליה", type:"urban", startDate:"2025-01-12", endDate:"2025-01-17", budgetEUR:500, notes:"מלון + טיסות", createdAt: Date.now(), updatedAt: Date.now() },
       { id:"demo2", destination:"ול טורנס, צרפת", type:"ski", startDate:"2025-02-02", endDate:"2025-02-09", budgetEUR:1200, notes:"סקי-פס ורכב", createdAt: Date.now()-10000000, updatedAt: Date.now()-5000000 }
@@ -318,12 +302,5 @@ async function refresh(){
   renderTrips();
 }
 
-// Auth state listener (if Firebase available)
-try{
-  const auth = window.AppDataLayer?._auth;
-  if (auth && auth.onAuthStateChanged){
-    auth.onAuthStateChanged((u) => { setAuthState(u ? u.uid : null); refresh(); });
-  } else {
-    refresh();
-  }
-}catch(_){ refresh(); }
+// Init: show correct view based on Firebase auth (if available)
+Data.onAuth((u) => { setAuthState(u); refresh(); });
