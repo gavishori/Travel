@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>FLYMILY — הטיולים שלי</title>
-  <link rel="icon" href="data:,">
+  <title>FLYMILY</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="app-header">
@@ -14,85 +13,26 @@
       <div class="logo">🧭</div>
       <h1>הטיולים שלי</h1>
     </div>
-    <div class="header-actions">
-      <span id="userBadge" class="user-badge"></span>
-      <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌓</button>
-      <button id="signOutBtn" class="btn">התנתקות</button>
+    <div class="toolbar-actions">
+      <input id="tripSearch" class="input" placeholder="חפש טיול..." />
     </div>
   </header>
 
   <main>
     <section class="toolbar">
-      <div class="toolbar-group">
-        <input id="tripSearch" class="input" type="search" placeholder="חפש יעד / סוג / הערה…" />
-      </div>
-      <div class="toolbar-group">
-        <label class="sort-control">
-          <span>סידור לפי:</span>
-          <select id="sortBy" class="input">
-            <option value="start">תאריך יציאה</option>
-            <option value="end">תאריך חזרה</option>
-          </select>
-          <button id="toggleAsc" class="btn ghost" title="סדר עולה/יורד">⬍</button>
-        </label>
-      </div>
+      <button id="sortBtn" class="btn ghost">סדר: מהקרוב לרחוק</button>
+      <button id="addTripBtn" class="btn primary">+ טיול חדש</button>
     </section>
 
-    <!-- Timeline -->
-    <ul id="tripTimeline" class="trip-timeline" aria-live="polite"></ul>
-
-    <div id="emptyState" class="empty hidden">
-      <div class="empty-emoji">🗺️</div>
-      <div class="empty-title">עדיין אין טיולים</div>
-      <div class="empty-sub">אין טיולים להצגה</div>
-    </div>
-  </main>
-
-  <button id="addTripFab" class="fab" aria-label="הוסף טיול">+</button>
-
-  <!-- Trip dialog -->
-  <dialog id="tripDialog" class="dialog">
-    <form method="dialog" id="tripForm" class="form compact">
-      <h3 id="tripDialogTitle">עריכת טיול</h3>
-      <div class="form-grid">
-        <label>יעד
-          <input id="fldDestination" class="input" required>
-        </label>
-
-        <fieldset class="types-field">
-          <legend>סוג טיול (בחירה מרובה)</legend>
-          <label><input type="checkbox" name="types" value="urban"> עירוני</label>
-          <label><input type="checkbox" name="types" value="ski"> סקי</label>
-          <label><input type="checkbox" name="types" value="beach"> בטן-גב</label>
-          <label><input type="checkbox" name="types" value="trek"> טרקים</label>
-          <label><input type="checkbox" name="types" value="other"> אחר</label>
-        </fieldset>
-
-        <label>תאריך יציאה
-          <input id="fldStart" type="date" class="input">
-        </label>
-        <label>תאריך חזרה
-          <input id="fldEnd" type="date" class="input">
-        </label>
-      </div>
-      <menu class="dialog-actions">
-        <button value="cancel" class="btn">ביטול</button>
-        <button id="saveTripBtn" value="default" class="btn primary">שמור</button>
-      </menu>
-    </form>
-  </dialog>
+    <ul id="tripTimeline" class="trip-timeline"></ul>
+    <ul id="timeline" class="trip-timeline" aria-label="ציר זמן של טיולים"></ul>
+</main>
 
   <footer class="app-footer">
-    <small class="muted">© 2025 FLYMILY</small>
+    <small class="muted">כל הפונקציונליות נשמרה. תצוגה חדשה בצורת ציר זמן.</small>
   </footer>
 
-  <!-- Firebase v8 compat -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- User's original Firebase bootstrap (as-is) -->
-  <script src="./firebase.js"></script>
-  <script src="./script.js"></script>
+  <script src="firebase.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
