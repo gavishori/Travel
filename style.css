@@ -1094,3 +1094,37 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #remainingUSD, #remainingEUR, #remainingILS {
   font-weight: 500; /* normal/medium */
 }
+
+
+
+/* === עיצוב מחדש לכפתורי ערוך/מחק === */
+.table .row-actions .btn {
+  min-width: 90px;
+  height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ערוך */
+.table .row-actions .btn.edit {
+  background-color: #3b82f6;
+  color: #fff;
+  border: none;
+}
+.table .row-actions .btn.edit:hover {
+  background-color: #2563eb;
+}
+
+/* מחק */
+.table .row-actions .btn.delete {
+  background-color: #ef4444;
+  color: #fff;
+  border: none;
+}
+.table .row-actions .btn.delete:hover {
+  background-color: #dc2626;
+}
