@@ -2020,6 +2020,8 @@ window.handleSignOut = async function(){
       li.append(dot,info,actions); host.appendChild(li);
     }
   }
+    // Toggle body class based on content (so old cards are hidden only when timeline is actually populated)
+    try{ document.body.classList.toggle('timeline-ready', filtered.length > 0); }catch(_){}
 
   document.addEventListener("click", async (e)=>{
     const actions = e.target.closest(".actions");
@@ -2080,4 +2082,16 @@ window.handleSignOut = async function(){
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
+})();
+/*__PW_TOGGLE__*/
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.icon-eye');
+    if (!btn) return;
+    var input = document.getElementById('email-auth-password');
+    if (!input) return;
+    var isPwd = input.getAttribute('type') === 'password';
+    input.setAttribute('type', isPwd ? 'text' : 'password');
+    btn.classList.toggle('active', isPwd);
+  });
 })();

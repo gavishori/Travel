@@ -1035,8 +1035,7 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 /* === Password eye toggle === */
 .input-with-icon{ position:relative; }
 .input-with-icon input{ padding-inline-end:44px; }
-.icon-eye{ position:absolute; inset-inline-end:10px; top:50%; transform:translateY(-50%); width:32px; height:32px;
-  display:grid; place-items:center; background:transparent; border:none; color:var(--fg,#fff); opacity:.9; }
+.icon-eye{ position:absolute; inset-inline-end:10px; top:50%; transform:translateY(-50%); width:32px; height:32px; display:grid; place-items:center; background:transparent; border:none; color:var(--muted); opacity:1; z-index:2; }
 .icon-eye:active{ transform:translateY(-50%) scale(.98); }
 .icon-eye .eye-closed{ display:none; }
 .icon-eye.active .eye-open{ display:none; }
@@ -1133,5 +1132,5 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 .menu button:hover{ background: var(--primary); color:#fff; }
 .actions.open .menu{ display:block; }
 
-/* Hide old cards grid to avoid duplicate presentation (functionality stays via JS) */
-.cards{ display:none; }
+/* Hide old cards only when timeline is ready */
+body.timeline-ready .cards{ display:none; }
