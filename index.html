@@ -3,13 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>FLYMILY</title>
+  <title>FLYMILY — טיולים</title>
+
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet (optional for map backgrounds; not used directly in this list page) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
-<body class="splash-mode">
-  <div class="bg-ornaments" aria-hidden="true"></div>
-  <section id="splash" role="region" aria-label="מסך פתיחה">
-    <div class="splash-card">
-      <img class="splash-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAADL1t+KAAAQAElEQVR4AexdB4BdRdX+ZuaW99723XSS0KWEDtIUBFERFVEUVEABFREURBAEFQ2CYEFQbIAiRWpoIkiHhN5CJ7SE9L59X71t5v/mbRZDlfwSSjKXd97MnXLmzDd3zzdn3m6QcJdDwCHgEHAIOAQcAu97BByhv++X0E3AIeAQcAg4BBwCwMoldIewQ8Ah4BBwCDgEHALvCAKO0N8RmN0gDgGHgEPAIeAQWLkIvJ8JfeUi47Q7BBwCDgGHgEPgfYSAI7T30WI5Ux0CDgGHgEPAIfBGCDhCfyNkXLlDwCHgEHAIOATeRwg4Qn8fLZYz1SHgEHAIOAQcAm+EgCP0N0Jm5ZY77Q4Bh4BDwCHgEHhbEXCE/rbC6ZQ5BBwCDgGHgEPg3UHAEfq7g/vKHdVpdwg4BBwCDoHVDgFH6KvdkrsJOwQcAg4Bh8CqiIAj9FVxVVfunJx2h4BDwCHgEHgPIuAI/T24KM4kh4BDwCHgEHAIrCgCjtBXFDHXfuUi4LQ7BBwCDgGHwP8LAUfo/y/YXCeHgEPAIeAQcAi8txBwhP7eWg9nzcpFwGl3CDgEHAKrLAKO0FfZpXUTcwg4BBwCDoHVCQFH6KvTaru5rlwEnHaHgEPAIfAuIuAI/V0E3w3tEHAIOAQcAg6BtwsBR+hvF5JOj0Ng5SLgtDsEHAIOgTdFwBH6m8LjKh0CDgGHgEPAIfD+QMAR+vtjnZyVDoGVi4DT7hBwCLzvEXCE/r5fQjcBh4BDwCHgEHAIAI7Q3VPgEHAIrGwEnH6HgEPgHUDAEfo7ALIbwiHgEHAIOAQcAisbAUfoKxthp98h4BBYuQg47Q4Bh0AdAUfodRjcl0PAIeAQcAg4BN7fCDhCf3+vn7PeIeAQWLkIOO0OgfcNAo7Q3zdL5Qx1CDgEHAIOAYfAGyPgCP2NsXE1DgGHgENg5SLgtDsE3kYEHKG/jWA6VQ4Bh4BDwCHgEHi3EHCE/m4h78Z1CDgEHAIrFwGnfTVDwBH6arbgbroOAYeAQ8AhsGoi4Ah91VxXNyuHgEPAIbByEXDa33MIOEJ/zy2JM8gh4BBwCDgEHAIrjoAj9BXHzPVwCDgEHAIOgZWLgNP+/0DAEfr/AzTXxSHgEHAIOAQcAu81BByhv9dWxNnjEHAIOAQcAisXgVVUuyP0VXRh3bQcAg4Bh4BDYPVCwBH66rXebrYOAYeAQ8AhsHIReNe0O0J/16B3AzsEHAIOAYeAQ+DtQ8AR+tuHpdPkEHAIOAQcAg6BlYvAm2h3hP4m4Lgqh4BDwCHgEHAIvF8QcIT+flkpZ6dDwCHgEHAIOATeBIG3gdDfRLurcgg4BBwCDgGHgEPgHUHAEfo7ArMbxCHgEHAIOAQcAisXgfc8oa/c6TvtDgGHgEPAIeAQWDUQcIS+aqyjm4VDwCHgEHAIrOYIrOaEvpqvvpu+Q8Ah4BBwCKwyCDhCX2WW0k3EIeAQcAg4BFZnBByhr8TVd6odAg4Bh4BDwCHwTiHgCP2dQtqN4xBwCDgEHAIOgZWIgCP0lQjuylXttDsEHAIOAYeAQ+A/CDhC/wweoBf89/VfTz/l2tPOnTr1mGuvuu7e+/77bn/rTXf899V/f/zX/33v/XfeeP/dd997/71333nzrV+/fnXr1m3atGni6uqqurq63Hfffee999777rvvnvfdd/9tN99885133nnnzTffvGfOnDnz5syZM2fOXLlSdnZ2enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo">🧭</div>
+      <h1>הטיולים שלי</h1>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌓</button>
+      <button id="googleSignIn" class="btn primary">התחברות</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div class="toolbar-group">
+        <input id="tripSearch" class="input" type="search" placeholder="חפש יעד / סוג / הערה…" />
+      </div>
+      <div class="toolbar-group">
+        <label class="sort-control">
+          <span>סידור לפי:</span>
+          <select id="sortBy" class="input">
+            <option value="start">תאריך יציאה</option>
+            <option value="end">תאריך חזרה</option>
+            <option value="updated">עודכן לאחרונה</option>
+            <option value="created">נוצר לאחרונה</option>
+          </select>
+          <button id="toggleAsc" class="btn ghost" title="סדר עולה/יורד">⬍</button>
+        </label>
+      </div>
+    </section>
+
+    <!-- Timeline -->
+    <ul id="tripTimeline" class="trip-timeline" aria-live="polite"></ul>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty hidden">
+      <div class="empty-emoji">🗺️</div>
+      <div class="empty-title">עדיין אין טיולים</div>
+      <div class="empty-sub">לחצו על + כדי להוסיף טיול ראשון</div>
+    </div>
+  </main>
+
+  <!-- FAB -->
+  <button id="addTripFab" class="fab" aria-label="הוסף טיול">+</button>
+
+  <!-- Minimal dialog for add/edit -->
+  <dialog id="tripDialog" class="dialog">
+    <form method="dialog" id="tripForm" class="form compact">
+      <h3 id="tripDialogTitle">טופס טיול</h3>
+      <div class="form-grid">
+        <label>יעד
+          <input id="fldDestination" class="input" required placeholder="למשל: מילאנו, איטליה">
+        </label>
+        <label>סוג טיול
+          <select id="fldType" class="input">
+            <option value="urban">עירוני</option>
+            <option value="ski">סקי</option>
+            <option value="beach">בטן-גב</option>
+            <option value="trek">טרקים</option>
+            <option value="other">אחר</option>
+          </select>
+        </label>
+        <label>תאריך יציאה
+          <input id="fldStart" type="date" class="input">
+        </label>
+        <label>תאריך חזרה
+          <input id="fldEnd" type="date" class="input">
+        </label>
+        <label>תקציב (EUR)
+          <input id="fldBudget" type="number" min="0" class="input" placeholder="0">
+        </label>
+        <label>הערות
+          <input id="fldNotes" class="input" placeholder="שדות חופשיים (טיסות/מלון/קישורים)">
+        </label>
+      </div>
+      <menu class="dialog-actions">
+        <button value="cancel" class="btn">ביטול</button>
+        <button id="saveTripBtn" value="default" class="btn primary">שמור</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <footer class="app-footer">
+    <small class="muted">© 2025 FLYMILY</small>
+  </footer>
+
+  <!-- Firebase v8 compat (expected by firebase.js) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- App bootstrap -->
+  <script src="./firebase.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
