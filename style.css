@@ -1165,3 +1165,68 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 .btn.delete:hover {
   background-color: #dc2626;
 }
+
+
+
+/* === כפתורי ערוך/מחק בעיצוב משני ועדין === */
+.btn.edit, .btn.delete {
+  min-width: 90px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn.edit:hover, .btn.delete:hover {
+  background-color: var(--border);
+  color: var(--text);
+}
+
+
+
+/* ===== Trips Page – neutral secondary actions (scoped) ===== */
+#trips-page-cards .row.bottom-row .btn {
+  min-width: 112px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+}
+
+#trips-page-cards .row.bottom-row .btn:hover {
+  background: var(--panel);
+}
+
+#trips-page-cards .row.bottom-row .btn.edit,
+#trips-page-cards .row.bottom-row .btn.delete {
+  /* explicitly neutralize any previous color rules */
+  background: transparent !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* card polish just for this page */
+#trips-page-cards li {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+#trips-page-cards li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+}
+#trips-page-cards .trip-title { font-weight: 700; }
+#trips-page-cards .muted { color: var(--muted); }
