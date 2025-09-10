@@ -1,26 +1,26 @@
 
-// ---- Minimal timeline-only script for the first page redesign ----
+// ---- Timeline page (with Firebase fallback when not signed-in) ----
 
-// Use existing Store if available (from your project). If not, mock a local one.
 const Store = window.Store || (()=>{
   const LS_KEY = "travel_journal_data_v2";
   function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || { trips:{} }; }catch{ return {trips:{}}; } }
   function save(d){ localStorage.setItem(LS_KEY, JSON.stringify(d)); }
   async function listTrips(){
-    if (window.AppDataLayer?.mode === "firebase" && !firebase.auth().currentUser){
-      console.warn("[guard] listTrips blocked until sign-in"); return [];
-    }
-    if (window.AppDataLayer?.mode === "firebase"){
-      const uid = firebase.auth().currentUser?.uid;
+    const firebaseMode = (window.AppDataLayer?.mode === "firebase") && typeof firebase !== "undefined";
+    if (firebaseMode && firebase?.auth?.().currentUser){
+      const uid = firebase.auth().currentUser.uid;
       const snap = await db.collection("trips").where("ownerUid","==", uid).get();
       return snap.docs.map(d=>({ id:d.id, ...d.data() }));
     }else{
+      // Fallback: read from local storage so the page works without auth.
       const data = load();
+      console.info("[fallback] Using LocalStorage (not signed-in)");
       return Object.entries(data.trips).map(([id,t])=>({id, ...t}));
     }
   }
   async function deleteTrip(id){
-    if (window.AppDataLayer?.mode === "firebase"){
+    const firebaseMode = (window.AppDataLayer?.mode === "firebase") && typeof firebase !== "undefined";
+    if (firebaseMode && firebase?.auth?.().currentUser){
       await db.collection("trips").doc(id).delete();
     }else{
       const data = load(); delete data.trips[id]; save(data);
@@ -54,13 +54,8 @@ function dayDiff(a,b){
     return Math.max(1, Math.round(ms/86400000));
   }catch{ return 1; }
 }
-function normalizeStart(trip){
-  // Supports startDate (ISO) or startTs
-  return trip.startDate || trip.start || trip.departure || trip.from || trip.startTs || trip.date || null;
-}
-function normalizeEnd(trip){
-  return trip.endDate || trip.to || trip.return || trip.endTs || null;
-}
+function normalizeStart(trip){ return trip.startDate || trip.start || trip.departure || trip.from || trip.startTs || trip.date || null; }
+function normalizeEnd(trip){ return trip.endDate || trip.to || trip.return || trip.endTs || null; }
 
 async function loadTrips(){
   state.trips = await Store.listTrips();
@@ -79,7 +74,15 @@ function render(){
   sortTripsInPlace();
   const list = $("#timeline");
   const tmpl = $("#tripItemTmpl");
+  const empty = $("#emptyState");
   list.innerHTML = "";
+
+  if (!state.trips || state.trips.length === 0){
+    empty.hidden = false;
+    return;
+  }else{
+    empty.hidden = true;
+  }
 
   state.trips.forEach(trip=>{
     const li = tmpl.content.firstElementChild.cloneNode(true);
@@ -110,7 +113,6 @@ function render(){
     document.addEventListener("click", ()=> menu.classList.remove("open"));
 
     pop.querySelector('[data-action="edit"]').addEventListener("click", ()=>{
-      // Allow host app to handle edit; fallback to hash route or event
       if (typeof window.onEditTrip === "function"){ window.onEditTrip(trip.id); }
       else { location.hash = "#/trip/" + trip.id; }
     });
@@ -147,7 +149,5 @@ function wireUI(){
 window.addEventListener("DOMContentLoaded", ()=>{
   wireUI();
   updateSortBtn();
-
-  // If Firebase is used, wait briefly for auth attempt, then load
-  setTimeout(loadTrips, 300);
+  setTimeout(loadTrips, 200);
 });

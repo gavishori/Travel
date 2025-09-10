@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>FLYMILY — טיולים</title>
+  <link rel="icon" href="logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -16,7 +17,7 @@
 <body>
   <header class="app-header">
     <div class="brand">
-      <div class="logo" aria-hidden="true">✈️</div>
+      <img src="logo.png" alt="Flymily" class="logo-img" />
       <h1>הטיולים שלי</h1>
     </div>
     <div class="header-actions">
@@ -30,6 +31,9 @@
   <main>
     <section class="timeline-wrapper">
       <ol id="timeline" class="timeline" aria-live="polite" aria-label="רשימת טיולים בציר זמן"></ol>
+      <div id="emptyState" class="empty" hidden>
+        <p>אין עדיין טיולים להצגה.</p>
+      </div>
     </section>
   </main>
 

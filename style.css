@@ -123,3 +123,6 @@ body{
   .timeline-item .line{ inset-inline-start: 15px; }
   .meta{ gap:6px; }
 }
+
+
+.brand .logo-img{ width:28px; height:28px; object-fit:contain; border-radius:6px; }
