@@ -1,93 +1,52 @@
-// ==== Firebase bootstrap (compat) with iOS redirect & tap-gate ====
-(function(){
-  try {
-    // Firebase config must be defined
-    window.firebaseConfig = window.firebaseConfig || {
-      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-      authDomain: "travel-416ff.firebaseapp.com",
-      projectId: "travel-416ff",
-      storageBucket: "travel-416ff.appspot.com",
-      messagingSenderId: "1075073511694",
-      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-      measurementId: "G-FT56H33X5J"
-    };
+// Firebase glue. Works if you paste your config; otherwise getTrips() returns [].
+// This file avoids breaking the page when Firebase isn't available.
 
-    if (!firebase || !firebase.apps) throw new Error('Firebase SDK not loaded');
-    if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+export async function getTrips(){
+  // If you want Firebase integration:
+  // 1) Paste your config below
+  // 2) Ensure index.html loads Firebase v10+ modules or compat builds if needed
+  // 3) Replace the mock return with Firestore fetch
+  const config = null; /* Example:
+  const config = {
+    apiKey: "...",
+    authDomain: "...",
+    projectId: "...",
+    storageBucket: "...",
+    messagingSenderId: "...",
+    appId: "...",
+  }; */
 
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
-    window.googleProvider = new firebase.auth.GoogleAuthProvider();
-    try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
-
-    // A utility function to detect if the user is on an iOS device.
-    window.isIOS = window.isIOS || function(){
-      try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
-    };
-
-    // Use session persistence for iOS and local persistence for other platforms.
-    var persistence = (window.isIOS&&window.isIOS()) ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL;
-    auth.setPersistence(persistence).catch(function(e){ console.warn('[auth] setPersistence failed', e&&e.code, e&&e.message); });
-
-    // Check for a redirect result after sign-in.
-    auth.getRedirectResult().then(function(res){
-      if (res && res.user){ 
-        console.log('[auth] redirect ok', res.user.uid); 
-      }
-    }).catch(function(e){
-      console.error('[auth] redirect error: ', e);
-    });
-
-    // Public starter: must be called from the Google button (user gesture)
-    window.startGoogleSignIn = function(){
-        window.__attemptSignIn();
-    };
-
-    // The core sign-in logic
-    window.__attemptSignIn = async function(){
-      try{
-        if (!window.auth || !window.googleProvider) return;
-        if (auth.currentUser) return;
-
-        // On iOS, force a redirect sign-in to bypass pop-up issues.
-        // The popup is often blocked on mobile browsers.
-        if (window.isIOS && window.isIOS()){
-          console.log('[auth] iOS detected, attempting signInWithRedirect');
-          await auth.signInWithRedirect(googleProvider);
-          return;
-        }
-
-        // On other platforms, first try sign-in with a pop-up.
-        try{
-          await auth.signInWithPopup(googleProvider);
-        }catch(err){
-          var code=(err && err.code) || '';
-          // If the pop-up fails for known reasons (e.g., blocked), fall back to a redirect.
-          var fallback=(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].indexOf(code)!==-1);
-          if (fallback){
-            console.log('[auth] Pop-up blocked or cancelled, falling back to redirect');
-            await auth.signInWithRedirect(googleProvider);
-          } else {
-            console.error('[auth] sign-in failed', code, err && err.message);
-          }
-        }
-      }catch(e){
-        console.error('[auth] __attemptSignIn fatal: ', e);
-      }
-    };
-
-    // DataLayer surface
-    window.AppDataLayer = window.AppDataLayer || {};
-    window.AppDataLayer.mode = 'firebase';
-    window.AppDataLayer.db = window.db;
-    window.AppDataLayer.ensureAuth = async function(){
-      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
-      return (auth.currentUser && auth.currentUser.uid) || null;
-    };
-
-    console.info('Firebase init complete');
-  } catch(e){
-    console.error('Firebase init error → local mode', e);
-    window.AppDataLayer = { mode: 'local' };
+  if(!config){
+    return []; // fall back to sample in script.js
   }
-})();
+
+  try{
+    // Dynamic import Firebase (module build)
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js');
+    const { getFirestore, collection, getDocs, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js');
+
+    const app = initializeApp(config);
+    const db = getFirestore(app);
+
+    // Adjust collection/fields to match your schema
+    const q = query(collection(db, 'trips')); // order in UI is handled client-side by sort button
+    const snap = await getDocs(q);
+
+    const items = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      items.push({
+        id: doc.id,
+        destination: d.destination || d.title || '',
+        startDate: d.startDate || d.start || d.dateFrom || '',
+        endDate: d.endDate || d.end || d.dateTo || '',
+        days: d.days || null,
+        type: d.type || d.category || '',
+      });
+    });
+    return items;
+  }catch(err){
+    console.warn('Firebase import/fetch failed:', err);
+    return [];
+  }
+}
