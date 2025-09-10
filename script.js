@@ -1,195 +1,185 @@
-// Trips list with: left-aligned 3-dots (RTL), account pill + disconnect, theme toggle, sort-by-departure.
-import { getTrips, getCurrentUser, signOutIfAvailable } from './firebase.js';
+// --- Global state ---
+const state = {
+  trips: [],
+  currentTripId: null,
+  rates: { USD:1, EUR:0.9, ILS:3.6 },
+  localCurrency: "USD",
+  theme: localStorage.getItem("theme") || "dark",
+  maps: { mini:null, main:null, location:null, expense:null, journal: null },
+  locationPick: { lat:null, lng:null, forType:null, tempId:null },
+  sortAsc: false,
+  journalSortAsc: false,
+  tripsSortAsc: false, // New state variable for trip sorting
+  lastStatusTimer: null,
+};
 
-const tripsGrid = document.getElementById('tripsGrid');
-const sortBtn = document.getElementById('sortBtn');
-const sortDirEl = document.getElementById('sortDir');
+// ... (existing code)
 
-const themeBtn = document.getElementById('themeBtn');
-const accountNameEl = document.getElementById('accountName');
-const accountAvatarEl = document.getElementById('accountAvatar');
-const disconnectBtn = document.getElementById('disconnectBtn');
+async function renderHome(){
+  $("#homeView")?.classList.add("active");
+  $("#tripView")?.classList.remove("active");
 
-let sortAsc = true;
-let trips = [];
+  const trips = await Store.listTrips();
+  state.trips = trips;
 
-/* THEME */
-function detectInitialTheme(){
-  const stored = localStorage.getItem('theme');
-  if(stored === 'dark' || stored === 'light') return stored;
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return prefersDark ? 'dark' : 'light';
-}
-function applyTheme(mode){
-  document.documentElement.setAttribute('data-theme', mode);
-  localStorage.setItem('theme', mode);
-}
-function toggleTheme(){
-  const current = document.documentElement.getAttribute('data-theme') || detectInitialTheme();
-  applyTheme(current === 'dark' ? 'light' : 'dark');
-}
-applyTheme(detectInitialTheme());
-themeBtn.addEventListener('click', toggleTheme);
+  // Add event listener for the new trip sort button
+  const sortTripsBtn = el("sortTripsBtn");
+  if (sortTripsBtn) {
+    sortTripsBtn.onclick = () => {
+      state.tripsSortAsc = !state.tripsSortAsc; // Toggle sort direction
+      renderTripList();
+    };
+  }
 
-/* DATES & RENDER */
-function fmtDate(iso){
-  if(!iso) return '—';
-  try{
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '—';
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const yyyy = String(d.getFullYear());
-    return `${dd}.${mm}.${yyyy}`;
-  }catch(e){ return '—'; }
+  // Initial render of the trip list
+  renderTripList();
 }
 
-function daysBetween(startISO, endISO){
-  try{
-    const a = new Date(startISO);
-    const b = new Date(endISO);
-    if (Number.isNaN(a) || Number.isNaN(b)) return null;
-    const days = Math.max(1, Math.round((b - a) / (1000*60*60*24)) + 1);
-    return days;
-  }catch(e){ return null; }
-}
+function renderTripList() {
+  let tripsToRender = [...state.trips]; // Create a copy to sort
+  const q = (el("tripSearch")?.value || "").trim().toLowerCase();
+  
+  // Filter trips based on search query
+  if (q) {
+    tripsToRender = tripsToRender.filter(x => (x.destination || "").toLowerCase().includes(q));
+  }
 
-function render(){
-  tripsGrid.innerHTML = '';
-
-  const sorted = [...trips].sort((a,b)=>{
-    const ad = a.startDate ? new Date(a.startDate).getTime() : Infinity;
-    const bd = b.startDate ? new Date(b.startDate).getTime() : Infinity;
-    return sortAsc ? ad - bd : bd - ad;
+  // Sort trips based on the new state variable
+  tripsToRender.sort((a, b) => {
+    const aDate = dayjs(a.start);
+    const bDate = dayjs(b.start);
+    if (state.tripsSortAsc) {
+      return aDate.diff(bDate);
+    } else {
+      return bDate.diff(aDate);
+    }
   });
 
-  for(const t of sorted){
-    const card = document.createElement('article');
-    card.className = 'card';
-    card.dataset.id = t.id || '';
+  const list = el("tripList");
+  if (!list) return;
 
-    const header = document.createElement('div');
-    header.className = 'card-header';
+  list.innerHTML = "";
+  for (const t of tripsToRender) {
+    const li = document.createElement("li");
+    const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day") + 1) : 0;
+    const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
+    
+    // Check if there are any trip types to display
+    const tripTypeBadge = translatedTripTypes ? `<span class="badge">${translatedTripTypes}</span>` : '';
 
-    const title = document.createElement('h2');
-    title.className = 'dest';
-    title.textContent = t.destination || 'ללא יעד';
-
-    const rowEnd = document.createElement('div');
-    rowEnd.className = 'row-end';
-
-    const menuAnchor = document.createElement('button');
-    menuAnchor.className = 'menu-anchor';
-    menuAnchor.setAttribute('aria-label','תפריט');
-    menuAnchor.innerHTML = '<span class="menu-dots" aria-hidden="true"></span>';
-
-    const menu = document.createElement('div');
-    menu.className = 'menu';
-    menu.innerHTML = `
-      <ul>
-        <li><button data-action="edit">ערוך</button></li>
-        <li><button data-action="delete">מחק</button></li>
-      </ul>
+    li.innerHTML = `
+      <div class="trip-header">
+        <div class="trip-title">${t.destination || "—"}</div>
+        <button class="menu-btn">...</button>
+      </div>
+      <div class="trip-meta">
+        <div class="muted">${t.start ? dayjs(t.start).format("DD/MM/YY") : ""}–${t.end ? dayjs(t.end).format("DD/MM/YY") : ""} • ${days || "?"} ימים</div>
+        ${tripTypeBadge}
+      </div>
+      <div class="actions-menu">
+        <button class="btn edit">ערוך</button>
+        <button class="btn view">פתח</button>
+        <button class="btn danger delete">מחק</button>
+      </div>
     `;
 
-    menuAnchor.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const wasOpen = menu.classList.contains('open');
-      document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));
-      if (!wasOpen) menu.classList.add('open');
-    });
-    document.addEventListener('click', ()=> menu.classList.remove('open'));
+    // Event listeners for the new 3-dot menu
+    const menuBtn = $(".menu-btn", li);
+    const actionsMenu = $(".actions-menu", li);
+    if (menuBtn) {
+      menuBtn.onclick = (e) => {
+        e.stopPropagation();
+        actionsMenu.classList.toggle("active");
+      };
+      // Close menu when clicking outside
+      document.addEventListener("click", () => {
+        actionsMenu.classList.remove("active");
+      });
+    }
 
-    menu.addEventListener('click', (e)=>{
-      const btn = e.target.closest('button[data-action]');
-      if(!btn) return;
-      const action = btn.dataset.action;
-      if(action === 'edit'){
-        console.log('edit trip', t.id);
-        // window.location.href = `/edit.html?id=${encodeURIComponent(t.id)}`;
-      }else if(action === 'delete'){
-        console.log('delete trip', t.id);
-        trips = trips.filter(x => x.id !== t.id);
-        render();
-      }
-    });
-
-    rowEnd.appendChild(menuAnchor);
-    rowEnd.appendChild(menu);
-
-    header.appendChild(title);
-    header.appendChild(rowEnd);
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-
-    const start = fmtDate(t.startDate);
-    const end = fmtDate(t.endDate);
-    const days = t.days ?? daysBetween(t.startDate, t.endDate);
-    const type = t.type || '—';
-
-    const chip1 = document.createElement('span'); chip1.className = 'chip'; chip1.textContent = `${start} – ${end}`;
-    const chip2 = document.createElement('span'); chip2.className = 'chip'; chip2.textContent = `${days ?? '—'} ימים`;
-    const chip3 = document.createElement('span'); chip3.className = 'chip'; chip3.textContent = type;
-
-    meta.appendChild(chip1); meta.appendChild(chip2); meta.appendChild(chip3);
-
-    card.appendChild(header);
-    card.appendChild(meta);
-    tripsGrid.appendChild(card);
+    const viewButton = $(".view", li);
+    if (viewButton) {
+      viewButton.onclick = (e) => {
+        e.stopPropagation();
+        openTrip(t.id);
+      };
+    }
+    const editButton = $(".edit", li);
+    if (editButton) {
+      editButton.onclick = async (e) => {
+        e.stopPropagation();
+        await openTrip(t.id);
+        // This will stay on the default 'overview' tab after opening the trip, as per the original script.
+      };
+    }
+    const deleteButton = $(".delete", li);
+    if (deleteButton) {
+      deleteButton.onclick = (e) => {
+        e.stopPropagation();
+        confirmDeleteTrip(t.id, t.destination);
+      };
+    }
+    list.appendChild(li);
   }
 }
 
-sortBtn.addEventListener('click', ()=>{
-  sortAsc = !sortAsc;
-  sortDirEl.textContent = sortAsc ? 'עולה' : 'יורד';
-  render();
-});
+// ... (other functions remain the same, just replaced the `renderHome` function body)
 
-async function setupAccount(){
-  try{
-    const u = await getCurrentUser();
-    if(u){
-      accountNameEl.textContent = u.displayName || u.email || 'מחובר';
-      if(u.photoURL){
-        accountAvatarEl.src = u.photoURL;
-        accountAvatarEl.hidden = false;
+async function init(){
+  applyTheme();
+  
+  async function loadUserContent(){
+    if (window.AppDataLayer?.mode === "firebase") {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        console.log("Auth UID:", user.uid);
+        renderHome(); // Use renderHome directly, which will handle the list
+      } else {
+        console.log("No user signed in.");
+        const list = el("tripList");
+        if (list) list.innerHTML = "";
       }
-    }else{
-      accountNameEl.textContent = 'אורח';
+    } else {
+      renderHome(); // Use renderHome directly for local mode
     }
-  }catch(e){
-    console.warn('account fetch failed', e);
-    accountNameEl.textContent = 'אורח';
   }
 
-  disconnectBtn.addEventListener('click', async ()=>{
-    try{
-      await signOutIfAvailable();
-    }catch(e){ console.warn('signout error', e); }
-    // Fallback: redirect or update UI
-    accountNameEl.textContent = 'אורח';
-    accountAvatarEl.hidden = true;
+  // Buttons
+  if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
+  if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
+  if (el("tripSearch")) el("tripSearch").oninput = renderTripList; // Updated to call the new render function
+  
+  if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
+    e.preventDefault();
+    const dest = el("newTripDestination").value.trim();
+    const start = el("newTripStart").value;
+    const end = el("newTripEnd").value;
+    if (!dest || !start || !end) return;
+    const t = await Store.createTrip({ destination: dest, start, end, tripType: [], participants:"" });
+    el("tripDialog").close();
+    setStatus("נסיעה נוצרה");
+    await renderHome();
+    openTrip(t.id);
+  };
+  if (el("backToHome")) el("backToHome").onclick = renderHome;
+  
+  // ... (the rest of the init function is unchanged)
+
+  await fetchRates("USD");
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("view")==="shared" && params.get("tripId")){
+    await openTrip(params.get("tripId"));
+    $$(".share-controls, .tabs .tab[data-tab='meta'], .tabs .tab[data-tab='export']").forEach(x=> x?.classList?.add?.("hidden"));
+    if (el("addExpenseBtn")) el("addExpenseBtn").classList.add("hidden");
+    if (el("addJournalBtn")) el("addJournalBtn").classList.add("hidden");
+  } else {
+    // Auth state listener handles the initial render
+  }
+
+  firebase.auth().onAuthStateChanged(user => {
+    loadUserContent();
   });
 }
 
-async function bootstrap(){
-  try{
-    const result = await getTrips();
-    trips = Array.isArray(result) && result.length ? result : sampleTrips;
-  }catch(e){
-    console.warn('Firebase not configured/failed; using sample data.', e);
-    trips = sampleTrips;
-  }
-  await setupAccount();
-  render();
-}
-
-const sampleTrips = [
-  { id: 't1', destination: 'מילאנו', startDate: '2025-10-04', endDate: '2025-10-07', days: 4, type: 'עיר' },
-  { id: 't2', destination: 'וינה', startDate: '2025-11-12', endDate: '2025-11-15', days: 4, type: 'תרבות' },
-  { id: 't3', destination: 'בודפשט', startDate: '2025-12-01', endDate: '2025-12-05', days: 5, type: 'אוכל' },
-  { id: 't4', destination: 'רודוס', startDate: '2025-07-20', endDate: '2025-07-25', days: 6, type: 'חופים' }
-];
-
-bootstrap();
+// ... (rest of the file is unchanged)
