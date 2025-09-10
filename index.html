@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>הטיולים שלי</title>
-    <!-- Google Font (Rubik) for Hebrew support; falls back to system fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -15,11 +14,25 @@
       <h1 class="title">הטיולים שלי</h1>
 
       <div class="actions">
+        <button id="themeBtn" class="icon-btn" aria-label="החלפת מצב תאורה" title="מצב כהה/בהיר">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <!-- Sun/Moon combo icon -->
+            <path d="M12 18a6 6 0 1 1 0-12c-.6 0-1.18.07-1.73.21A7.002 7.002 0 0 0 12 19.73c.59.18 1.22.27 1.87.27A6 6 0 0 1 12 18z"/>
+          </svg>
+          <span class="btn-label">מצב</span>
+        </button>
+
         <button id="sortBtn" class="icon-btn" aria-label="מיון לפי תאריך יציאה" title="מיון לפי תאריך יציאה">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M3 18h6v-2H3v2zm0-7h12v-2H3v2zM3 4v2h18V4H3zm13.59 9L14 15.59 17.41 19 14 22.41 15.41 23.83 20.24 19 15.41 14.17 16.83 12.75 23 19l-6.17 6.17-1.41-1.41L20.17 19 15.41 14.24 16.59 13.06 23 19l-6.41 6.41-1.41-1.41L20.17 19 15.41 14.24 16.59 13.06z"/></svg>
-          <span class="sort-label">תאריך יציאה</span>
+          <span class="btn-label">תאריך יציאה</span>
           <span id="sortDir" class="sort-dir" aria-hidden="true">עולה</span>
         </button>
+
+        <div class="account" id="accountBox" aria-live="polite">
+          <img id="accountAvatar" class="avatar" alt="" hidden>
+          <span id="accountName" class="account-name">—</span>
+          <button id="disconnectBtn" class="text-btn" title="התנתקות">נתק</button>
+        </div>
       </div>
     </header>
 
@@ -27,7 +40,6 @@
       <div id="tripsGrid" class="grid" aria-live="polite"></div>
     </main>
 
-    <!-- App scripts -->
     <script type="module" src="./script.js"></script>
   </body>
 </html>

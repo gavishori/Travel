@@ -1,11 +1,7 @@
-// Firebase glue. Works if you paste your config; otherwise getTrips() returns [].
-// This file avoids breaking the page when Firebase isn't available.
+// Firebase helpers: getTrips, getCurrentUser, signOutIfAvailable.
+// Paste your Firebase config to enable real data/auth.
 
 export async function getTrips(){
-  // If you want Firebase integration:
-  // 1) Paste your config below
-  // 2) Ensure index.html loads Firebase v10+ modules or compat builds if needed
-  // 3) Replace the mock return with Firestore fetch
   const config = null; /* Example:
   const config = {
     apiKey: "...",
@@ -15,23 +11,16 @@ export async function getTrips(){
     messagingSenderId: "...",
     appId: "...",
   }; */
-
   if(!config){
-    return []; // fall back to sample in script.js
+    return [];
   }
-
   try{
-    // Dynamic import Firebase (module build)
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js');
-    const { getFirestore, collection, getDocs, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js');
+    const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js');
 
     const app = initializeApp(config);
     const db = getFirestore(app);
-
-    // Adjust collection/fields to match your schema
-    const q = query(collection(db, 'trips')); // order in UI is handled client-side by sort button
-    const snap = await getDocs(q);
-
+    const snap = await getDocs(collection(db, 'trips'));
     const items = [];
     snap.forEach(doc => {
       const d = doc.data();
@@ -46,7 +35,46 @@ export async function getTrips(){
     });
     return items;
   }catch(err){
-    console.warn('Firebase import/fetch failed:', err);
+    console.warn('Firebase trips fetch failed:', err);
     return [];
+  }
+}
+
+export async function getCurrentUser(){
+  const config = null; /* Paste same config if using Auth */
+  if(!config) return null;
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js');
+    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js');
+    const app = initializeApp(config);
+    const auth = getAuth(app);
+    return await new Promise((resolve)=>{
+      onAuthStateChanged(auth, (user)=>{
+        if(!user) resolve(null);
+        else resolve({
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+        });
+      });
+    });
+  }catch(e){
+    console.warn('getCurrentUser failed', e);
+    return null;
+  }
+}
+
+export async function signOutIfAvailable(){
+  const config = null; /* Paste same config if using Auth */
+  if(!config) return;
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js');
+    const { getAuth, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js');
+    const app = initializeApp(config);
+    const auth = getAuth(app);
+    await signOut(auth);
+  }catch(e){
+    console.warn('signOut failed', e);
   }
 }

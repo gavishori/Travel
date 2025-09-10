@@ -1,15 +1,37 @@
-// Minimal RTL trips list: keep cards, no colors, unified fonts, sort by departure date, 3-dots menu.
-// Tries Firebase if configured; otherwise falls back to local sample data.
-
-import { getTrips } from './firebase.js';
+// Trips list with: left-aligned 3-dots (RTL), account pill + disconnect, theme toggle, sort-by-departure.
+import { getTrips, getCurrentUser, signOutIfAvailable } from './firebase.js';
 
 const tripsGrid = document.getElementById('tripsGrid');
 const sortBtn = document.getElementById('sortBtn');
 const sortDirEl = document.getElementById('sortDir');
 
+const themeBtn = document.getElementById('themeBtn');
+const accountNameEl = document.getElementById('accountName');
+const accountAvatarEl = document.getElementById('accountAvatar');
+const disconnectBtn = document.getElementById('disconnectBtn');
+
 let sortAsc = true;
 let trips = [];
 
+/* THEME */
+function detectInitialTheme(){
+  const stored = localStorage.getItem('theme');
+  if(stored === 'dark' || stored === 'light') return stored;
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
+}
+function applyTheme(mode){
+  document.documentElement.setAttribute('data-theme', mode);
+  localStorage.setItem('theme', mode);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') || detectInitialTheme();
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+applyTheme(detectInitialTheme());
+themeBtn.addEventListener('click', toggleTheme);
+
+/* DATES & RENDER */
 function fmtDate(iso){
   if(!iso) return '—';
   try{
@@ -27,16 +49,14 @@ function daysBetween(startISO, endISO){
     const a = new Date(startISO);
     const b = new Date(endISO);
     if (Number.isNaN(a) || Number.isNaN(b)) return null;
-    const ms = Math.max(1, Math.round((b - a) / (1000*60*60*24)) + 1);
-    return ms;
+    const days = Math.max(1, Math.round((b - a) / (1000*60*60*24)) + 1);
+    return days;
   }catch(e){ return null; }
 }
 
 function render(){
-  // clear
   tripsGrid.innerHTML = '';
 
-  // sort
   const sorted = [...trips].sort((a,b)=>{
     const ad = a.startDate ? new Date(a.startDate).getTime() : Infinity;
     const bd = b.startDate ? new Date(b.startDate).getTime() : Infinity;
@@ -48,7 +68,6 @@ function render(){
     card.className = 'card';
     card.dataset.id = t.id || '';
 
-    // header
     const header = document.createElement('div');
     header.className = 'card-header';
 
@@ -73,29 +92,23 @@ function render(){
       </ul>
     `;
 
-    // open/close menu
     menuAnchor.addEventListener('click', (e)=>{
       e.stopPropagation();
       const wasOpen = menu.classList.contains('open');
       document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));
       if (!wasOpen) menu.classList.add('open');
     });
-
     document.addEventListener('click', ()=> menu.classList.remove('open'));
 
-    // handle actions
     menu.addEventListener('click', (e)=>{
       const btn = e.target.closest('button[data-action]');
       if(!btn) return;
       const action = btn.dataset.action;
       if(action === 'edit'){
-        // TODO: change to your edit route
         console.log('edit trip', t.id);
         // window.location.href = `/edit.html?id=${encodeURIComponent(t.id)}`;
       }else if(action === 'delete'){
         console.log('delete trip', t.id);
-        // Here you can call your delete logic (Firestore or local);
-        // For demo we just remove from UI:
         trips = trips.filter(x => x.id !== t.id);
         render();
       }
@@ -107,7 +120,6 @@ function render(){
     header.appendChild(title);
     header.appendChild(rowEnd);
 
-    // meta chips
     const meta = document.createElement('div');
     meta.className = 'meta';
 
@@ -116,26 +128,14 @@ function render(){
     const days = t.days ?? daysBetween(t.startDate, t.endDate);
     const type = t.type || '—';
 
-    const chip1 = document.createElement('span');
-    chip1.className = 'chip';
-    chip1.textContent = `${start} – ${end}`;
+    const chip1 = document.createElement('span'); chip1.className = 'chip'; chip1.textContent = `${start} – ${end}`;
+    const chip2 = document.createElement('span'); chip2.className = 'chip'; chip2.textContent = `${days ?? '—'} ימים`;
+    const chip3 = document.createElement('span'); chip3.className = 'chip'; chip3.textContent = type;
 
-    const chip2 = document.createElement('span');
-    chip2.className = 'chip';
-    chip2.textContent = `${days ?? '—'} ימים`;
+    meta.appendChild(chip1); meta.appendChild(chip2); meta.appendChild(chip3);
 
-    const chip3 = document.createElement('span');
-    chip3.className = 'chip';
-    chip3.textContent = type;
-
-    meta.appendChild(chip1);
-    meta.appendChild(chip2);
-    meta.appendChild(chip3);
-
-    // pack
     card.appendChild(header);
     card.appendChild(meta);
-
     tripsGrid.appendChild(card);
   }
 }
@@ -146,19 +146,42 @@ sortBtn.addEventListener('click', ()=>{
   render();
 });
 
-async function bootstrap(){
-  // try fetch from Firebase; else sample
+async function setupAccount(){
   try{
-    const result = await getTrips();
-    if(Array.isArray(result) && result.length){
-      trips = result;
+    const u = await getCurrentUser();
+    if(u){
+      accountNameEl.textContent = u.displayName || u.email || 'מחובר';
+      if(u.photoURL){
+        accountAvatarEl.src = u.photoURL;
+        accountAvatarEl.hidden = false;
+      }
     }else{
-      trips = sampleTrips;
+      accountNameEl.textContent = 'אורח';
     }
   }catch(e){
-    console.warn('Firebase not configured or failed; using sample data.', e);
+    console.warn('account fetch failed', e);
+    accountNameEl.textContent = 'אורח';
+  }
+
+  disconnectBtn.addEventListener('click', async ()=>{
+    try{
+      await signOutIfAvailable();
+    }catch(e){ console.warn('signout error', e); }
+    // Fallback: redirect or update UI
+    accountNameEl.textContent = 'אורח';
+    accountAvatarEl.hidden = true;
+  });
+}
+
+async function bootstrap(){
+  try{
+    const result = await getTrips();
+    trips = Array.isArray(result) && result.length ? result : sampleTrips;
+  }catch(e){
+    console.warn('Firebase not configured/failed; using sample data.', e);
     trips = sampleTrips;
   }
+  await setupAccount();
   render();
 }
 

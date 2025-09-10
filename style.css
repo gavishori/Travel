@@ -1,12 +1,21 @@
-/* Minimalist, grayscale, unified font (Rubik) – RTL ready */
+/* Minimalist grayscale + RTL. Restores account pill and theme toggle. */
 :root{
   --bg: #ffffff;
-  --text: #111;
-  --muted: #666;
-  --border: #e6e6e6;
-  --surface: #f7f7f7;
+  --text: #111111;
+  --muted: #666666;
+  --border: #e5e5e5;
+  --surface: #f7f7f8;
   --shadow: 0 1px 2px rgba(0,0,0,.05);
   --radius: 16px;
+}
+
+[data-theme="dark"]{
+  --bg: #0f1113;
+  --text: #f2f2f2;
+  --muted: #a8a8a8;
+  --border: #272a2f;
+  --surface: #16181c;
+  --shadow: 0 1px 2px rgba(0,0,0,.25);
 }
 
 *{ box-sizing: border-box; }
@@ -48,7 +57,7 @@ html, body{
   gap:10px;
   padding:10px 12px;
   border:1px solid var(--border);
-  background:#fff;
+  background:var(--bg);
   color:var(--text);
   border-radius: 999px;
   box-shadow: var(--shadow);
@@ -57,10 +66,24 @@ html, body{
 }
 .icon-btn:active{ transform: scale(.98); }
 .icon-btn:hover{ background: var(--surface); }
-
 .icon{ width:18px; height:18px; fill: currentColor; }
-.sort-label{ font-weight:500; }
+.btn-label{ font-weight:500; }
 .sort-dir{ font-size: 12px; color: var(--muted); border-inline-start: 1px solid var(--border); padding-inline-start:8px; }
+
+.account{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+.avatar{ width:22px; height:22px; border-radius:50%; object-fit:cover; border:1px solid var(--border); }
+.account-name{ font-size:14px; color:var(--text); }
+.text-btn{
+  border:none; background:transparent; color:var(--muted); cursor:pointer; padding:4px 6px;
+}
+.text-btn:hover{ color:var(--text); text-decoration: underline; }
 
 .container{ padding: 20px; }
 
@@ -70,10 +93,10 @@ html, body{
   gap: 14px;
 }
 
-/* Trip Card (“קובייה”) */
+/* Card */
 .card{
   border:1px solid var(--border);
-  background: #fff;
+  background: var(--bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px;
@@ -96,24 +119,10 @@ html, body{
   font-weight:600;
 }
 
-.meta{
-  display:flex;
-  flex-wrap:wrap;
-  gap: 8px 12px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.meta .chip{
-  padding: 6px 10px;
-  border:1px solid var(--border);
-  border-radius: 999px;
-  background: #fff;
-}
-
+/* Left-aligned menu trigger in RTL -> use inline-end (which is LEFT in RTL) */
 .row-end{
   position:absolute;
-  inset-inline-start: 10px; /* for RTL, “end” is left */
+  inset-inline-end: 10px; /* LEFT in RTL */
   top: 10px;
 }
 
@@ -124,6 +133,7 @@ html, body{
   padding:6px;
   border-radius: 10px;
   cursor:pointer;
+  color: var(--text);
 }
 .menu-anchor:hover{ background: var(--surface); }
 
@@ -136,11 +146,11 @@ html, body{
 .menu{
   position:absolute;
   top: 34px;
-  inset-inline-start: 6px;
-  background: #fff;
+  inset-inline-end: 6px; /* LEFT in RTL */
+  background: var(--bg);
   border:1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
   min-width: 140px;
   display:none;
   z-index: 5;
@@ -154,7 +164,8 @@ html, body{
   width:100%;
   text-align:start;
   padding:10px 12px;
-  background:#fff;
+  background: var(--bg);
+  color: var(--text);
   border:none;
   border-radius:8px;
   cursor:pointer;
@@ -162,7 +173,22 @@ html, body{
 }
 .menu button:hover{ background: var(--surface); }
 
-/* Accessibility focus */
+.meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.meta .chip{
+  padding: 6px 10px;
+  border:1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+/* Focus */
 :focus-visible{
   outline: 2px solid #000;
   outline-offset: 2px;
