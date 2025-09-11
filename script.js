@@ -554,65 +554,45 @@ async function renderHome(){
   const trips = await Store.listTrips();
   state.trips = trips;
 
-  const sorted = [...trips].sort((a,b)=>{
-    const as = a && a.start ? new Date(a.start).getTime() : 0;
-    const bs = b && b.start ? new Date(b.start).getTime() : 0;
-    return state.sortAsc ? (as - bs) : (bs - as);
-  });
-
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
   list.innerHTML = "";
-  for (const t of sorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
+  for (const t of trips.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
     // Translate trip types to Hebrew
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
-    
-li.innerHTML = `
-      <div class="row" style="justify-content: space-between; align-items: flex-start;">
-        <div>
-          <div class="trip-title">${t.destination||"—"}</div>
-          <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}${t.end?(" – "+dayjs(t.end).format("DD/MM/YY")):""} • ${days||"?"} ימים</div>
-          <div class="row" style="justify-content: flex-start; margin-top: 10px;">
-            <span class="badge">${translatedTripTypes||"—"}</span>
-          </div>
-        </div>
-        <div class="menu">
-          <button class="kebab" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋯</button>
-          <div class="menu-list" role="menu">
-            <div class="menu-item"><button class="menu-edit" role="menuitem">ערוך</button></div>
-            <div class="menu-item"><button class="menu-delete" role="menuitem">מחק</button></div>
-          </div>
+    li.innerHTML = `
+      <div>
+        <div class="trip-title">${t.destination||"—"}</div>
+        <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+        <div class="row" style="justify-content: flex-start; margin-top: 10px;">
+          <span class="badge">${translatedTripTypes||"—"}</span>
         </div>
       </div>
       <div class="row bottom-row">
+        <button class="btn edit edit-btn">ערוך</button>
         <button class="btn view">פתח</button>
+        <button class="btn danger delete">מחק</button>
       </div>
     `;
-
     const viewButton = $(".view", li);
     if (viewButton) {
-      viewButton.onclick = async ()=>{ await openTrip(t.id); };
+      viewButton.onclick = ()=> openTrip(t.id);
     }
-    const kebab = $(".kebab", li);
-    if (kebab) {
-      const menu = kebab.parentElement;
-      kebab.addEventListener("click", (ev)=>{
-        ev.stopPropagation();
-        menu.classList.toggle("open");
-      });
-      document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
+    const editButton = $(".edit", li);
+    if (editButton) {
+      editButton.onclick = async ()=>{
+        await openTrip(t.id);
+        // Removed the code that switches to the 'meta' tab
+        // Now it will stay on the default tab, which is 'overview'
+      };
     }
-    const editItem = $(".menu-edit", li);
-    if (editItem) {
-      editItem.onclick = async ()=>{ await openTrip(t.id); };
-    }
-    const deleteItem = $(".menu-delete", li);
-    if (deleteItem) {
-      deleteItem.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
+    const deleteButton = $(".del", li);
+    if (deleteButton) {
+      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
     }
     list.appendChild(li);
   }
@@ -1594,8 +1574,6 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
-    if (el("sortDepartBtn")) el("sortDepartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
-
   if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     e.preventDefault();
     const dest = el("newTripDestination").value.trim();
@@ -1982,3 +1960,33 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// === UI tweak: move password eye to the LEFT by wrapping input + button ===
+(function(){
+  function movePasswordEyeLeft(){
+    try{
+      var input = document.getElementById('email-auth-password');
+      var btn = document.getElementById('toggle-pass-visibility');
+      if (!input || !btn) return;
+      // If already wrapped, just mark and exit
+      var wrapper = btn.closest('.password-field');
+      if (wrapper){
+        wrapper.classList.add('left-eye');
+        return;
+      }
+      wrapper = document.createElement('div');
+      wrapper.className = 'password-field left-eye';
+      // insert before input
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      // ensure button comes after input
+      wrapper.appendChild(btn);
+    }catch(e){ console.warn('movePasswordEyeLeft failed', e); }
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', movePasswordEyeLeft);
+  }else{
+    movePasswordEyeLeft();
+  }
+})();
