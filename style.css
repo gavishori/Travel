@@ -1187,3 +1187,16 @@ dialog#confirmDialog{ background: var(--panel, #ffffff) !important; opacity: 1 !
 #tripList.list-mode .row-list .badge{ white-space:nowrap; }
 #tripList.list-mode .row-list .flex-spacer{ flex:1; }
 #tripList.list-mode .kebab-wrap{ position:relative; } /* keep as is; stays at far left thanks to spacer */
+
+
+/* === List mode: right-align all text content, kebab on left === */
+#tripList.list-mode > li{ width:100%; padding: 14px 18px; }
+#tripList.list-mode .row-list{ display:flex; align-items:center; gap:16px; }
+#tripList.list-mode .row-list .info{
+  margin-inline-start: auto;  /* push info group to the right */
+  display:flex; align-items:center; gap:16px; text-align:right;
+}
+#tripList.list-mode .row-list .trip-title{ font-size:20px; font-weight:800; }
+#tripList.list-mode .row-list .dates{ white-space:nowrap; }
+#tripList.list-mode .row-list .badge{ white-space:nowrap; }
+#tripList.list-mode .kebab-wrap{ position:relative; }

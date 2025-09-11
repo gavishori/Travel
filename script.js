@@ -574,16 +574,17 @@ async function renderHome(){
 
     li.innerHTML = `${ state.viewMode==="list" ? `
   <div class="row-list">
-    <div class="trip-title">${t.destination||"—"}</div>
-    <div class="muted dates">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
-    <span class="badge">${translatedTripTypes||"—"}</span>
-    <div class="flex-spacer"></div>
     <div class="kebab-wrap">
       <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
       <div class="kebab-menu" role="menu">
         <button class="edit" role="menuitem">ערוך</button>
         <button class="delete" role="menuitem">מחק</button>
       </div>
+    </div>
+    <div class="info">
+      <div class="trip-title">${t.destination||"—"}</div>
+      <div class="muted dates">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+      <span class="badge">${translatedTripTypes||"—"}</span>
     </div>
   </div>
 ` : `
