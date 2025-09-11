@@ -1643,7 +1643,7 @@ async function init(){
       start: el("tripStart").value,
       end: el("tripEnd").value,
       budget: { USD: budgetUSD },
-;
+};
     if (selectedTripTypes && selectedTripTypes.length) { updates.tripType = selectedTripTypes; }
     await Store.updateTrip(id, updates);
     setStatus("נתוני נסיעה נשמרו ✔");
