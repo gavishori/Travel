@@ -1,4 +1,3 @@
-
 // DOUBLE_TAP_GUARD_v2
 (function(){
   var last = 0;
@@ -1880,58 +1879,6 @@ window.debugAuth = async function(){
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
 
-
-// --- Auth-aware UI bootstrap (avoid UI actions before user exists) ---
-document.addEventListener('DOMContentLoaded', function(){
-  if (!firebase || !firebase.auth) return;
-
-  var loginBtn = document.getElementById('googleSignInBtn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', function(){
-      if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
-    });
-  }
-
-  firebase.auth().onAuthStateChanged(async function(user){
-    document.body.classList.toggle('auth-ok', !!user);
-    document.body.classList.toggle('auth-anon', !user);
-    if (user) {
-      if (typeof window.onAuthReady === 'function') {
-        try { await window.onAuthReady(user); } catch(e){ console.warn('onAuthReady failed', e); }
-      }
-    } else {
-      // not signed in – show login UI only
-    }
-  });
-});
-
-
-// --- Show current email/uid in document title ---
-firebase.auth().onAuthStateChanged(function(user){
-  if (user) {
-    document.title = "🟢 " + (user.email || user.uid);
-  } else {
-    document.title = "🔴 לא מחובר";
-  }
-});
-
-
-// --- UI: show connected account next to the title ---
-(function attachUserAccountLabel(){
-  try{
-    if (!window.firebase || !firebase.auth) return;
-    firebase.auth().onAuthStateChanged(function(user){
-      var el = document.getElementById('userAccount');
-      if (!el) return;
-      if (user){
-        var label = user.email || user.displayName || 'מחובר';
-        el.textContent = '(' + label + ')';
-      } else {
-        el.textContent = '';
-      }
-    });
-  }catch(e){ console.warn('[ui] userAccount label failed', e); }
-})();
 
 /* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){

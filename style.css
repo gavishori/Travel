@@ -344,9 +344,6 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
   margin: 0 0 12px;
   text-align: right;
 }
-.dialog .dialog-content{
-  padding: 0;
-}
 dialog#emailAuthDialog::backdrop{
   background: rgba(2,6,23,.6);
   backdrop-filter: blur(6px);
@@ -1191,4 +1188,70 @@ dialog#confirmDialog{
   font-size: 16px !important;
   font-weight: 600;
   padding: 6px 12px;
+}
+
+/* Force list-mode styles for the toolbar buttons and the list items. */
+.btn.btn-outline {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 10px 14px;
+}
+
+.view-toggle .btn {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 10px 14px;
+}
+
+#tripList.list-mode > li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card, #fff);
+  box-shadow: var(--shadow);
+}
+
+#tripList.list-mode .trip-details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-grow: 1;
+  padding-inline-end: 20px;
+}
+
+#tripList.list-mode .row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#tripList.list-mode .kebab-wrap {
+  order: 2;
+  margin-right: -10px;
+}
+
+#tripList.list-mode .trip-header {
+  flex-grow: 1;
+}
+
+#tripList.list-mode .trip-title {
+  margin: 0;
+}
+
+#tripList.list-mode .trip-title,
+#tripList.list-mode .muted {
+  text-align: right;
+}
+
+#tripList.list-mode .badge {
+  order: 1;
+}
+
+#tripList.list-mode .kebab-menu {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
 }
