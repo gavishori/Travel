@@ -1159,3 +1159,16 @@ dialog#confirmDialog{
   box-shadow: var(--shadow);
 }
 #tripList.list-mode .bottom-row{ margin-top: 0; }
+
+/* === Custom Adjustments === */
+
+/* Smaller font size for toolbar tabs (מיון, גלריה, רשימה) */
+.tabs .tab {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+/* In list view, align all text to the right */
+.list li {
+  text-align: right;
+}
