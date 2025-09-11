@@ -1034,8 +1034,8 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 
 /* === Password eye toggle === */
 .input-with-icon{ position:relative; }
-.input-with-icon input{ padding-inline-end:44px; }
-.icon-eye{ position:absolute; inset-inline-end:10px; top:50%; transform:translateY(-50%); width:32px; height:32px;
+.input-with-icon input{ padding-inline-start:44px;   }
+.icon-eye{ position:absolute; left:10px; right:auto; inset-inline-end:auto; top:50%; transform:translateY(-50%); width:32px; height:32px;
   display:grid; place-items:center; background:transparent; border:none; color:var(--fg,#fff); opacity:.9; }
 .icon-eye:active{ transform:translateY(-50%) scale(.98); }
 .icon-eye .eye-closed{ display:none; }
@@ -1064,7 +1064,7 @@ dialog#emailAuthDialog .dialog-row{ display:flex; flex-direction:column; gap:6px
 
   /* Eye button must be visible and tappable */
   .input-with-icon{ position: relative; }
-  .input-with-icon input{ padding-inline-end: 44px; }
+  .input-with-icon input{ padding-inline-start:44px;   }
   .input-with-icon .icon-eye{
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
     width: 34px; height: 34px; display: grid; place-items: center;
@@ -1095,41 +1095,61 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   font-weight: 500; /* normal/medium */
 }
 
-/* === Center logo in header (without moving existing items) === */
-.app-header{ position: sticky; } /* already sticky, keep for safety */
-.app-header .logo{
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
+/* Light-mode contrast fix for 'unsaved data' dialog */
+
+:root.light .unsaved-modal{
+  background: #ffffff;
+  color: #0b1220;
+  border: 1px solid #c7ced6;
+}
+:root.light .unsaved-modal h3{
+  color: #081120;
 }
 
-/* === Password field: move eye icon to the LEFT (desktop & mobile) === */
-.password-field{ position: relative; }
-.password-field.left-eye input[type="password"],
-.password-field.left-eye input[type="text"]{
-  padding-left: 42px; /* make room for the icon */
-}
-.password-field.left-eye #toggle-pass-visibility{
+
+/* Kebab menu on trip cards */
+.trip-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.btn.icon{ padding:8px; width:auto; min-width:unset; border-radius:10px; }
+.kebab-trigger{ font-size:18px; line-height:1; }
+.kebab-menu{
   position: absolute;
-  left: 12px;
-  right: auto;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
+  inset-inline-end: 8px; /* in RTL this appears near the left edge of the card header; we will position via container */
+  top: 36px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
   padding: 6px;
-  line-height: 0;
+  display: none;
+  z-index: 1000;
 }
+.kebab-menu.open{ display:block; }
+.kebab-menu .menu-item{
+  display:block;
+  background: transparent;
+  border:none;
+  text-align: right;
+  width: 140px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+}
+.kebab-menu .menu-item:hover{ background: rgba(255,255,255,0.06); }
+.cards li{ position: relative; } /* to anchor the absolute menu */
 
-/* === Improve contrast for Unsaved modal ONLY in dark theme === */
-html:not(.light) .unsaved-modal{
-  color: #0f172a; /* strong readable text on white */
+
+/* Header layout: center logo */
+.app-header{
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
 }
-html:not(.light) .unsaved-modal h3{
-  color: #0b1320;
+.app-header .brand{
+  grid-column: 2;
+  justify-self: center;
 }
-html:not(.light) .unsaved-modal p{
-  opacity: 1; /* no fade to keep contrast */
-  color: #1f2937;
+.app-header .header-actions{
+  grid-column: 3;
+  justify-self: end;
 }

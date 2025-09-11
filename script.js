@@ -116,6 +116,15 @@ const state = {
 };
 
 // Map for translating trip types to Hebrew
+
+function sortTripsByStart(arr){
+  const dir = state.sortAsc ? 1 : -1;
+  const val = (x)=> {
+    if (!x || !x.start) return 0;
+    try { return dayjs(x.start).valueOf() || 0; } catch(_){ return 0; }
+  };
+  return arr.slice().sort((a,b)=> dir * (val(a)-val(b)));
+}
 const TRIP_TYPE_HEBREW = {
   "beach": "בטן-גב",
   "ski": "סקי",
@@ -551,7 +560,9 @@ async function renderHome(){
   $("#homeView")?.classList.add("active");
   $("#tripView")?.classList.remove("active");
 
-  const trips = await Store.listTrips();
+  let trips = await Store.listTrips();
+  // Sort by departure date only
+  trips = sortTripsByStart(trips);
   state.trips = trips;
 
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
@@ -565,32 +576,51 @@ async function renderHome(){
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
     li.innerHTML = `
-      <div>
+      <div class="trip-header">
         <div class="trip-title">${t.destination||"—"}</div>
-        <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
-        <div class="row" style="justify-content: flex-start; margin-top: 10px;">
-          <span class="badge">${translatedTripTypes||"—"}</span>
+        <div class="trip-inline-actions">
+          <button class="btn icon kebab-trigger" aria-haspopup="menu" aria-expanded="false" title="פעולות">⋮</button>
+          <div class="kebab-menu" role="menu" aria-hidden="true">
+            <button class="menu-item edit" role="menuitem">ערוך</button>
+            <button class="menu-item del" role="menuitem">מחק</button>
+          </div>
         </div>
       </div>
+      <div class="muted">
+        ${t.start?dayjs(t.start).format("DD/MM/YY"):"—"} → ${t.end?dayjs(t.end).format("DD/MM/YY"):"—"} • ${days||"?"} ימים
+      </div>
       <div class="row bottom-row">
-        <button class="btn edit edit-btn">ערוך</button>
         <button class="btn view">פתח</button>
-        <button class="btn danger delete">מחק</button>
       </div>
     `;
+    const kebabBtn = $(".kebab-trigger", li);
+    const kebabMenu = $(".kebab-menu", li);
+    if (kebabBtn && kebabMenu){
+      kebabBtn.onclick = (e)=>{
+        e.stopPropagation();
+        kebabMenu.classList.toggle("open");
+        const open = kebabMenu.classList.contains("open");
+        kebabBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        kebabMenu.setAttribute("aria-hidden", open ? "false" : "true");
+      };
+      // Close on outside click
+      document.addEventListener("click", (ev)=>{
+        if (!li.contains(ev.target)) { kebabMenu.classList.remove("open"); kebabBtn.setAttribute("aria-expanded","false"); }
+      });
+    }
     const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
-    const editButton = $(".edit", li);
+    const editButton = $(".menu-item.edit", li);
     if (editButton) {
-      editButton.onclick = async ()=>{
+      editButton.onclick = async ()=>{ if (kebabMenu) kebabMenu.classList.remove('open');
         await openTrip(t.id);
         // Removed the code that switches to the 'meta' tab
         // Now it will stay on the default tab, which is 'overview'
       };
     }
-    const deleteButton = $(".del", li);
+    const deleteButton = $(".menu-item.del", li);
     if (deleteButton) {
       deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
     }
@@ -631,26 +661,7 @@ async function openTrip(id){
   const trip = await Store.getTrip(id);
   if (!trip){ alert("נסיעה לא נמצאה"); return; }
 
-  el("tripTitle").textContent = trip.destination || "נסיעה";
-  // The share controls are now in the export tab, so we don't need to get them here
-  
-  $("#homeView")?.classList.remove("active");
-  $("#tripView")?.classList.add("active");
-
-  el("tripDestination").value = trip.destination || "";
-  el("tripParticipants").value = trip.participants || "";
-  // multi select
-  // Removed the line that was causing the error
-  // [...el("tripType").options].forEach(opt => opt.selected = Array.isArray(trip.tripType) && trip.tripType.includes(opt.value));
-  el("tripStart").value = trip.start || "";
-  el("tripEnd").value = trip.end || "";
-  // el("tripBudgetUSD").value = trip.budget?.USD || ""; // Removed old budget field
-// Render the checkboxes for trip types
-  const tripTypeCheckboxes = el("tripTypeCheckboxes");
-  if(tripTypeCheckboxes) {
-    const tripTypes = trip.tripType || [];
-    Array.from(tripTypeCheckboxes.querySelectorAll('input[type="checkbox"]')).forEach(checkbox => {
-      checkbox.checked = tripTypes.includes(checkbox.value);
+  el("tripTitle").textContent = trhecked = tripTypes.includes(checkbox.value);
     });
   }
 
@@ -1574,6 +1585,16 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
+  if (el("sortDepartBtn")) {
+    el("sortDepartBtn").onclick = ()=>{
+      state.sortAsc = !state.sortAsc;
+      el("sortDepartBtn").textContent = state.sortAsc ? "יציאה ↑" : "יציאה ↓";
+      renderHome();
+    };
+    // initialize label
+    el("sortDepartBtn").textContent = state.sortAsc ? "יציאה ↑" : "יציאה ↓";
+  }
+
   if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     e.preventDefault();
     const dest = el("newTripDestination").value.trim();
@@ -1960,33 +1981,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// === UI tweak: move password eye to the LEFT by wrapping input + button ===
-(function(){
-  function movePasswordEyeLeft(){
-    try{
-      var input = document.getElementById('email-auth-password');
-      var btn = document.getElementById('toggle-pass-visibility');
-      if (!input || !btn) return;
-      // If already wrapped, just mark and exit
-      var wrapper = btn.closest('.password-field');
-      if (wrapper){
-        wrapper.classList.add('left-eye');
-        return;
-      }
-      wrapper = document.createElement('div');
-      wrapper.className = 'password-field left-eye';
-      // insert before input
-      input.parentNode.insertBefore(wrapper, input);
-      wrapper.appendChild(input);
-      // ensure button comes after input
-      wrapper.appendChild(btn);
-    }catch(e){ console.warn('movePasswordEyeLeft failed', e); }
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', movePasswordEyeLeft);
-  }else{
-    movePasswordEyeLeft();
-  }
-})();
