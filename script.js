@@ -598,33 +598,30 @@ async function renderHome(){
   }
 }
 
-
 function activateTabs(){
-  $$(".tab").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      var tab = btn.dataset.tab;
-      function doSwitch(){
-        $$(".tab").forEach(function(b){ b.classList.remove("active"); });
-        btn.classList.add("active");
-        $$(".panel").forEach(function(p){ p.classList.remove("active"); });
-        var tgt = el("tab-" + tab);
-        if (tgt) tgt.classList.add("active");
-        if (tab === "map") refreshMainMap();
-        hasUnsavedChanges = false;
-      }
+  $$(".tab").forEach(btn => {
+    btn.addEventListener("click", ()=>{
+      const tab = btn.dataset.tab;
       if (hasUnsavedChanges){
-        Promise.resolve(askToSave()).then(function(action){
+        (async ()=>{
+          const action = await askToSave();
           if (action === "cancel") return;
-          if (action === "save"){ Promise.resolve(saveCurrentContext()).then(doSwitch); }
-          else { doSwitch(); }
-        });
-      } else {
-        doSwitch();
+          if (action === "save") { await saveCurrentContext(); }
+          hasUnsavedChanges = false;
+          $$(".tab").forEach(b=> b.classList.remove("active"));
+          btn.classList.add("active");
+          $$(".panel").forEach(p=> p.classList.remove("active"));
+          el("tab-"+tab)?.classList.add("active");
+          if (tab === "map") refreshMainMap();
+        })();
+        return;
       }
+      $$(".tab").forEach(b=> b.classList.remove("active"));
+      btn.classList.add("active");
+      $$(".panel").forEach(p=> p.classList.remove("active"));
+      el("tab-"+tab)?.classList.add("active");
+      if (tab === "map") refreshMainMap();
     });
-  });
-}
-
   });
 }
 
@@ -637,8 +634,8 @@ async function openTrip(id){
   el("tripTitle").textContent = trip.destination || "נסיעה";
   // The share controls are now in the export tab, so we don't need to get them here
   
-  var hv = $("#homeView"); if (hv) hv.classList.remove("active");
-  var tv = $("#tripView"); if (tv) tv.classList.add("active");
+  $("#homeView")?.classList.remove("active");
+  $("#tripView")?.classList.add("active");
 
   el("tripDestination").value = trip.destination || "";
   el("tripParticipants").value = trip.participants || "";
@@ -1963,3 +1960,33 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// === UI tweak: move password eye to the LEFT by wrapping input + button ===
+(function(){
+  function movePasswordEyeLeft(){
+    try{
+      var input = document.getElementById('email-auth-password');
+      var btn = document.getElementById('toggle-pass-visibility');
+      if (!input || !btn) return;
+      // If already wrapped, just mark and exit
+      var wrapper = btn.closest('.password-field');
+      if (wrapper){
+        wrapper.classList.add('left-eye');
+        return;
+      }
+      wrapper = document.createElement('div');
+      wrapper.className = 'password-field left-eye';
+      // insert before input
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      // ensure button comes after input
+      wrapper.appendChild(btn);
+    }catch(e){ console.warn('movePasswordEyeLeft failed', e); }
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', movePasswordEyeLeft);
+  }else{
+    movePasswordEyeLeft();
+  }
+})();

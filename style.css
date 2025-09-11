@@ -1094,3 +1094,42 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #remainingUSD, #remainingEUR, #remainingILS {
   font-weight: 500; /* normal/medium */
 }
+
+/* === Center logo in header (without moving existing items) === */
+.app-header{ position: sticky; } /* already sticky, keep for safety */
+.app-header .logo{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* === Password field: move eye icon to the LEFT (desktop & mobile) === */
+.password-field{ position: relative; }
+.password-field.left-eye input[type="password"],
+.password-field.left-eye input[type="text"]{
+  padding-left: 42px; /* make room for the icon */
+}
+.password-field.left-eye #toggle-pass-visibility{
+  position: absolute;
+  left: 12px;
+  right: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 6px;
+  line-height: 0;
+}
+
+/* === Improve contrast for Unsaved modal ONLY in dark theme === */
+html:not(.light) .unsaved-modal{
+  color: #0f172a; /* strong readable text on white */
+}
+html:not(.light) .unsaved-modal h3{
+  color: #0b1320;
+}
+html:not(.light) .unsaved-modal p{
+  opacity: 1; /* no fade to keep contrast */
+  color: #1f2937;
+}
