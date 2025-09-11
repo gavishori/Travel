@@ -1094,3 +1094,39 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #remainingUSD, #remainingEUR, #remainingILS {
   font-weight: 500; /* normal/medium */
 }
+
+/* === Kebab menu for trip card (⋮) === */
+.kebab-wrap{ position: relative; }
+.kebab-btn{
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.kebab-menu{
+  position: absolute;
+  top: 28px;
+  inset-inline-start: 0;
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+.kebab-menu.open{ display: block; }
+.kebab-menu button{
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.kebab-menu button:hover{ background: var(--card, #f6f6f6); }
+
+.trip-header{ display:flex; align-items:center; gap:8px; }
