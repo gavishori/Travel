@@ -6,6 +6,7 @@
   --panel:#161a22;
   --accent:#2d5bff;
   --border: #262b36;
+  --chip-bg:#12151c;
 }
 
 *{ box-sizing:border-box; }
@@ -52,7 +53,7 @@ body{
 .nav-buttons{
   display:flex;
   align-items:center;
-  gap:10px;                          /* רווח אחיד בין הכפתורים */
+  gap:10px;
 }
 
 /* כפתור "שבוי־שורה": לעולם לא יעבור שורה */
@@ -63,14 +64,17 @@ body{
   gap:8px;
   height:40px;
   padding:0 14px;
-  border-radius:999px;               /* מראה אחיד ועכשווי */
+  border-radius:999px;
   border:1px solid var(--border);
-  background:var(--panel);
+  background:var(--chip-bg);
   color:var(--text);
-  white-space:nowrap;                /* אין שבירת שורה בטקסט */
+  white-space:nowrap;
   line-height:1;
   cursor:pointer;
+  user-select:none;
+  transition:border-color .15s ease, background .15s ease;
 }
+.btn.chip[aria-pressed="true"]{ outline:2px solid color-mix(in oklab, var(--accent), white 15%); }
 .btn.chip:hover{ border-color:color-mix(in oklab, var(--border), var(--text) 20%); }
 .btn.chip.sort{ white-space:nowrap; }
 
@@ -149,13 +153,14 @@ body{
   .trip-meta{ font-size:12px; }
 }
 
-/* === Gallery (optional demo) === */
+/* === Gallery === */
 .gallery{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
 .card{
   border:1px solid var(--border);
   background:var(--panel);
   border-radius:12px;
   padding:12px;
+  display:flex; flex-direction:column; gap:6px;
 }
-.card-hd{ font-weight:700; margin-bottom:6px; }
-.muted{ color:var(--muted); }
+.card .hd{ font-weight:700; }
+.card .muted{ color:var(--muted); }

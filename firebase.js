@@ -1,4 +1,1 @@
-// Placeholder: keep your original Firebase config here if needed.
-/* Example:
-export const firebaseConfig = { ... };
-*/
+// השארתי קובץ זה כדי לשמור על מבנה הפרויקט. אין שימוש בפיירבייס כאן.

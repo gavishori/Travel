@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>הנסיעות שלי — UI</title>
+  <title>הנסיעות שלי — גרסה עובדת</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="toolbar container">
     <div class="toolbar-left">
       <label for="tripSearch" class="visually-hidden">חפש נסיעה</label>
-      <input id="tripSearch" class="input" type="search" placeholder="חפש נסיעה…" />
+      <input id="tripSearch" class="input" type="search" placeholder="חפש נסיעה…" autocomplete="off" />
     </div>
 
     <div class="toolbar-right nav-buttons" aria-label="ניווט תצוגה ומיון">
-      <button class="btn chip" data-view="list" type="button" id="btnList">רשימה</button>
-      <button class="btn chip" data-view="gallery" type="button" id="btnGallery">גלריה</button>
-      <button class="btn chip sort" type="button" id="btnSort">מיין תאריך יציאה</button>
+      <button class="btn chip" data-view="list" type="button" id="btnList" aria-pressed="true">רשימה</button>
+      <button class="btn chip" data-view="gallery" type="button" id="btnGallery" aria-pressed="false">גלריה</button>
+      <button class="btn chip sort" type="button" id="btnSort" aria-label="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
     </div>
   </header>
 
@@ -24,64 +24,10 @@
     <h1 class="page-title">הנסיעות שלי</h1>
 
     <!-- LIST VIEW -->
-    <ul class="list trips-list" id="listView">
-      <li class="trip-row">
-        <button class="kebab" type="button" aria-label="עוד אפשרויות">⋯</button>
-        <div class="trip-main">
-          <div class="trip-line">
-            <span class="trip-title">ארה״ב, סיאטל — מבקרים את רום</span>
-            <span class="trip-meta">21 ימים • 21/06/26–01/06/26</span>
-          </div>
-          <div class="trip-tags">
-            <span class="tag">עירוני</span>
-          </div>
-        </div>
-      </li>
+    <ul class="list trips-list" id="listView" role="list"></ul>
 
-      <li class="trip-row">
-        <button class="kebab" type="button" aria-label="עוד אפשרויות">⋯</button>
-        <div class="trip-main">
-          <div class="trip-line">
-            <span class="trip-title">אינדונזיה 2026</span>
-            <span class="trip-meta">8 ימים • 28/01/26–04/02/26</span>
-          </div>
-          <div class="trip-tags">
-            <span class="tag">סקי</span>
-            <span class="tag">בטן-גב</span>
-          </div>
-        </div>
-      </li>
-
-      <li class="trip-row">
-        <button class="kebab" type="button" aria-label="עוד אפשרויות">⋯</button>
-        <div class="trip-main">
-          <div class="trip-line">
-            <span class="trip-title">איטליה 1248</span>
-            <span class="trip-meta">12 ימים • 23/09/25–04/10/25</span>
-          </div>
-          <div class="trip-tags">
-            <span class="tag">טרקים</span>
-            <span class="tag">עירוני</span>
-          </div>
-        </div>
-      </li>
-    </ul>
-
-    <!-- GALLERY VIEW (hidden by default) -->
-    <section class="gallery" id="galleryView" hidden>
-      <article class="card">
-        <header class="card-hd">ארה״ב, סיאטל</header>
-        <p class="muted">21 ימים • 21/06/26–01/06/26</p>
-      </article>
-      <article class="card">
-        <header class="card-hd">אינדונזיה 2026</header>
-        <p class="muted">8 ימים • 28/01/26–04/02/26</p>
-      </article>
-      <article class="card">
-        <header class="card-hd">איטליה 1248</header>
-        <p class="muted">12 ימים • 23/09/25–04/10/25</p>
-      </article>
-    </section>
+    <!-- GALLERY VIEW -->
+    <section class="gallery" id="galleryView" hidden aria-hidden="true"></section>
   </main>
 
   <script src="script.js"></script>
