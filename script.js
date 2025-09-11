@@ -558,7 +558,7 @@ async function renderHome(){
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
-  for (const t of trips.filter(x => (x.destination||"").toLowerCase().includes(q))){
+  for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
