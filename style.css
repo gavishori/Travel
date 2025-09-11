@@ -1184,3 +1184,11 @@ dialog#confirmDialog{
   text-align: left !important;
   direction: ltr;
 }
+
+
+/* Match tab font size to trip title size ("ישראל") */
+.tabs .tab {
+  font-size: 16px !important;
+  font-weight: 600;
+  padding: 6px 12px;
+}
