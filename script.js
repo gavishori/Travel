@@ -565,56 +565,123 @@ async function renderHome(){
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
     li.innerHTML = `
-  <div>
-    <div class="trip-title-row">
-      <div class="kebab-wrap">
-        <button class="kebab" aria-haspopup="true" aria-expanded="false"></button>
-        <div class="dropdown" role="menu">
-          <button class="item edit">ערוך</button>
-          <button class="item delete">מחק</button>
+      <div>
+        <div class="trip-title">${t.destination||"—"}</div>
+        <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+        <div class="row" style="justify-content: flex-start; margin-top: 10px;">
+          <span class="badge">${translatedTripTypes||"—"}</span>
         </div>
       </div>
-      <div class="trip-title">${t.destination||"—"}</div>
-    </div>
-    <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
-    <div class="row" style="justify-content: flex-start; margin-top: 10px;">
-      <span class="badge">${translatedTripTypes||"—"}</span>
-    </div>
-  </div>
-  <div class="row bottom-row">
-    <button class="btn view">פתח</button>
-  </div>
-`;
-const viewButton = $(".view", li);
-if (viewButton) viewButton.onclick = ()=> openTrip(t.id);
-
-// Kebab menu
-const kebab = $(".kebab", li);
-const menu = $(".dropdown", li);
-if (kebab && menu){
-  kebab.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    menu.classList.toggle('open');
-  });
-  document.addEventListener('click', ()=> menu.classList.remove('open'), { once: true });
-}
-
-// Dropdown actions
-const editButton = $(".edit", li);
-if (editButton) {
-  editButton.onclick = async ()=>{
-    await openTrip(t.id);
-  };
-}
-const deleteButton = $(".delete", li);
-if (deleteButton) {
-  deleteButton.onclick = async ()=>{
-    if (confirm("למחוק את הטיול?")){
-      await Store.deleteTrip(t.id);
-      renderHome();
+      <div class="row bottom-row">
+        <button class="btn edit edit-btn">ערוך</button>
+        <button class="btn view">פתח</button>
+        <button class="btn danger delete">מחק</button>
+      </div>
+    `;
+    const viewButton = $(".view", li);
+    if (viewButton) {
+      viewButton.onclick = ()=> openTrip(t.id);
     }
-  };
+    const editButton = $(".edit", li);
+    if (editButton) {
+      editButton.onclick = async ()=>{
+        await openTrip(t.id);
+        // Removed the code that switches to the 'meta' tab
+        // Now it will stay on the default tab, which is 'overview'
+      };
+    }
+    const deleteButton = $(".del", li);
+    if (deleteButton) {
+      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
+    }
+    list.appendChild(li);
+  }
 }
+
+
+function activateTabs(){
+  $$(".tab").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var tab = btn.dataset.tab;
+      function doSwitch(){
+        $$(".tab").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        $$(".panel").forEach(function(p){ p.classList.remove("active"); });
+        var tgt = el("tab-" + tab);
+        if (tgt) tgt.classList.add("active");
+        if (tab === "map") refreshMainMap();
+        hasUnsavedChanges = false;
+      }
+      if (hasUnsavedChanges){
+        Promise.resolve(askToSave()).then(function(action){
+          if (action === "cancel") return;
+          if (action === "save"){ Promise.resolve(saveCurrentContext()).then(doSwitch); }
+          else { doSwitch(); }
+        });
+      } else {
+        doSwitch();
+      }
+    });
+  });
+}
+
+          hasUnsavedChanges = false;
+          $$(".tab").forEach(b=> b.classList.remove("active"));
+          btn.classList.add("active");
+          $$(".panel").forEach(p=> p.classList.remove("active"));
+          el("tab-"+tab)?.classList.add("active");
+          if (tab === "map") refreshMainMap();
+        })();
+        return;
+      }
+      $$(".tab").forEach(b=> b.classList.remove("active"));
+      btn.classList.add("active");
+      $$(".panel").forEach(p=> p.classList.remove("active"));
+      el("tab-"+tab)?.classList.add("active");
+      if (tab === "map") refreshMainMap();
+    });
+  });
+}
+
+
+async function openTrip(id){
+  state.currentTripId = id;
+  const trip = await Store.getTrip(id);
+  if (!trip){ alert("נסיעה לא נמצאה"); return; }
+
+  el("tripTitle").textContent = trip.destination || "נסיעה";
+  // The share controls are now in the export tab, so we don't need to get them here
+  
+  $("#homeView")?.classList.remove("active");
+  $("#tripView")?.classList.add("active");
+
+  el("tripDestination").value = trip.destination || "";
+  el("tripParticipants").value = trip.participants || "";
+  // multi select
+  // Removed the line that was causing the error
+  // [...el("tripType").options].forEach(opt => opt.selected = Array.isArray(trip.tripType) && trip.tripType.includes(opt.value));
+  el("tripStart").value = trip.start || "";
+  el("tripEnd").value = trip.end || "";
+  // el("tripBudgetUSD").value = trip.budget?.USD || ""; // Removed old budget field
+// Render the checkboxes for trip types
+  const tripTypeCheckboxes = el("tripTypeCheckboxes");
+  if(tripTypeCheckboxes) {
+    const tripTypes = trip.tripType || [];
+    Array.from(tripTypeCheckboxes.querySelectorAll('input[type="checkbox"]')).forEach(checkbox => {
+      checkbox.checked = tripTypes.includes(checkbox.value);
+    });
+  }
+
+  // Update budget fields
+  const budgetUSD = Number(trip.budget?.USD || 0);
+  // Make sure elements exist before trying to set their values
+  if (el("tripBudgetUSD")) el("tripBudgetUSD").value = formatMoney(Math.round(budgetUSD));
+  if (el("tripBudgetEUR")) el("tripBudgetEUR").value = formatMoney(Math.round(budgetUSD * (state.rates?.EUR || 0.9)));
+  if (el("tripBudgetILS")) el("tripBudgetILS").value = formatMoney(Math.round(budgetUSD * (state.rates?.ILS || 3.6)));
+  // Add formatting focus/blur handlers
+  [el("tripBudgetUSD"), el("tripBudgetEUR"), el("tripBudgetILS")].forEach(input=>{
+    if(!input) return;
+    input.onfocus = ()=>{ input.value = unformatMoney(input.value); };
     input.onblur  = ()=>{ formatInputEl(input); };
   });
 
@@ -1911,46 +1978,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// === UI tweak: move password eye to the LEFT by wrapping input + button ===
-(function(){
-  function movePasswordEyeLeft(){
-    try{
-      var input = document.getElementById('email-auth-password');
-      var btn = document.getElementById('toggle-pass-visibility');
-      if (!input || !btn) return;
-      // If already wrapped, just mark and exit
-      var wrapper = btn.closest('.password-field');
-      if (wrapper){
-        wrapper.classList.add('left-eye');
-        return;
-      }
-      wrapper = document.createElement('div');
-      wrapper.className = 'password-field left-eye';
-      // insert before input
-      input.parentNode.insertBefore(wrapper, input);
-      wrapper.appendChild(input);
-      // ensure button comes after input
-      wrapper.appendChild(btn);
-    }catch(e){ console.warn('movePasswordEyeLeft failed', e); }
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', movePasswordEyeLeft);
-  }else{
-    movePasswordEyeLeft();
-  }
-})();
-
-
-// --- Use vector (div) markers so icons never break ---
-if (typeof L !== 'undefined' && L.Marker){
-  try{
-    L.Marker.prototype.options.icon = L.divIcon({
-      className: 'mm-pin leaflet-div-icon',
-      html: '',
-      iconSize: [14,14],
-      iconAnchor: [7,14]
-    });
-  }catch(_){}
-}
