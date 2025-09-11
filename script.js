@@ -103,7 +103,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 ;
 
 const state = {
-  trips: [],
+  viewMode:"gallery", trips: [],
   currentTripId: null,
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
@@ -564,6 +564,7 @@ async function renderHome(){
 
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
+  list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
   for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
@@ -1573,7 +1574,9 @@ async function exportPDF(){
 
 // ---------- Init ----------
 async function init(){
-  if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
+  if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
+  if (el("listViewBtn")) el("listViewBtn").onclick = ()=>{ state.viewMode="list"; renderHome(); };
+if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
   applyTheme();
   
   // This is a new helper function to load data based on the current user.

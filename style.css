@@ -1131,39 +1131,5 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
 .trip-header{ display:flex; align-items:center; gap:8px; }
 
-
-/* === Uniform toolbar buttons (Sort / Gallery / List) === */
-.toolbar-actions { display:flex; align-items:center; gap:12px; }
-.toolbar-actions .btn,
-.view-toggle .btn,
-#sortStartBtn.btn {
-  font-size: 14px;
-  line-height: 1.1;
-  padding: 6px 14px;
-  min-height: 36px;
-  border-radius: 22px;
-  border-width: 1.5px;
-  white-space: nowrap;
-}
-
-
-/* === List mode: right-aligned content starts at same X, kebab left === */
-#tripList.list-mode > li { padding-inline: 18px; }
-#tripList.list-mode .row-list {
-  display: grid;
-  grid-template-columns: 1fr auto; /* info | kebab */
-  align-items: center;
-  column-gap: 16px;
-  direction: rtl;
-}
-#tripList.list-mode .row-list .info {
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-  gap: 16px;
-  text-align: right;
-}
-#tripList.list-mode .row-list .trip-title { margin: 0; }
-#tripList.list-mode .row-list .dates,
-#tripList.list-mode .row-list .badge { white-space: nowrap; }
-#tripList.list-mode .row-list .kebab-wrap { justify-self: start; }
+.view-toggle{display:flex;gap:12px;align-items:center;}
+.view-toggle .btn{font-size:14px;padding:6px 14px;min-height:36px;border-radius:22px;border-width:1.5px;white-space:nowrap;}
