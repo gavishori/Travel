@@ -103,7 +103,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 ;
 
 const state = {
-  sortAsc:true, viewMode:"gallery", trips: [],
+  trips: [],
   currentTripId: null,
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
@@ -554,6 +554,7 @@ async function renderHome(){
   const trips = await Store.listTrips();
   state.trips = trips;
 
+  // Sort by start date only
   const sortAsc = state.sortAsc ?? true;
   const tripsSorted = trips.slice().sort((a,b)=>{
     const as = a && a.start ? new Date(a.start).getTime() : 0;
@@ -563,7 +564,6 @@ async function renderHome(){
 
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
-  list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
   for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
@@ -572,22 +572,7 @@ async function renderHome(){
     // Translate trip types to Hebrew
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
-    li.innerHTML = `${ state.viewMode==="list" ? `
-  <div class="row-list">
-    <div class="kebab-wrap">
-      <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
-      <div class="kebab-menu" role="menu">
-        <button class="edit" role="menuitem">ערוך</button>
-        <button class="delete" role="menuitem">מחק</button>
-      </div>
-    </div>
-    <div class="info">
-      <div class="trip-title">${t.destination||"—"}</div>
-      <div class="muted dates">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
-      <span class="badge">${translatedTripTypes||"—"}</span>
-    </div>
-  </div>
-` : `
+    li.innerHTML = `
   <div>
     <div class="trip-header">
       <div class="kebab-wrap">
@@ -607,7 +592,7 @@ async function renderHome(){
   <div class="row bottom-row">
     <button class="btn view">פתח</button>
   </div>
-` }`;
+`;
 const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
@@ -620,7 +605,8 @@ const viewButton = $(".view", li);
       menuBtn.onclick = (e)=>{ e.stopPropagation(); const open = menu.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", open? "true":"false"); };
       document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
     }
-const editButton = $(".edit", li);
+
+    const editButton = $(".edit", li);
     if (editButton) {
       editButton.onclick = async ()=>{
         await openTrip(t.id);
@@ -1588,9 +1574,7 @@ async function exportPDF(){
 // ---------- Init ----------
 async function init(){
   if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
-  if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
-  if (el("listViewBtn")) el("listViewBtn").onclick = ()=>{ state.viewMode="list"; renderHome(); };
-applyTheme();
+  applyTheme();
   
   // This is a new helper function to load data based on the current user.
   async function loadUserContent(){
