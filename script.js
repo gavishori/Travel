@@ -566,23 +566,39 @@ async function renderHome(){
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
     li.innerHTML = `
-      <div>
-        <div class="trip-title">${t.destination||"—"}</div>
-        <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
-        <div class="row" style="justify-content: flex-start; margin-top: 10px;">
-          <span class="badge">${translatedTripTypes||"—"}</span>
+  <div>
+    <div class="trip-header">
+      <div class="kebab-wrap">
+        <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
+        <div class="kebab-menu" role="menu">
+          <button class="edit" role="menuitem">ערוך</button>
+          <button class="delete" role="menuitem">מחק</button>
         </div>
       </div>
-      <div class="row bottom-row">
-        <button class="btn edit edit-btn">ערוך</button>
-        <button class="btn view">פתח</button>
-        <button class="btn danger delete">מחק</button>
-      </div>
-    `;
-    const viewButton = $(".view", li);
+      <div class="trip-title">${t.destination||"—"}</div>
+    </div>
+    <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+    <div class="row" style="justify-content: flex-start; margin-top: 10px;">
+      <span class="badge">${translatedTripTypes||"—"}</span>
+    </div>
+  </div>
+  <div class="row bottom-row">
+    <button class="btn view">פתח</button>
+  </div>
+`;
+const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
+    // Kebab menu toggle
+    const menuWrap = $(".kebab-wrap", li);
+    const menuBtn  = $(".kebab-btn", li);
+    const menu     = $(".kebab-menu", li);
+    if (menuBtn && menu) {
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); const open = menu.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", open? "true":"false"); };
+      document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
+    }
+
     const editButton = $(".edit", li);
     if (editButton) {
       editButton.onclick = async ()=>{
@@ -591,7 +607,7 @@ async function renderHome(){
         // Now it will stay on the default tab, which is 'overview'
       };
     }
-    const deleteButton = $(".del", li);
+    const deleteButton = $(".delete", li);
     if (deleteButton) {
       deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
     }
