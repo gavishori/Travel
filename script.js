@@ -625,21 +625,6 @@ function activateTabs(){
   });
 }
 
-          hasUnsavedChanges = false;
-          $$(".tab").forEach(b=> b.classList.remove("active"));
-          btn.classList.add("active");
-          $$(".panel").forEach(p=> p.classList.remove("active"));
-          el("tab-"+tab)?.classList.add("active");
-          if (tab === "map") refreshMainMap();
-        })();
-        return;
-      }
-      $$(".tab").forEach(b=> b.classList.remove("active"));
-      btn.classList.add("active");
-      $$(".panel").forEach(p=> p.classList.remove("active"));
-      el("tab-"+tab)?.classList.add("active");
-      if (tab === "map") refreshMainMap();
-    });
   });
 }
 
@@ -652,8 +637,8 @@ async function openTrip(id){
   el("tripTitle").textContent = trip.destination || "נסיעה";
   // The share controls are now in the export tab, so we don't need to get them here
   
-  $("#homeView")?.classList.remove("active");
-  $("#tripView")?.classList.add("active");
+  var hv = $("#homeView"); if (hv) hv.classList.remove("active");
+  var tv = $("#tripView"); if (tv) tv.classList.add("active");
 
   el("tripDestination").value = trip.destination || "";
   el("tripParticipants").value = trip.participants || "";
