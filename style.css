@@ -1124,3 +1124,14 @@ dialog#confirmDialog{ background: var(--panel, #ffffff) !important; opacity: 1 !
 /* === Outline button === */
 .btn.btn-outline{ background: transparent; border: 2px solid currentColor; box-shadow: none; }
 .btn.btn-outline:active{ transform: translateY(0); }
+
+
+/* === List/Gallery functional + sizing fix === */
+.view-toggle{ display:flex; gap:8px; align-items:center; flex-wrap:nowrap; }
+.view-toggle .btn{ 
+  font-size: 14px; padding: 6px 12px; border-width:1.5px; border-radius:18px; 
+  min-width: 104px; height: 36px; flex: 0 0 auto; white-space: nowrap;
+}
+#tripList.list-mode{ display:flex; flex-direction:column; gap:16px; }
+#tripList.list-mode > li{ display:flex; justify-content:space-between; align-items:center; padding: 14px 16px; }
+#tripList.list-mode .bottom-row{ margin-top: 0; }
