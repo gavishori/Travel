@@ -1172,3 +1172,15 @@ dialog#confirmDialog{
 .list li {
   text-align: right;
 }
+
+
+/* Keep the three-dots menu aligned to the left even when text is right-aligned */
+.list li .row-actions,
+.list li .more,
+.list li .menu,
+.list li .dots {
+  margin-left: auto;
+  margin-right: 0;
+  text-align: left !important;
+  direction: ltr;
+}
