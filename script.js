@@ -565,19 +565,6 @@ async function renderHome(){
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
-  /* __VIEW_TOGGLE_INJECTED__ */
-  (function(){
-    const listBtn = el("listViewBtn");
-    const galBtn  = el("galleryViewBtn");
-    if (listBtn && galBtn){
-      const isList = state.viewMode === "list";
-      listBtn.setAttribute("aria-pressed", String(isList));
-      galBtn.setAttribute("aria-pressed", String(!isList));
-      listBtn.classList.toggle("active", isList);
-      galBtn.classList.toggle("active", !isList);
-    }
-  })();
-
   list.innerHTML = "";
   for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
