@@ -1120,3 +1120,5 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 #tripList.list-mode .row-list .dates{ white-space:nowrap; }
 #tripList.list-mode .row-list .badge{ white-space:nowrap; }
 #tripList.list-mode .row-list .kebab-wrap{ margin-inline-start:0; } /* kebab remains at far left because 'info' is pushed right */
+
+.btn.btn-outline{background:transparent;border:2px solid currentColor;box-shadow:none;}

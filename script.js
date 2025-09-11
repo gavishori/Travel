@@ -103,7 +103,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 ;
 
 const state = {
-  viewMode:"gallery", trips: [],
+  sortAsc:true, viewMode:"gallery", trips: [],
   currentTripId: null,
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
@@ -554,6 +554,12 @@ async function renderHome(){
   const trips = await Store.listTrips();
   state.trips = trips;
 
+  const sortAsc = state.sortAsc ?? true;
+  const tripsSorted = trips.slice().sort((a,b)=>{
+    const as = a && a.start ? new Date(a.start).getTime() : 0;
+    const bs = b && b.start ? new Date(b.start).getTime() : 0;
+    return sortAsc ? (as - bs) : (bs - as);
+  });
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
@@ -1577,7 +1583,8 @@ async function exportPDF(){
 
 // ---------- Init ----------
 async function init(){
-  if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
+  if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
+if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
   if (el("listViewBtn")) el("listViewBtn").onclick = ()=>{ state.viewMode="list"; renderHome(); };
 applyTheme();
   
