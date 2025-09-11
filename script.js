@@ -103,7 +103,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 ;
 
 const state = {
-  trips: [],
+  sortAsc:true, trips: [],
   currentTripId: null,
   rates: { USD:1, EUR:0.9, ILS:3.6 },
   localCurrency: "USD",
@@ -553,6 +553,13 @@ async function renderHome(){
 
   const trips = await Store.listTrips();
   state.trips = trips;
+  // --- ensure tripsSorted exists (sort by start date only) ---
+  const sortAsc = (state && typeof state.sortAsc !== "undefined") ? state.sortAsc : true;
+  const tripsSorted = (Array.isArray(trips) ? trips.slice() : []).sort((a,b)=>{
+    const as = a && a.start ? new Date(a.start).getTime() : 0;
+    const bs = b && b.start ? new Date(b.start).getTime() : 0;
+    return sortAsc ? (as - bs) : (bs - as);
+  });
 
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
