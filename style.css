@@ -1095,30 +1095,75 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   font-weight: 500; /* normal/medium */
 }
 
-
-/* === Kebab menu (⋮) === */
+/* === Kebab menu for trip card (⋮) === */
 .kebab-wrap{ position: relative; }
-.kebab-btn{ background: transparent; border: none; font-size: 18px; line-height: 1; cursor: pointer; padding: 4px 6px; }
-.kebab-menu{ position: absolute; top: 28px; inset-inline-start: 0; background: var(--panel, #fff); border: 1px solid var(--border, #e5e5e5); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.08); display: none; min-width: 140px; z-index: 10; }
+.kebab-btn{
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.kebab-menu{
+  position: absolute;
+  top: 28px;
+  inset-inline-start: 0;
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
 .kebab-menu.open{ display: block; }
-.kebab-menu button{ display:block; width:100%; text-align:start; padding:8px 10px; background:transparent; border:none; cursor:pointer; }
+.kebab-menu button{
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
 .kebab-menu button:hover{ background: var(--card, #f6f6f6); }
 
-
-/* === View toggle buttons (Gallery/List) === */
-.toolbar-actions{ display:flex; align-items:center; gap:12px; }
-.view-toggle{ display:flex; gap:12px; align-items:center; flex-wrap:nowrap; }
-.view-toggle .btn{ font-size:14px; padding:6px 12px; border-radius:18px; border-width:1.5px; }
+.trip-header{ display:flex; align-items:center; gap:8px; }
 
 
-/* === List mode: single-row, right-aligned info, kebab on left === */
-#tripList.list-mode{ display:flex; flex-direction:column; gap:16px; }
-#tripList.list-mode > li{ width:100%; padding: 14px 18px; }
-#tripList.list-mode .row-list{ display:flex; align-items:center; gap:16px; }
-#tripList.list-mode .row-list .info{ display:flex; align-items:center; gap:16px; text-align:right; flex-wrap:nowrap; margin-inline-start:auto; }
-#tripList.list-mode .row-list .trip-title{ font-size:20px; font-weight:800; }
-#tripList.list-mode .row-list .dates{ white-space:nowrap; }
-#tripList.list-mode .row-list .badge{ white-space:nowrap; }
-#tripList.list-mode .row-list .kebab-wrap{ margin-inline-start:0; } /* kebab remains at far left because 'info' is pushed right */
+/* === Uniform toolbar buttons (Sort / Gallery / List) === */
+.toolbar-actions { display:flex; align-items:center; gap:12px; }
+.toolbar-actions .btn,
+.view-toggle .btn,
+#sortStartBtn.btn {
+  font-size: 14px;
+  line-height: 1.1;
+  padding: 6px 14px;
+  min-height: 36px;
+  border-radius: 22px;
+  border-width: 1.5px;
+  white-space: nowrap;
+}
 
-.btn.btn-outline{background:transparent;border:2px solid currentColor;box-shadow:none;}
+
+/* === List mode: right-aligned content starts at same X, kebab left === */
+#tripList.list-mode > li { padding-inline: 18px; }
+#tripList.list-mode .row-list {
+  display: grid;
+  grid-template-columns: 1fr auto; /* info | kebab */
+  align-items: center;
+  column-gap: 16px;
+  direction: rtl;
+}
+#tripList.list-mode .row-list .info {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 16px;
+  text-align: right;
+}
+#tripList.list-mode .row-list .trip-title { margin: 0; }
+#tripList.list-mode .row-list .dates,
+#tripList.list-mode .row-list .badge { white-space: nowrap; }
+#tripList.list-mode .row-list .kebab-wrap { justify-self: start; }
