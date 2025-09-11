@@ -572,7 +572,22 @@ async function renderHome(){
     // Translate trip types to Hebrew
     const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
 
-    li.innerHTML = `
+    li.innerHTML = `${ state.viewMode==="list" ? `
+  <div class="row-list">
+    <div class="trip-header">
+      <div class="trip-title">${t.destination||"—"}</div>
+      <div class="muted dates">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+      <span class="badge">${translatedTripTypes||"—"}</span>
+      <div class="kebab-wrap">
+        <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
+        <div class="kebab-menu" role="menu">
+          <button class="edit" role="menuitem">ערוך</button>
+          <button class="delete" role="menuitem">מחק</button>
+        </div>
+      </div>
+    </div>
+  </div>
+` : `
   <div>
     <div class="trip-header">
       <div class="kebab-wrap">
@@ -592,8 +607,8 @@ async function renderHome(){
   <div class="row bottom-row">
     <button class="btn view">פתח</button>
   </div>
-`;
-    const viewButton = $(".view", li);
+` }`;
+const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }

@@ -1135,3 +1135,17 @@ dialog#confirmDialog{ background: var(--panel, #ffffff) !important; opacity: 1 !
 #tripList.list-mode{ display:flex; flex-direction:column; gap:16px; }
 #tripList.list-mode > li{ display:flex; justify-content:space-between; align-items:center; padding: 14px 16px; }
 #tripList.list-mode .bottom-row{ margin-top: 0; }
+
+
+/* === Toolbar equal spacing === */
+.toolbar-actions{ display:flex; align-items:center; gap:12px; }
+.view-toggle{ display:flex; gap:12px; align-items:center; flex-wrap:nowrap; }
+
+/* === List mode: single-line layout === */
+#tripList.list-mode > li{ padding: 12px 16px; }
+#tripList.list-mode .row-list{ display:flex; align-items:center; gap:16px; }
+#tripList.list-mode .trip-header{ display:flex; align-items:center; gap:16px; flex:1; }
+#tripList.list-mode .trip-title{ font-size: 20px; font-weight: 800; }
+#tripList.list-mode .dates{ white-space: nowrap; }
+#tripList.list-mode .badge{ white-space: nowrap; }
+#tripList.list-mode .kebab-wrap{ margin-inline-start: auto; } /* push ⋮ to the far left in RTL */
