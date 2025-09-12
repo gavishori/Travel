@@ -1522,3 +1522,28 @@ dialog::backdrop{
   background: transparent !important;
   color: var(--muted) !important;
 }
+
+
+/* === Expense dialog sizing & visuals === */
+.dialog.wide{
+  width: min(1100px, 96vw);
+  max-height: 90vh;
+  overflow: auto;          /* allow scroll so action buttons never get cut */
+  background: var(--card); /* solid, no transparency */
+}
+/* Make sure inner content can breathe on small screens */
+.dialog .form{ gap: 14px; }
+.dialog .form menu.form-actions{
+  position: sticky;
+  bottom: 0;
+  background: var(--card);
+  padding-top: 8px;
+}
+
+/* Small action dialog (⋮) */
+.dialog.small{ width: min(360px, 92vw); }
+.small-dialog .dialog-header{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.small-dialog .dialog-body .two.flat{ display:flex; gap:10px; }
+.small-dialog .btn{ width:100%; }

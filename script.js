@@ -978,10 +978,7 @@ tr.innerHTML = `
       <td>${e.currency||"USD"}</td>
       <td>${extractCityName(e.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><button class="btn ghost kebab" title="אפשרויות">⋮</button></td>
     `;
 // If placeName missing but lat/lng exist → fetch city and persist
 (async ()=>{
@@ -995,8 +992,7 @@ tr.innerHTML = `
   }
 })();
 
-    $(".edit", tr).onclick = ()=> openExpenseDialog(e);
-    $(".del", tr).onclick = ()=> removeExpense(e);
+    $(".kebab", tr).onclick = ()=> openExpenseRowActionsDialog(trip.id || (state.currentTripId||state.currentTrip?.id), e.id);
     tbody.appendChild(tr);
   }
 
@@ -1036,10 +1032,7 @@ async function renderJournal(){
       <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><button class="btn ghost kebab" title="אפשרויות">⋮</button></td>
     `;
     // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
@@ -2034,3 +2027,39 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
+
+
+// === Expense Row Actions Dialog (⋮) ===
+let __rowActionExp = { tripId:null, expId:null };
+function openExpenseRowActionsDialog(tripId, expId){
+  __rowActionExp.tripId = tripId;
+  __rowActionExp.expId  = expId;
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+  try { dlg.showModal(); } catch(_) { dlg.open = true; }
+}
+function closeExpenseRowActionsDialog(){
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
+}
+document.addEventListener("DOMContentLoaded", function(){
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+  const closeBtn = document.getElementById("exp-row-action-close");
+  const editBtn  = document.getElementById("exp-row-action-edit");
+  const delBtn   = document.getElementById("exp-row-action-delete");
+  if (closeBtn) closeBtn.onclick = closeExpenseRowActionsDialog;
+  if (editBtn)  editBtn.onclick = async ()=>{
+    const trip = await Store.getTrip(__rowActionExp.tripId);
+    if (!trip) return;
+    const exp = Object.entries(trip.expenses||{}).map(([id, v])=>({id, ...v})).find(x=>x.id===__rowActionExp.expId);
+    if (exp) openExpenseDialog(exp);
+    closeExpenseRowActionsDialog();
+  };
+  if (delBtn)   delBtn.onclick  = ()=>{
+    if (__rowActionExp.tripId && __rowActionExp.expId) removeExpense({ id: __rowActionExp.expId, tripId: __rowActionExp.tripId });
+    closeExpenseRowActionsDialog();
+  };
+  dlg.addEventListener("cancel", closeExpenseRowActionsDialog);
+});
