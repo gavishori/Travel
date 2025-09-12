@@ -1321,3 +1321,36 @@ dialog#confirmDialog{
 
 /* If duplicates are rendered by mistake, keep only the first */
 #tripList.list-mode .kebab-wrap + .kebab-wrap{ display:none !important; }
+
+
+/* === Fix: kebab menu left-aligned to trip card in list mode (RTL) === */
+#tripList.list-mode .kebab-menu{
+  inset-inline-start: -16px;
+  inset-inline-end: auto;
+}
+/* Improve contrast for menu and buttons in light/dark themes */
+.kebab-menu{
+  background: var(--panel, #ffffff);
+  color: var(--fg, #111111);
+  border: 1px solid var(--border, #e5e7eb);
+}
+.kebab-menu button{
+  color: inherit;
+  font-weight: 600;
+}
+:root.light .kebab-menu button:hover{ background: #f3f4f6; }
+:root:not(.light) .kebab-menu{ background: #0f172a; color:#ffffff; }
+:root:not(.light) .kebab-menu button:hover{ background: rgba(255,255,255,.08); }
+
+
+/* === Fix: password eye icon placement and theme-aware color === */
+#emailAuthDialog .input-with-icon input{ padding-inline-start:44px; }
+#emailAuthDialog .icon-eye{
+  inset-inline-start:10px;
+  inset-inline-end:auto;
+  top:50%;
+  transform:translateY(-50%);
+}
+:root.light #emailAuthDialog .icon-eye{ color:#111111; }
+:root:not(.light) #emailAuthDialog .icon-eye{ color:#ffffff; }
+

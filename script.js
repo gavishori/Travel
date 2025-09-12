@@ -1818,7 +1818,7 @@ function openJournalDeleteDialog(tripId, entry){
       /* __ACCOUNT_BIND__ */
       try{
         var acct = document.getElementById('userAccount');
-        if (acct) acct.textContent = user ? (user.displayName || user.email || '') : '';
+        if (acct) acct.textContent = user ? (user.email || user.displayName || '') : '';
       }catch(e){}
     
       console.log("[auth] state changed:", !!user);
