@@ -598,13 +598,12 @@ const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
-    // Kebab menu toggle
+    
+    // Kebab menu -> open centered dialog (Edit/Delete)
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
-    const menu     = $(".kebab-menu", li);
-    if (menuBtn && menu) {
-      menuBtn.onclick = (e)=>{ e.stopPropagation(); const open = menu.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", open? "true":"false"); };
-      document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
+    if (menuBtn) {
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
     }
 
     const editButton = $(".edit", li);
@@ -1942,3 +1941,34 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
+
+
+// === Row Actions Dialog wiring ===
+let __rowActionTripId = null;
+function openRowActionsDialog(tripId, destination){
+  __rowActionTripId = tripId;
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  try { dlg.showModal(); } catch(_) { dlg.open = true; }
+}
+function closeRowActionsDialog(){
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
+}
+
+
+
+// Attach persistent listeners for dialog buttons
+document.addEventListener("DOMContentLoaded", function(){
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  const closeBtn = document.getElementById("row-action-close");
+  const editBtn  = document.getElementById("row-action-edit");
+  const delBtn   = document.getElementById("row-action-delete");
+  if (closeBtn) closeBtn.onclick = closeRowActionsDialog;
+  if (editBtn)  editBtn.onclick = async ()=>{ if(__rowActionTripId){ await openTrip(__rowActionTripId); } closeRowActionsDialog(); };
+  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
+  dlg.addEventListener("cancel", closeRowActionsDialog);
+});
+
