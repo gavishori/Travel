@@ -205,7 +205,7 @@
           <div class="card">
             <div class="table-actions">
               <h3>הוצאות</h3>
-              <button id="addExpenseBtn" class="btn">הוסף הוצאה</button>
+              <button id="addExpenseBtn" class="btn primary">הוסף הוצאה</button>
               <button id="sortExpensesBtn" class="btn"><span>&#9650;&#9660;</span> מיין</button>
             </div>
             <div class="table-wrapper">
@@ -646,5 +646,21 @@
     </div>
   </dialog>
 
+
+    <dialog id="expRowActionDialog" class="dialog small">
+      <div class="small-dialog">
+        <div class="dialog-header">
+          <h3>אפשרויות</h3>
+          <button id="exp-row-action-close" class="btn ghost" aria-label="סגור">✕</button>
+        </div>
+        <div class="dialog-body">
+          <div class="two flat">
+            <button id="exp-row-action-edit" class="btn primary" autofocus>ערוך</button>
+            <button id="exp-row-action-delete" class="btn danger">מחק</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+    
 </body>
 </html>

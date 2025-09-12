@@ -1554,3 +1554,12 @@ dialog::backdrop {
 }
 /* Disable body/page scroll when any dialog is open (CSS) */
 html:has(dialog[open]){ overflow: hidden; }
+
+
+/* Map height inside 'הוספת הוצאה' dialog – keep within viewport */
+.dialog.wide .map.tall#expenseMap{
+  height: clamp(220px, 38vh, 360px);
+}
+/* Tighten paddings a bit to save vertical space */
+#expenseDialog .form{ row-gap: 12px; }
+#expenseDialog .dialog-actions-row{ margin-bottom: 8px; }
