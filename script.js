@@ -598,12 +598,14 @@ const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
-    // Kebab menu toggle
+    
+    // Kebab menu -> open centered dialog (works for gallery & list)
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
-    const menu     = $(".kebab-menu", li);
-    if (menuBtn && menu) {
-      menuBtn.onclick = (e)=>{ e.stopPropagation(); const open = menu.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", open? "true":"false"); };
+    if (menuBtn) {
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
+    }
+;
       document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
     }
 
