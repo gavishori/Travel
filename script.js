@@ -868,7 +868,7 @@ async function renderOverviewMiniMap(){
     const group = state.miniGroup;
     if (group && group.clearLayers) group.clearLayers();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], {  radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillColor: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillOpacity: 1 }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1128,7 +1128,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
@@ -1971,4 +1971,22 @@ document.addEventListener("DOMContentLoaded", function(){
   if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
   dlg.addEventListener("cancel", closeRowActionsDialog);
 });
+
+
+
+// === Override addTripMarker to use solid fill circle markers ===
+function addTripMarker(lat, lng, tripId, destination){
+  if(typeof L === "undefined" || !map) return;
+  const marker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: '#2563eb',
+    weight: 2,
+    fillColor: '#2563eb',
+    fillOpacity: 1
+  }).addTo(map);
+  marker.on('click', ()=>{
+    if(tripId){ openTrip(tripId); }
+  });
+  return marker;
+}
 
