@@ -1995,3 +1995,20 @@ function addTripMarker(lat, lng, tripId, destination){
   return marker;
 }
 
+
+
+// Cancel buttons for confirm dialogs
+document.addEventListener("DOMContentLoaded", ()=>{
+  const dlgConfirm = document.getElementById("confirmDialog");
+  const dlgExpense = document.getElementById("confirmExpenseDialog");
+  const dlgJournal = document.getElementById("confirmJournalDialog");
+  document.getElementById("confirmCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgConfirm?.close(); }catch(_){ if(dlgConfirm) dlgConfirm.open = false; }
+  });
+  document.getElementById("confirmExpenseCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgExpense?.close(); }catch(_){ if(dlgExpense) dlgExpense.open = false; }
+  });
+  document.getElementById("confirmJournalCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgJournal?.close(); }catch(_){ if(dlgJournal) dlgJournal.open = false; }
+  });
+});
