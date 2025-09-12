@@ -598,12 +598,13 @@ const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
-    
-    // Kebab menu -> open centered dialog (Edit/Delete)
+    // Kebab menu toggle
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
-    if (menuBtn) {
-      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
+    const menu     = $(".kebab-menu", li);
+    if (menuBtn && menu) {
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); const open = menu.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", open? "true":"false"); };
+      document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
     }
 
     const editButton = $(".edit", li);
@@ -868,7 +869,7 @@ async function renderOverviewMiniMap(){
     const group = state.miniGroup;
     if (group && group.clearLayers) group.clearLayers();
     points.forEach(p=>{
-      const marker = L.circleMarker([p.lat,p.lng], {  radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillColor: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillOpacity: 1 }).bindPopup(p.desc||p.text||"");
+      const marker = L.circleMarker([p.lat,p.lng], { radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") }).bindPopup(p.desc||p.text||"");
       group.addLayer(marker);
     });
     group.addTo(map);
@@ -1128,7 +1129,7 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], { radius:7, color, weight:2 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
@@ -1941,52 +1942,3 @@ window.handleSignOut = async function(){
     if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
   }
 };
-
-
-// === Row Actions Dialog wiring ===
-let __rowActionTripId = null;
-function openRowActionsDialog(tripId, destination){
-  __rowActionTripId = tripId;
-  const dlg = document.getElementById("rowActionDialog");
-  if (!dlg) return;
-  try { dlg.showModal(); } catch(_) { dlg.open = true; }
-}
-function closeRowActionsDialog(){
-  const dlg = document.getElementById("rowActionDialog");
-  if (!dlg) return;
-  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
-}
-
-
-
-// Attach persistent listeners for dialog buttons
-document.addEventListener("DOMContentLoaded", function(){
-  const dlg = document.getElementById("rowActionDialog");
-  if (!dlg) return;
-  const closeBtn = document.getElementById("row-action-close");
-  const editBtn  = document.getElementById("row-action-edit");
-  const delBtn   = document.getElementById("row-action-delete");
-  if (closeBtn) closeBtn.onclick = closeRowActionsDialog;
-  if (editBtn)  editBtn.onclick = async ()=>{ if(__rowActionTripId){ await openTrip(__rowActionTripId); } closeRowActionsDialog(); };
-  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
-  dlg.addEventListener("cancel", closeRowActionsDialog);
-});
-
-
-
-// === Override addTripMarker to use solid fill circle markers ===
-function addTripMarker(lat, lng, tripId, destination){
-  if(typeof L === "undefined" || !map) return;
-  const marker = L.circleMarker([lat, lng], {
-    radius: 8,
-    color: '#2563eb',
-    weight: 2,
-    fillColor: '#2563eb',
-    fillOpacity: 1
-  }).addTo(map);
-  marker.on('click', ()=>{
-    if(tripId){ openTrip(tripId); }
-  });
-  return marker;
-}
-
