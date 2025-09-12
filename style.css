@@ -1257,8 +1257,28 @@ dialog#confirmDialog{
 }
 
 
-/* === FIX: kebab popup visibility & stacking (do not alter other layout) === */
 #tripList.list-mode > li > div:first-child{ overflow: visible !important; } /* allow menu to overflow */
 .kebab-wrap{ position: absolute; left:16px; top:50%; transform:translateY(-50%); z-index: 50; background: transparent !important; border: 0 !important; box-shadow:none !important; }
 .kebab-wrap .kebab-menu{ z-index: 1000; }
 .kebab-wrap .kebab-menu.open{ display:block; } /* ensure visibility when JS toggles class */
+
+
+/* === Minimal fixes (do not change row layout) === */
+
+/* 1) Password eye inside the input on login dialog */
+#emailAuthDialog .input-with-icon{ position:relative; overflow:visible !important; }
+#emailAuthDialog .input-with-icon input{ padding-inline-start:44px !important; }
+#emailAuthDialog #toggle-pass-visibility,
+#emailAuthDialog .icon-eye{
+  position:absolute;
+  inset-inline-start:12px; top:50%;
+  transform:translateY(-50%);
+  width:28px;height:28px; display:grid; place-items:center;
+  background:transparent;border:0; z-index:3; pointer-events:auto;
+}
+#emailAuthDialog .dialog-content{ overflow:visible !important; }
+
+/* 2) Kebab menu popup: visible and clickable without touching the row layout */
+#tripList .kebab-wrap{ position:relative; z-index:2; background:transparent !important; }
+#tripList .kebab-wrap .kebab-menu{ position:absolute; inset-inline-start:0; inset-block-start:calc(100% + 8px); z-index:1000; }
+#tripList .kebab-wrap .kebab-menu.open{ display:block; }
