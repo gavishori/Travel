@@ -1601,7 +1601,12 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
-  if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
+  
+  if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
+    e.preventDefault();
+    try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
+  };
+if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     e.preventDefault();
     const dest = el("newTripDestination").value.trim();
     const start = el("newTripStart").value;
