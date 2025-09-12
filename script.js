@@ -605,9 +605,9 @@ const viewButton = $(".view", li);
     if (menuBtn) {
       menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
     }
-;
-      document.addEventListener("click", ()=> menu.classList.remove("open"), { once:true });
-    }
+// [removed stray line]
+// [removed stray line]
+// [removed stray line]
 
     const editButton = $(".edit", li);
     if (editButton) {
