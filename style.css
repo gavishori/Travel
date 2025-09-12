@@ -1323,68 +1323,63 @@ dialog#confirmDialog{
 #tripList.list-mode .kebab-wrap + .kebab-wrap{ display:none !important; }
 
 
-/* === Fix: kebab menu left-aligned to trip card in list mode (RTL) === */
-#tripList.list-mode .kebab-menu{
-  inset-inline-start: -16px;
-  inset-inline-end: auto;
-}
-/* Improve contrast for menu and buttons in light/dark themes */
-.kebab-menu{
-  background: var(--panel, #ffffff);
-  color: var(--fg, #111111);
-  border: 1px solid var(--border, #e5e7eb);
-}
+/* === Final Fixes: Edit/Delete font weights & colors, kebab alignment === */
 .kebab-menu button{
-  color: inherit;
-  font-weight: 600;
+  font-family: 'Rubik', sans-serif;
+  font-size: 16px;
+  font-weight:600;
 }
-:root.light .kebab-menu button:hover{ background: #f3f4f6; }
-:root:not(.light) .kebab-menu{ background: #0f172a; color:#ffffff; }
-:root:not(.light) .kebab-menu button:hover{ background: rgba(255,255,255,.08); }
+.kebab-menu .delete{
+  font-weight:700;
+  color:#ff4d4d;
+}
+:root:not(.light) .kebab-menu .delete{
+  color:#ff7b7b;
+}
 
-
-/* === Fix: password eye icon placement and theme-aware color === */
-#emailAuthDialog .input-with-icon input{ padding-inline-start:44px; }
-#emailAuthDialog .icon-eye{
-  inset-inline-start:10px;
-  inset-inline-end:auto;
+/* Align kebab button to the far left of card */
+.kebab-wrap{
+  position:absolute;
+  left:0 !important;
   top:50%;
   transform:translateY(-50%);
 }
-:root.light #emailAuthDialog .icon-eye{ color:#111111; }
-:root:not(.light) #emailAuthDialog .icon-eye{ color:#ffffff; }
+#tripList.list-mode .kebab-menu{
+  inset-inline-start:0 !important;
+  inset-inline-end:auto !important;
+}
 
 
-/* === Hotfix: force password eye to LEFT and avoid overlap === */
-#emailAuthDialog .input-with-icon{ position:relative; overflow:visible; }
+/* === Final request: Eye icon clearly visible on LEFT with strong contrast === */
 #emailAuthDialog .input-with-icon input{
-  padding-inline-start:44px !important;
-  padding-inline-end:16px !important; /* normal padding on the right */
+  padding-inline-start:48px !important; /* extra room so text never collides */
 }
 #emailAuthDialog .icon-eye{
-  position:absolute !important;
-  inset-inline-start:10px !important;
+  inset-inline-start:12px !important;
   inset-inline-end:auto !important;
-  left:10px !important;
-  right:auto !important;
   top:50% !important;
   transform:translateY(-50%) !important;
-  z-index:3;
+  z-index: 10 !important;           /* above input */
+  opacity: 1 !important;
+  pointer-events: auto;
 }
+:root.light #emailAuthDialog .icon-eye{ color:#111 !important; }
+:root:not(.light) #emailAuthDialog .icon-eye{ color:#fff !important; }
 
-/* === Hotfix: kebab menu contrast and Delete emphasis === */
-.kebab-menu{
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+/* === Final request: Edit/Delete font clarity without moving menu === */
+.kebab-menu button{ font-size:16px !important; font-weight:600 !important; }
+.kebab-menu .edit{ font-weight:700 !important; color:inherit !important; }
+.kebab-menu .delete{ font-weight:800 !important; color:#ff5a5a !important; }
+:root:not(.light) .kebab-menu .delete{ color:#ff9a9a !important; }
+.kebab-menu{ box-shadow:0 10px 30px rgba(0,0,0,.35); }
+
+
+/* === Alignment Fix: kebab button wrapper flush with card edge === */
+.kebab-wrap{
+  left:0 !important; /* was 16px */
 }
-.kebab-menu button{
-  font-size: 16px;
-  line-height: 1.3;
+#tripList.list-mode .kebab-menu{
+  inset-inline-start:0 !important;
+  inset-inline-end:auto !important;
 }
-.kebab-menu .edit{ font-weight:700; }
-.kebab-menu .delete{
-  font-weight:800;
-  color: var(--danger, #ef4444);
-}
-:root:not(.light) .kebab-menu .delete{ color:#fca5a5; } /* light-red for dark mode */
-.kebab-menu .delete:hover{ filter: brightness(1.1); }
 
