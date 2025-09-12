@@ -1816,11 +1816,11 @@ function openJournalDeleteDialog(tripId, entry){
       });
       auth.onAuthStateChanged(function(user){
       /* __ACCOUNT_BIND__ */
-      try {
+      try{
         var acct = document.getElementById('userAccount');
-        if (acct){ acct.dir='ltr'; acct.textContent = user ? (user.email || user.displayName || '') : ''; acct.title = acct.textContent; }
-      } catch(e){}
-
+        if (acct) acct.textContent = user ? (user.displayName || user.email || '') : '';
+      }catch(e){}
+    
       console.log("[auth] state changed:", !!user);
 
         if (user){

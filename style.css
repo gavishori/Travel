@@ -1257,28 +1257,67 @@ dialog#confirmDialog{
 }
 
 
-#tripList.list-mode > li > div:first-child{ overflow: visible !important; } /* allow menu to overflow */
-.kebab-wrap{ position: absolute; left:16px; top:50%; transform:translateY(-50%); z-index: 50; background: transparent !important; border: 0 !important; box-shadow:none !important; }
-.kebab-wrap .kebab-menu{ z-index: 1000; }
-.kebab-wrap .kebab-menu.open{ display:block; } /* ensure visibility when JS toggles class */
+/* === CONNECTED PATCH v2 === */
 
+/* 1) Login dialog: hide list/gallery buttons inside the auth dialog only */
+#emailAuthDialog .view-toggle{ display:none !important; }
 
-/* === Minimal fixes (do not change row layout) === */
-
-/* 1) Password eye inside the input on login dialog */
-#emailAuthDialog .input-with-icon{ position:relative; overflow:visible !important; }
-#emailAuthDialog .input-with-icon input{ padding-inline-start:44px !important; }
-#emailAuthDialog #toggle-pass-visibility,
+/* 2) Password eye fully visible and on the LEFT (RTL-friendly logical props) */
+#emailAuthDialog .dialog-content{ overflow:visible; }
+#emailAuthDialog .input-with-icon{ position:relative; overflow:visible; }
+#emailAuthDialog .input-with-icon input{ padding-inline-start:44px; } /* room for the eye on the left */
 #emailAuthDialog .icon-eye{
-  position:absolute;
-  inset-inline-start:12px; top:50%;
-  transform:translateY(-50%);
-  width:28px;height:28px; display:grid; place-items:center;
-  background:transparent;border:0; z-index:3; pointer-events:auto;
+  inset-inline-start:10px; inset-inline-end:auto;  /* left side */
+  top:50%; transform:translateY(-50%);
+  z-index:2;
 }
-#emailAuthDialog .dialog-content{ overflow:visible !important; }
 
-/* 2) Kebab menu popup: visible and clickable without touching the row layout */
-#tripList .kebab-wrap{ position:relative; z-index:2; background:transparent !important; }
-#tripList .kebab-wrap .kebab-menu{ position:absolute; inset-inline-start:0; inset-block-start:calc(100% + 8px); z-index:1000; }
-#tripList .kebab-wrap .kebab-menu.open{ display:block; }
+/* 3) Account indicator next to title/avatar */
+#userAccount{ margin-inline-start:10px; font-weight:600; opacity:.9; white-space:nowrap; }
+
+/* 4) Safety: if duplicate kebab wrappers are rendered, keep only the first */
+.trip-row .kebab-wrap:not(:first-of-type){ display:none !important; }
+
+
+/* ==== ONE-LINE LIST OVERRIDE — FINAL ==== */
+/* Make each list item a single-line row with kebab on the LEFT (RTL) */
+#tripList.list-mode > li{
+  display:block !important;
+  position:relative;
+  padding:14px 16px 14px 88px !important; /* leave room for kebab */
+}
+
+/* Flatten inner content into a single line */
+#tripList.list-mode > li > div:first-child{
+  display:flex !important;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+}
+#tripList.list-mode .trip-header{ display:contents !important; }
+#tripList.list-mode .trip-title{
+  font-weight:700;
+  min-width:0; max-width:44vw;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#tripList.list-mode .muted{ white-space:nowrap; }
+#tripList.list-mode .row{ display:inline-flex !important; gap:6px; align-items:center; margin:0 !important; }
+#tripList.list-mode .row.bottom-row{ display:none !important; } /* hide bottom action row in list */
+
+/* Kebab absolute on the left */
+#tripList.list-mode .kebab-wrap{
+  position:absolute; left:16px; top:50%; transform:translateY(-50%);
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+}
+#tripList.list-mode .kebab-wrap::before, 
+#tripList.list-mode .kebab-wrap::after{ content:none !important; }
+#tripList.list-mode .kebab-btn{
+  width:56px; height:56px; border-radius:14px;
+  border:1px solid var(--border); background:transparent; color:inherit;
+  display:grid; place-items:center; line-height:0;
+}
+
+/* If duplicates are rendered by mistake, keep only the first */
+#tripList.list-mode .kebab-wrap + .kebab-wrap{ display:none !important; }
