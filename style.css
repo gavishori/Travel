@@ -1323,39 +1323,72 @@ dialog#confirmDialog{
 #tripList.list-mode .kebab-wrap + .kebab-wrap{ display:none !important; }
 
 
-/* === Specific fix for kebab menu popup (Edit/Delete) === */
+/* === Unified Final Fixes === */
+
+/* Eye icon for password field */
+#emailAuthDialog .input-with-icon input{
+  padding-inline-start:44px;
+}
+#emailAuthDialog .icon-eye{
+  position:absolute;
+  inset-inline-start:12px;
+  inset-inline-end:auto;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:5;
+}
+:root.light #emailAuthDialog .icon-eye{ color:#111; }
+:root:not(.light) #emailAuthDialog .icon-eye{ color:#fff; }
+
+/* Kebab button alignment */
+.kebab-wrap{
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+}
+#tripList.list-mode .kebab-menu{
+  inset-inline-start:0;
+  inset-inline-end:auto;
+}
+
+/* Kebab popup styling */
 .kebab-menu{
-  background-color:#ffffff !important;
-  border-radius:12px !important;
-  padding:8px 0 !important;
+  background-color:var(--panel,#fff);
+  border-radius:12px;
+  padding:8px 0;
+  font-family:'Rubik',sans-serif;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
 :root:not(.light) .kebab-menu{
-  background-color:#0f172a !important;
+  background-color:#0f172a;
 }
 .kebab-menu button{
   display:block;
   width:100%;
   text-align:right;
-  padding:10px 16px !important;
-  font-size:15px !important;
-  font-weight:600 !important;
-  color:#111 !important;
+  padding:10px 16px;
+  font-size:15px;
+  font-weight:500;
+  color:inherit;
   background:transparent;
-}
-:root:not(.light) .kebab-menu button{
-  color:#f9fafb !important;
-}
-.kebab-menu .delete{
-  color:#dc2626 !important; /* bright red */
-  font-weight:700 !important;
-}
-:root:not(.light) .kebab-menu .delete{
-  color:#f87171 !important; /* lighter red in dark mode */
+  border:none;
+  cursor:pointer;
 }
 .kebab-menu button:hover{
-  background-color:rgba(0,0,0,0.05) !important;
+  background-color:rgba(0,0,0,0.05);
 }
 :root:not(.light) .kebab-menu button:hover{
-  background-color:rgba(255,255,255,0.1) !important;
+  background-color:rgba(255,255,255,0.1);
+}
+.kebab-menu .edit{
+  font-weight:600;
+}
+.kebab-menu .delete{
+  color:#dc2626;
+  font-weight:600;
+}
+:root:not(.light) .kebab-menu .delete{
+  color:#f87171;
 }
 
