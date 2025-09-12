@@ -1093,7 +1093,7 @@ html, body{ -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 }
 
 /* === Kebab menu for trip card (⋮) === */
-.kebab-wrap{ position: relative; }
+
 .kebab-btn{
   background: transparent;
   border: none;
@@ -1229,10 +1229,7 @@ dialog#confirmDialog{
   gap: 10px;
 }
 
-#tripList.list-mode .kebab-wrap {
-  order: 2;
-  margin-right: -10px;
-}
+#tripList.list-mode 
 
 #tripList.list-mode .trip-header {
   flex-grow: 1;
@@ -1251,10 +1248,7 @@ dialog#confirmDialog{
   order: 1;
 }
 
-#tripList.list-mode .kebab-menu {
-  inset-inline-start: auto;
-  inset-inline-end: 0;
-}
+
 
 
 /* === CONNECTED PATCH v2 === */
@@ -1307,10 +1301,7 @@ dialog#confirmDialog{
 #tripList.list-mode .row.bottom-row{ display:none !important; } /* hide bottom action row in list */
 
 /* Kebab absolute on the left */
-#tripList.list-mode .kebab-wrap{
-  position:absolute; left:16px; top:50%; transform:translateY(-50%);
-  background:transparent !important; border:0 !important; box-shadow:none !important;
-}
+#tripList.list-mode 
 #tripList.list-mode .kebab-wrap::before, 
 #tripList.list-mode .kebab-wrap::after{ content:none !important; }
 #tripList.list-mode .kebab-btn{
@@ -1320,7 +1311,7 @@ dialog#confirmDialog{
 }
 
 /* If duplicates are rendered by mistake, keep only the first */
-#tripList.list-mode .kebab-wrap + .kebab-wrap{ display:none !important; }
+#tripList.list-mode .kebab-wrap + 
 
 
 /* === Unified Final Fixes === */
@@ -1339,6 +1330,53 @@ dialog#confirmDialog{
 }
 :root.light #emailAuthDialog .icon-eye{ color:#111; }
 :root:not(.light) #emailAuthDialog .icon-eye{ color:#fff; }
+
+/* Kebab button alignment */
+
+
+
+/* Kebab popup styling */
+.kebab-menu{
+  background-color:var(--panel,#fff);
+  border-radius:12px;
+  padding:8px 0;
+  font-family:'Rubik',sans-serif;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+:root:not(.light) .kebab-menu{
+  background-color:#0f172a;
+}
+.kebab-menu button{
+  display:block;
+  width:100%;
+  text-align:right;
+  padding:10px 16px;
+  font-size:15px;
+  font-weight:500;
+  color:inherit;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+}
+.kebab-menu button:hover{
+  background-color:rgba(0,0,0,0.05);
+}
+:root:not(.light) .kebab-menu button:hover{
+  background-color:rgba(255,255,255,0.1);
+}
+.kebab-menu .edit{
+  font-weight:600;
+}
+.kebab-menu .delete{
+  color:#dc2626;
+  font-weight:600;
+}
+:root:not(.light) .kebab-menu .delete{
+  color:#f87171;
+}
+
+
+/* === Clean Unified Fixes === */
 
 /* Kebab button alignment */
 .kebab-wrap{
