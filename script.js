@@ -2087,3 +2087,17 @@ document.addEventListener("click", (ev)=>{
   const id = tr && tr.dataset && tr.dataset.id;
   openExpenseRowActionsDialog(state.currentTripId, id);
 }, true);
+
+
+// Invalidate map when collapsible opens so Leaflet sizes correctly
+document.addEventListener("DOMContentLoaded", ()=>{
+  const ms = document.getElementById("mapSection");
+  if (ms){
+    ms.addEventListener("toggle", ()=>{
+      const map = state?.maps?.expense;
+      if (ms.open && map && typeof map.invalidateSize === "function"){
+        setTimeout(()=> map.invalidateSize(), 80);
+      }
+    });
+  }
+});

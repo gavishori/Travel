@@ -1563,3 +1563,18 @@ html:has(dialog[open]){ overflow: hidden; }
 /* Tighten paddings a bit to save vertical space */
 #expenseDialog .form{ row-gap: 12px; }
 #expenseDialog .dialog-actions-row{ margin-bottom: 8px; }
+
+
+/* Collapsible map section in expense dialog */
+#expenseDialog details.collapsible{
+  border:1.5px solid #E5E7EB; border-radius:16px; background:#fff;
+  padding:0; overflow:hidden;
+}
+#expenseDialog details.collapsible > summary.collapse-toggle{
+  list-style:none; cursor:pointer; padding:14px 18px; font-weight:600;
+}
+#expenseDialog details.collapsible[open] > summary.collapse-toggle{ border-bottom:1px solid #F1F5F9; }
+#expenseDialog details.collapsible .collapse-content{ padding:14px; }
+#expenseDialog details.collapsible .map.tall{ height: clamp(220px, 40vh, 360px); }
+/* remove default triangle marker */
+#expenseDialog details.collapsible > summary::-webkit-details-marker { display:none; }
