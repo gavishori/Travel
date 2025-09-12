@@ -2012,3 +2012,25 @@ document.addEventListener("DOMContentLoaded", ()=>{
     try{ dlgJournal?.close(); }catch(_){ if(dlgJournal) dlgJournal.open = false; }
   });
 });
+
+
+// === Global robust cancel handler (no side-effects) ===
+document.addEventListener("click", function(e){
+  const btn = e.target instanceof Element ? e.target.closest("button") : null;
+  if (!btn) return;
+  // Match explicit IDs we use, or data attribute, or Hebrew label "ביטול"
+  const isCancel =
+    btn.id === "cancelTripBtn" ||
+    btn.id === "confirmCancelBtn" ||
+    btn.id === "confirmExpenseCancelBtn" ||
+    btn.id === "confirmJournalCancelBtn" ||
+    btn.getAttribute("data-close") === "dialog" ||
+    (btn.textContent && btn.textContent.trim() === "ביטול");
+  if (!isCancel) return;
+  const dlg = btn.closest("dialog");
+  if (!dlg) return;
+  e.preventDefault();
+  e.stopPropagation();
+  try { dlg.close(); }
+  catch(_) { dlg.open = false; }
+}, true); // capture to beat form validation
