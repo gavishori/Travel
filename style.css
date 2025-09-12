@@ -1492,17 +1492,14 @@ dialog::backdrop{
 
 
 
-/* === Kebab menu positioning fix for gallery cards === */
-.cards li { position: relative; }
-.cards li .kebab-wrap {
-  position: absolute;
-  top: 8px;
-  inset-inline-end: 8px; /* RTL/LTR aware */
-  z-index: 5;
+/* === FIX: Scope kebab positioning ONLY to gallery (non list) === */
+#tripList:not(.list-mode) > li { position: relative !important; }
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: 8px !important;
+  inset-inline-end: 8px !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
 }
-.cards li .kebab-btn {
-  color: var(--muted);
-}
-:root.light .cards li .kebab-btn {
-  color: var(--muted);
-}
+/* Keep list-mode behavior as defined elsewhere */
