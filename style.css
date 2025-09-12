@@ -1524,26 +1524,33 @@ dialog::backdrop{
 }
 
 
-/* === Expense dialog sizing & visuals === */
+/* === Modal polish: no transparency, no page scroll while open === */
+dialog.dialog, .dialog { 
+  background-color: #ffffff !important; /* force fully opaque */
+}
+dialog::backdrop { 
+  background: rgba(0,0,0,0.5); /* block view behind */
+}
+/* Expense wide dialog: make it fit viewport so no page scroll is needed */
 .dialog.wide{
   width: min(1100px, 96vw);
-  max-height: 90vh;
-  overflow: auto;          /* allow scroll so action buttons never get cut */
-  background: var(--card); /* solid, no transparency */
+  height: auto;
+  max-height: 88vh;  /* ensure within viewport */
+  overflow: hidden;  /* avoid inner scrollbars unless we allow a child to scroll */
 }
-/* Make sure inner content can breathe on small screens */
-.dialog .form{ gap: 14px; }
+/* Content inside can scroll minimally if necessary, not the page */
+.dialog.wide .scroll-area{
+  max-height: calc(88vh - 84px); /* header/controls allowance */
+  overflow: auto;
+}
+/* If the expense form is the direct child, allow it to scroll internally a bit */
+.dialog.wide .form{ 
+  max-height: calc(88vh - 84px);
+  overflow: auto;
+}
+/* Sticky actions stay visible */
 .dialog .form menu.form-actions{
-  position: sticky;
-  bottom: 0;
-  background: var(--card);
-  padding-top: 8px;
+  position: sticky; bottom: 0; background: #ffffff;
 }
-
-/* Small action dialog (⋮) */
-.dialog.small{ width: min(360px, 92vw); }
-.small-dialog .dialog-header{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-}
-.small-dialog .dialog-body .two.flat{ display:flex; gap:10px; }
-.small-dialog .btn{ width:100%; }
+/* Disable body/page scroll when any dialog is open (CSS) */
+html:has(dialog[open]){ overflow: hidden; }
