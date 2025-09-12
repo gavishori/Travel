@@ -1490,3 +1490,19 @@ dialog::backdrop{
   background: rgba(0,0,0,0.4);
 }
 
+
+
+/* === Kebab menu positioning fix for gallery cards === */
+.cards li { position: relative; }
+.cards li .kebab-wrap {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px; /* RTL/LTR aware */
+  z-index: 5;
+}
+.cards li .kebab-btn {
+  color: var(--muted);
+}
+:root.light .cards li .kebab-btn {
+  color: var(--muted);
+}
