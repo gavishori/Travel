@@ -1464,3 +1464,29 @@ dialog#rowActionDialog.small{
 /* Hide legacy inline kebab dropdown if present */
 .kebab-menu{ display:none !important; }
 
+
+
+/* Make rowActionDialog much smaller */
+dialog#rowActionDialog.small{
+  max-width: 240px !important;
+  padding: 0 !important;
+}
+#rowActionDialog .dialog-content{ padding: 12px !important; }
+#rowActionDialog .dialog-title{ font-size: 16px !important; margin-bottom: 10px; }
+#rowActionDialog .two.flat{ gap: 6px !important; }
+#rowActionDialog .btn{ font-size: 14px !important; padding: 6px 10px !important; border-radius: 8px !important; }
+
+
+
+/* Ensure rowActionDialog is centered on screen */
+dialog#rowActionDialog.small{
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+dialog::backdrop{
+  background: rgba(0,0,0,0.4);
+}
+
