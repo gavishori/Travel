@@ -1354,3 +1354,37 @@ dialog#confirmDialog{
 :root.light #emailAuthDialog .icon-eye{ color:#111111; }
 :root:not(.light) #emailAuthDialog .icon-eye{ color:#ffffff; }
 
+
+/* === Hotfix: force password eye to LEFT and avoid overlap === */
+#emailAuthDialog .input-with-icon{ position:relative; overflow:visible; }
+#emailAuthDialog .input-with-icon input{
+  padding-inline-start:44px !important;
+  padding-inline-end:16px !important; /* normal padding on the right */
+}
+#emailAuthDialog .icon-eye{
+  position:absolute !important;
+  inset-inline-start:10px !important;
+  inset-inline-end:auto !important;
+  left:10px !important;
+  right:auto !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  z-index:3;
+}
+
+/* === Hotfix: kebab menu contrast and Delete emphasis === */
+.kebab-menu{
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.kebab-menu button{
+  font-size: 16px;
+  line-height: 1.3;
+}
+.kebab-menu .edit{ font-weight:700; }
+.kebab-menu .delete{
+  font-weight:800;
+  color: var(--danger, #ef4444);
+}
+:root:not(.light) .kebab-menu .delete{ color:#fca5a5; } /* light-red for dark mode */
+.kebab-menu .delete:hover{ filter: brightness(1.1); }
+
