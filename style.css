@@ -1383,3 +1383,13 @@ dialog#confirmDialog{
   inset-inline-end:auto !important;
 }
 
+
+/* === Final Fixes === */
+.kebab-menu{
+  background-color: var(--panel, #fff) !important; /* opaque */
+  font-family: 'Rubik', sans-serif !important;
+}
+.kebab-menu button{
+  font-family: inherit !important;
+}
+
