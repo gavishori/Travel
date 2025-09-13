@@ -1543,6 +1543,34 @@ dialog::backdrop{
 #expenseDialog menu.form-actions{ position: sticky; bottom: 0; background:#fff; padding-top:8px; }
 
 
-/* Row actions align (expenses) */
-.table td.row-actions { text-align: end; white-space: nowrap; }
-.table td.row-actions .kebab { min-width: 36px; }
+/* --- Add Expense button look (table actions) --- */
+.table-actions .btn#addExpenseBtn{
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+}
+
+/* --- Expense dialog: compact & tidy controls --- */
+#expenseDialog h3{ margin: 8px 0 12px; }
+#expenseDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
+#expenseDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
+#expenseDialog .dialog-actions-row.tight{
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 8px;
+}
+#expenseDialog .dialog-actions-row .btn,
+#expenseDialog .dialog-actions-row .input,
+#expenseDialog .dialog-actions-row .input-with-button .btn{
+  height: 44px;
+  line-height: 44px;
+  border-radius: 22px;
+}
+#expenseDialog .input-with-button{ align-items:center; }
+#expenseDialog #expenseMap.map.tall{ height: clamp(220px, 30vh, 300px); }
+
+/* Action cell align */
+.table td.row-actions{ text-align:end; white-space:nowrap; }
+.table td.row-actions .kebab{ min-width: 36px; }
