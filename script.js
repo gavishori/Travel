@@ -978,10 +978,7 @@ tr.innerHTML = `
       <td>${e.currency||"USD"}</td>
       <td>${extractCityName(e.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><div class="kebab-wrap"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button><div class="kebab-menu" role="menu"><button class="edit" role="menuitem">ערוך</button><button class="del" role="menuitem">מחק</button></div></div></td>
     `;
 // If placeName missing but lat/lng exist → fetch city and persist
 (async ()=>{
@@ -1036,10 +1033,7 @@ async function renderJournal(){
       <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><div class="kebab-wrap"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button><div class="kebab-menu" role="menu"><button class="edit" role="menuitem">ערוך</button><button class="del" role="menuitem">מחק</button></div></div></td>
     `;
     // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
@@ -1053,6 +1047,10 @@ async function renderJournal(){
       }
     })();
 
+    const kebabBtn = $(".kebab-btn", tr);
+    if (kebabBtn){
+      kebabBtn.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); };
+    }
     $(".edit", tr).onclick = () => openJournalDialog(j);
     $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
     tbody.appendChild(tr);
@@ -1123,17 +1121,21 @@ function refreshMainMap(){
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
     }
     const map = state.maps.main;
+    var __be = document.getElementById('btnWhereSpent'); if(__be) __be.classList.toggle('active', state.mapFilters.showExpenses);
+    var __bt = document.getElementById('btnWhereTraveled'); if(__bt) __bt.classList.toggle('active', state.mapFilters.showJournal);
     (async ()=>{
       const trip = await Store.getTrip(state.currentTripId);
       if (!trip) return;
+      if (state.mainMapGroup && state.maps.main){ try{ state.maps.main.removeLayer(state.mainMapGroup); }catch(_){} }
       const group = L.featureGroup();
+      state.mainMapGroup = group;
       function addPoint(p, color){
         const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
+      if (state.mapFilters.showExpenses && trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (state.mapFilters.showJournal && trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
@@ -2034,3 +2036,30 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
+
+/* Map overlay toggle wiring */
+document.addEventListener('DOMContentLoaded', function(){
+  var be = document.getElementById('btnWhereSpent');
+  var bt = document.getElementById('btnWhereTraveled');
+  function syncBtns(){
+    if (be) be.classList.toggle('active', state.mapFilters.showExpenses);
+    if (bt) bt.classList.toggle('active', state.mapFilters.showJournal);
+  }
+  if (be && !be.__wired){
+    be.__wired = true;
+    be.addEventListener('click', function(){
+      state.mapFilters.showExpenses = !state.mapFilters.showExpenses;
+      syncBtns();
+      refreshMainMap();
+    });
+  }
+  if (bt && !bt.__wired){
+    bt.__wired = true;
+    bt.addEventListener('click', function(){
+      state.mapFilters.showJournal = !state.mapFilters.showJournal;
+      syncBtns();
+      refreshMainMap();
+    });
+  }
+  syncBtns();
+});
