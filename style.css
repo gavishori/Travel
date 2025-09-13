@@ -1543,105 +1543,47 @@ dialog::backdrop{
 #expenseDialog menu.form-actions{ position: sticky; bottom: 0; background:#fff; padding-top:8px; }
 
 
-/* --- Add Expense button look (table actions) --- */
-.table-actions .btn#addExpenseBtn{
-  border: 1.5px solid var(--border);
-  background: #fff;
-  font-weight: 600;
-}
-
-/* --- Expense dialog: compact & tidy controls --- */
-#expenseDialog h3{ margin: 8px 0 12px; }
-#expenseDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
-#expenseDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
+/* === v2 — Expense dialog location controls: consistent + tidy 2-row grid === */
 #expenseDialog .dialog-actions-row.tight{
   display: grid;
-  grid-template-columns: max-content max-content 1fr max-content;
-  align-items: center;
+  grid-template-columns: 1fr max-content max-content;
+  grid-auto-rows: 44px;
   column-gap: 12px;
-  row-gap: 8px;
-}
-#expenseDialog .dialog-actions-row .btn,
-#expenseDialog .dialog-actions-row .input,
-#expenseDialog .dialog-actions-row .input-with-button .btn{
-  height: 44px;
-  line-height: 44px;
-  border-radius: 22px;
-}
-#expenseDialog .input-with-button{ align-items:center; }
-#expenseDialog #expenseMap.map.tall{ height: clamp(220px, 30vh, 300px); }
-
-/* Action cell align */
-.table td.row-actions{ text-align:end; white-space:nowrap; }
-.table td.row-actions .kebab{ min-width: 36px; }
-
-
-/* --- Expense dialog location controls unified --- */
-#expenseDialog .dialog-actions-row.tight{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-start;
-}
-#expenseDialog .dialog-actions-row.tight .btn,
-#expenseDialog .dialog-actions-row.tight .input{
-  height: 42px;
-  border-radius: 8px;
-  flex: 1 1 auto;
-}
-#expenseDialog .dialog-actions-row.tight .input-with-button{
-  display: flex;
-  flex: 2 1 100%;
-}
-#expenseDialog .dialog-actions-row.tight .input-with-button .input{ flex:1; }
-#expenseDialog .dialog-actions-row.tight .input-with-button .btn{ flex:0 0 auto; }
-
-/* force two rows look: buttons first row, search second row */
-#pickOnMapExp, #useCurrentLocExp, #clearLocExp{ flex:1 1 30%; min-width:120px; }
-#searchPlaceExp{ flex:1 1 60%; }
-#searchPlaceBtnExp{ flex:0 0 auto; }
-
-
-/* === Expense dialog actions: unified look + 2-row layout === */
-#expenseDialog .dialog-actions-row.tight{
-  display: grid;
-  grid-template-columns: 1fr minmax(140px, 220px);
-  grid-template-rows: auto auto;
-  gap: 12px;
+  row-gap: 12px;
   align-items: center;
 }
-/* place items explicitly */
+/* Row 1 */
 #expenseDialog #pickOnMapExp{ grid-column: 1; grid-row: 1; }
 #expenseDialog #useCurrentLocExp{ grid-column: 2; grid-row: 1; }
-#expenseDialog .dialog-actions-row.tight .input-with-button{ grid-column: 1; grid-row: 2; display:flex; gap:8px; }
-#expenseDialog #clearLocExp{ grid-column: 2; grid-row: 2; }
+/* Row 2 */
+#expenseDialog .dialog-actions-row.tight .input-with-button{ grid-column: 1; grid-row: 2; display:flex; gap:8px; align-items:center; }
+#expenseDialog #clearLocExp{ grid-column: 3; grid-row: 2; }
 
-/* unified button look (no filled vs outline) */
+/* Uniform look: all buttons same style (no filled primary here) */
 #expenseDialog .dialog-actions-row.tight .btn{
-  width: 100%;
-  height: 44px;
-  line-height: 44px;
-  border-radius: 22px;
-  background: #fff;
+  background: var(--card);
   color: var(--text);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: 44px;
+  line-height: 22px;
+  padding: 10px 14px;
 }
 #expenseDialog .dialog-actions-row.tight .btn.primary{
-  background: #fff;             /* unify with others */
+  background: var(--card);
   color: var(--text);
   border-color: var(--border);
 }
-#expenseDialog .dialog-actions-row.tight .btn:hover{
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-}
 
-/* search row input/button sizes */
+/* Inputs same height & radius as buttons */
+#expenseDialog .dialog-actions-row.tight .input,
 #expenseDialog .dialog-actions-row.tight .input-with-button .input,
 #expenseDialog .dialog-actions-row.tight .input-with-button .btn{
   height: 44px;
+  border-radius: 12px;
 }
 
-/* dialog height to avoid page scroll */
+/* Keep dialog height sane (no page scroll) */
 #expenseDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
 #expenseDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
-#expenseDialog #expenseMap.map.tall{ height: clamp(220px, 30vh, 300px); }
+#expenseDialog #expenseMap.map.tall{ height: clamp(240px, 34vh, 320px); }
