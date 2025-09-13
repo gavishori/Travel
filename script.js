@@ -1573,12 +1573,8 @@ async function exportPDF(){
 
 // ---------- Init ----------
 async function init(){
-  // Bind view mode toggles (may appear more than once)
-  $$('.galleryViewBtn').forEach(btn=> btn.onclick = ()=>{ state.viewMode='gallery'; renderHome(); });
-  $$('.listViewBtn').forEach(btn=> btn.onclick = ()=>{ state.viewMode='list'; renderHome(); });
-
-  
-  
+  if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
+  if (el("listViewBtn")) el("listViewBtn").onclick = ()=>{ state.viewMode="list"; renderHome(); };
   if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
   applyTheme();
   
@@ -1606,18 +1602,7 @@ async function init(){
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   
-  
-  // Attach a generic cancel handler for any cancelBtn inside a <dialog>
-  $$('.cancelBtn').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const dlg = e.target.closest('dialog');
-      if (dlg && typeof dlg.close === 'function') { try{ dlg.close(); } catch(_){ dlg.open=false; } }
-    });
-  });
-
-// legacy single cancel (kept for safety)
-if (false && el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
+  if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
     e.preventDefault();
     try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
   };
@@ -1810,8 +1795,7 @@ function openJournalDeleteDialog(tripId, entry){
 (function(){
   try {
     var signInBtn  = document.getElementById('googleSignInBtn');
-    var signOutBtns = Array.from(document.querySelectorAll('.signOutBtn'));
-    var signOutBtn = signOutBtns[0] || null;
+    var signOutBtn = document.getElementById('signOutBtn');
 
     function enterApp(){
       document.body.classList.add('entered');
@@ -1845,11 +1829,11 @@ function openJournalDeleteDialog(tripId, entry){
 
         if (user){
           if (signInBtn)  signInBtn.style.display = 'none';
-          if (signOutBtns.length) signOutBtns.forEach(b=> b.style.display = 'inline-flex');
+          if (signOutBtn) signOutBtn.style.display = 'inline-flex';
           enterApp();
         } else {
           if (signInBtn)  signInBtn.style.display = 'inline-flex';
-          if (signOutBtns.length) signOutBtns.forEach(b=> b.style.display = 'none');
+          if (signOutBtn) signOutBtn.style.display = 'none';
           showSplash();
         }
       });
@@ -2050,11 +2034,3 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
-
-/* SAFETY: force-close expRowActionDialog on edit click */
-document.addEventListener("click", (ev)=>{
-  const btn = ev.target.closest && ev.target.closest("#exp-row-action-edit");
-  if (!btn) return;
-  const dlg = document.getElementById("expRowActionDialog");
-  if (dlg){ try{ dlg.close('edit'); }catch(_){ dlg.open=false; } }
-}, true);
