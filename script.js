@@ -1601,6 +1601,19 @@ async function init(){
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   
+  /* dlg-cancel-delegation */
+  if(!window.__dlgCancelWired){
+    window.__dlgCancelWired = true;
+    document.addEventListener("click", function(e){
+      const btn = e.target.closest("[data-cancel=\"dialog\"]");
+      if (!btn) return;
+      const dlg = btn.closest("dialog");
+      if (!dlg) return;
+      e.preventDefault();
+      try{ dlg.close(); } catch(_){ dlg.open = false; }
+    }, true);
+  }
+  // legacy single button support (kept for backward compatibility)
   if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
     e.preventDefault();
     try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
