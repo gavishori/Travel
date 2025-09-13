@@ -1770,3 +1770,34 @@ dialog::backdrop{
   max-height: none !important;
 }
 
+
+
+/* ===== FIX: ensure dialog fully visible and downscale everything by 20% ===== */
+#expenseDialog,
+#journalDialog{
+  --modal-scale: .8; /* 20% smaller visuals */
+}
+
+/* Large-screen sizing: reduce margins and fit closer to viewport */
+@media (min-width: 900px){
+  #expenseDialog.dialog.wide,
+  #journalDialog.dialog.wide{
+    height: min(96dvh, 820px);
+    margin: 1.5vh auto;
+  }
+}
+
+/* Scale the entire content while compensating the layout box to avoid clipping */
+#expenseDialog .form,
+#journalDialog .form{
+  transform: scale(var(--modal-scale, 1));
+  transform-origin: top center;
+  inline-size: calc(100% / var(--modal-scale, 1));
+  block-size: calc(100% / var(--modal-scale, 1));
+}
+
+/* Slightly reduce map height bounds to keep footer visible on short screens */
+#expenseDialog #expenseMap.map.tall,
+#journalDialog #journalMap.map.tall{
+  height: clamp(200px, 28vh, 280px);
+}
