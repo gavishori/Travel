@@ -67,6 +67,8 @@
         <button class="tab" data-tab="journal">יומן יומי</button>
         <button class="tab" data-tab="map">מפה</button>
         <button class="tab" data-tab="export">ייצוא ושיתוף</button>
+        <button class="tab" id="btnWhereMoney">איפה הכסף</button>
+        <button class="tab" id="btnWhereTraveled">איפה טיילתי</button>
       </nav>
 
       <div class="tab-panels">
@@ -253,7 +255,7 @@
 
         <!-- MAP -->
         <div id="tab-map" class="panel">
-          <div class="map-toolbar"><button id="btnWhereMoney" class="btn primary">איפה הכסף</button><button id="btnWhereTraveled" class="btn primary">איפה טיילתי</button></div><div id="mainMap" class="map"></div>
+          <div id="mainMap" class="map"></div>
         </div>
 
         <!-- EXPORT AND SHARE -->
@@ -422,7 +424,7 @@
         <h3 id="confirmTitle">לאשר?</h3>
         <p id="confirmMsg">האם אתה בטוח?</p>
         <menu class="form-actions">
-          <button type="button" data-close="dialog" class="btn ghost">ביטול</button>
+          <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
           <button id="confirmYes" class="btn danger" type="button">מחק</button>
         </menu>
       </form>
@@ -433,7 +435,7 @@
     <h3 id="confirmExpenseTitle">מחיקת הוצאה</h3>
     <p id="confirmExpenseMsg">האם אתה בטוח שברצונך למחוק את ההוצאה?</p>
     <menu class="form-actions">
-      <button type="button" data-close="dialog" class="btn ghost">ביטול</button>
+      <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
       <button id="confirmExpenseYes" class="btn danger" type="button">מחק</button>
     </menu>
   </form>
@@ -444,7 +446,7 @@
     <h3 id="confirmJournalTitle">מחיקת רישום יומן</h3>
     <p id="confirmJournalMsg">האם אתה בטוח שברצונך למחוק את הרישום?</p>
     <menu class="form-actions">
-      <button type="button" data-close="dialog" class="btn ghost">ביטול</button>
+      <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
       <button id="confirmJournalYes" class="btn danger" type="button">מחק</button>
     </menu>
   </form>
