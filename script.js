@@ -622,12 +622,7 @@ const viewButton = $(".view", li);
   }
 }
 
-
-// --- guard to ensure mapFilters exists even if older bundle is cached ---
-function __ensureMapFilters(){
-  if (!state.mapFilters) state.mapFilters = { showExpenses:false, showJournal:false };
-  if (typeof state.mainMapGroup === 'undefined') state.mainMapGroup = null;
-}
+function __ensureMapFilters(){ if (!state.mapFilters) state.mapFilters = { showExpenses:false, showJournal:false }; if (typeof state.mainMapGroup==='undefined') state.mainMapGroup=null; }
 
 function activateTabs(){
   $$(".tab").forEach(btn => {
@@ -1002,6 +997,8 @@ tr.innerHTML = `
   }
 })();
 
+    const kebabBtn = $(".kebab-btn", tr);
+    if (kebabBtn){ kebabBtn.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     $(".edit", tr).onclick = ()=> openExpenseDialog(e);
     $(".del", tr).onclick = ()=> removeExpense(e);
     tbody.appendChild(tr);
@@ -1043,10 +1040,7 @@ async function renderJournal(){
       <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><div class="kebab-wrap"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button><div class="kebab-menu" role="menu"><button class="edit" role="menuitem">ערוך</button><button class="del" role="menuitem">מחק</button></div></div></td>
     `;
     // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
@@ -1121,8 +1115,8 @@ async function renderJournal(){
 }
 
 // Maps
-function refreshMainMap(){
-  __ensureMapFilters(); if (!state.currentTripId) return;
+function refreshMainMap(){ __ensureMapFilters();
+  if (!state.currentTripId) return;
   const mapEl = el("mainMap");
   if (mapEl){
     if (!state.maps.main){
@@ -2041,3 +2035,52 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
+
+// === Journal Row Actions Dialog ===
+let __journalRowCtx = null;
+function __openJournalRowActions(entry){
+  __journalRowCtx = entry;
+  const dlg = document.getElementById("journalActionDialog");
+  if (!dlg) return;
+  try{ dlg.showModal(); }catch(_){ dlg.open = true; }
+}
+function __closeJournalRowActions(){
+  const dlg = document.getElementById("journalActionDialog");
+  if (!dlg) return;
+  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
+}
+document.addEventListener("DOMContentLoaded", function(){
+  const dlg = document.getElementById("journalActionDialog");
+  if (!dlg) return;
+  const closeBtn = document.getElementById("journal-action-close");
+  const editBtn  = document.getElementById("journal-action-edit");
+  const delBtn   = document.getElementById("journal-action-delete");
+  if (closeBtn) closeBtn.onclick = __closeJournalRowActions;
+  if (editBtn)  editBtn.onclick  = function(){ if(__journalRowCtx){ openJournalDialog(__journalRowCtx); } __closeJournalRowActions(); };
+  if (delBtn)   delBtn.onclick   = function(){ if(__journalRowCtx){ const tripId = state.currentTripId; openJournalDeleteDialog(tripId, __journalRowCtx); } __closeJournalRowActions(); };
+});
+
+/* Map overlay toggle wiring */
+document.addEventListener('DOMContentLoaded', function(){ __ensureMapFilters();
+  var be = document.getElementById('btnWhereSpent');
+  var bt = document.getElementById('btnWhereTraveled');
+  function syncBtns(){
+    if (be) be.classList.toggle('active', state.mapFilters.showExpenses);
+    if (bt) bt.classList.toggle('active', state.mapFilters.showJournal);
+  }
+  if (be && !be.__wired){
+    be.__wired = true;
+    be.addEventListener('click', function(){
+      state.mapFilters.showExpenses = !state.mapFilters.showExpenses;
+      syncBtns(); refreshMainMap();
+    });
+  }
+  if (bt && !bt.__wired){
+    bt.__wired = true;
+    bt.addEventListener('click', function(){
+      state.mapFilters.showJournal = !state.mapFilters.showJournal;
+      syncBtns(); refreshMainMap();
+    });
+  }
+  syncBtns();
+});
