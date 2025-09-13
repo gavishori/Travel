@@ -1522,3 +1522,7 @@ dialog::backdrop{
   background: transparent !important;
   color: var(--muted) !important;
 }
+
+
+/* Map toolbar (two primary buttons on the left) */
+.map-toolbar{display:flex;gap:16px;margin:12px 0 16px;justify-content:flex-start;}
