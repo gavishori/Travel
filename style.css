@@ -1588,3 +1588,87 @@ dialog::backdrop{
 #expenseDialog menu.form-actions, #journalDialog menu.form-actions{
   position: relative; display: flex; gap: 12px; padding-top: 8px; background: #fff; z-index: 1;
 }
+
+
+/* ===== v5 — Ensure footer visible, outline buttons, balanced body height ===== */
+
+/* Body grid has three rows (header|content|footer) */
+#expenseDialog .form, #journalDialog .form{
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: clip;
+}
+
+/* Content grid: two columns on wide screens */
+#expenseDialog .expense-dialog-grid,
+#journalDialog .journal-dialog-grid{
+  display: grid;
+  gap: clamp(12px, 2vw, 16px);
+  grid-template-columns: 1fr;
+  min-block-size: 0; min-inline-size: 0;
+}
+@media (min-width: 1000px){
+  #expenseDialog .expense-dialog-grid,
+  #journalDialog .journal-dialog-grid{
+    grid-template-columns: 1.05fr 1fr;
+  }
+}
+
+/* Columns internals */
+#expenseDialog .form-side, #journalDialog .form-side{
+  display: grid;
+  grid-template-rows: 1fr auto; /* textarea grows, date/time fixed */
+  gap: 12px;
+  min-block-size: 0;
+}
+#expenseDialog .map-side, #journalDialog .map-side{
+  display: grid;
+  grid-template-rows: auto 1fr; /* toolbar, map */
+  gap: 12px;
+  min-block-size: 0;
+}
+
+/* Textareas expand but never push footer off-screen */
+#journalTextarea, #expDesc{
+  min-height: 0;
+  height: auto;
+  block-size: 100%;
+  resize: vertical;
+}
+
+/* Toolbar keeps compact height so the map gets room */
+#expenseDialog .dialog-actions-row, #journalDialog .dialog-actions-row{
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
+  grid-auto-rows: 44px;
+  gap: 12px;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+#expenseDialog .map.tall, #journalDialog .map.tall{
+  height: 100% !important;
+  min-height: 0;
+}
+
+/* Footer buttons always visible + outline style only (no fills) */
+#expenseDialog menu.form-actions, #journalDialog menu.form-actions{
+  position: relative;
+  display: flex; gap: 12px;
+  padding-top: 10px; background: #fff; z-index: 1;
+}
+#expenseDialog menu.form-actions .btn,
+#journalDialog menu.form-actions .btn{
+  background: #fff !important;
+  color: var(--text) !important;
+  border: 1.6px solid var(--border) !important;
+  box-shadow: none !important;
+}
+#expenseDialog menu.form-actions .btn.primary,
+#journalDialog menu.form-actions .btn.primary,
+#expenseDialog menu.form-actions .btn.danger,
+#journalDialog menu.form-actions .btn.danger{
+  background: #fff !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
