@@ -3,102 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>תיעוד יומי – דמו מוכן</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>תיעוד יומי – מסך יחיד</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="light">
   <header class="app-header">
-    <div class="brand">
-      <span class="logo">🗺️</span>
-      <h1>תיעוד יומי</h1>
-    </div>
-    <div class="actions">
-      <button class="btn" id="toggleTheme">מצב כהה/בהיר</button>
-    </div>
+    <div class="brand"><span class="logo">🗺️</span><h1>תיעוד יומי</h1></div>
+    <button class="btn small" id="toggleTheme">כהה/בהיר</button>
   </header>
 
-  <main>
-    <section class="card">
-      <h2 class="title">הוספת תיעוד יומי</h2>
-      <p class="muted">הטופס הבא עובד מקומית (localStorage). לחיצה על "שמור" תשמור את הרשומה ותציג התראה.</p>
+  <main class="viewport">
+    <form id="journalForm" class="form">
+      <div class="above">
+        <label for="note">מה קרה היום?</label>
+        <textarea id="note" class="input clamp" placeholder="רשום כאן בקצרה..."></textarea>
+      </div>
 
-      <form id="journalForm" class="form">
-        <div class="form-grid">
-          <div class="form-col">
-            <label for="note">מה קרה היום?</label>
-            <textarea id="note" class="input" rows="9" placeholder="רשום כאן בקצרה..."></textarea>
-
-            <div class="two-row-label">
-              <label>בחר מיקום ע״ג מפה</label>
-              <div class="map-controls">
-                <button type="button" class="btn small" id="useCurrent">נקה מיקום</button>
-              </div>
-              <div id="map" class="map tall" aria-label="מפה"></div>
-              <div class="muted">לחץ על המפה כדי להציב סיכה. ניתן לגרור את הסיכה.</div>
-            </div>
+      <div class="row">
+        <div class="col">
+          <label for="whenDate">תאריך ושעה</label>
+          <div class="two">
+            <input type="date" id="whenDate" class="input">
+            <input type="time" id="whenTime" class="input" step="60">
           </div>
 
-          <div class="form-col">
-            <label for="whenDate">תאריך ושעה</label>
-            <div class="two-column-input">
-              <input type="date" id="whenDate" class="input">
-              <input type="time" id="whenTime" class="input" step="60">
-            </div>
-
-            <label for="placeName">שם מקום (אופציונלי)</label>
-            <input id="placeName" class="input" placeholder="למשל: חוף הים, בית קפה...">
-
-            <label for="tags">תגיות (אופציונלי)</label>
-            <input id="tags" class="input" placeholder="משפחה, אימון, לימודים...">
-          </div>
+          <label for="placeName">שם מקום</label>
+          <input id="placeName" class="input" placeholder="למשל: חוף הים">
+          <label for="tags">תגיות</label>
+          <input id="tags" class="input" placeholder="משפחה, אימון...">
         </div>
 
-        <!-- Sticky footer with Save/Cancel ALWAYS visible -->
-        <div class="form-actions sticky-footer" role="toolbar" aria-label="פעולות טופס">
-          <div class="left">
-            <span id="status" class="muted"></span>
-          </div>
-          <div class="right">
-            <button type="button" class="btn" id="cancelBtn">ביטול</button>
-            <button type="submit" class="btn primary" id="saveBtn">שמור</button>
+        <div class="col">
+          <div class="map-wrap">
+            <div class="map" id="map" aria-label="מפה"></div>
+            <div class="map-row">
+              <button type="button" id="useCurrent" class="btn small">נקה מיקום</button>
+              <span class="muted">לחץ למיקום ← גרירה אפשרית</span>
+            </div>
           </div>
         </div>
-      </form>
-    </section>
+      </div>
 
-    <section class="card">
-      <div class="table-actions">
-        <h3>רשומות שנשמרו</h3>
-        <button class="btn" id="clearAll">נקה הכל</button>
+      <div class="footer-actions" role="toolbar" aria-label="פעולות">
+        <span id="status" class="muted"></span>
+        <div class="btns">
+          <button type="button" class="btn" id="cancelBtn">ביטול</button>
+          <button type="submit" class="btn primary" id="saveBtn">שמור</button>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="table" id="rowsTable">
-          <thead>
-            <tr>
-              <th>תאריך</th>
-              <th>שעה</th>
-              <th>מקום</th>
-              <th>תיאור</th>
-              <th>מפה</th>
-              <th>מחיקה</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+    </form>
   </main>
 
-  <footer class="app-footer">
-    <span class="muted">נשמר מקומית בלבד. ניתן לקחת את הקוד ולהטמיע בפרויקט שלך.</span>
-  </footer>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="firebase.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
