@@ -1674,15 +1674,33 @@ dialog::backdrop{
 }
 
 
-/* ===== Hotfix: keep Save/Cancel in view, remove vertical scroll ===== */
+/* ===== Hotfix (minimal): Keep Save/Cancel visible, no vertical scroll ===== */
 html, body { height: 100%; overflow: hidden; }
-main { height: calc(100vh - 64px); overflow: hidden; } /* header ~64px */
-.form, .form.compact { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
-textarea.input { max-height: 22vh; }
-.map.tall, .map { height: 260px !important; } /* reduce map to fit viewport */
-.form .sticky-footer, .form .dialog-actions, .form .dialog-actions-row, .form .form-actions {
-  position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--border);
-  padding: 10px 12px; display: flex; justify-content: space-between; gap: 10px; z-index: 100;
+
+/* Central area fills viewport (no page scroll). If header height differs, adjust 64px. */
+main { 
+  height: calc(100dvh - 64px); /* mobile-friendly */
+  height: calc(100vh - 64px);  /* fallback */
+  overflow: hidden; 
 }
-/* Make sure primary button is visible enough */
-.btn.primary { background: var(--primary); color: #fff; border-color: transparent; }
+
+/* Grid: header content -> flexible area -> actions row */
+.form, .form.compact { 
+  height: 100%; 
+  display: grid; 
+  grid-template-rows: auto 1fr auto; 
+}
+
+/* Clamp heights so everything fits without scrolling */
+textarea.input { max-height: 22vh; }
+.map, .map.tall { height: 260px !important; }
+
+/* Actions row sticks to bottom regardless of content height */
+.form .sticky-footer, .form .dialog-actions, .form .dialog-actions-row, .form .form-actions {
+  position: sticky; bottom: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex; justify-content: space-between; gap: 10px;
+  z-index: 100;
+}
