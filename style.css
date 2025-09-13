@@ -1587,3 +1587,46 @@ dialog::backdrop{
 #expenseDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
 #expenseDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
 #expenseDialog #expenseMap.map.tall{ height: clamp(240px, 34vh, 320px); }
+
+
+/* ===== Journal dialog layout & controls ===== */
+#journalDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
+#journalDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
+#journalDialog menu.form-actions{ position: sticky; bottom: 0; background: #fff; padding-top: 8px; z-index: 1; }
+
+#journalDialog .dialog-actions-row.tight{
+  display: grid;
+  grid-template-columns: 1fr max-content max-content;
+  grid-auto-rows: 44px;
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: center;
+}
+#journalDialog #pickOnMapJournal{ grid-column: 1; grid-row: 1; }
+#journalDialog #useCurrentLocJournal{ grid-column: 2; grid-row: 1; }
+#journalDialog .dialog-actions-row.tight .input-with-button{ grid-column: 1; grid-row: 2; display:flex; gap:8px; align-items:center; }
+#journalDialog #clearLocJournal{ grid-column: 3; grid-row: 2; }
+
+/* Uniform look: all location buttons in journal are outline */
+#journalDialog .dialog-actions-row.tight .btn{
+  background: #fff;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  height: 44px;
+  line-height: 22px;
+  padding: 10px 14px;
+}
+#journalDialog .dialog-actions-row.tight .btn.primary,
+#journalDialog .dialog-actions-row.tight .btn.ghost,
+#journalDialog .dialog-actions-row.tight .btn.danger{
+  background: #fff; color: var(--text); border-color: var(--border);
+}
+#journalDialog .dialog-actions-row.tight .input,
+#journalDialog .dialog-actions-row.tight .input-with-button .input,
+#journalDialog .dialog-actions-row.tight .input-with-button .btn{
+  height: 44px;
+  border-radius: 22px;
+}
+/* Map height tuned for no page scroll */
+#journalDialog #journalMap.map.tall{ height: clamp(240px, 34vh, 320px); }

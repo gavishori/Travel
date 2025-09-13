@@ -1,3 +1,18 @@
+
+// SVG marker helper (clean, self-contained; no external images)
+function makeSvgPinIcon(color){
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'>
+    <circle cx='13' cy='13' r='10' fill='${color}' stroke='white' stroke-width='3'/>
+  </svg>`;
+  return L.icon({
+    iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(svg),
+    iconSize: [26,26],
+    iconAnchor: [13,13],
+    popupAnchor: [0,-13]
+  });
+}
+const DefaultPin = makeSvgPinIcon('#2563eb'); // blue
+
 // DOUBLE_TAP_GUARD_v2
 (function(){
   var last = 0;
@@ -1181,7 +1196,7 @@ function openLocationPicker(forType){
       const lat = Number(r.lat), lng = Number(r.lon);
       state.locationPick.lat = lat; state.locationPick.lng = lng;
       state.maps.location.setView([lat,lng], 14);
-      L.marker([lat,lng]).addTo(state.maps.location);
+      L.marker([lat,lng], {icon: DefaultPin}).addTo(state.maps.location);
       setStatus(r.display_name);
     } else {
       alert("לא נמצא מיקום מתאים");
@@ -1253,7 +1268,7 @@ async function openExpenseDialog(exp){
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.marker([lat,lng], {icon: DefaultPin}).addTo(map); }
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
@@ -1397,7 +1412,7 @@ async function openJournalDialog(journalEntry) {
     let marker;
     function setMarker(lat,lng){
       if (marker){ marker.setLatLng([lat,lng]); }
-      else { marker = L.marker([lat,lng]).addTo(map); }
+      else { marker = L.marker([lat,lng], {icon: DefaultPin}).addTo(map); }
       el("journalLat").value = lat;
       el("journalLng").value = lng;
     }
