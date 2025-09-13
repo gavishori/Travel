@@ -1674,9 +1674,6 @@ dialog::backdrop{
 }
 
 
-/* ===== Hotfix (minimal): Keep Save/Cancel visible, no vertical scroll ===== */
-html, body { height: 100%; overflow: hidden; }
-
 /* Central area fills viewport (no page scroll). If header height differs, adjust 64px. */
 main { 
   height: calc(100dvh - 64px); /* mobile-friendly */
@@ -1692,7 +1689,6 @@ main {
 }
 
 /* Clamp heights so everything fits without scrolling */
-textarea.input { max-height: 22vh; }
 .map, .map.tall { height: 260px !important; }
 
 /* Actions row sticks to bottom regardless of content height */
@@ -1703,4 +1699,90 @@ textarea.input { max-height: 22vh; }
   padding: 10px 12px;
   display: flex; justify-content: space-between; gap: 10px;
   z-index: 100;
+}
+
+
+/* =========================
+   Journal Dialog – final layout pass (2025-09)
+   ========================= */
+#journalDialog.dialog.wide{
+  width: min(1100px, 98vw);
+  height: 92vh;
+  max-height: 92vh;
+  overflow: clip;
+}
+#journalDialog .form{
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-block-size: 0;
+  overflow: clip;
+  padding: clamp(12px, 2vw, 16px);
+}
+#journalDialog .journal-dialog-grid{
+  display: grid;
+  gap: clamp(12px, 2vw, 16px);
+  grid-template-columns: 1fr;
+  min-block-size: 0; min-inline-size: 0;
+}
+@media (min-width: 1000px){
+  #journalDialog .journal-dialog-grid{ grid-template-columns: 1.05fr 1fr; }
+}
+#journalDialog .form-side{
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+  min-block-size: 0;
+}
+#journalDialog .map-side{
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-block-size: 0;
+}
+#journalDialog .dialog-actions-row{
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
+  grid-auto-rows: 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+#journalDialog .dialog-actions-row .input-with-button{ display:flex; gap:8px; align-items:center; }
+#journalDialog .dialog-actions-row .input-with-button .input{ flex:1; }
+#journalDialog .map.tall{
+  height: 100% !important;
+  min-height: 220px;
+  border-radius: 16px;
+}
+#journalDialog #journalTextarea{
+  min-height: 0;
+  height: auto;
+  block-size: 100%;
+  resize: vertical;
+}
+#journalDialog menu.form-actions{
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-top: 10px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 1;
+}
+#journalDialog menu.form-actions .btn{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1.6px solid var(--border) !important;
+  box-shadow: none !important;
+}
+#journalDialog menu.form-actions .btn.primary{
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+@media (max-width: 999.98px){
+  #journalDialog .map-side .map{ height: 45vh; }
 }
