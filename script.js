@@ -101,7 +101,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 }
 ;
 
-const state = {
+const state = { mapFilters:{showExpenses:false,showJournal:false}, mainMapGroup:null,
   viewMode: "gallery",
   trips: [],
   currentTripId: null,
@@ -1125,14 +1125,14 @@ function refreshMainMap(){
     (async ()=>{
       const trip = await Store.getTrip(state.currentTripId);
       if (!trip) return;
-      const group = L.featureGroup();
+      if(state.mainMapGroup && state.maps.main){ try{ state.maps.main.removeLayer(state.mainMapGroup); }catch(_){} } const group = L.featureGroup(); state.mainMapGroup = group;
       function addPoint(p, color){
         const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
+      if (state.mapFilters.showExpenses && trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (state.mapFilters.showJournal && trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
@@ -1613,7 +1613,7 @@ async function init(){
       try{ dlg.close(); } catch(_){ dlg.open = false; }
     }, true);
   }
-  // legacy single button support (kept for backward compatibility)
+  // legacy (kept just in case)
   if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
     e.preventDefault();
     try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
@@ -1729,7 +1729,18 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     setStatus("קישור הועתק");
   };
 
-  if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
+  
+/* map overlay wiring */
+document.addEventListener('DOMContentLoaded', function(){
+  var be = document.getElementById('btnWhereSpent');
+  var bt = document.getElementById('btnWhereTraveled');
+  function sync(){ if(be) be.classList.toggle('active', state.mapFilters.showExpenses);
+                   if(bt) bt.classList.toggle('active', state.mapFilters.showJournal); }
+  if (be && !be.__wired){ be.__wired=true; be.addEventListener('click', function(){ state.mapFilters.showExpenses=!state.mapFilters.showExpenses; sync(); refreshMainMap(); }); }
+  if (bt && !bt.__wired){ bt.__wired=true; bt.addEventListener('click', function(){ state.mapFilters.showJournal=!state.mapFilters.showJournal; sync(); refreshMainMap(); }); }
+  sync();
+});
+if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
   if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
 
