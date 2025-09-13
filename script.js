@@ -1189,7 +1189,9 @@ function openLocationPicker(forType){
   };
 
 
-  el("saveLocationBtn").onclick = ()=>{
+  
+  el("cancelLocationBtn")?.addEventListener("click", ()=>{ try{ dlg.close(); }catch(_){ dlg.open=false; } });
+el("saveLocationBtn").onclick = ()=>{
     if (state.locationPick.lat && state.locationPick.lng){
       if (state.locationPick.forType === "expense"){
         el("expLat").value = state.locationPick.lat;
@@ -1717,98 +1719,9 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     setStatus("קישור הועתק");
   };
 
-  
-// === JSON Importer ===
-async function importFromFile(mode){ // mode: 'new' | 'merge'
-  const file = document.getElementById('importJSONFile')?.files?.[0];
-  if (!file){ alert("בחר קובץ JSON לייבוא"); return; }
-  const text = await file.text();
-  let data;
-  try{ data = JSON.parse(text); }catch(e){ alert("JSON לא תקין"); return; }
-
-  const meta = data.metadata || {};
-  const dates = meta.dates || {};
-  const start = dates.start || meta.start || "";
-  const end   = dates.end   || meta.end   || "";
-  const types = Array.isArray(meta.tripType) ? meta.tripType : (meta.tripType ? [meta.tripType] : []);
-
-  function participantsToString(p){
-    if (!p) return "";
-    if (typeof p === "string") return p;
-    if (Array.isArray(p)) return p.join(", ");
-    if (typeof p === "object"){
-      // compress object into a readable string
-      const parts = [];
-      if (typeof p.adults === "number") parts.push(`מבוגרים: ${p.adults}`);
-      if (Array.isArray(p.children)) parts.push(`ילדים: ${p.children.join("/")}`);
-      if (p.notes) parts.push(p.notes);
-      return parts.join(" | ");
-    }
-    return String(p);
-  }
-
-  let tripId = state.currentTripId;
-  if (mode === "new" || !tripId){
-    const t = await Store.createTrip({ destination: meta.destination || "נסיעה", start, end, tripType: types, participants: participantsToString(meta.participants) });
-    tripId = t?.id;
-  } else if (mode === "merge"){
-    await Store.updateTrip(tripId, { destination: meta.destination || undefined, start: start||undefined, end: end||undefined, tripType: types.length?types:undefined, participants: participantsToString(meta.participants)||undefined });
-  }
-  if (!tripId){ alert("יצירת נסיעה נכשלה"); return; }
-
-  const geo = data.geo || {};
-
-  // --- Expenses ---
-  if (Array.isArray(data.expenses)){
-    for (const e of data.expenses){
-      const entry = {
-        desc: e.description || "",
-        category: e.category || "אחר",
-        amount: Number(e.amount||0),
-        currency: e.currency || "USD"
-      };
-      // try to attach a lat/lng if description contains a known place key
-      if (e.location && geo[e.location]){
-        entry.lat = geo[e.location].lat; entry.lng = geo[e.location].lng; entry.placeName = e.location;
-      }
-      try{ await Store.addExpense(tripId, entry); }catch(err){ console.warn("[import:expense] skip", err); }
-    }
-  }
-
-  // --- Journal ---
-  if (Array.isArray(data.journal)){
-    let dayIdx = 0;
-    for (const j of data.journal){
-      const entry = { text: j.text || "" };
-      // attach first location name if exists
-      if (Array.isArray(j.location) && j.location.length){
-        entry.placeName = j.location[0];
-        const g = geo[entry.placeName];
-        if (g){ entry.lat = g.lat; entry.lng = g.lng; }
-      }
-      // estimate createdAt if dates exist (start + dayIdx)
-      if (start){
-        const dt = new Date(start);
-        if (!isNaN(dt)){ dt.setDate(dt.getDate() + dayIdx); entry.createdAt = dt.getTime(); }
-      }
-      try{ await Store.addJournal(tripId, entry); }catch(err){ console.warn("[import:journal] skip", err); }
-      dayIdx++;
-    }
-  }
-
-  setStatus("ייבוא הושלם");
-  openTrip(tripId);
-}
-
-if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
-  if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
   if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
-
-  if (el("importAsNewBtn")) el("importAsNewBtn").onclick = ()=> importFromFile('new');
-  if (el("importMergeBtn")) el("importMergeBtn").onclick = ()=> importFromFile('merge');
-
 
   await fetchRates("USD");
 

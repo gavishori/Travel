@@ -1522,6 +1522,3 @@ dialog::backdrop{
   background: transparent !important;
   color: var(--muted) !important;
 }
-
-.import-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-.import-controls input[type=file]{max-width:360px}
