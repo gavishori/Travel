@@ -1526,3 +1526,7 @@ dialog::backdrop{
 
 /* Map toolbar (two primary buttons on the left) */
 .map-toolbar{display:flex;gap:16px;margin:12px 0 16px;justify-content:flex-start;}
+
+/* Force the map toolbar to align left even under RTL layouts */
+.map-toolbar{display:flex;gap:16px;margin:12px 0 16px;justify-content:flex-start;direction:ltr}
+.map-toolbar .btn{direction:rtl}
