@@ -1524,57 +1524,20 @@ dialog::backdrop{
 }
 
 
-/* === Modal polish: no transparency, no page scroll while open === */
-dialog.dialog, .dialog { 
-  background-color: #ffffff !important; /* force fully opaque */
-}
-dialog::backdrop { 
-  background: rgba(0,0,0,0.5); /* block view behind */
-}
-/* Expense wide dialog: make it fit viewport so no page scroll is needed */
+/* === Expense dialog: fit viewport, no page scrollbar === */
 .dialog.wide{
   width: min(1100px, 96vw);
-  height: auto;
-  max-height: 88vh;  /* ensure within viewport */
-  overflow: hidden;  /* avoid inner scrollbars unless we allow a child to scroll */
+  max-height: 88vh;
+  overflow: hidden;
+  background: #fff;
 }
-/* Content inside can scroll minimally if necessary, not the page */
-.dialog.wide .scroll-area{
-  max-height: calc(88vh - 84px); /* header/controls allowance */
+#expenseDialog .form { 
+  max-height: calc(88vh - 40px);
   overflow: auto;
+  padding-bottom: 8px;
 }
-/* If the expense form is the direct child, allow it to scroll internally a bit */
-.dialog.wide .form{ 
-  max-height: calc(88vh - 84px);
-  overflow: auto;
-}
-/* Sticky actions stay visible */
-.dialog .form menu.form-actions{
-  position: sticky; bottom: 0; background: #ffffff;
-}
-/* Disable body/page scroll when any dialog is open (CSS) */
-html:has(dialog[open]){ overflow: hidden; }
-
-
-/* Map height inside 'הוספת הוצאה' dialog – keep within viewport */
-.dialog.wide .map.tall#expenseMap{
-  height: clamp(220px, 38vh, 360px);
-}
-/* Tighten paddings a bit to save vertical space */
-#expenseDialog .form{ row-gap: 12px; }
+#expenseDialog #expenseMap.map.tall{ height: clamp(220px, 34vh, 320px); }
 #expenseDialog .dialog-actions-row{ margin-bottom: 8px; }
-
-
-/* Collapsible map section in expense dialog */
-#expenseDialog details.collapsible{
-  border:1.5px solid #E5E7EB; border-radius:16px; background:#fff;
-  padding:0; overflow:hidden;
-}
-#expenseDialog details.collapsible > summary.collapse-toggle{
-  list-style:none; cursor:pointer; padding:14px 18px; font-weight:600;
-}
-#expenseDialog details.collapsible[open] > summary.collapse-toggle{ border-bottom:1px solid #F1F5F9; }
-#expenseDialog details.collapsible .collapse-content{ padding:14px; }
-#expenseDialog details.collapsible .map.tall{ height: clamp(220px, 40vh, 360px); }
-/* remove default triangle marker */
-#expenseDialog details.collapsible > summary::-webkit-details-marker { display:none; }
+#expenseDialog .form .two{ gap: 12px; }
+#expenseDialog .form label{ margin-bottom: 8px; }
+#expenseDialog menu.form-actions{ position: sticky; bottom: 0; background:#fff; padding-top:8px; }
