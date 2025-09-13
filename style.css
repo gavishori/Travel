@@ -1543,365 +1543,48 @@ dialog::backdrop{
 #expenseDialog menu.form-actions{ position: sticky; bottom: 0; background:#fff; padding-top:8px; }
 
 
-/* === v2 — Expense dialog location controls: consistent + tidy 2-row grid === */
-#expenseDialog .dialog-actions-row.tight{
-  display: grid;
-  grid-template-columns: 1fr max-content max-content;
-  grid-auto-rows: 44px;
-  column-gap: 12px;
-  row-gap: 12px;
-  align-items: center;
-}
-/* Row 1 */
-#expenseDialog #pickOnMapExp{ grid-column: 1; grid-row: 1; }
-#expenseDialog #useCurrentLocExp{ grid-column: 2; grid-row: 1; }
-/* Row 2 */
-#expenseDialog .dialog-actions-row.tight .input-with-button{ grid-column: 1; grid-row: 2; display:flex; gap:8px; align-items:center; }
-#expenseDialog #clearLocExp{ grid-column: 3; grid-row: 2; }
+/* ===== v4 — Align to preview exactly: compact header, fixed footer, slim toolbar ===== */
 
-/* Uniform look: all buttons same style (no filled primary here) */
-#expenseDialog .dialog-actions-row.tight .btn{
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  height: 44px;
-  line-height: 22px;
-  padding: 10px 14px;
-}
-#expenseDialog .dialog-actions-row.tight .btn.primary{
-  background: var(--card);
-  color: var(--text);
-  border-color: var(--border);
+/* Header compact */
+#expenseDialog h3, #journalDialog h3{
+  margin: 0 0 8px !important;
+  line-height: 1.2;
+  font-size: clamp(20px, 2.2vw, 28px);
 }
 
-/* Inputs same height & radius as buttons */
-#expenseDialog .dialog-actions-row.tight .input,
-#expenseDialog .dialog-actions-row.tight .input-with-button .input,
-#expenseDialog .dialog-actions-row.tight .input-with-button .btn{
-  height: 44px;
-  border-radius: 12px;
-}
-
-/* Keep dialog height sane (no page scroll) */
-#expenseDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
-#expenseDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
-#expenseDialog #expenseMap.map.tall{ height: clamp(240px, 34vh, 320px); }
-
-
-/* ===== Journal dialog layout & controls ===== */
-#journalDialog.dialog.wide{ max-height: 84vh; overflow: hidden; }
-#journalDialog .form{ max-height: calc(84vh - 32px); overflow: auto; padding-bottom: 8px; }
-#journalDialog menu.form-actions{ position: sticky; bottom: 0; background: #fff; padding-top: 8px; z-index: 1; }
-
-#journalDialog .dialog-actions-row.tight{
-  display: grid;
-  grid-template-columns: 1fr max-content max-content;
-  grid-auto-rows: 44px;
-  column-gap: 12px;
-  row-gap: 12px;
-  align-items: center;
-}
-#journalDialog #pickOnMapJournal{ grid-column: 1; grid-row: 1; }
-#journalDialog #useCurrentLocJournal{ grid-column: 2; grid-row: 1; }
-#journalDialog .dialog-actions-row.tight .input-with-button{ grid-column: 1; grid-row: 2; display:flex; gap:8px; align-items:center; }
-#journalDialog #clearLocJournal{ grid-column: 3; grid-row: 2; }
-
-/* Uniform look: all location buttons in journal are outline */
-#journalDialog .dialog-actions-row.tight .btn{
-  background: #fff;
-  color: var(--text);
-  border: 1.5px solid var(--border);
-  border-radius: 22px;
-  height: 44px;
-  line-height: 22px;
-  padding: 10px 14px;
-}
-#journalDialog .dialog-actions-row.tight .btn.primary,
-#journalDialog .dialog-actions-row.tight .btn.ghost,
-#journalDialog .dialog-actions-row.tight .btn.danger{
-  background: #fff; color: var(--text); border-color: var(--border);
-}
-#journalDialog .dialog-actions-row.tight .input,
-#journalDialog .dialog-actions-row.tight .input-with-button .input,
-#journalDialog .dialog-actions-row.tight .input-with-button .btn{
-  height: 44px;
-  border-radius: 22px;
-}
-/* Map height tuned for no page scroll */
-#journalDialog #journalMap.map.tall{ height: clamp(240px, 34vh, 320px); }
-
-
-/* =========================================================
-   Full-screen, responsive dialogs for:
-   - #expenseDialog  (הוספת הוצאה)
-   - #journalDialog  (הוספת תיעוד יומי)
-   Goals: fit viewport, no vertical scrollbars, persistent footer buttons,
-   adaptive grid for map+form, RTL-safe.
-   ========================================================= */
-
-/* 1) Dialog shell — mobile first: full screen, no page scroll inside */
-#expenseDialog.dialog.wide,
-#journalDialog.dialog.wide{
-  /* occupy whole viewport on phones */
-  width: 100vw;
-  height: 100dvh;
-  max-width: 100vw;
-  max-height: 100dvh;
-  margin: 0;
-  border-radius: 0;
-  overflow: hidden;               /* prevent internal vertical scrolling */
-  background: #fff;
-}
-
-/* 2) Dialog shell — large screens: centered with a max width/height */
-@media (min-width: 900px){
-  #expenseDialog.dialog.wide,
-  #journalDialog.dialog.wide{
-    width: min(1100px, 96vw);
-    height: min(92dvh, 860px);
-    margin: 4vh auto;
-    border-radius: 18px;
-  }
-}
-
-/* 3) Dialog content scaffold — 3 fixed rows: header | body | footer (buttons) */
-#expenseDialog .form,
-#journalDialog .form{
+/* Body scaffold */
+#expenseDialog .form, #journalDialog .form{
   display: grid;
   grid-template-rows: auto 1fr auto;
-  inline-size: 100%;
-  block-size: 100%;
-  overflow: clip;                      /* no scrollbars within the modal */
+  overflow: clip;
   padding: clamp(12px, 2vw, 16px);
-  direction: rtl;                      /* preserve RTL explicitly */
 }
 
-/* 4) The “body” row — grid that adapts for map + form sections */
-#expenseDialog .expense-dialog-grid,
-#journalDialog .journal-dialog-grid{
-  display: grid;
-  gap: clamp(12px, 2vw, 16px);
-  grid-template-columns: 1fr;          /* stack on mobile */
-  grid-auto-rows: 1fr;
-  min-block-size: 0;                    /* allow children to shrink — prevents overflow */
-  min-inline-size: 0;
-}
-
-/* 4a) Wide screens: two columns (map | form) that stretch neatly */
-@media (min-width: 900px){
-  #expenseDialog .expense-dialog-grid,
-  #journalDialog .journal-dialog-grid{
-    grid-template-columns: 1.15fr 1fr; /* give the map a bit more space */
-    align-items: stretch;
-  }
-}
-
-/* 5) Map column structure — actions row on top, map fills the rest */
-#expenseDialog .map-side,
-#journalDialog .map-side{
-  display: grid;
-  grid-template-rows: auto 1fr;        /* actions | map */
-  gap: 12px;
-  min-block-size: 0;
-}
-
-/* 6) Make the Leaflet map fully fluid inside its cell */
-#expenseDialog .map.tall,
-#journalDialog .map.tall{
-  height: 100%;
-  min-height: 0;                        /* required so grid can shrink without overflow */
-  border-radius: 16px;
-}
-
-/* 7) Top action bar above the map — compact, wraps nicely on small screens */
-#expenseDialog .dialog-actions-row,
-#journalDialog .dialog-actions-row{
-  display: grid;
-  grid-template-columns: 1fr max-content;
+/* Actions toolbar: 4 columns matching markup order, 44px row height */
+#expenseDialog .dialog-actions-row, #journalDialog .dialog-actions-row{
+  display: grid !important;
+  grid-template-columns: max-content max-content 1fr max-content;
   grid-auto-rows: 44px;
-  align-items: center;
   gap: 12px;
+  align-items: center;
+  min-inline-size: 0;
 }
 #expenseDialog .dialog-actions-row .input-with-button,
 #journalDialog .dialog-actions-row .input-with-button{
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  min-width: 0;                           /* keep inputs from overflowing */
+  display: flex; gap: 8px; align-items: center; min-width: 0;
 }
-#expenseDialog .dialog-actions-row .input,
-#journalDialog .dialog-actions-row .input,
-#expenseDialog .dialog-actions-row .btn,
-#journalDialog .dialog-actions-row .btn{
-  height: 44px;
-  border-radius: 12px;
-}
-
-/* Outline style for all location buttons; also apply to “חפש” & map button */
-#expenseDialog .dialog-actions-row .btn,
-#journalDialog .dialog-actions-row .btn{
-  background: #fff;
-  color: var(--text);
-  border: 1.5px solid var(--border);
-}
-#expenseDialog .dialog-actions-row .btn.primary,
-#journalDialog .dialog-actions-row .btn.primary{
-  background: #fff;
-  color: var(--text);
-  border-color: var(--border);
-}
-
-/* 8) Footer (ביטול / שמור) — fixed row that always stays visible */
-#expenseDialog menu.form-actions,
-#journalDialog menu.form-actions{
-  position: relative;                    /* in the 3rd grid row — no need to be sticky */
-  display: flex;
-  gap: 12px;
-  padding-top: 8px;
-  background: #fff;
-  z-index: 1;
-}
-
-/* 9) Defensive: prevent accidental nested scrolling anywhere in the modal */
-#expenseDialog .form *:where(.table-wrapper, .scroll, .overflow-auto),
-#journalDialog .form *:where(.table-wrapper, .scroll, .overflow-auto){
-  overflow: clip !important;
-  max-height: none !important;
-}
-
-
-
-/* ===== FIX: ensure dialog fully visible and downscale everything by 20% ===== */
-#expenseDialog,
-#journalDialog{
-  --modal-scale: .8; /* 20% smaller visuals */
-}
-
-/* Large-screen sizing: reduce margins and fit closer to viewport */
-@media (min-width: 900px){
-  #expenseDialog.dialog.wide,
-  #journalDialog.dialog.wide{
-    height: min(96dvh, 820px);
-    margin: 1.5vh auto;
-  }
-}
-
-/* Scale the entire content while compensating the layout box to avoid clipping */
-#expenseDialog .form,
-#journalDialog .form{
-  transform: scale(var(--modal-scale, 1));
-  transform-origin: top center;
-  inline-size: calc(100% / var(--modal-scale, 1));
-  block-size: calc(100% / var(--modal-scale, 1));
-}
-
-/* Slightly reduce map height bounds to keep footer visible on short screens */
-#expenseDialog #expenseMap.map.tall,
-#journalDialog #journalMap.map.tall{
-  height: clamp(200px, 28vh, 280px);
-}
-
-
-/* ===== v3 FINAL — Full-screen responsive dialogs (no scale, no vertical scroll) ===== */
-
-/* Shell: mobile full-screen; desktop centered with max size */
-#expenseDialog.dialog.wide,
-#journalDialog.dialog.wide{
-  width: 100vw;
-  height: 100dvh;
-  max-width: 100vw;
-  max-height: 100dvh;
-  margin: 0;
-  border-radius: 0;
-  overflow: hidden;
-  background: #fff;
-}
-@media (min-width: 900px){
-  #expenseDialog.dialog.wide,
-  #journalDialog.dialog.wide{
-    width: min(1100px, 96vw);
-    height: min(92dvh, 880px);
-    margin: 3vh auto;
-    border-radius: 20px;
-  }
-}
-
-/* Layout: header | content | footer */
-#expenseDialog .form,
-#journalDialog .form{
-  transform: none !important;            /* cancel older scale */
-  inline-size: 100% !important;
-  block-size: 100% !important;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: clamp(12px, 2vw, 16px);
-  overflow: clip;
-}
-
-/* Content grid: map + form */
-#expenseDialog .expense-dialog-grid,
-#journalDialog .journal-dialog-grid{
-  display: grid;
-  gap: clamp(12px, 2vw, 16px);
-  grid-template-columns: 1fr;            /* mobile: stacked */
-  min-inline-size: 0; min-block-size: 0;
-}
-@media (min-width: 900px){
-  #expenseDialog .expense-dialog-grid,
-  #journalDialog .journal-dialog-grid{
-    grid-template-columns: 1.1fr 1fr;    /* desktop: two columns */
-    align-items: stretch;
-  }
-}
-
-/* Map column: toolbar + map that fills available height */
-#expenseDialog .map-side,
-#journalDialog .map-side{
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 12px;
-  min-block-size: 0;
-}
-#expenseDialog .map.tall,
-#journalDialog .map.tall{
-  height: 100% !important;
-  min-height: 0;
-  border-radius: 16px;
-}
-
-/* Toolbar above map (wraps nicely) */
-#expenseDialog .dialog-actions-row,
-#journalDialog .dialog-actions-row{
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  grid-auto-rows: 44px;
-  gap: 12px;
-  align-items: center;
-}
-#expenseDialog .dialog-actions-row .input-with-button,
-#journalDialog .dialog-actions-row .input-with-button{ display:flex; gap:8px; min-width:0; align-items:center; }
 #expenseDialog .dialog-actions-row .btn,
 #journalDialog .dialog-actions-row .btn,
 #expenseDialog .dialog-actions-row .input,
-#journalDialog .dialog-actions-row .input{ height:44px; border-radius:12px; }
-
-/* Outline look for all toolbar buttons */
-#expenseDialog .dialog-actions-row .btn,
-#journalDialog .dialog-actions-row .btn{ background:#fff; color:var(--text); border:1.5px solid var(--border); }
-#expenseDialog .dialog-actions-row .btn.primary,
-#journalDialog .dialog-actions-row .btn.primary{ background:#fff; color:var(--text); border-color:var(--border); }
-
-/* Footer: always visible (3rd grid row) */
-#expenseDialog menu.form-actions,
-#journalDialog menu.form-actions{
-  position: relative;
-  display: flex; gap: 12px;
-  padding-top: 8px; background:#fff; z-index:1;
+#journalDialog .dialog-actions-row .input{
+  height: 44px; border-radius: 12px;
 }
 
-/* Defensive: avoid nested scroll containers inside dialog */
-#expenseDialog .form *:where(.table-wrapper, .scroll, .overflow-auto),
-#journalDialog .form *:where(.table-wrapper, .scroll, .overflow-auto){
-  overflow: clip !important; max-height: none !important;
+/* Map fills all remaining space; left column may scroll internally if absolutely necessary (but we clip) */
+#expenseDialog .map-side, #journalDialog .map-side{ display:grid; grid-template-rows: auto 1fr; gap: 12px; min-block-size: 0; }
+#expenseDialog .map.tall, #journalDialog .map.tall{ height: 100% !important; min-height: 0; border-radius: 16px; }
+
+/* Footer stays visible (no sticky needed because it's the 3rd grid row) */
+#expenseDialog menu.form-actions, #journalDialog menu.form-actions{
+  position: relative; display: flex; gap: 12px; padding-top: 8px; background: #fff; z-index: 1;
 }
