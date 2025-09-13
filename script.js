@@ -622,8 +622,6 @@ const viewButton = $(".view", li);
   }
 }
 
-function __ensureMapFilters(){ if (!state.mapFilters) state.mapFilters = { showExpenses:false, showJournal:false }; if (typeof state.mainMapGroup==='undefined') state.mainMapGroup=null; }
-
 function activateTabs(){
   $$(".tab").forEach(btn => {
     btn.addEventListener("click", ()=>{
@@ -997,8 +995,6 @@ tr.innerHTML = `
   }
 })();
 
-    const kebabBtn = $(".kebab-btn", tr);
-    if (kebabBtn){ kebabBtn.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     $(".edit", tr).onclick = ()=> openExpenseDialog(e);
     $(".del", tr).onclick = ()=> removeExpense(e);
     tbody.appendChild(tr);
@@ -1040,7 +1036,10 @@ async function renderJournal(){
       <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions"><div class="kebab-wrap"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button><div class="kebab-menu" role="menu"><button class="edit" role="menuitem">ערוך</button><button class="del" role="menuitem">מחק</button></div></div></td>
+      <td class="row-actions">
+        <button class="btn ghost edit">ערוך</button>
+        <button class="btn ghost danger del">מחק</button>
+      </td>
     `;
     // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
@@ -1115,7 +1114,7 @@ async function renderJournal(){
 }
 
 // Maps
-function refreshMainMap(){ __ensureMapFilters();
+function refreshMainMap(){
   if (!state.currentTripId) return;
   const mapEl = el("mainMap");
   if (mapEl){
@@ -1718,9 +1717,98 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     setStatus("קישור הועתק");
   };
 
+  
+// === JSON Importer ===
+async function importFromFile(mode){ // mode: 'new' | 'merge'
+  const file = document.getElementById('importJSONFile')?.files?.[0];
+  if (!file){ alert("בחר קובץ JSON לייבוא"); return; }
+  const text = await file.text();
+  let data;
+  try{ data = JSON.parse(text); }catch(e){ alert("JSON לא תקין"); return; }
+
+  const meta = data.metadata || {};
+  const dates = meta.dates || {};
+  const start = dates.start || meta.start || "";
+  const end   = dates.end   || meta.end   || "";
+  const types = Array.isArray(meta.tripType) ? meta.tripType : (meta.tripType ? [meta.tripType] : []);
+
+  function participantsToString(p){
+    if (!p) return "";
+    if (typeof p === "string") return p;
+    if (Array.isArray(p)) return p.join(", ");
+    if (typeof p === "object"){
+      // compress object into a readable string
+      const parts = [];
+      if (typeof p.adults === "number") parts.push(`מבוגרים: ${p.adults}`);
+      if (Array.isArray(p.children)) parts.push(`ילדים: ${p.children.join("/")}`);
+      if (p.notes) parts.push(p.notes);
+      return parts.join(" | ");
+    }
+    return String(p);
+  }
+
+  let tripId = state.currentTripId;
+  if (mode === "new" || !tripId){
+    const t = await Store.createTrip({ destination: meta.destination || "נסיעה", start, end, tripType: types, participants: participantsToString(meta.participants) });
+    tripId = t?.id;
+  } else if (mode === "merge"){
+    await Store.updateTrip(tripId, { destination: meta.destination || undefined, start: start||undefined, end: end||undefined, tripType: types.length?types:undefined, participants: participantsToString(meta.participants)||undefined });
+  }
+  if (!tripId){ alert("יצירת נסיעה נכשלה"); return; }
+
+  const geo = data.geo || {};
+
+  // --- Expenses ---
+  if (Array.isArray(data.expenses)){
+    for (const e of data.expenses){
+      const entry = {
+        desc: e.description || "",
+        category: e.category || "אחר",
+        amount: Number(e.amount||0),
+        currency: e.currency || "USD"
+      };
+      // try to attach a lat/lng if description contains a known place key
+      if (e.location && geo[e.location]){
+        entry.lat = geo[e.location].lat; entry.lng = geo[e.location].lng; entry.placeName = e.location;
+      }
+      try{ await Store.addExpense(tripId, entry); }catch(err){ console.warn("[import:expense] skip", err); }
+    }
+  }
+
+  // --- Journal ---
+  if (Array.isArray(data.journal)){
+    let dayIdx = 0;
+    for (const j of data.journal){
+      const entry = { text: j.text || "" };
+      // attach first location name if exists
+      if (Array.isArray(j.location) && j.location.length){
+        entry.placeName = j.location[0];
+        const g = geo[entry.placeName];
+        if (g){ entry.lat = g.lat; entry.lng = g.lng; }
+      }
+      // estimate createdAt if dates exist (start + dayIdx)
+      if (start){
+        const dt = new Date(start);
+        if (!isNaN(dt)){ dt.setDate(dt.getDate() + dayIdx); entry.createdAt = dt.getTime(); }
+      }
+      try{ await Store.addJournal(tripId, entry); }catch(err){ console.warn("[import:journal] skip", err); }
+      dayIdx++;
+    }
+  }
+
+  setStatus("ייבוא הושלם");
+  openTrip(tripId);
+}
+
+if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
+  if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
   if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
+
+  if (el("importAsNewBtn")) el("importAsNewBtn").onclick = ()=> importFromFile('new');
+  if (el("importMergeBtn")) el("importMergeBtn").onclick = ()=> importFromFile('merge');
+
 
   await fetchRates("USD");
 
@@ -1892,7 +1980,7 @@ window.debugAuth = async function(){
 
 
 /* auth button wiring */
-document.addEventListener('DOMContentLoaded', function(){ __ensureMapFilters();
+document.addEventListener('DOMContentLoaded', function(){
   var loginBtn = document.getElementById('googleSignInBtn');
   if (loginBtn && !loginBtn.__wired){
     loginBtn.__wired = true;
@@ -1918,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', function(){ __ensureMapFilters();
 });
 
 /* signOut wiring */
-document.addEventListener('DOMContentLoaded', function(){ __ensureMapFilters();
+document.addEventListener('DOMContentLoaded', function(){
   var out = document.getElementById('signOutBtn');
   if (out && !out.__wired){
     out.__wired = true;
@@ -2035,52 +2123,3 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
-
-// === Journal Row Actions Dialog ===
-let __journalRowCtx = null;
-function __openJournalRowActions(entry){
-  __journalRowCtx = entry;
-  const dlg = document.getElementById("journalActionDialog");
-  if (!dlg) return;
-  try{ dlg.showModal(); }catch(_){ dlg.open = true; }
-}
-function __closeJournalRowActions(){
-  const dlg = document.getElementById("journalActionDialog");
-  if (!dlg) return;
-  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
-}
-document.addEventListener("DOMContentLoaded", function(){
-  const dlg = document.getElementById("journalActionDialog");
-  if (!dlg) return;
-  const closeBtn = document.getElementById("journal-action-close");
-  const editBtn  = document.getElementById("journal-action-edit");
-  const delBtn   = document.getElementById("journal-action-delete");
-  if (closeBtn) closeBtn.onclick = __closeJournalRowActions;
-  if (editBtn)  editBtn.onclick  = function(){ if(__journalRowCtx){ openJournalDialog(__journalRowCtx); } __closeJournalRowActions(); };
-  if (delBtn)   delBtn.onclick   = function(){ if(__journalRowCtx){ const tripId = state.currentTripId; openJournalDeleteDialog(tripId, __journalRowCtx); } __closeJournalRowActions(); };
-});
-
-/* Map overlay toggle wiring */
-document.addEventListener('DOMContentLoaded', function(){ __ensureMapFilters();
-  var be = document.getElementById('btnWhereSpent');
-  var bt = document.getElementById('btnWhereTraveled');
-  function syncBtns(){
-    if (be) be.classList.toggle('active', state.mapFilters.showExpenses);
-    if (bt) bt.classList.toggle('active', state.mapFilters.showJournal);
-  }
-  if (be && !be.__wired){
-    be.__wired = true;
-    be.addEventListener('click', function(){
-      state.mapFilters.showExpenses = !state.mapFilters.showExpenses;
-      syncBtns(); refreshMainMap();
-    });
-  }
-  if (bt && !bt.__wired){
-    bt.__wired = true;
-    bt.addEventListener('click', function(){
-      state.mapFilters.showJournal = !state.mapFilters.showJournal;
-      syncBtns(); refreshMainMap();
-    });
-  }
-  syncBtns();
-});

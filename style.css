@@ -1523,5 +1523,5 @@ dialog::backdrop{
   color: var(--muted) !important;
 }
 
-#mainMap{position:relative;}
-#mainMap .map-overlay-controls{position:absolute;top:8px;left:72px;z-index:1100;display:flex;gap:12px;}
+.import-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.import-controls input[type=file]{max-width:360px}
