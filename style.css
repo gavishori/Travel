@@ -1541,3 +1541,8 @@ dialog::backdrop{
 #expenseDialog .form .two{ gap: 12px; }
 #expenseDialog .form label{ margin-bottom: 8px; }
 #expenseDialog menu.form-actions{ position: sticky; bottom: 0; background:#fff; padding-top:8px; }
+
+
+/* Row actions align (expenses) */
+.table td.row-actions { text-align: end; white-space: nowrap; }
+.table td.row-actions .kebab { min-width: 36px; }

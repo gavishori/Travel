@@ -979,9 +979,8 @@ tr.innerHTML = `
       <td>${extractCityName(e.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
       <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+  <button class="btn ghost kebab" title="פעולות">⋮</button>
+</td>
     `;
 // If placeName missing but lat/lng exist → fetch city and persist
 (async ()=>{
@@ -995,8 +994,8 @@ tr.innerHTML = `
   }
 })();
 
-    $(".edit", tr).onclick = ()=> openExpenseDialog(e);
-    $(".del", tr).onclick = ()=> removeExpense(e);
+    $(".kebab", tr).onclick = ()=> openExpRowActionsDialog(e);
+    
     tbody.appendChild(tr);
   }
 
@@ -2042,3 +2041,41 @@ document.addEventListener("click", (ev)=>{
   const dlg = document.getElementById("expRowActionDialog");
   if (dlg){ try{ dlg.close('edit'); }catch(_){ dlg.open=false; } }
 }, true);
+
+
+
+// ========== EXPENSE row actions dialog ==========
+let __rowActionExpense = null;
+
+function openExpRowActionsDialog(expense){
+  __rowActionExpense = expense;
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+  try { dlg.showModal(); } catch(_) { dlg.open = true; }
+}
+function closeExpRowActionsDialog(){
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  const dlg = document.getElementById("expRowActionDialog");
+  if (!dlg) return;
+
+  const closeBtn = document.getElementById("exp-row-action-close");
+  const editBtn = document.getElementById("exp-row-action-edit");
+  const delBtn  = document.getElementById("exp-row-action-delete");
+
+  closeBtn && closeBtn.addEventListener("click", closeExpRowActionsDialog);
+  editBtn && editBtn.addEventListener("click", ()=>{
+    if (__rowActionExpense) openExpenseDialog(__rowActionExpense);
+    closeExpRowActionsDialog();
+  });
+  delBtn && delBtn.addEventListener("click", ()=>{
+    if (__rowActionExpense) removeExpense(__rowActionExpense);
+    closeExpRowActionsDialog();
+  });
+
+  dlg.addEventListener("cancel", closeExpRowActionsDialog);
+});
