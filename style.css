@@ -1522,3 +1522,7 @@ dialog::backdrop{
   background: transparent !important;
   color: var(--muted) !important;
 }
+
+#mainMap{position:relative;}
+#mainMap .map-overlay-controls{position:absolute;top:8px;left:72px;z-index:1100;display:flex;gap:12px}
+#mainMap .map-overlay-controls .tab.active{background:#7c4dff;color:#fff}
