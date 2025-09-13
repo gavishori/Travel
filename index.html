@@ -253,7 +253,7 @@
 
         <!-- MAP -->
         <div id="tab-map" class="panel">
-          <div id="mainMap" class="map">  <div class="map-overlay-controls">    <button id="btnWhereSpent" class="tab">איפה ביזבזתי</button>    <button id="btnWhereTraveled" class="tab">איפה טיילתי</button>  </div></div>
+          <div id="mainMap" class="map"></div>
         </div>
 
         <!-- EXPORT AND SHARE -->
@@ -641,6 +641,21 @@
         <div class="two flat">
           <button id="row-action-edit" class="btn primary" autofocus>ערוך</button>
           <button id="row-action-delete" class="btn danger">מחק</button>
+        </div>
+      </div>
+    </div>
+  
+</dialog>
+
+  <!-- Journal Row Actions Dialog -->
+  <dialog id="journalActionDialog" class="dialog small">
+    <div class="dialog-content">
+      <button class="dialog-close" id="journal-action-close" aria-label="סגור">×</button>
+      <h3 class="dialog-title">אפשרויות</h3>
+      <div class="dialog-body">
+        <div class="two flat">
+          <button id="journal-action-edit" class="btn primary" autofocus>ערוך</button>
+          <button id="journal-action-delete" class="btn danger">מחק</button>
         </div>
       </div>
     </div>

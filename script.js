@@ -622,8 +622,6 @@ const viewButton = $(".view", li);
   }
 }
 
-function __ensureMapFilters(){ if(!state.mapFilters) state.mapFilters={showExpenses:false,showJournal:false}; if(typeof state.mainMapGroup==="undefined") state.mainMapGroup=null; }
-
 function activateTabs(){
   $$(".tab").forEach(btn => {
     btn.addEventListener("click", ()=>{
@@ -1035,12 +1033,13 @@ async function renderJournal(){
     const tr = document.createElement("tr");
     tr.dataset.journalid = j.id;
     tr.innerHTML = `
-      <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
+      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
       <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
+        <div class="kebab-wrap">
+          <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
+        </div>
       </td>
     `;
     // If placeName missing but lat/lng exist → fetch city and persist
@@ -1055,8 +1054,7 @@ async function renderJournal(){
       }
     })();
 
-    $(".edit", tr).onclick = () => openJournalDialog(j);
-    $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
+            const kb = $(".kebab-btn", tr); if(kb){ kb.onclick=(e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     tbody.appendChild(tr);
   }
 
@@ -1106,9 +1104,8 @@ async function renderJournal(){
           }
         }
       })();
-      $(".edit", tr).onclick = () => openJournalDialog(j);
-      $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
-      tbody.appendChild(tr);
+                  const kb = $(".kebab-btn", tr); if(kb){ kb.onclick=(e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
+    tbody.appendChild(tr);
     }
   }
 
@@ -1128,15 +1125,14 @@ function refreshMainMap(){
     (async ()=>{
       const trip = await Store.getTrip(state.currentTripId);
       if (!trip) return;
-      if(state.mainMapGroup && state.maps.main){ try{ state.maps.main.removeLayer(state.mainMapGroup); }catch(_){}}
-      const group = L.featureGroup(); state.mainMapGroup = group;
+      const group = L.featureGroup();
       function addPoint(p, color){
         const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (state.mapFilters.showExpenses && trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (state.mapFilters.showJournal && trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
@@ -1720,19 +1716,7 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     setStatus("קישור הועתק");
   };
 
-  
-/* map overlay wiring */
-document.addEventListener('DOMContentLoaded', function(){
-  __ensureMapFilters();
-  var be = document.getElementById('btnWhereSpent');
-  var bt = document.getElementById('btnWhereTraveled');
-  function sync(){ if(be) be.classList.toggle('active', state.mapFilters.showExpenses);
-                   if(bt) bt.classList.toggle('active', state.mapFilters.showJournal); }
-  if (be && !be.__wired){ be.__wired=true; be.addEventListener('click', function(){ state.mapFilters.showExpenses=!state.mapFilters.showExpenses; sync(); refreshMainMap(); }); }
-  if (bt && !bt.__wired){ bt.__wired=true; bt.addEventListener('click', function(){ state.mapFilters.showJournal=!state.mapFilters.showJournal; sync(); refreshMainMap(); }); }
-  sync();
-});
-if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
+  if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
   if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
 
