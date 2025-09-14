@@ -1,34 +1,18 @@
 <!doctype html>
-<!-- Source spec: fileciteturn3file0 -->
 <html dir="rtl" lang="he">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>FLYMILY – הנסיעות שלי</title>
-  <link rel="icon" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231a1f2b'/%3E%3Cpath d='M20 44 L44 20 L32 32 Z' fill='%236aa9ff'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23ffffff'/%3E%3C/svg%3E">
 
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- Utilities -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-
-  <!-- jsPDF + autotable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
@@ -36,6 +20,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Favicon to avoid 404 -->
+  <link rel="icon" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231a1f2b'/%3E%3Cpath d='M20 44 L44 20 L32 32 Z' fill='%236aa9ff'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23ffffff'/%3E%3C/svg%3E">
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -45,22 +32,22 @@
     <div class="card splash-card">
       <h1>הנסיעות שלי</h1>
       <p class="muted">נהל טיולים, הוצאות, יומן יומי ומפה — ב־RTL, מובייל, וללא באגים.</p>
+
+      <!-- Clean single email/password form -->
       <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
         <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
         <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
         <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+      </form>
+
+      <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
         <label class="checkbox" style="gap:.35rem">
           <input id="rememberEmail" type="checkbox"> זכור את האימייל
         </label>
         <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה">כניסה</button>
-        <button id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
       </div>
     </div>
   </div>
@@ -68,472 +55,36 @@
   <!-- App -->
   <div id="app" hidden>
     <header class="appbar">
-      <div class="brand">
-        <span class="logo">🧭</span>
-        <span>הנסיעות שלי</span>
-      </div>
+      <div class="brand"><span class="logo">🧭</span><span>הנסיעות שלי</span></div>
       <div class="app-actions">
         <button id="themeToggle" class="btn ghost" aria-label="מצב כהה/בהיר">כהה / בהיר</button>
         <button id="signOutBtn" class="btn ghost" aria-label="יציאה" title="יציאה" hidden>יציאה</button>
       </div>
     </header>
-
-    <main id="views">
-
-      <!-- HOME VIEW -->
-      <section id="homeView" class="view">
-        <div class="toolbar">
-          <div class="left">
-            <div class="segmented">
-              <button class="seg active" data-mode="grid">גלריה</button>
-              <button class="seg" data-mode="list">רשימה</button>
-            </div>
-          </div>
-          <div class="right">
-            <input id="tripSearch" type="search" placeholder="חפש בכל הטיולים..." aria-label="חיפוש">
-            <button id="addTripBtn" class="btn primary">+ טיול חדש</button>
-          </div>
-        </div>
-
-        <div id="tripGrid" class="grid"></div>
-        <table id="tripList" class="table" hidden>
-          <thead>
-            <tr>
-              <th>יעד</th>
-              <th>תאריכים</th>
-              <th>משתתפים</th>
-              <th>תקציב</th>
-              <th class="actions-col"><span class="th-title">מיין</span></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </section>
-
-      <!-- TRIP VIEW -->
-      <section id="tripView" class="view" hidden>
-        <div class="trip-header">
-          <button id="backToHome" class="btn ghost">← חזרה</button>
-          <h2 id="tripTitle">טיול</h2>
-        </div>
-
-        <div class="tabs">
-          <button class="tab active" data-tab="overview">הצג הכל</button>
-          <button class="tab" data-tab="meta">נתוני נסיעה</button>
-          <button class="tab" data-tab="budget">תקציב</button>
-          <button class="tab" data-tab="expenses">הוצאות</button>
-          <button class="tab" data-tab="journal">יומן יומי</button>
-          <button class="tab" data-tab="map">מפה</button>
-          <button class="tab" data-tab="export">ייבוא / ייצוא / שיתוף</button>
-        </div>
-
-        <!-- Tabs content -->
-        <div id="tabContent">
-
-          <!-- OVERVIEW -->
-          <div id="tab-overview" class="tab-panel active">
-            <div class="panel-grid">
-              <div class="card">
-                <h3>פרטי נסיעה</h3>
-                <div id="overviewMeta"></div>
-                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
-        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
-        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-                  <button class="btn" data-goto="meta">ערוך נתונים</button>
-                  <button class="btn" data-goto="map">מצא במפה</button>
-                </div>
-              </div>
-              <div class="card">
-                <h3>תקציב</h3>
-                <div id="overviewBudget"></div>
-                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
-        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
-        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-                  <button class="btn" data-goto="budget">ערוך תקציב</button>
-                </div>
-              </div>
-              <div class="card">
-                <h3>סטטוס הוצאות / יומן</h3>
-                <div id="overviewStats"></div>
-                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
-        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
-        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-                  <button class="btn" data-goto="expenses">פתח הוצאות</button>
-                  <button class="btn" data-goto="journal">פתח יומן</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- META -->
-          <div id="tab-meta" class="tab-panel">
-            <form id="metaForm" class="form">
-              <div class="row">
-                <label>יעד</label>
-                <input name="destination" placeholder="למשל: מילאנו">
-              </div>
-              <div class="row two">
-                <div>
-                  <label>תאריך התחלה</label>
-                  <input name="start" type="date">
-                </div>
-                <div>
-                  <label>תאריך סיום</label>
-                  <input name="end" type="date">
-                </div>
-              </div>
-              <div class="row">
-                <label>משתתפים</label>
-                <input name="participants" placeholder="שמות / מספרים">
-              </div>
-              <div class="row">
-                <label>סוג טיול</label>
-                <div class="chips">
-                  <label><input type="checkbox" name="tripType" value="עיר"> עיר</label>
-                  <label><input type="checkbox" name="tripType" value="טבע"> טבע</label>
-                  <label><input type="checkbox" name="tripType" value="קניות"> קניות</label>
-                  <label><input type="checkbox" name="tripType" value="אוכל"> אוכל</label>
-                </div>
-              </div>
-              <div class="row actions">
-                <button type="button" id="verifyOnMapBtn" class="btn">אמת במפה</button>
-                <button type="submit" class="btn primary">שמור</button>
-              </div>
-              <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-          </div>
-
-          <!-- BUDGET -->
-          <div id="tab-budget" class="tab-panel">
-            <div class="row">
-              <button id="toggleBudgetLock" class="btn">קבע תקציב</button>
-            </div>
-            <form id="budgetForm" class="form">
-              <div class="row two">
-                <div>
-                  <label>תקציב (USD)</label>
-                  <input name="USD" type="number" step="0.01" min="0" placeholder="0">
-                </div>
-                <div>
-                  <label>תקציב (EUR)</label>
-                  <input name="EUR" type="number" step="0.01" min="0" placeholder="0">
-                </div>
-              </div>
-              <div class="row two">
-                <div>
-                  <label>תקציב (ILS)</label>
-                  <input name="ILS" type="number" step="0.01" min="0" placeholder="0">
-                </div>
-                <div class="muted small">המרה חד-כיוונית: שינוי כל ערך יעדכן את USD בהתאם לשערים המקומיים.</div>
-              </div>
-              <div class="row actions">
-                <button type="submit" class="btn primary">שמור</button>
-              </div>
-              <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-          </div>
-
-          <!-- EXPENSES -->
-          <div id="tab-expenses" class="tab-panel">
-            <div class="toolbar">
-              <div></div>
-              <div class="right">
-                <button id="addExpenseBtn" class="btn">הוסף הוצאה</button>
-              </div>
-            </div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>תאריך</th>
-                  <th>קטגוריה</th>
-                  <th>תיאור</th>
-                  <th>סכום</th>
-                  <th>מטבע</th>
-                  <th>מקום</th>
-                  <th class="actions-col"><span class="th-title">מיין</span></th>
-                </tr>
-              </thead>
-              <tbody id="expenseTbody"></tbody>
-            </table>
-          </div>
-
-          <!-- JOURNAL -->
-          <div id="tab-journal" class="tab-panel">
-            <div class="toolbar">
-              <div></div>
-              <div class="right">
-                <button id="addJournalBtn" class="btn">הוסף רישום</button>
-              </div>
-            </div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>תאריך</th>
-                  <th>תיאור</th>
-                  <th>מקום</th>
-                  <th class="actions-col"><span class="th-title">מיין</span></th>
-                </tr>
-              </thead>
-              <tbody id="journalTbody"></tbody>
-            </table>
-          </div>
-
-          <!-- MAP -->
-          <div id="tab-map" class="tab-panel">
-            <div id="mapWrapper">
-              <div id="mainMap"></div>
-              <div class="map-overlays">
-                <button id="toggleExpenseLayer" class="btn ghost">איפה ביזבזתי</button>
-                <button id="toggleJournalLayer" class="btn ghost">איפה טיילתי</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- EXPORT -->
-          <div id="tab-export" class="tab-panel">
-            <div class="card">
-              <h3>ייצוא</h3>
-              <div class="row">
-                <label class="checkbox"><input id="exportNoExpenses" type="checkbox"> ללא הוצאות</label>
-              </div>
-              <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
-        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
-        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-                <button id="exportPdfBtn" class="btn">PDF</button>
-                <button id="exportCsvBtn" class="btn">Excel (CSV)</button>
-                <button id="exportGpxBtn" class="btn">GPX</button>
-                <button id="exportDocBtn" class="btn">Word (DOC)</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>ייבוא</h3>
-              <div class="row">
-                <input id="importJsonInput" type="file" accept="application/json">
-                <button id="importJsonBtn" class="btn">ייבוא JSON</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>שיתוף</h3>
-              <div class="row">
-                <label class="checkbox">
-                  <input id="shareToggle" type="checkbox"> הפעל שיתוף (קריאה בלבד)
-                </label>
-              </div>
-              <div class="row">
-                <label>היקף</label>
-                <select id="shareScope">
-                  <option value="full">מלא</option>
-                  <option value="partial">חלקי</option>
-                </select>
-              </div>
-              <div class="row">
-                <input id="shareLink" type="url" placeholder="קישור לשיתוף" readonly>
-              </div>
-              <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
-        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
-        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
-        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
-        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
-        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
-        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
-        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-                <button id="copyShareLinkBtn" class="btn">העתק קישור</button>
-                <button id="revokeShareLinkBtn" class="btn">בטל שיתוף</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    </main>
+    <main id="views"></main>
   </div>
 
-  <!-- DIALOGS (opaque, no inner transparency) -->
-
-  <!-- Expense dialog -->
-  <dialog id="expenseDialog" class="modal">
-    <form method="dialog" class="modal-body" id="expenseForm">
-      <header>
-        <h3 id="expenseDialogTitle">הוסף הוצאה</h3>
-        <button type="button" class="icon-btn close" data-close>×</button>
-      </header>
-      <div class="fields">
-        <div class="row two">
-          <div>
-            <label>תאריך</label>
-            <input name="date" type="date" required>
-          </div>
-          <div>
-            <label>קטגוריה</label>
-            <input name="category" placeholder="תחבורה / אוכל / מלון...">
-          </div>
-        </div>
-        <div class="row">
-          <label>תיאור</label>
-          <input name="desc" required placeholder="מה נקנה/שולם">
-        </div>
-        <div class="row three">
-          <div>
-            <label>סכום</label>
-            <input name="amount" type="number" step="0.01" min="0" required>
-          </div>
-          <div>
-            <label>מטבע</label>
-            <input name="currency" value="USD">
-          </div>
-          <div>
-            <label>מקום</label>
-            <input name="placeName" placeholder="שם מקום (לא חובה)">
-          </div>
-        </div>
-        <div class="row two">
-          <div>
-            <label>Lat</label>
-            <input name="lat" type="number" step="any">
-          </div>
-          <div>
-            <label>Lng</label>
-            <input name="lng" type="number" step="any">
-          </div>
-        </div>
-      </div>
-      <footer class="actions">
-        <button type="button" class="btn ghost" id="expenseClearLocBtn">נקה מיקום</button>
-        <button type="button" class="btn ghost" id="expenseCurrentLocBtn">מיקום נוכחי</button>
-        <div class="spacer"></div>
-        <button value="cancel" class="btn">ביטול</button>
-        <button value="default" class="btn primary">שמור</button>
-      </footer>
-      <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Journal dialog -->
-  <dialog id="journalDialog" class="modal">
-    <form method="dialog" class="modal-body" id="journalForm">
-      <header>
-        <h3 id="journalDialogTitle">הוסף רישום</h3>
-        <button type="button" class="icon-btn close" data-close>×</button>
-      </header>
-      <div class="fields">
-        <div class="row">
-          <label>תאריך</label>
-          <input name="date" type="date" required>
-        </div>
-        <div class="row">
-          <label>תיאור</label>
-          <textarea name="text" rows="3" required placeholder="מה קרה היום?"></textarea>
-        </div>
-        <div class="row">
-          <label>מקום</label>
-          <input name="placeName" placeholder="שם מקום (לא חובה)">
-        </div>
-        <div class="row two">
-          <div>
-            <label>Lat</label>
-            <input name="lat" type="number" step="any">
-          </div>
-          <div>
-            <label>Lng</label>
-            <input name="lng" type="number" step="any">
-          </div>
-        </div>
-      </div>
-      <footer class="actions">
-        <button type="button" class="btn ghost" id="journalClearLocBtn">נקה מיקום</button>
-        <button type="button" class="btn ghost" id="journalCurrentLocBtn">מיקום נוכחי</button>
-        <div class="spacer"></div>
-        <button value="cancel" class="btn">ביטול</button>
-        <button value="default" class="btn primary">שמור</button>
-      </footer>
-      <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
-        <label class="checkbox" style="gap:.35rem">
-          <input id="rememberEmail" type="checkbox"> זכור את האימייל
-        </label>
-        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Kebab small menu template (cloned) -->
-  <div id="kebabMenuTemplate" class="kebab-menu" hidden>
-    <button data-action="edit">ערוך</button>
-    <button data-action="delete" class="danger">מחק</button>
-  </div>
-
-  <!-- Provide your Firebase config BEFORE firebase.js. Replace with your keys safely. -->
+  <!-- Inject Firebase config with API key prompt fallback -->
   <script>
-    // Important: fill with your real config or inject at runtime.
-    window.firebaseConfig = window.firebaseConfig || null; // { apiKey, authDomain, projectId, ... }
+    (function(){
+      window.firebaseConfig = {
+        apiKey: localStorage.getItem('firebase.apiKey') || "PASTE_YOUR_API_KEY",
+        authDomain: "travel-416ff.firebaseapp.com",
+        projectId: "travel-416ff",
+        storageBucket: "travel-416ff.appspot.com",
+        messagingSenderId: "1075073511694",
+        appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+        measurementId: "G-FT56H33X5J"
+      };
+      if(window.firebaseConfig.apiKey === "PASTE_YOUR_API_KEY"){
+        try{
+          var k = prompt('הדבק את ה‑API Key של Firebase (יישמר מקומית בדפדפן):');
+          if(k){ localStorage.setItem('firebase.apiKey', k); window.firebaseConfig.apiKey = k; }
+        }catch(_){}
+      }
+    })();
   </script>
+
   <script src="firebase.js"></script>
   <script src="script.js"></script>
 </body>
