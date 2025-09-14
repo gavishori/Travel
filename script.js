@@ -1032,18 +1032,16 @@ async function renderJournal(){
     const tr = document.createElement("tr");
     tr.dataset.journalid = j.id;
     tr.innerHTML = `
-      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
-      <td>${extractCityName(j.placeName)}</td>
+      <td class="row-actions"><button class="kebab-btn" title="אפשרויות">⋮</button></td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="kebab-btn" title="אפשרויות">⋮</button>
-      </td>
+      <td>${extractCityName(j.placeName)}</td>
+      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
     `;
     (async ()=>{
       if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
         const city = await reverseGeocodeCity(j.lat, j.lng);
         if (city){
-          const td = tr.querySelectorAll("td")[1];
+          const td = tr.querySelectorAll("td")[2];
           if (td) td.textContent = city;
           try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
         }

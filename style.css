@@ -1523,4 +1523,7 @@ dialog::backdrop{
   color: var(--muted) !important;
 }
 
+#addJournalBtn{border:2px solid var(--border-strong, #CBD5E1); background:#fff; border-radius:16px; padding:8px 14px}
+#addJournalBtn:hover{box-shadow:var(--shadow)}
+
 .journal-text{white-space:pre-wrap; line-height:1.5}
