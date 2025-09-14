@@ -16,6 +16,15 @@
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
     window.db = firebase.firestore();
+    try{
+      // Silence flaky QUIC / 400 transport issues on some networks by forcing long polling
+      window.db.settings({
+        experimentalAutoDetectLongPolling: true,
+        experimentalForceLongPolling: true,
+        useFetchStreams: false
+      });
+    }catch(_){}
+    
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
     try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
@@ -69,17 +78,15 @@
             await auth.signInWithRedirect(googleProvider);
           } else {
             console.error('[auth] sign-in failed', code, err && err.message);
-            if(code==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → local mode'); window.AppDataLayer.mode='local'; }
           }
         }
       }catch(e){
         console.error('[auth] __attemptSignIn fatal: ', e);
-        try{ if((e&&e.code)==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → switching to local mode'); window.AppDataLayer.mode='local'; } }catch(_){ }
       }
     };
 
     // DataLayer surface
-    window.AppDataLayer = window.AppDataLayer || {}; /*__FALLBACK_LOCAL__*/
+    window.AppDataLayer = window.AppDataLayer || {};
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
