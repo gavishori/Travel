@@ -89,8 +89,14 @@ async function onReadyAuth(){
 }
 
 $('#signInBtn').addEventListener('click', async ()=>{
+  const ADL = window.AppDataLayer;
+  if(!ADL || ADL.mode !== 'firebase'){
+    console.warn('Firebase config missing – continuing in local mode');
+    $('#splash').hidden = true; $('#app').hidden = false; renderHome();
+    return;
+  }
   try {
-    await window.AppDataLayer.ensureAuth(true);
+    await ADL.ensureAuth(true);
     await onReadyAuth();
   } catch (e){
     console.warn('Auth failed, continue local:', e);
