@@ -101,7 +101,7 @@ function renderCurrencyOptions(selectEl, allowed, ensureExtra){
 }
 ;
 
-const state = { showExpenses: true, showJournal: true, 
+const state = {
   viewMode: "gallery",
   trips: [],
   currentTripId: null,
@@ -324,7 +324,42 @@ const Store = (()=>{
     }
   }
 
-  // Journal
+  
+// Shared handler: open edit/delete dialog for table rows
+document.addEventListener('click', (ev)=>{
+  const kb = ev.target.closest('.kebab-btn');
+  if (!kb) return;
+  const tr = kb.closest('tr');
+  const table = kb.closest('table');
+  if (!tr || !table) return;
+
+  // store context
+  const dialog = document.getElementById('rowActionDialog');
+  if (!dialog) return;
+  try { dialog.showModal(); } catch(_){}
+
+  const onEdit = document.getElementById('row-action-edit');
+  const onDel  = document.getElementById('row-action-delete');
+
+  // Remove previous listeners by cloning
+  const editBtn = onEdit.cloneNode(true);
+  const delBtn  = onDel.cloneNode(true);
+  onEdit.parentNode.replaceChild(editBtn, onEdit);
+  onDel.parentNode.replaceChild(delBtn, onDel);
+
+  if (table.id === 'journalTable'){
+    const id = tr.dataset.journalid;
+    editBtn.onclick = ()=> { dialog.close(); openJournalDialog(id); };
+    delBtn.onclick  = ()=> { dialog.close(); confirmDeleteJournal(id); };
+  } else if (table.id === 'expenseTable'){
+    const id = tr.dataset.expenseid;
+    editBtn.onclick = ()=> { dialog.close(); openExpenseDialogById(id); };
+    delBtn.onclick  = ()=> { dialog.close(); confirmDeleteExpenseById(id); };
+  } else {
+    dialog.close();
+  }
+});
+// Journal
   async function listJournal(tripId){
   if (mode === "firebase" && !firebase.auth().currentUser) {
     console.warn("[guard] listJournal blocked until sign-in");
@@ -807,8 +842,7 @@ async function renderOverviewExpenses() {
 
   for (const e of expenses) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${linkifyToIcon(e.desc||"—")}</td>
+    tr.dataset.expenseid = e.id;tr.innerHTML = `<td>${linkifyToIcon(e.desc||"—")}</td>
       <td>${e.category||"—"}</td>
       <td>${e.amount ?? 0}</td>
       <td>${e.currency||"USD"}</td>
@@ -817,6 +851,7 @@ async function renderOverviewExpenses() {
         <span class="time">${dayjs(e.createdAt).format("HH:mm")}</span>
         <span class="date">${dayjs(e.createdAt).format("DD/MM")}</span>
       </div></td>
+      <td><button class="kebab-btn" title="אפשרויות" aria-label="אפשרויות">⋮</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -1026,17 +1061,22 @@ async function renderJournal(){
   const tbody = $("#journalTable tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
+  // Sort journal entries from newest to oldest
   entries.sort((a,b) => b.createdAt - a.createdAt);
+
   for (const j of entries){
     const tr = document.createElement("tr");
     tr.dataset.journalid = j.id;
     tr.innerHTML = `
-      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
+      <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
       <td>${extractCityName(j.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions"><button class="kebab-btn" title="אפשרויות">⋮</button></td>
+      <td class="row-actions">
+        <button class="btn ghost edit">ערוך</button>
+        <button class="btn ghost danger del">מחק</button>
+      </td>
     `;
-    // Reverse geocode if needed
+    // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
       if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
         const city = await reverseGeocodeCity(j.lat, j.lng);
@@ -1047,12 +1087,66 @@ async function renderJournal(){
         }
       }
     })();
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); window.__openJournalRowActions(j); }; }
+
+    $(".edit", tr).onclick = () => openJournalDialog(j);
+    $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
     tbody.appendChild(tr);
   }
-}
 
+  // Add event listener for the sort button
+  const sortButton = el("sortJournalBtn");
+  if (sortButton) {
+    sortButton.onclick = () => {
+      state.journalSortAsc = !state.journalSortAsc; // Toggle sort direction
+      entries.sort((a, b) => {
+        const aVal = a.createdAt;
+        const bVal = b.createdAt;
+        if (state.journalSortAsc) {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      });
+      // Update the button icon
+      sortButton.innerHTML = `<span>${state.journalSortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
+      renderJournalTable(entries);
+    };
+  }
+
+  function renderJournalTable(entriesToRender) {
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    for (const j of entriesToRender){
+      const tr = document.createElement("tr");
+      tr.dataset.journalid = j.id;
+      tr.innerHTML = `
+        <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
+        <td>${extractCityName(j.placeName)}</td>
+        <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
+        <td class="row-actions">
+          <button class="btn ghost edit">ערוך</button>
+          <button class="btn ghost danger del">מחק</button>
+        </td>
+      `;
+      // If placeName missing but lat/lng exist → fetch city and persist
+      (async ()=>{
+        if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
+          const city = await reverseGeocodeCity(j.lat, j.lng);
+          if (city){
+            const td = tr.querySelectorAll("td")[1];
+            if (td) td.textContent = city;
+            try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
+          }
+        }
+      })();
+      $(".edit", tr).onclick = () => openJournalDialog(j);
+      $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
+      tbody.appendChild(tr);
+    }
+  }
+
+  renderJournalTable(entries);
+}
 
 // Maps
 function refreshMainMap(){
@@ -1069,20 +1163,18 @@ function refreshMainMap(){
       if (!trip) return;
       const group = L.featureGroup();
       function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], {radius:7, color:color, fill:true, fillOpacity:0.9, weight:2});
-        m.bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
+        const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
         group.addLayer(m);
       }
       group.clearLayers();
-      if (state.showExpenses && trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (state.showJournal  && trip.journal)  Object.values(trip.journal) .forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
       else map.setView([31.8, 35.2], 7);
     })();
   }
 }
-
 
 function openLocationPicker(forType){
   state.locationPick = { lat:null, lng:null, forType };
@@ -1977,15 +2069,3 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
-
-document.addEventListener("DOMContentLoaded", function(){
-  const expBtn = document.getElementById("toggleExpenses");
-  const jourBtn = document.getElementById("toggleJournal");
-  function sync(){
-    expBtn && expBtn.classList.toggle("active", !!state.showExpenses);
-    jourBtn && jourBtn.classList.toggle("active", !!state.showJournal);
-    refreshMainMap();
-  }
-  if (expBtn) expBtn.onclick = function(){ state.showExpenses = !state.showExpenses; sync(); };
-  if (jourBtn) jourBtn.onclick = function(){ state.showJournal = !state.showJournal; sync(); };
-});

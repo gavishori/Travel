@@ -16,10 +16,6 @@
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
     window.db = firebase.firestore();
-try{
-  window.db.settings({ experimentalAutoDetectLongPolling:true, experimentalForceLongPolling:true, useFetchStreams:false });
-}catch(_){}
-
     window.auth = firebase.auth();
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
     try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
