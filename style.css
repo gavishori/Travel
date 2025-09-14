@@ -1523,5 +1523,14 @@ dialog::backdrop{
   color: var(--muted) !important;
 }
 
-#addJournalBtn{border:2px solid var(--border-strong,#CBD5E1);background:#fff;border-radius:16px;padding:8px 14px}#addJournalBtn:hover{box-shadow:var(--shadow)}
-.journal-text{white-space:pre-wrap;line-height:1.5}
+
+/* === Fixed column widths for Journal table (wrap text) === */
+#journalTable{table-layout:fixed;width:100%}
+#journalTable th, #journalTable td{box-sizing:border-box; overflow-wrap:anywhere; white-space:normal}
+/* DOM order assumed: 1=description, 2=place, 3=time, 4=kebab */
+#journalTable th:nth-child(4), #journalTable td:nth-child(4){width:48px}     /* ⋮ */
+#journalTable th:nth-child(3), #journalTable td:nth-child(3){width:130px}    /* זמן */
+#journalTable th:nth-child(2), #journalTable td:nth-child(2){width:220px}    /* מקום */
+#journalTable th:nth-child(1), #journalTable td:nth-child(1){width:auto}     /* תיאור (fills remaining) */
+#journalTable td.journal-text{white-space:pre-wrap; line-height:1.5}
+
