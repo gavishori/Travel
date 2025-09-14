@@ -202,3 +202,7 @@ h3{font-size:1.1rem}
   .toolbar input[type="search"]{flex:1}
   .form .row.two, .form .row.three{flex-direction:column}
 }
+
+#emailAuthForm input{padding:.55rem .8rem;border-radius:14px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text)}
+
+#emailAuthForm .checkbox{display:flex;align-items:center}

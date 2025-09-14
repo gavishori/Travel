@@ -67,7 +67,41 @@
     await db.collection('trips').doc(id).delete();
   }
 
-  async function ensureAuth(interactive=false){
+  
+  async function ensureEmailAuth(email, password, allowCreate=true){
+    if(mode!=='firebase') throw new Error('Firebase not initialized');
+    // if already logged in, return
+    if(user) return {user};
+    if(!email || !password) throw new Error('email/password required');
+    try{
+      const cred = await auth.signInWithEmailAndPassword(email, password);
+      user = cred.user;
+      return {user};
+    }catch(err){
+      if(allowCreate && err && (err.code==='auth/user-not-found' || err.code==='auth/invalid-credential')){
+        const cred = await auth.createUserWithEmailAndPassword(email, password);
+        user = cred.user;
+        return {user};
+      }
+      throw err;
+    }
+  }
+
+  async function setPersistence(modeStr){
+    if(mode!=='firebase') return;
+    try{
+      const P = firebase.auth.Auth.Persistence;
+      const target = modeStr==='LOCAL' ? P.LOCAL : (modeStr==='NONE' ? P.NONE : P.SESSION);
+      await auth.setPersistence(target);
+    }catch(e){ console.warn('setPersistence failed', e); }
+  }
+
+  async function sendPasswordReset(email){
+    if(mode!=='firebase') throw new Error('Firebase not initialized');
+    if(!email) throw new Error('missing-email');
+    await auth.sendPasswordResetEmail(email);
+  }
+async function ensureAuth(interactive=false){
     if(mode!=='firebase') return {user:null};
     if(user) return {user};
     if(!interactive) throw new Error('Auth required');
@@ -79,7 +113,7 @@
       user = auth.currentUser;
       return {user};
     }catch(err){
-      console.warn('Popup sign-in failed or iOS; falling back to redirect', err?.code||err?.message||err);
+      console.warn('Popup sign-in failed || iOS; falling back to redirect', err?.code||err?.message||err);
       await auth.signInWithRedirect(provider);
       // After redirect: flow continues on page load; script.js will continue once postRedirectResolved
       return {user:null};
@@ -103,5 +137,8 @@
     getTrip,
     upsertTrip,
     deleteTrip,
+    setPersistence,
+    sendPasswordReset,
+    ensureEmailAuth,
   };
 })();

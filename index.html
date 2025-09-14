@@ -45,7 +45,20 @@
     <div class="card splash-card">
       <h1>הנסיעות שלי</h1>
       <p class="muted">נהל טיולים, הוצאות, יומן יומי ומפה — ב־RTL, מובייל, וללא באגים.</p>
-      <div class="actions">
+      <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
         <button id="signInBtn" class="btn primary" aria-label="כניסה">כניסה</button>
         <button id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
       </div>
@@ -123,7 +136,20 @@
               <div class="card">
                 <h3>פרטי נסיעה</h3>
                 <div id="overviewMeta"></div>
-                <div class="actions">
+                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
                   <button class="btn" data-goto="meta">ערוך נתונים</button>
                   <button class="btn" data-goto="map">מצא במפה</button>
                 </div>
@@ -131,14 +157,40 @@
               <div class="card">
                 <h3>תקציב</h3>
                 <div id="overviewBudget"></div>
-                <div class="actions">
+                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
                   <button class="btn" data-goto="budget">ערוך תקציב</button>
                 </div>
               </div>
               <div class="card">
                 <h3>סטטוס הוצאות / יומן</h3>
                 <div id="overviewStats"></div>
-                <div class="actions">
+                <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
                   <button class="btn" data-goto="expenses">פתח הוצאות</button>
                   <button class="btn" data-goto="journal">פתח יומן</button>
                 </div>
@@ -180,7 +232,13 @@
                 <button type="button" id="verifyOnMapBtn" class="btn">אמת במפה</button>
                 <button type="submit" class="btn primary">שמור</button>
               </div>
-            </form>
+              <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
           </div>
 
           <!-- BUDGET -->
@@ -209,7 +267,13 @@
               <div class="row actions">
                 <button type="submit" class="btn primary">שמור</button>
               </div>
-            </form>
+              <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
           </div>
 
           <!-- EXPENSES -->
@@ -275,7 +339,20 @@
               <div class="row">
                 <label class="checkbox"><input id="exportNoExpenses" type="checkbox"> ללא הוצאות</label>
               </div>
-              <div class="actions">
+              <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
                 <button id="exportPdfBtn" class="btn">PDF</button>
                 <button id="exportCsvBtn" class="btn">Excel (CSV)</button>
                 <button id="exportGpxBtn" class="btn">GPX</button>
@@ -308,7 +385,20 @@
               <div class="row">
                 <input id="shareLink" type="url" placeholder="קישור לשיתוף" readonly>
               </div>
-              <div class="actions">
+              <form id="emailAuthForm" class="actions" onsubmit="return false" autocomplete="on" style="flex-wrap:wrap;gap:.5rem">
+        <input id="loginEmail" type="email" placeholder="אימייל" required style="min-width:220px">
+        <input id="loginPassword" type="password" placeholder="סיסמה" required style="min-width:180px">
+        <button type="button" id="togglePassBtn" class="btn ghost" aria-pressed="false" title="הצג/הסתר סיסמה">👁️ הצג</button>
+        <div id="authError" class="small" style="color:var(--danger);width:100%"></div>
+        <button id="signInBtn" class="btn primary" aria-label="כניסה/הרשמה">כניסה / הרשמה</button>
+        <button type="button" id="continueLocalBtn" class="btn ghost" aria-label="המשך ללא התחברות">המשך ללא התחברות</button>
+        <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
+    </form>
                 <button id="copyShareLinkBtn" class="btn">העתק קישור</button>
                 <button id="revokeShareLinkBtn" class="btn">בטל שיתוף</button>
               </div>
@@ -377,6 +467,12 @@
         <button value="cancel" class="btn">ביטול</button>
         <button value="default" class="btn primary">שמור</button>
       </footer>
+      <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
     </form>
   </dialog>
 
@@ -418,6 +514,12 @@
         <button value="cancel" class="btn">ביטול</button>
         <button value="default" class="btn primary">שמור</button>
       </footer>
+      <div style="display:flex;gap:.5rem;align-items:center;justify-content:space-between;width:100%;margin-top:.25rem">
+        <label class="checkbox" style="gap:.35rem">
+          <input id="rememberEmail" type="checkbox"> זכור את האימייל
+        </label>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost" title="איפוס סיסמה">שכחתי סיסמה</button>
+      </div>
     </form>
   </dialog>
 

@@ -89,18 +89,32 @@ async function onReadyAuth(){
 }
 
 $('#signInBtn').addEventListener('click', async ()=>{
+  const email = $('#loginEmail')?.value?.trim();
+  const pass  = $('#loginPassword')?.value || '';
+  if(!email || !pass){
+    alert('יש להזין אימייל וסיסמה');
+    return;
+  }
   const ADL = window.AppDataLayer;
   if(!ADL || ADL.mode !== 'firebase'){
     console.warn('Firebase config missing – continuing in local mode');
+    alert('התחברות במייל דורשת קונפיג Firebase תקין. עובר למצב לוקאלי.');
     $('#splash').hidden = true; $('#app').hidden = false; renderHome();
     return;
   }
-  try {
-    await ADL.ensureAuth(true);
+  try{
+    const remember = document.getElementById('rememberEmail')?.checked;
+    if(window.AppDataLayer?.setPersistence){ await window.AppDataLayer.setPersistence(remember?'LOCAL':'SESSION'); }
+
+    await ADL.ensureEmailAuth(email, pass, /*allowCreate*/ true);
+    const el = document.getElementById('authError'); if(el){ el.style.color='var(--ok)'; el.textContent='מחובר ✔'; }
+    try{ const remember = document.getElementById('rememberEmail')?.checked; const email = document.getElementById('loginEmail')?.value?.trim(); if(remember && email){ localStorage.setItem('flymily.savedEmail', email); } else { localStorage.removeItem('flymily.savedEmail'); } }catch(_){}
     await onReadyAuth();
-  } catch (e){
-    console.warn('Auth failed, continue local:', e);
-    $('#splash').hidden = true; $('#app').hidden = false; renderHome();
+  }catch(e){
+    console.warn('Email auth failed:', e);
+    const m = mapAuthErrorToHe(e);
+    const el = document.getElementById('authError'); if(el) el.textContent = m;
+    else alert(m);
   }
 });
 $('#continueLocalBtn').addEventListener('click', ()=>{
@@ -781,4 +795,69 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 // Safety: close menus on ESC
 window.addEventListener('keydown', e=>{
   if(e.key==='Escape') closeKebabMenus();
+});
+
+// Show/Hide password
+$('#togglePassBtn')?.addEventListener('click', ()=>{
+  const p = $('#loginPassword');
+  const b = $('#togglePassBtn');
+  if(!p||!b) return;
+  const show = p.type === 'password';
+  p.type = show ? 'text' : 'password';
+  b.setAttribute('aria-pressed', show ? 'true' : 'false');
+  b.textContent = show ? '🙈 הסתר' : '👁️ הצג';
+});
+
+function mapAuthErrorToHe(err){
+  const code = (err && err.code) || '';
+  const map = {
+    'auth/invalid-email': 'האימייל שגוי. בדוק כתובת דוא״ל.',
+    'auth/missing-email': 'לא הוזן אימייל.',
+    'auth/missing-password': 'לא הוזנה סיסמה.',
+    'auth/wrong-password': 'סיסמה שגויה.',
+    'auth/user-not-found': 'המשתמש לא קיים. ניצור עבורך משתמש חדש אחרי אישור.',
+    'auth/invalid-credential': 'פרטי ההתחברות שגויים.',
+    'auth/too-many-requests': 'יותר מדי ניסיונות. נסה שוב בעוד מספר דקות.',
+    'auth/network-request-failed': 'בעיה בחיבור רשת. בדוק אינטרנט ונסה שוב.',
+    'auth/email-already-in-use': 'האימייל כבר רשום. הזן סיסמה נכונה.',
+    'auth/weak-password': 'סיסמה חלשה. השתמש ב־6 תווים ומעלה.'
+  };
+  return map[code] || ('שגיאה בהתחברות: ' + (err?.message || code || err));
+}
+
+// Prefill saved email
+window.addEventListener('DOMContentLoaded', ()=>{
+  try{
+    const saved = localStorage.getItem('flymily.savedEmail');
+    if(saved && document.getElementById('loginEmail')){
+      document.getElementById('loginEmail').value = saved;
+      const cb = document.getElementById('rememberEmail'); if(cb) cb.checked = true;
+    }
+  }catch(_){}
+});
+
+// Remember email checkbox
+$('#rememberEmail')?.addEventListener('change', (e)=>{
+  const email = $('#loginEmail')?.value?.trim() || '';
+  if(e.target.checked && email){
+    try{ localStorage.setItem('flymily.savedEmail', email); }catch(_){}
+  }else{
+    try{ localStorage.removeItem('flymily.savedEmail'); }catch(_){}
+  }
+});
+
+// Forgot password flow
+$('#forgotPasswordBtn')?.addEventListener('click', async ()=>{
+  const email = $('#loginEmail')?.value?.trim();
+  const out = $('#authError');
+  if(!email){ if(out) out.textContent = 'הזן אימייל ולאחר מכן לחץ איפוס סיסמה.'; else alert('הזן אימייל'); return; }
+  const ADL = window.AppDataLayer;
+  if(!ADL || ADL.mode!=='firebase'){ if(out) out.textContent='דורש חיבור Firebase תקין.'; else alert('דורש Firebase'); return; }
+  try{
+    await ADL.sendPasswordReset(email);
+    if(out){ out.style.color='var(--ok)'; out.textContent='שלחנו מייל לאיפוס סיסמה. בדוק את תיבת הדואר.'; }
+  }catch(e){
+    if(out){ out.style.color='var(--danger)'; out.textContent = mapAuthErrorToHe(e); }
+    else alert(mapAuthErrorToHe(e));
+  }
 });
