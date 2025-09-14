@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%2730%27 fill=%27%238B5CF6%27/%3E%3Cpath d=%27M16 38l10-10 8 8 14-14%27 stroke=%27white%27 stroke-width=%276%27 fill=%27none%27/%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body class="splash-mode">
   <div class="bg-ornaments" aria-hidden="true"></div>
@@ -253,6 +254,10 @@
 
         <!-- MAP -->
         <div id="tab-map" class="panel">
+          <div id="mapToggleWrap" class="chip-row map-only">
+            <button id="toggleExpenses" class="chip active">איפה ביזבזתי</button>
+            <button id="toggleJournal" class="chip">איפה טיילתי</button>
+          </div>
           <div id="mainMap" class="map"></div>
         </div>
 
@@ -411,7 +416,7 @@
         </div>
         <div id="locationMap" class="map tall"></div>
         <menu class="form-actions">
-          <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
+          <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
           <button id="saveLocationBtn" class="btn primary">שמור מיקום</button>
         </menu>
       </form>
@@ -422,7 +427,7 @@
         <h3 id="confirmTitle">לאשר?</h3>
         <p id="confirmMsg">האם אתה בטוח?</p>
         <menu class="form-actions">
-          <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
+          <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
           <button id="confirmYes" class="btn danger" type="button">מחק</button>
         </menu>
       </form>
@@ -433,7 +438,7 @@
     <h3 id="confirmExpenseTitle">מחיקת הוצאה</h3>
     <p id="confirmExpenseMsg">האם אתה בטוח שברצונך למחוק את ההוצאה?</p>
     <menu class="form-actions">
-      <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
+      <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
       <button id="confirmExpenseYes" class="btn danger" type="button">מחק</button>
     </menu>
   </form>
@@ -444,7 +449,7 @@
     <h3 id="confirmJournalTitle">מחיקת רישום יומן</h3>
     <p id="confirmJournalMsg">האם אתה בטוח שברצונך למחוק את הרישום?</p>
     <menu class="form-actions">
-      <button type="button" id="cancelTripBtn" class="btn ghost">ביטול</button>
+      <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
       <button id="confirmJournalYes" class="btn danger" type="button">מחק</button>
     </menu>
   </form>
@@ -646,5 +651,19 @@
     </div>
   </dialog>
 
+
+  <dialog id="journalActionDialog" class="dialog small">
+    <div class="dialog-content">
+      <button class="dialog-close" id="journal-action-close" aria-label="סגור">×</button>
+      <h3 class="dialog-title">אפשרויות</h3>
+      <div class="dialog-body">
+        <div class="two flat">
+          <button id="journal-action-edit" class="btn primary">ערוך</button>
+          <button id="journal-action-delete" class="btn danger">מחק</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 </body>
+
 </html>
