@@ -1026,19 +1026,19 @@ async function renderJournal(){
   const tbody = $("#journalTable tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  // Sort journal entries from newest to oldest
+  // newest first
   entries.sort((a,b) => b.createdAt - a.createdAt);
-
   for (const j of entries){
     const tr = document.createElement("tr");
     tr.dataset.journalid = j.id;
     tr.innerHTML = `
-      <td class=\"journal-text\">${linkifyToIcon(j.text || \"\" )}</td>
+      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
       <td>${extractCityName(j.placeName)}</td>
-      <td><div class=\"expense-datetime\"><span class=\"time\">${dayjs(j.createdAt).format(\"HH:mm\")}</span><span class=\"date\">${dayjs(j.createdAt).format(\"DD/MM\")}</span></div></td>
-      <td class=\"row-actions\"><button class=\"kebab-btn\" title=\"אפשרויות\">⋮</button></td>
+      <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
+      <td class="row-actions">
+        <button class="kebab-btn" title="אפשרויות">⋮</button>
+      </td>
     `;
-    // If placeName missing but lat/lng exist → fetch city and persist
     (async ()=>{
       if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
         const city = await reverseGeocodeCity(j.lat, j.lng);
@@ -1049,66 +1049,12 @@ async function renderJournal(){
         }
       }
     })();
-
-    $(".edit", tr).onclick = () => openJournalDialog(j);
-    $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
-    const kb = $(".kebab-btn", tr); if(kb){ kb.onclick=(e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; } tbody.appendChild(tr);
+    const kb = $(".kebab-btn", tr);
+    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
+    tbody.appendChild(tr);
   }
-
-  // Add event listener for the sort button
-  const sortButton = el("sortJournalBtn");
-  if (sortButton) {
-    sortButton.onclick = () => {
-      state.journalSortAsc = !state.journalSortAsc; // Toggle sort direction
-      entries.sort((a, b) => {
-        const aVal = a.createdAt;
-        const bVal = b.createdAt;
-        if (state.journalSortAsc) {
-          return aVal - bVal;
-        } else {
-          return bVal - aVal;
-        }
-      });
-      // Update the button icon
-      sortButton.innerHTML = `<span>${state.journalSortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
-      renderJournalTable(entries);
-    };
-  }
-
-  function renderJournalTable(entriesToRender) {
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    for (const j of entriesToRender){
-      const tr = document.createElement("tr");
-      tr.dataset.journalid = j.id;
-      tr.innerHTML = `
-        <td>${linkifyToIcon((j.text || "").replace(/[\n\r]+/g, " ").slice(0, 80))}${j.text && j.text.length > 80 ? '...' : ''}</td>
-        <td>${extractCityName(j.placeName)}</td>
-        <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-        <td class="row-actions">
-          <button class="btn ghost edit">ערוך</button>
-          <button class="btn ghost danger del">מחק</button>
-        </td>
-      `;
-      // If placeName missing but lat/lng exist → fetch city and persist
-      (async ()=>{
-        if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
-          const city = await reverseGeocodeCity(j.lat, j.lng);
-          if (city){
-            const td = tr.querySelectorAll("td")[1];
-            if (td) td.textContent = city;
-            try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
-          }
-        }
-      })();
-      $(".edit", tr).onclick = () => openJournalDialog(j);
-      $(".del", tr).onclick = () => openJournalDeleteDialog(tripId, j);
-      const kb = $(".kebab-btn", tr); if(kb){ kb.onclick=(e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; } tbody.appendChild(tr);
-    }
-  }
-
-  renderJournalTable(entries);
 }
+
 
 // Maps
 function refreshMainMap(){
@@ -1599,6 +1545,18 @@ async function init(){
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   
+  /* dlg-cancel-delegation */
+  if(!window.__dlgCancelWired){
+    window.__dlgCancelWired = true;
+    document.addEventListener("click", function(e){
+      const btn = e.target.closest("[data-cancel=\"dialog\"]");
+      if (!btn) return;
+      const dlg = btn.closest("dialog");
+      if (!dlg) return;
+      e.preventDefault();
+      try{ dlg.close(); } catch(_){ dlg.open = false; }
+    }, true);
+  }
   if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
     e.preventDefault();
     try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
