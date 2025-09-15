@@ -1571,8 +1571,8 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 }
 /* widths: reduce ~10% vs full width of flex basis */
 #homeView .toolbar-actions .input{ width:auto; flex: 1 1 45%; max-width: 45%; }
-#homeView #globalSearchInput{ order:1; }
-#homeView #tripSearch{ order:2; }
+#homeView #globalSearchInput{ order:2; }
+#homeView #tripSearch{ order:1; }
 
 /* Kebab always bottom-left on cards/list */
 #tripList > li{ position: relative; }
@@ -1587,3 +1587,24 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 
 /* Make trip title look clickable */
 #tripList .trip-title{ cursor:pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+
+/* Force chips to the far LEFT (last) in RTL */
+#homeView .toolbar-actions .view-toggle{ order: 99; }
+#homeView .toolbar-actions #sortStartBtn{ order: 98; }
+
+
+/* FINAL: kebab bottom-left everywhere (wins cascade) */
+#homeView #tripList.cards > li .kebab-wrap,
+#homeView #tripList.list-mode > li .kebab-wrap{
+  position: absolute !important;
+  top: auto !important;
+  bottom: 12px !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  left: 12px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
