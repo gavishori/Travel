@@ -108,7 +108,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 }
 
 .btn{
-  appearance:none; border:none; border-radius:12px; padding:10px 14px; cursor:pointer;
+  appearance:none;  border-radius:12px; padding:10px 14px; cursor:pointer;
   background: var(--card); color: var(--text); border:1px solid var(--border);
 }
 .btn.primary{ background: var(--primary); color:#fff; border-color:transparent; }
@@ -293,7 +293,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .muted{ color: var(--muted); font-size: 12px; }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .table{ width:100%; border-collapse: collapse; }
@@ -468,7 +468,7 @@ dialog#emailAuthDialog .dialog-error.show{ display:block; }
   .table {
     font-size: 12px;
     display: block;
-    overflow-x: auto;
+    overflow-x: hidden;
     white-space: nowrap;
   }
   .table th, .table td {
@@ -856,7 +856,7 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 .brand-title{margin:0; font-size:46px; font-weight:700;}
 .tagline{margin:8px 0 20px; font-size:19px; color:var(--muted);}
 .cta-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
-.btn{padding:12px 20px; border-radius:999px; border:none; cursor:pointer; font-size:18px;}
+.btn{padding:12px 20px; border-radius:999px;  cursor:pointer; font-size:18px;}
 .btn.primary{background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff;}
 #app{display:none;} .entered #app{display:block;} .entered #splash, .entered .bg-ornaments{display:none;}
 @media (max-width:520px){ .cta-row .btn{width:100%} }

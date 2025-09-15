@@ -978,10 +978,7 @@ tr.innerHTML = `
       <td>${e.currency||"USD"}</td>
       <td>${extractCityName(e.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="btn ghost edit">ערוך</button>
-        <button class="btn ghost danger del">מחק</button>
-      </td>
+      <td class="row-actions"><button class="kebab-btn" title="אפשרויות">⋮</button></td>
     `;
 // If placeName missing but lat/lng exist → fetch city and persist
 (async ()=>{
@@ -995,8 +992,8 @@ tr.innerHTML = `
   }
 })();
 
-    $(".edit", tr).onclick = ()=> openExpenseDialog(e);
-    $(".del", tr).onclick = ()=> removeExpense(e);
+    const _kbExp = $(".kebab-btn", tr); if (_kbExp){ _kbExp.onclick = (ev)=>{ ev.stopPropagation(); __openExpenseRowActions(e); }; }
+    
     tbody.appendChild(tr);
   }
 
@@ -1049,8 +1046,8 @@ async function renderJournal(){
         }
       }
     })();
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
+    const kebabBtnJournal = $(".kebab-btn", tr);
+    if (kebabBtnJournal){ kebabBtnJournal.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     tbody.appendChild(tr);
   }
 }
@@ -1063,6 +1060,7 @@ function refreshMainMap(){
   if (mapEl){
     if (!state.maps.main){
       state.maps.main = L.map(mapEl);
+      setTimeout(()=>refreshMapLayers(), 0);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
     }
     const map = state.maps.main;
@@ -1989,3 +1987,66 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
+
+
+function __openExpenseRowActions(e){
+  openRowActionsDialog(state.currentTripId, e.desc || "הוצאה", {
+    onEdit: ()=> openExpenseDialog(e),
+    onDelete: ()=> removeExpense(e)
+  });
+}
+
+
+// trip-title click delegation
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if (t && t.classList && t.classList.contains('trip-title')){
+    const li = t.closest('li'); const id = li && li.dataset && li.dataset.tripId ? li.dataset.tripId : null;
+    // Fallback: pull id from runtime variable in closure if not found (we also bind inline per-render)
+    try { openTrip(id || (t.textContent||'').trim()); } catch(_){ /* ignore */ }
+  }
+});
+
+
+// Map toggles
+document.addEventListener('click', async (e)=>{
+  const t = e.target;
+  if (!(t instanceof HTMLElement)) return;
+  if (t.id === 'btnShowExpensesOnMap'){ e.preventDefault(); state.ui = state.ui||{}; state.ui.showExpensesLayer = !state.ui.showExpensesLayer; await refreshMapLayers(); }
+  if (t.id === 'btnShowJournalOnMap'){ e.preventDefault(); state.ui = state.ui||{}; state.ui.showJournalLayer = !state.ui.showJournalLayer; await refreshMapLayers(); }
+});
+function toggleActiveButtonsForMap(){
+  const eBtn = document.getElementById('btnShowExpensesOnMap');
+  const jBtn = document.getElementById('btnShowJournalOnMap');
+  if (eBtn){ eBtn.classList.toggle('active', !!(state.ui && state.ui.showExpensesLayer)); }
+  if (jBtn){ jBtn.classList.toggle('active', !!(state.ui && state.ui.showJournalLayer)); }
+}
+async function refreshMapLayers(){
+  const map = state.maps?.main; if (!map) return;
+  // clear
+  if (state.layers?.expenses){ map.removeLayer(state.layers.expenses); }
+  if (state.layers?.journal){ map.removeLayer(state.layers.journal); }
+  state.layers = state.layers || {};
+  const trip = await Store.getTrip(state.currentTripId); if (!trip) return;
+  if (state.ui?.showExpensesLayer){
+    const g = L.featureGroup();
+    for (const e of (trip.expenses||[])){
+      if (typeof e.lat==='number' && typeof e.lng==='number'){
+        g.addLayer(L.circleMarker([e.lat,e.lng], {radius:7, color:'#ff8800', fillOpacity:.85}).bindPopup((e.desc||'')+(e.placeName?`<br>${e.placeName}`:'')));
+      }
+    }
+    state.layers.expenses = g.addTo(map);
+  }
+  if (state.ui?.showJournalLayer){
+    const g = L.featureGroup();
+    for (const j of (trip.journal||[])){
+      if (typeof j.lat==='number' && typeof j.lng==='number'){
+        g.addLayer(L.circleMarker([j.lat,j.lng], {radius:7, color:'#1976d2', fillOpacity:.85}).bindPopup((j.text||'')+(j.placeName?`<br>${j.placeName}`:'')));
+      }
+    }
+    state.layers.journal = g.addTo(map);
+  }
+  const toBound=[]; if (state.layers.expenses) toBound.push(state.layers.expenses); if (state.layers.journal) toBound.push(state.layers.journal);
+  if (toBound.length){ try{ const fg=L.featureGroup(toBound); map.fitBounds(fg.getBounds().pad(.2)); }catch(_){ } }
+  toggleActiveButtonsForMap();
+}
