@@ -1,144 +1,93 @@
-/* Firebase compat bootstrap + simple Firestore bridge + auth with popup + iOS redirect fallback */
-
+// ==== Firebase bootstrap (compat) with iOS redirect & tap-gate ====
 (function(){
-  const config = window.firebaseConfig || null;
-  let app=null, auth=null, db=null, user=null;
-  let mode='local'; // default
-  let postRedirectResolved=false;
+  try {
+    // Firebase config must be defined
+    window.firebaseConfig = window.firebaseConfig || {
+      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+      authDomain: "travel-416ff.firebaseapp.com",
+      projectId: "travel-416ff",
+      storageBucket: "travel-416ff.appspot.com",
+      messagingSenderId: "1075073511694",
+      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+      measurementId: "G-FT56H33X5J"
+    };
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    if (!firebase || !firebase.apps) throw new Error('Firebase SDK not loaded');
+    if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
-  if(config){
-    try{
-      app = firebase.initializeApp(config);
-      auth = firebase.auth();
-      db = firebase.firestore();
-      mode = 'firebase';
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
-      // Persistence: SESSION on iOS (popup issues), LOCAL otherwise
-      auth.setPersistence(isIOS ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL);
+    // A utility function to detect if the user is on an iOS device.
+    window.isIOS = window.isIOS || function(){
+      try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
+    };
 
-      // Handle redirect result (iOS)
-      auth.getRedirectResult().then(res=>{
-        if(res && res.user){ user = res.user; }
-        postRedirectResolved = true;
-      }).catch(err=>{
-        console.warn('redirect result error', err); postRedirectResolved = true;
-      });
+    // Use session persistence for iOS and local persistence for other platforms.
+    var persistence = (window.isIOS&&window.isIOS()) ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL;
+    auth.setPersistence(persistence).catch(function(e){ console.warn('[auth] setPersistence failed', e&&e.code, e&&e.message); });
 
-      // Observe auth state
-      auth.onAuthStateChanged(u=>{
-        user = u || null;
-        if(user){ mode='firebase'; } else { mode = config ? 'firebase' : 'local'; }
-      });
-
-    }catch(e){
-      console.warn('Firebase init failed, fallback to local mode', e);
-      app=auth=db=null; mode='local';
-    }
-  }
-
-  // Minimal Firestore schema: collection 'trips' with doc id, filtered by ownerUid
-  async function listTrips(){
-    if(mode!=='firebase' || !user) return Object.values((localStorage.getItem('flymily.v1') && JSON.parse(localStorage.getItem('flymily.v1')) || {trips:{}}).trips||{});
-    const snap = await db.collection('trips').where('ownerUid','==',user.uid).get();
-    return snap.docs.map(d=>d.data());
-  }
-  async function getTrip(id){
-    if(mode!=='firebase' || !user){
-      const s = JSON.parse(localStorage.getItem('flymily.v1')||'{"trips":{}}'); return s.trips?.[id]||null;
-    }
-    const ref = db.collection('trips').doc(id); const doc = await ref.get();
-    return doc.exists ? doc.data() : null;
-  }
-  async function upsertTrip(trip){
-    if(mode!=='firebase' || !user){
-      const s = JSON.parse(localStorage.getItem('flymily.v1')||'{"trips":{}}'); s.trips ||= {};
-      s.trips[trip.id]=trip; localStorage.setItem('flymily.v1', JSON.stringify(s)); return trip;
-    }
-    trip.ownerUid = user.uid;
-    await db.collection('trips').doc(trip.id).set(trip, {merge:false});
-    return trip;
-  }
-  async function deleteTrip(id){
-    if(mode!=='firebase' || !user){
-      const s = JSON.parse(localStorage.getItem('flymily.v1')||'{"trips":{}}'); delete s.trips?.[id]; localStorage.setItem('flymily.v1', JSON.stringify(s)); return;
-    }
-    await db.collection('trips').doc(id).delete();
-  }
-
-  
-  async function ensureEmailAuth(email, password, allowCreate=true){
-    if(mode!=='firebase') throw new Error('Firebase not initialized');
-    // if already logged in, return
-    if(user) return {user};
-    if(!email || !password) throw new Error('email/password required');
-    try{
-      const cred = await auth.signInWithEmailAndPassword(email, password);
-      user = cred.user;
-      return {user};
-    }catch(err){
-      if(allowCreate && err && (err.code==='auth/user-not-found' || err.code==='auth/invalid-credential')){
-        const cred = await auth.createUserWithEmailAndPassword(email, password);
-        user = cred.user;
-        return {user};
+    // Check for a redirect result after sign-in.
+    auth.getRedirectResult().then(function(res){
+      if (res && res.user){ 
+        console.log('[auth] redirect ok', res.user.uid); 
       }
-      throw err;
-    }
-  }
+    }).catch(function(e){
+      console.error('[auth] redirect error: ', e);
+    });
 
-  async function setPersistence(modeStr){
-    if(mode!=='firebase') return;
-    try{
-      const P = firebase.auth.Auth.Persistence;
-      const target = modeStr==='LOCAL' ? P.LOCAL : (modeStr==='NONE' ? P.NONE : P.SESSION);
-      await auth.setPersistence(target);
-    }catch(e){ console.warn('setPersistence failed', e); }
-  }
+    // Public starter: must be called from the Google button (user gesture)
+    window.startGoogleSignIn = function(){
+        window.__attemptSignIn();
+    };
 
-  async function sendPasswordReset(email){
-    if(mode!=='firebase') throw new Error('Firebase not initialized');
-    if(!email) throw new Error('missing-email');
-    await auth.sendPasswordResetEmail(email);
-  }
-async function ensureAuth(interactive=false){
-    if(mode!=='firebase') return {user:null};
-    if(user) return {user};
-    if(!interactive) throw new Error('Auth required');
-    // Try popup first; fallback to redirect on iOS / popup blocked
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try{
-      if(isIOS) throw new Error('ForceRedirectOnIOS');
-      await auth.signInWithPopup(provider);
-      user = auth.currentUser;
-      return {user};
-    }catch(err){
-      console.warn('Popup sign-in failed || iOS; falling back to redirect', err?.code||err?.message||err);
-      await auth.signInWithRedirect(provider);
-      // After redirect: flow continues on page load; script.js will continue once postRedirectResolved
-      return {user:null};
-    }
-  }
+    // The core sign-in logic
+    window.__attemptSignIn = async function(){
+      try{
+        if (!window.auth || !window.googleProvider) return;
+        if (auth.currentUser) return;
 
-  async function signOut(){
-    if(mode!=='firebase') return;
-    await auth.signOut();
-  }
+        // On iOS, force a redirect sign-in to bypass pop-up issues.
+        // The popup is often blocked on mobile browsers.
+        if (window.isIOS && window.isIOS()){
+          console.log('[auth] iOS detected, attempting signInWithRedirect');
+          await auth.signInWithRedirect(googleProvider);
+          return;
+        }
 
-  // Expose bridge
-  window.AppDataLayer = {
-    mode,
-    db,
-    user,
-    postRedirectResolved,
-    ensureAuth,
-    signOut,
-    listTrips,
-    getTrip,
-    upsertTrip,
-    deleteTrip,
-    setPersistence,
-    sendPasswordReset,
-    ensureEmailAuth,
-  };
+        // On other platforms, first try sign-in with a pop-up.
+        try{
+          await auth.signInWithPopup(googleProvider);
+        }catch(err){
+          var code=(err && err.code) || '';
+          // If the pop-up fails for known reasons (e.g., blocked), fall back to a redirect.
+          var fallback=(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].indexOf(code)!==-1);
+          if (fallback){
+            console.log('[auth] Pop-up blocked or cancelled, falling back to redirect');
+            await auth.signInWithRedirect(googleProvider);
+          } else {
+            console.error('[auth] sign-in failed', code, err && err.message);
+          }
+        }
+      }catch(e){
+        console.error('[auth] __attemptSignIn fatal: ', e);
+      }
+    };
+
+    // DataLayer surface
+    window.AppDataLayer = window.AppDataLayer || {};
+    window.AppDataLayer.mode = 'firebase';
+    window.AppDataLayer.db = window.db;
+    window.AppDataLayer.ensureAuth = async function(){
+      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
+      return (auth.currentUser && auth.currentUser.uid) || null;
+    };
+
+    console.info('Firebase init complete');
+  } catch(e){
+    console.error('Firebase init error → local mode', e);
+    window.AppDataLayer = { mode: 'local' };
+  }
 })();
