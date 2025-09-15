@@ -108,7 +108,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 }
 
 .btn{
-  appearance:none;  border-radius:12px; padding:10px 14px; cursor:pointer;
+  appearance:none; border:none; border-radius:12px; padding:10px 14px; cursor:pointer;
   background: var(--card); color: var(--text); border:1px solid var(--border);
 }
 .btn.primary{ background: var(--primary); color:#fff; border-color:transparent; }
@@ -293,7 +293,7 @@ main{ padding:16px; max-width:1200px; margin:0 auto; }
 .muted{ color: var(--muted); font-size: 12px; }
 
 .table-wrapper {
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .table{ width:100%; border-collapse: collapse; }
@@ -468,7 +468,7 @@ dialog#emailAuthDialog .dialog-error.show{ display:block; }
   .table {
     font-size: 12px;
     display: block;
-    overflow-x: hidden;
+    overflow-x: auto;
     white-space: nowrap;
   }
   .table th, .table td {
@@ -856,7 +856,7 @@ body.splash-mode{margin:0;font-family:'Rubik',sans-serif;background:var(--bg);co
 .brand-title{margin:0; font-size:46px; font-weight:700;}
 .tagline{margin:8px 0 20px; font-size:19px; color:var(--muted);}
 .cta-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
-.btn{padding:12px 20px; border-radius:999px;  cursor:pointer; font-size:18px;}
+.btn{padding:12px 20px; border-radius:999px; border:none; cursor:pointer; font-size:18px;}
 .btn.primary{background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff;}
 #app{display:none;} .entered #app{display:block;} .entered #splash, .entered .bg-ornaments{display:none;}
 @media (max-width:520px){ .cta-row .btn{width:100%} }
@@ -1524,41 +1524,3 @@ dialog::backdrop{
 }
 
 .journal-text{white-space:pre-wrap; line-height:1.5}
-
-
-/* ===== Mobile Hardening (No horizontal scroll) ===== */
-html, body { max-width: 100%; overflow-x: hidden; }
-#app, main, .container, .panel, .card, .table-wrap { max-width: 100%; overflow-x: hidden; }
-
-/* Buttons: touch-friendly */
-button, .btn, .kebab-btn { min-height: 40px; min-width: 40px; touch-action: manipulation; }
-
-/* Tables: wrap/ellipsis to avoid horizontal scrolling */
-table { table-layout: fixed; width: 100%; }
-th, td { word-wrap: break-word; overflow-wrap: anywhere; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
-
-/* Dialog: fit viewport on mobile */
-.dialog-surface { max-width: 520px; width: calc(100% - 24px); margin: 8vh auto; }
-@media (max-width: 480px){
-  .dialog-surface { width: calc(100% - 16px); margin: 6vh auto; }
-  .panel .card { padding: 12px; }
-  th, td { max-width: 160px; }
-  .kebab-btn { width: 40px; height: 40px; }
-}
-
-/* Map responsive height */
-.map { height: 60vh; max-width: 100%; }
-@media (max-width: 600px){ .map { height: 50vh; } }
-
-/* Kebab menu RTL left alignment and clip prevention */
-.kebab-wrap { position: relative; }
-.kebab-menu { position: absolute; inset-inline-start: 0; inset-inline-end: auto; z-index: 1001; overflow: visible; }
-
-
-/* Pressed/active state for map toggle buttons */
-.btn.ghost.active { background: #1976d2; color: #fff; border-color: #0d47a1; }
-
-
-/* Active/pressed state for toggles */
-.btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
