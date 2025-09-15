@@ -650,22 +650,20 @@ function activateTabs(){
 }
 
 
-
-function switchToTab(tab){
-  $$('.tab').forEach(b=> b.classList.remove('active'));
-  const btn = document.querySelector(`.tab[data-tab="${tab}"]`);
-  if (btn) btn.classList.add('active');
-  $$('.panel').forEach(p=> p.classList.remove('active'));
-  el('tab-'+tab)?.classList.add('active');
-  if (tab === 'map') refreshMainMap();
-}
 async function openTrip(id){
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
-  if (!trip){ alert("נסיעה לא נמצאה"); return; }
+  if (!trip){
+  /*fallback if trip missing*/
+  try {
+    if (state.currentTripId){ switchToTab("overview"); return; }
+    const all = await Store.listTrips();
+    if (all && all.length){ await openTrip(all[0].id); return; }
+  } catch(_){}
+  console.warn("נסיעה לא נמצאה"); return;
+}
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
-  if (el("tripTitle")) { el("tripTitle").onclick = ()=> switchToTab("overview"); el("tripTitle").style.cursor="pointer"; el("tripTitle").setAttribute("title","לחיצה מחזירה ל׳הצג הכל׳"); }
   // The share controls are now in the export tab, so we don't need to get them here
   
   $("#homeView")?.classList.remove("active");
@@ -1551,62 +1549,7 @@ async function init(){
   // Buttons
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
-  
-async function performGlobalSearch(query){
-  const q = String(query||"").trim().toLowerCase();
-  if (!q) return [];
-  const trips = await Store.listTrips();
-  const results = [];
-  for (const t of trips){
-    const tTitle = t?.destination || "";
-    if (tTitle && tTitle.toLowerCase().includes(q)){
-      results.push({ type:"יעד", tripId: t.id, label: tTitle, snippet: "שם יעד" });
-    }
-    const full = await Store.getTrip(t.id);
-    if (!full) continue;
-    const expenses = Object.values(full.expenses||{});
-    for (const e of expenses){
-      const blob = `${e.description||""} ${e.category||""} ${e.placeName||""}`.toLowerCase();
-      if (blob.includes(q)){
-        results.push({ type:"הוצאה", tripId: t.id, label: full.destination||"נסיעה", snippet: e.description||e.category||e.placeName||"" });
-      }
-    }
-    const journal = Object.values(full.journal||{});
-    for (const j of journal){
-      const blob = `${j.title||""} ${j.text||""}`.toLowerCase();
-      if (blob.includes(q)){
-        results.push({ type:"יומן", tripId: t.id, label: full.destination||"נסיעה", snippet: j.title||j.text||"" });
-      }
-    }
-  }
-  return results.slice(0, 200);
-}
-
-function renderGlobalSearchResults(items){
-  const dlg = el("globalSearchDialog");
-  const box = el("globalSearchResults");
-  if (!dlg || !box) return;
-  box.innerHTML = "";
-  if (!items.length){
-    const p = document.createElement("p");
-    p.textContent = "לא נמצאו תוצאות.";
-    box.appendChild(p);
-  } else {
-    for (const it of items){
-      const row = document.createElement("div");
-      row.className = "result-item";
-      row.setAttribute("role","listitem");
-      row.innerHTML = `<strong>${it.label}</strong> <span class="result-type">(${it.type})</span><div class="muted">${linkifyToIcon(it.snippet||"")}</div>`;
-      row.addEventListener("click", async ()=>{
-        try { await openTrip(it.tripId); switchToTab("overview"); } finally { try{ dlg.close(); }catch(_){ dlg.open=false; } }
-      });
-      box.appendChild(row);
-    }
-  }
-  try{ dlg.showModal(); }catch(_){ dlg.open = true; }
-}
-
-if (el("tripSearch")) el("tripSearch").oninput = renderHome;
+  if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   if (el("globalSearchInput")) el("globalSearchInput").addEventListener("keydown", async (ev)=>{ if (ev.key==="Enter"){ ev.preventDefault(); const items = await performGlobalSearch(ev.target.value); renderGlobalSearchResults(items); }});
 
   
