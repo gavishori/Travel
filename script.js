@@ -39,7 +39,6 @@ const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 // ---------- Global state ----------
-const MAP_TOGGLES = { showExpensesOnMap: true, showJournalOnMap: true };
 const COUNTRY_CCY = {
   "IL":"ILS","US":"USD","GB":"GBP","DE":"EUR","FR":"EUR","ES":"EUR","IT":"EUR","PT":"EUR","NL":"EUR","BE":"EUR",
   "AT":"EUR","IE":"EUR","FI":"EUR","GR":"EUR","PL":"PLN","CZ":"CZK","SK":"EUR","HU":"HUF","RO":"RON","BG":"BGN",
@@ -819,8 +818,6 @@ async function renderOverviewExpenses() {
         <span class="date">${dayjs(e.createdAt).format("DD/MM")}</span>
       </div></td>
     `;
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openExpenseRowActions(eObj, tr, state.currentTripId); }; }
     tbody.appendChild(tr);
   }
 }
@@ -845,8 +842,6 @@ async function renderOverviewJournal() {
         <span class="date">${dayjs(j.createdAt).format("DD/MM")}</span>
       </div></td>
     `;
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openExpenseRowActions(eObj, tr, state.currentTripId); }; }
     tbody.appendChild(tr);
   }
 }
@@ -983,8 +978,9 @@ tr.innerHTML = `
       <td>${e.currency||"USD"}</td>
       <td>${extractCityName(e.placeName)}</td>
       <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions left-align">
-        <button class="kebab-btn" title="עוד פעולות">⋮</button>
+      <td class="row-actions">
+        <button class="btn ghost edit">ערוך</button>
+        <button class="btn ghost danger del">מחק</button>
       </td>
     `;
 // If placeName missing but lat/lng exist → fetch city and persist
@@ -1001,8 +997,6 @@ tr.innerHTML = `
 
     $(".edit", tr).onclick = ()=> openExpenseDialog(e);
     $(".del", tr).onclick = ()=> removeExpense(e);
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openExpenseRowActions(eObj, tr, state.currentTripId); }; }
     tbody.appendChild(tr);
   }
 
@@ -1055,49 +1049,13 @@ async function renderJournal(){
         }
       }
     })();
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
-    const kb = $(".kebab-btn", tr);
-    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openExpenseRowActions(eObj, tr, state.currentTripId); }; }
+    const kebabBtnJournal = $(".kebab-btn", tr);
+    if (kebabBtnJournal){ kebabBtnJournal.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     tbody.appendChild(tr);
   }
 }
 
 
-
-// Kebab menu for expenses rows
-function __openExpenseRowActions(expenseObj, trEl, tripId){
-  // Close any existing menu
-  $$(".kebab-menu").forEach(m => m.remove());
-  const menu = document.createElement("div");
-  menu.className = "kebab-menu";
-  menu.innerHTML = `
-    <button class="menu-item edit">ערוך</button>
-    <button class="menu-item danger del">מחק</button>
-  `;
-  document.body.appendChild(menu);
-  const rect = trEl.querySelector(".kebab-btn").getBoundingClientRect();
-  menu.style.top = (window.scrollY + rect.bottom + 6) + "px";
-  menu.style.left = (window.scrollX + rect.left - 80) + "px";
-  function close(){ menu.remove(); document.removeEventListener("click", close, true); }
-  setTimeout(()=> document.addEventListener("click", close, true), 0);
-
-  $(".edit", menu).onclick = async (e)=>{
-    e.stopPropagation();
-    close();
-    openAddExpenseDialog(expenseObj); // reuse existing edit flow
-  };
-  $(".del", menu).onclick = async (e)=>{
-    e.stopPropagation();
-    close();
-    if (confirm("למחוק הוצאה?")){
-      await Store.deleteExpense(tripId, expenseObj.id);
-      refreshExpensesTable();
-      refreshOverviewExpenses();
-      refreshMainMap();
-    }
-  };
-}
 // Maps
 function refreshMainMap(){
   if (!state.currentTripId) return;
@@ -1117,7 +1075,7 @@ function refreshMainMap(){
         group.addLayer(m);
       }
       group.clearLayers();
-      if (MAP_TOGGLES.showExpensesOnMap && trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
+      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
       if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
       group.addTo(map);
       if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
@@ -1456,7 +1414,7 @@ function collectJournalForm(){
 }
 
 // Exporters
-async function exportXLSX(){
+async function exportCSV(){
   const trip = await Store.getTrip(state.currentTripId);
   const rows = [["type","desc","category","amount","currency","lat","lng","timestamp"]];
   if (!el("exportWithoutExpenses").checked && trip.expenses){
@@ -1715,7 +1673,7 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
   };
 
   if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
-  if (el("exportXLSX")) el("exportXLSX").onclick = exportXLSX;
+  if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
 
   await fetchRates("USD");
@@ -2032,88 +1990,78 @@ document.addEventListener("click", function(e){
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
 
-// Map toggle buttons
-const tSpent = el('toggleSpent');
-if (tSpent){ tSpent.onclick = ()=>{ MAP_TOGGLES.showExpensesOnMap = !MAP_TOGGLES.showExpensesOnMap; refreshMainMap(); tSpent.classList.toggle('active', MAP_TOGGLES.showExpensesOnMap); }; }
-const tTrav = el('toggleTraveled');
-if (tTrav){ tTrav.onclick = ()=>{ MAP_TOGGLES.showJournalOnMap = !MAP_TOGGLES.showJournalOnMap; refreshMainMap(); tTrav.classList.toggle('active', MAP_TOGGLES.showJournalOnMap); }; }
 
-// Export DOCX using docx library (if available), otherwise fallback to simple text file
-document.getElementById('exportDOCX')?.addEventListener('click', async ()=>{
-  const trip = await Store.getTrip(state.currentTripId);
-  if (!trip) return alert("אין נסיעה פתוחה");
-  if (window.docx){
-    // simple doc generation
-    const { Document, Packer, Paragraph, TextRun } = window.docx;
-    const doc = new Document({
-      sections:[{ properties:{}, children:[
-        new Paragraph({ children:[ new TextRun({ text: `דוח נסיעה: ${trip.destination||""}`, bold:true, size:28 }) ] }),
-      ]}]
-    });
-    const blob = await Packer.toBlob(doc);
-    triggerDownload(blob, `trip_${state.currentTripId||'doc'}.docx`);
-  } else {
-    const blob = new Blob([`Trip: ${trip.destination||""}`], {type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
-    triggerDownload(blob, `trip_${state.currentTripId||'docx'}.docx`);
+// === Map toggles: expenses / journal ===
+document.addEventListener('click', async (ev)=>{
+  const t = ev.target;
+  if (!(t instanceof HTMLElement)) return;
+  if (t.id === 'btnShowExpensesOnMap'){
+    ev.preventDefault();
+    if (!state.currentTripId) return;
+    await ensureMapReady();
+    state.ui = state.ui || {};
+    state.ui.showExpensesLayer = !state.ui.showExpensesLayer;
+    await refreshMapLayers();
+  }
+  if (t.id === 'btnShowJournalOnMap'){
+    ev.preventDefault();
+    if (!state.currentTripId) return;
+    await ensureMapReady();
+    state.ui = state.ui || {};
+    state.ui.showJournalLayer = !state.ui.showJournalLayer;
+    await refreshMapLayers();
   }
 });
 
-document.getElementById('exportXLSX')?.addEventListener('click', async ()=>{
-  const trip = await Store.getTrip(state.currentTripId);
-  if (!trip) return alert("אין נסיעה פתוחה");
-  if (window.XLSX){
-    const rows = [["תיאור","קטגוריה","סכום","מטבע","מקום","זמן"]];
-    if (trip.expenses) Object.values(trip.expenses).forEach(e=>{
-      rows.push([e.desc||"", e.category||"", e.amount||0, e.currency||"", e.placeName||"", new Date(e.createdAt||Date.now()).toISOString()]);
-    });
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-    triggerDownload(new Blob([wbout], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}), `trip_${state.currentTripId||'excel'}.xlsx`);
-  } else {
-    // Fallback to CSV
-    let csv = "desc,category,amount,currency,place,createdAt\n";
-    if (trip.expenses) Object.values(trip.expenses).forEach(e=>{
-      csv += [e.desc||"", e.category||"", e.amount||0, e.currency||"", (e.placeName||"").replace(/,/g,' '), new Date(e.createdAt||Date.now()).toISOString()].join(",") + "\n";
-    });
-    triggerDownload(new Blob([csv], {type:"text/csv"}), `trip_${state.currentTripId||'excel'}.csv`);
+async function ensureMapReady(){
+  const el = document.getElementById('mainMap');
+  if (!el) return;
+  state.maps = state.maps || {};
+  if (!state.maps.main){
+    state.maps.main = L.map(el);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
   }
-});
-
-document.getElementById('importJSONBtn')?.addEventListener('click', async ()=>{
-  const file = document.getElementById('importJSON')?.files?.[0];
-  if (!file) return alert("בחר קובץ JSON קודם");
-  const txt = await file.text();
-  try{
-    const data = JSON.parse(txt);
-    if (!data || !data.trips) throw new Error("פורמט לא נתמך");
-    // Merge into store (local only unless firebase mode)
-    for (const [id, trip] of Object.entries(data.trips)){
-      await Store.updateTrip(id, trip);
-    }
-    alert("ייבוא הושלם");
-  }catch(err){
-    alert("שגיאה בייבוא: " + err.message);
-  }
-});
-
-function applyShareReadOnlyView(){
-  const url = new URL(location.href);
-  const shared = url.searchParams.get("share");
-  if (!shared) return;
-  // Hide tabs except journal + map
-  $$(".tabs .tab").forEach(btn=>{
-    const tab = btn.getAttribute("data-tab");
-    if (!["journal","map"].includes(tab)) btn.style.display="none";
-  });
-  // Force toggles to show only traveled (journal)
-  MAP_TOGGLES.showExpensesOnMap = false;
-  MAP_TOGGLES.showJournalOnMap = true;
-  // Hide budget/expenses UI
-  $("#tab-overview")?.remove();
-  $("#tab-meta")?.remove();
-  $("#tab-budget")?.remove();
-  $("#tab-export")?.remove();
 }
-document.addEventListener("DOMContentLoaded", applyShareReadOnlyView);
+
+async function refreshMapLayers(){
+  const map = state.maps && state.maps.main;
+  if (!map) return;
+  // clear old layers
+  if (state.layers && state.layers.expenses){ map.removeLayer(state.layers.expenses); }
+  if (state.layers && state.layers.journal){ map.removeLayer(state.layers.journal); }
+  state.layers = state.layers || {};
+  const trip = await Store.getTrip(state.currentTripId);
+  if (!trip) return;
+  // expenses layer
+  if (state.ui.showExpensesLayer){
+    const group = L.featureGroup();
+    for (const e of (trip.expenses||[])){
+      if (typeof e.lat === 'number' && typeof e.lng === 'number'){
+        const m = L.circleMarker([e.lat, e.lng], {radius:7, color:'#ff8800', fillOpacity:0.8});
+        m.bindPopup((e.title||e.category||'') + (e.placeName? `<br>${e.placeName}`:''));
+        group.addLayer(m);
+      }
+    }
+    state.layers.expenses = group.addTo(map);
+  }
+  // journal layer
+  if (state.ui.showJournalLayer){
+    const group = L.featureGroup();
+    for (const j of (trip.journal||[])){
+      if (typeof j.lat === 'number' && typeof j.lng === 'number'){
+        const m = L.circleMarker([j.lat, j.lng], {radius:7, color:'#1976d2', fillOpacity:0.8});
+        m.bindPopup((j.desc||j.text||'') + (j.placeName? `<br>${j.placeName}`:''));
+        group.addLayer(m);
+      }
+    }
+    state.layers.journal = group.addTo(map);
+  }
+  // fit bounds if any
+  const layers = [];
+  if (state.layers.expenses) layers.push(state.layers.expenses);
+  if (state.layers.journal) layers.push(state.layers.journal);
+  if (layers.length){
+    const fg = L.featureGroup(layers);
+    try{ map.fitBounds(fg.getBounds().pad(0.2)); }catch(_){}
+  }
+}

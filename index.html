@@ -254,13 +254,11 @@
 
         <!-- MAP -->
         <div id="tab-map" class="panel">
-          
-          <div class="map-toolbar two">
-            <button id="toggleSpent" class="btn">איפה ביזבזתי</button>
-            <button id="toggleTraveled" class="btn">איפה טיילתי</button>
-          </div>
-    
-          <div id="mainMap" class="map"></div>
+          <div class="map-toolbar">
+  <button id="btnShowExpensesOnMap" class="btn ghost">איפה ביזבזתי</button>
+  <button id="btnShowJournalOnMap" class="btn ghost">איפה טיילתי</button>
+</div>
+<div id="mainMap" class="map"></div>
         </div>
 
         <!-- EXPORT AND SHARE -->
@@ -269,8 +267,7 @@
             <h3>ייצוא</h3>
             <div class="two">
               <button id="exportPDF" class="btn">ייצוא PDF (עם/בלי הוצאות)</button>
-              <button id="exportDOCX" class="btn">ייצוא Word (DOCX)</button>
-              <button id="exportCSV" class="btn">ייצוא Excel (XLSX)</button>
+              <button id="exportCSV" class="btn">ייצוא CSV</button>
             </div>
             <div class="two">
               <button id="exportGPX" class="btn">ייצוא GPX</button>
@@ -278,11 +275,6 @@
             </div>
           </div>
           <div class="card">
-            <h3>ייבוא</h3>
-            <div class="two">
-              <input type="file" id="importJSON" accept="application/json" />
-              <button id="importJSONBtn" class="btn">ייבא JSON</button>
-            </div>
             <h3>שיתוף נסיעה</h3>
             <div class="share-controls">
               <label><input type="checkbox" id="shareToggle"> הפעל שיתוף</label>
