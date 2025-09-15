@@ -69,15 +69,17 @@
             await auth.signInWithRedirect(googleProvider);
           } else {
             console.error('[auth] sign-in failed', code, err && err.message);
+            if(code==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → local mode'); window.AppDataLayer.mode='local'; }
           }
         }
       }catch(e){
         console.error('[auth] __attemptSignIn fatal: ', e);
+        try{ if((e&&e.code)==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → switching to local mode'); window.AppDataLayer.mode='local'; } }catch(_){ }
       }
     };
 
     // DataLayer surface
-    window.AppDataLayer = window.AppDataLayer || {};
+    window.AppDataLayer = window.AppDataLayer || {}; /*__FALLBACK_LOCAL__*/
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){

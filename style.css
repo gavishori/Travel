@@ -1523,30 +1523,4 @@ dialog::backdrop{
   color: var(--muted) !important;
 }
 
-
-/* === Consistent kebab/action column (under 'מיין') for journal & expenses === */
-#journalTable thead th:last-child,
-#journalTable tbody td:last-child,
-#expenseTable thead th:last-child,
-#expenseTable tbody td:last-child{
-  width: 56px;
-  min-width: 56px;
-  max-width: 56px;
-  padding: 0;
-  text-align: center;
-}
-#journalTable .kebab-btn,
-#expenseTable .kebab-btn{
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-}
-#journalTable .kebab-btn:hover,
-#expenseTable .kebab-btn:hover{ background: rgba(255,255,255,0.06); }
+.journal-text{white-space:pre-wrap; line-height:1.5}
