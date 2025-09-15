@@ -1564,25 +1564,26 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
 
 
-/* --- Inputs sizing tweaks --- */
-#homeView #tripSearch.input,
-#homeView #globalSearchInput.input{
-  /* reduce height ~25% vs .input default (10px top/bottom) */
-  padding: 7px 10px;
-  /* reduce length by ~10% */
-  width: 90%;
-  max-width: 90%;
+/* === Home toolbar inputs: order, size (height -25%, width -10%) === */
+#homeView .toolbar-actions{ display:flex; gap:12px; align-items:center; }
+#homeView #globalSearchInput, #homeView #tripSearch{
+  padding-top: 7.5px; padding-bottom: 7.5px; /* ~-25% vs 10px */
 }
+/* widths: reduce ~10% vs full width of flex basis */
+#homeView .toolbar-actions .input{ width:auto; flex: 1 1 45%; max-width: 45%; }
+#homeView #globalSearchInput{ order:1; }
+#homeView #tripSearch{ order:2; }
 
-/* layout spacing for the two inputs side-by-side */
-#homeView .toolbar-actions{ gap: 10px; align-items: center; }
-
-/* --- Kebab positioning to bottom-left in ALL modes --- */
-#tripList > li { position: relative; }
+/* Kebab always bottom-left on cards/list */
+#tripList > li{ position: relative; }
 #tripList > li .kebab-wrap{
   position: absolute !important;
-  left: 12px; right: auto;
-  bottom: 12px; top: auto;
-  z-index: 5;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: auto !important;
+  top: auto !important;
 }
-#tripList .trip-header { position: static !important; }
+#tripList .trip-header{ position: static !important; }
+
+/* Make trip title look clickable */
+#tripList .trip-title{ cursor:pointer; text-decoration: underline; text-underline-offset: 2px; }
