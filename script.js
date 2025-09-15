@@ -1049,8 +1049,8 @@ async function renderJournal(){
         }
       }
     })();
-    const kebabBtnJournal = $(".kebab-btn", tr);
-    if (kebabBtnJournal){ kebabBtnJournal.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
+    const kb = $(".kebab-btn", tr);
+    if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
     tbody.appendChild(tr);
   }
 }
@@ -1989,79 +1989,3 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true); // capture to beat form validation
-
-
-// === Map toggles: expenses / journal ===
-document.addEventListener('click', async (ev)=>{
-  const t = ev.target;
-  if (!(t instanceof HTMLElement)) return;
-  if (t.id === 'btnShowExpensesOnMap'){
-    ev.preventDefault();
-    if (!state.currentTripId) return;
-    await ensureMapReady();
-    state.ui = state.ui || {};
-    state.ui.showExpensesLayer = !state.ui.showExpensesLayer;
-    await refreshMapLayers();
-  }
-  if (t.id === 'btnShowJournalOnMap'){
-    ev.preventDefault();
-    if (!state.currentTripId) return;
-    await ensureMapReady();
-    state.ui = state.ui || {};
-    state.ui.showJournalLayer = !state.ui.showJournalLayer;
-    await refreshMapLayers();
-  }
-});
-
-async function ensureMapReady(){
-  const el = document.getElementById('mainMap');
-  if (!el) return;
-  state.maps = state.maps || {};
-  if (!state.maps.main){
-    state.maps.main = L.map(el);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
-  }
-}
-
-async function refreshMapLayers(){
-  const map = state.maps && state.maps.main;
-  if (!map) return;
-  // clear old layers
-  if (state.layers && state.layers.expenses){ map.removeLayer(state.layers.expenses); }
-  if (state.layers && state.layers.journal){ map.removeLayer(state.layers.journal); }
-  state.layers = state.layers || {};
-  const trip = await Store.getTrip(state.currentTripId);
-  if (!trip) return;
-  // expenses layer
-  if (state.ui.showExpensesLayer){
-    const group = L.featureGroup();
-    for (const e of (trip.expenses||[])){
-      if (typeof e.lat === 'number' && typeof e.lng === 'number'){
-        const m = L.circleMarker([e.lat, e.lng], {radius:7, color:'#ff8800', fillOpacity:0.8});
-        m.bindPopup((e.title||e.category||'') + (e.placeName? `<br>${e.placeName}`:''));
-        group.addLayer(m);
-      }
-    }
-    state.layers.expenses = group.addTo(map);
-  }
-  // journal layer
-  if (state.ui.showJournalLayer){
-    const group = L.featureGroup();
-    for (const j of (trip.journal||[])){
-      if (typeof j.lat === 'number' && typeof j.lng === 'number'){
-        const m = L.circleMarker([j.lat, j.lng], {radius:7, color:'#1976d2', fillOpacity:0.8});
-        m.bindPopup((j.desc||j.text||'') + (j.placeName? `<br>${j.placeName}`:''));
-        group.addLayer(m);
-      }
-    }
-    state.layers.journal = group.addTo(map);
-  }
-  // fit bounds if any
-  const layers = [];
-  if (state.layers.expenses) layers.push(state.layers.expenses);
-  if (state.layers.journal) layers.push(state.layers.journal);
-  if (layers.length){
-    const fg = L.featureGroup(layers);
-    try{ map.fitBounds(fg.getBounds().pad(0.2)); }catch(_){}
-  }
-}
