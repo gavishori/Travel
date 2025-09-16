@@ -566,7 +566,15 @@ async function renderHome(){
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
-  for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
+  const gq = (el("globalSearchInput")?.value||"").trim().toLowerCase();
+const __matchTrip = (t)=>{
+  const hay = [t.destination||"", Array.isArray(t.tripType)?t.tripType.join(","):t.tripType||"", t.participants||"", t.city||"", t.country||"", t.start||"", t.end||""].join(" ").toLowerCase();
+  const okGlobal = gq ? hay.includes(gq) : true;
+  const okTrip = q ? ((t.destination||"").toLowerCase().includes(q)) : true;
+  return okGlobal && okTrip;
+};
+// -- global word filter --
+for (const t of tripsSorted.filter(__matchTrip)){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
@@ -600,14 +608,14 @@ const viewButton = $(".view", li);
     }
     
     /* bind title -> overview */
-    const titleEl = $(".trip-title", li);
-    if (titleEl){
-      titleEl.style.cursor = "pointer";
-      titleEl.setAttribute("role","link");
-      titleEl.tabIndex = 0;
-      const go = async ()=>{ await openTrip(t.id); if (typeof switchToTab === "function") switchToTab("overview"); };
-      titleEl.onclick = go;
-      titleEl.onkeydown = (ev)=>{ if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); go(); } };
+    const __title = $(".trip-title", li);
+    if (__title){
+      __title.style.cursor="pointer";
+      __title.setAttribute("role","link");
+      __title.tabIndex = 0;
+      const __go = async ()=>{ await openTrip(t.id); };
+      __title.onclick = __go;
+      __title.onkeydown = (ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); __go(); } };
     }
     
     // Kebab menu -> open centered dialog (Edit/Delete)
@@ -664,7 +672,7 @@ function activateTabs(){
 async function openTrip(id){
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
-  if (!trip){ alert("נסיעה לא נמצאה"); return; }
+  if (!trip){ console.warn("נסיעה לא נמצאה"); return; }
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
   // The share controls are now in the export tab, so we don't need to get them here
@@ -1555,17 +1563,9 @@ async function init(){
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   if (el("globalSearchInput")){
     let __gTimer;
-    el("globalSearchInput").addEventListener("input", (ev)=>{
-      const q = String(ev.target.value||"").trim();
+    el("globalSearchInput").addEventListener("input", ()=>{
       clearTimeout(__gTimer);
-      __gTimer = setTimeout(async ()=>{
-        if (!q){
-          const dlg = el("globalSearchDialog"); if (dlg && dlg.open) try{ dlg.close(); }catch(_){ dlg.open=false; }
-          return;
-        }
-        const items = await performGlobalSearch(q);
-        renderGlobalSearchResults(items);
-      }, 200);
+      __gTimer = setTimeout(()=>{ renderHome(); }, 200);
     });
   }
 
