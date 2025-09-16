@@ -1563,17 +1563,22 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 /* Active/pressed state for toggles */
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
 
-/* === FINAL-FINAL: kebab bottom-right (keep side), gallery+list === */
-#homeView #tripList.cards > li .kebab-wrap,
-#homeView #tripList.list-mode > li .kebab-wrap{
-  position: absolute !important;
-  top: auto !important;
-  bottom: 12px !important;
-  left: auto !important;
-  right: 12px !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: 12px !important;
-  transform: none !important;
-  margin: 0 !important;
-  z-index: 5 !important;
-}
+
+/* === Toolbar alignment === */
+#homeView .toolbar-actions{ display:flex; gap:12px; align-items:center; }
+
+/* Inputs sizing (~half) */
+#homeView .toolbar-actions .input{ flex: 1 1 22%; max-width: 22%; min-width: 160px; }
+
+/* Keep order: tripSearch (1), global word (2), doSearch (3), chips at far-left (98-99) */
+#homeView #tripSearch{ order:1; }
+#homeView #globalSearchInput{ order:2; }
+#homeView #doSearch{ order:3; }
+#homeView .toolbar-actions #sortStartBtn{ order:98; }
+#homeView .toolbar-actions .view-toggle{ order:99; }
+
+/* Make "חפש" button same height/shape as chips */
+#homeView #doSearch.chip{ line-height: inherit; padding-inline: 16px; }
+
+/* Keep sort button on a single line */
+#sortStartBtn{ white-space: nowrap; min-width: max-content; }

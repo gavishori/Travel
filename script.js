@@ -599,17 +599,6 @@ const viewButton = $(".view", li);
       viewButton.onclick = ()=> openTrip(t.id);
     }
     
-    /* bind title -> overview */
-    const titleEl = $(".trip-title", li);
-    if (titleEl){
-      titleEl.style.cursor="pointer";
-      titleEl.setAttribute("role","link");
-      titleEl.tabIndex = 0;
-      const go = async()=>{ await openTrip(t.id); if (typeof switchToTab === "function") switchToTab("overview"); };
-      titleEl.onclick = go;
-      titleEl.onkeydown = (ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); go(); } };
-    }
-    
     // Kebab menu -> open centered dialog (Edit/Delete)
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
@@ -664,11 +653,9 @@ function activateTabs(){
 async function openTrip(id){
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
-  if (!trip){ alert("נסיעה לא נמצאה"); return; }
+  if (!trip){ console.warn("נסיעה לא נמצאה"); return; }
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
-  el("tripTitle").style.cursor="pointer";
-  el("tripTitle").onclick = ()=> switchToTab("overview"); /* title->overview restored */
   // The share controls are now in the export tab, so we don't need to get them here
   
   $("#homeView")?.classList.remove("active");
@@ -1555,6 +1542,15 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
+  if (el("doSearch")) el("doSearch").onclick = async ()=>{
+    renderHome();
+    const g = el("globalSearchInput");
+    const qg = g ? String(g.value||"").trim() : "";
+    if (qg && typeof performGlobalSearch === "function"){
+      const items = await performGlobalSearch(qg);
+      if (typeof renderGlobalSearchResults === "function") renderGlobalSearchResults(items);
+    }
+  };
   
   /* dlg-cancel-delegation */
   if(!window.__dlgCancelWired){
