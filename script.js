@@ -566,17 +566,32 @@ async function renderHome(){
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
-
-  const __gq = (el("globalSearchInput")?.value||"").trim().toLowerCase();
-  const __q  = (el("tripSearch")?.value||"").trim().toLowerCase();
-  const filteredTrips = tripsSorted.filter(t => {
-    const hay = [t.destination||"", Array.isArray(t.tripType)?t.tripType.join(","):t.tripType||"", t.participants||"", t.city||"", t.country||"", t.start||"", t.end||""].join(" ").toLowerCase();
-    const okGlobal = __gq ? hay.includes(__gq) : true;
-    const okTrip = __q ? ((t.destination||"").toLowerCase().includes(__q)) : true;
+  
+  const gq = (el("globalSearchInput")?.value||"").trim().toLowerCase();
+  const filteredTrips = tripsSorted.filter(t=>{
+    const basics = [
+      t.destination||"", (Array.isArray(t.tripType)?t.tripType.join(","):t.tripType||""),
+      t.participants||"", t.city||"", t.country||"", t.start||"", t.end||""
+    ].join(" ").toLowerCase();
+    let deep = "";
+    try{
+      if (t.expenses){
+        for (const e of Object.values(t.expenses)){
+          deep += " " + [e.desc||"", e.category||"", e.placeName||"", e.currency||"", String(e.amount??"")].join(" ");
+        }
+      }
+      if (t.journal){
+        for (const j of Object.values(t.journal)){
+          deep += " " + [j.text||"", j.placeName||""].join(" ");
+        }
+      }
+    }catch(_){}
+    const hay = (basics + " " + deep).toLowerCase();
+    const okGlobal = gq ? hay.includes(gq) : true;
+    const okTrip   = q  ? String(t.destination||"").toLowerCase().includes(q) : true;
     return okGlobal && okTrip;
   });
-  // -- global word filter --
-  for (const t of filteredTrips){
+for (const t of filteredTrips){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
@@ -605,20 +620,11 @@ async function renderHome(){
   </div>
 `;
 const viewButton = $(".view", li);
-    if (viewButton) {
-    /* bind title -> overview */
-    try{
-      const __title = $(".trip-title", li);
-      if (__title){
-        __title.style.cursor = "pointer";
-        __title.setAttribute("role","link");
-        __title.tabIndex = 0;
-        const __go = async ()=>{ await openTrip(t.id); };
-        __title.onclick = __go;
-        __title.onkeydown = (ev)=>{ if (ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); __go(); } };
-      }
-    }catch(_){/* no-op */}
+    /* title click opens */
+    const titleEl = $(".trip-title", li);
+    if (titleEl){ titleEl.style.cursor="pointer"; titleEl.onclick = ()=> openTrip(t.id); titleEl.setAttribute("role","link"); }
 
+    if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
     
@@ -1569,7 +1575,7 @@ async function init(){
     let __gTimer;
     el("globalSearchInput").addEventListener("input", ()=>{
       clearTimeout(__gTimer);
-      __gTimer = setTimeout(()=>{ renderHome(); }, 200);
+      __gTimer = setTimeout(()=> renderHome(), 180);
     });
   }
 
@@ -1736,7 +1742,7 @@ function openJournalDeleteDialog(tripId, entry){
   el("confirmJournalTitle").textContent = "מחיקת רישום יומן";
   const preview = (entry.text || "").trim();
   el("confirmJournalMsg").textContent = preview
-    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '...' : ''}"?`
+    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '…' : ''}"?`
     : `למחוק רישום יומן זה?`;
 
   const yesBtn = el("confirmJournalYes");
