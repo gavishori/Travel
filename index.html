@@ -509,9 +509,17 @@
       <label>אימייל
         <input type="email" id="authEmail" required placeholder="name@example.com">
       </label>
-      <label>סיסמה
+      
+    <label>סיסמה
+      <div class="input-with-button">
         <input type="password" id="authPassword" required placeholder="••••••••">
-      </label>
+        <button type="button" id="togglePasswordBtn" class="btn ghost" title="הצג/הסתר סיסמה">👁</button>
+      </div>
+    </label>
+    <div class="dialog-actions-row tight">
+      <button type="button" id="forgotPasswordBtn" class="btn link">שכחתי סיסמה</button>
+    </div>
+    
       <div class="dialog-actions-row">
         <div class="left-actions">
           <button id="emailSignInBtn" class="btn primary" value="signin">כניסה</button>

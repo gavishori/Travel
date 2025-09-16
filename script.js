@@ -1964,6 +1964,31 @@ function openJournalDeleteDialog(tripId, entry){
         const ok = await (window.emailSignIn && window.emailSignIn(emailEl.value, passEl.value));
         if (ok && dlg) dlg.close();
       });
+      
+    // Toggle password visibility
+    var passToggleBtn = document.getElementById('togglePasswordBtn');
+    if (passToggleBtn && passEl){
+      passToggleBtn.addEventListener('click', function(){
+        if (passEl.type === 'password'){ passEl.type = 'text'; passToggleBtn.textContent = '🙈'; }
+        else { passEl.type = 'password'; passToggleBtn.textContent = '👁'; }
+      });
+    }
+
+    // Forgot password
+    var forgotBtn = document.getElementById('forgotPasswordBtn');
+    if (forgotBtn){
+      forgotBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        if (!emailEl.value){ showError('נא להזין אימייל כדי לאפס סיסמה'); return; }
+        try{
+          await auth.sendPasswordResetEmail(emailEl.value);
+          showError('נשלח מייל לאיפוס סיסמה');
+        }catch(e){
+          showError(e && e.message ? e.message : 'שגיאה בשליחת איפוס סיסמה');
+        }
+      });
+    }
+    
       if (signUpBtn) signUpBtn.addEventListener('click', async function(ev){
         ev.preventDefault();
         showError('');
