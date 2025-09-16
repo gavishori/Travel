@@ -563,10 +563,29 @@ async function renderHome(){
   });
 
   const q = (el("tripSearch")?.value||"").trim().toLowerCase();
+  const deepQ = (el("wordSearch")?.value||"").trim().toLowerCase();
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
-  for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
+
+  const filteredTrips = await Promise.all(tripsSorted.filter(async t => {
+    // Filter by trip name
+    const nameMatch = (t.destination || "").toLowerCase().includes(q);
+    if (q && !nameMatch) return false;
+
+    // Deep search if needed
+    if (deepQ) {
+      const expenses = await Store.listExpenses(t.id);
+      const journal = await Store.listJournal(t.id);
+      const deepMatch = expenses.some(e => (e.desc || "").toLowerCase().includes(deepQ) || (e.category || "").toLowerCase().includes(deepQ)) ||
+        journal.some(j => (j.text || "").toLowerCase().includes(deepQ));
+      return deepMatch;
+    }
+
+    return true;
+  }));
+  
+  for (const t of filteredTrips){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
@@ -583,9 +602,7 @@ async function renderHome(){
       <span class="badge">${translatedTripTypes||"—"}</span>
     </div>
   </div>
-  <div class="row bottom-row">
-    <button class="btn view">פתח</button>
-  <div class="kebab-wrap kebab-left"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button></div></div>
+  <div class="kebab-wrap"><button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button></div>
 `;
 const viewButton = $(".view", li);
     if (viewButton) {
@@ -933,7 +950,10 @@ async function renderBudget(){
         <td>${e.amount ?? 0}</td>
         <td>${e.currency||"USD"}</td>
         <td>${extractCityName(e.placeName)}</td>
-        <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
+        <td><div class="expense-datetime">
+          <span class="time">${dayjs(e.createdAt).format("HH:mm")}</span>
+          <span class="date">${dayjs(e.createdAt).format("DD/MM")}</span>
+        </div></td>
         <td class="row-actions">
           <div class="kebab-wrap-expense">
             <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
@@ -1682,6 +1702,7 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
+  if (el("wordSearch")) el("wordSearch").oninput = renderHome; // New word search input handler
   
   if(!window.__dlgCancelWired){
     window.__dlgCancelWired = true;
@@ -2114,3 +2135,5 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true);
+
+}
