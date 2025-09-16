@@ -1581,3 +1581,18 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 
 /* widen the sort chip so its text stays in one line */
 #sortStartBtn{ white-space: nowrap; padding-inline: 18px; flex: 0 0 auto; min-width: max-content; }
+
+/* === FINAL OVERRIDE: kebab bottom-left on cards & list === */
+#homeView #tripList.cards > li .kebab-wrap,
+#homeView #tripList.list-mode > li .kebab-wrap{
+  position: absolute !important;
+  top: auto !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
