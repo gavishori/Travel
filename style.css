@@ -1591,3 +1591,58 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
     transform: none;
   }
 }
+
+/* Password field with eye button */
+.input-with-button.password-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.input-with-button.password-field .input {
+  flex: 1;
+}
+.input-with-button.password-field .eye-btn {
+  padding: 0 10px;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn.link {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+
+/* === Auth dialog extras === */
+.input-icon-wrap { position: relative; }
+.input-icon-wrap input { width: 100%; padding-inline-end: 42px; } /* space for eye on the right (RTL) */
+.input-icon-wrap.rtl .icon-btn { right: 8px; left: auto; } /* eye on right */
+.icon-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+dialog#emailAuthDialog .btn,
+dialog#emailAuthDialog .icon-btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+}
+dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }

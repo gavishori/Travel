@@ -14,7 +14,7 @@
 
   <section id="splash" role="region" aria-label="מסך פתיחה">
     <div class="splash-card">
-      <img class="splash-logo" src="data:image/png;base64,iVBORw0KGgoAAAANsfasfafjIuG5N... (base64 image data) ...a6bf869efb117" alt="FLYMILY">
+      <img class="splash-logo" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2772%27 height=%2772%27 viewBox=%270 0 72 72%27%3E%3Cdefs/%3E%3Ccircle cx=%2736%27 cy=%2736%27 r=%2732%27 fill=%27%235b8cff%27/%3E%3Cpath d=%27M20 40l10-10 8 8 14-14%27 stroke=%27%23fff%27 stroke-width=%276%27 fill=%27none%27 stroke-linecap=%27round%27/%3E%3C/svg%3E" alt="FLYMILY">
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
@@ -503,32 +503,28 @@
 
   <!-- Email/Password Auth Dialog -->
   <dialog id="emailAuthDialog" class="dialog">
-    <form method="dialog" class="form" id="emailAuthForm" novalidate>
-      <h3 class="dialog-title">כניסה לחשבון</h3>
-      <div id="emailAuthError" class="dialog-error" role="alert"></div>
-      <label>אימייל
-        <input type="email" id="authEmail" required placeholder="name@example.com">
-      </label>
-      
+  <form method="dialog" class="form" id="emailAuthForm" novalidate>
+    <h3 class="dialog-title">כניסה לחשבון</h3>
+    <div id="emailAuthError" class="dialog-error" role="alert"></div>
+    <label>אימייל
+      <input type="email" id="authEmail" required placeholder="name@example.com">
+    </label>
     <label>סיסמה
-      <div class="input-with-button">
+      <div class="input-icon-wrap rtl">
         <input type="password" id="authPassword" required placeholder="••••••••">
-        <button type="button" id="togglePasswordBtn" class="btn ghost" title="הצג/הסתר סיסמה">👁</button>
+        <button type="button" id="togglePasswordBtn" class="icon-btn" title="הצג/הסתר סיסמה" aria-label="הצג/הסתר סיסמה">👁</button>
       </div>
     </label>
-    <div class="dialog-actions-row tight">
-      <button type="button" id="forgotPasswordBtn" class="btn link">שכחתי סיסמה</button>
-    </div>
-    
-      <div class="dialog-actions-row">
-        <div class="left-actions">
-          <button id="emailSignInBtn" class="btn primary" value="signin">כניסה</button>
-          <button id="emailSignUpBtn" class="btn" value="signup" type="button">הרשמה</button>
-        </div>
-        <button class="btn ghost dialog-close-btn" value="cancel" aria-label="סגור">✕</button>
+    <div class="dialog-actions-row">
+      <div class="left-actions">
+        <button id="emailSignInBtn" class="btn primary" value="signin">כניסה</button>
+        <button id="emailSignUpBtn" class="btn" value="signup" type="button">הרשמה</button>
+        <button type="button" id="forgotPasswordBtn" class="btn ghost">שכחתי סיסמה</button>
       </div>
-    </form>
-  </dialog>
+      <button class="btn ghost dialog-close-btn" value="cancel" aria-label="סגור">✕</button>
+    </div>
+  </form>
+</dialog>
 
 </body>
 </html>

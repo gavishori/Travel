@@ -2102,3 +2102,106 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true);
+
+/* ===== AUTH WIRING v2 (email/password only) ===== */
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var openBtn = document.getElementById('openEmailAuthBtn');
+    var dlg = document.getElementById('emailAuthDialog');
+    var emailEl = document.getElementById('authEmail');
+    var passEl  = document.getElementById('authPassword');
+    var toggleBtn = document.getElementById('togglePasswordBtn');
+    var signInBtn = document.getElementById('emailSignInBtn');
+    var signUpBtn = document.getElementById('emailSignUpBtn');
+    var forgotBtn = document.getElementById('forgotPasswordBtn');
+    var errBox = document.getElementById('emailAuthError');
+    var userAccount = document.getElementById('userAccount');
+    var signOutBtn = document.getElementById('signOutBtn');
+
+    function showError(msg){
+      if (!errBox) return;
+      errBox.textContent = msg || '';
+      errBox.classList.toggle('show', !!msg);
+    }
+
+    if (openBtn && window.showEmailDialog){
+      openBtn.addEventListener('click', function(){ window.showEmailDialog(); });
+    } else if (openBtn && dlg && dlg.showModal){
+      openBtn.addEventListener('click', function(){ dlg.showModal(); });
+    }
+
+    if (toggleBtn && passEl){
+      toggleBtn.addEventListener('click', function(){
+        if (passEl.type === 'password'){ passEl.type = 'text'; toggleBtn.textContent = '🙈'; }
+        else { passEl.type = 'password'; toggleBtn.textContent = '👁'; }
+      });
+    }
+
+    if (signInBtn){
+      signInBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        showError('');
+        try{
+          if (!emailEl.value || !passEl.value){ showError('נא למלא אימייל וסיסמה'); return; }
+          if (window.emailSignIn){
+            var ok = await window.emailSignIn(emailEl.value, passEl.value);
+            if (ok && dlg) dlg.close();
+          }
+        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בכניסה'); }
+      });
+    }
+
+    if (signUpBtn){
+      signUpBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        showError('');
+        try{
+          if (!emailEl.value || !passEl.value){ showError('נא למלא אימייל וסיסמה'); return; }
+          if (window.emailSignUp){
+            var ok = await window.emailSignUp(emailEl.value, passEl.value);
+            if (ok && dlg) dlg.close();
+          }
+        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בהרשמה'); }
+      });
+    }
+
+    if (forgotBtn){
+      forgotBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        showError('');
+        try{
+          if (!emailEl.value){ showError('נא להזין אימייל לשליחת קישור איפוס'); return; }
+          await auth.sendPasswordResetEmail(emailEl.value);
+          showError('קישור איפוס נשלח למייל.');
+        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בשליחת איפוס'); }
+      });
+    }
+
+    if (signOutBtn){
+      signOutBtn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        if (window.handleSignOut) window.handleSignOut();
+      });
+    }
+
+    if (typeof auth !== 'undefined' && auth && typeof auth.onAuthStateChanged === 'function'){
+      auth.onAuthStateChanged(function(user){
+        console.log('[auth] state changed:', !!user);
+        var body = document.body;
+        if (user){
+          // Show app
+          body.classList.remove('splash-mode');
+          if (userAccount) userAccount.textContent = '(' + (user.email || '') + ')';
+          // If dialog open, close
+          if (dlg && typeof dlg.close === 'function') try{ dlg.close(); }catch(_){}
+        } else {
+          // Show splash
+          body.classList.add('splash-mode');
+          if (userAccount) userAccount.textContent = '';
+        }
+      });
+    } else {
+      console.warn('[auth] onAuthStateChanged unavailable');
+    }
+  }catch(e){ console.error('auth wiring init failed', e); }
+});
