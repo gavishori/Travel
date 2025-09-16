@@ -1541,3 +1541,12 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
 .kebab-left {
   margin-right: auto;
 }
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }

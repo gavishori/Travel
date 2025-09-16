@@ -576,9 +576,6 @@ async function renderHome(){
     li.innerHTML = `
   <div>
     <div class="trip-header">
-      <div class="kebab-wrap">
-        <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
-      </div>
       <div class="trip-title">${t.destination||"—"}</div>
     </div>
     <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
