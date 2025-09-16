@@ -1564,47 +1564,20 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
 
 
-/* === Home toolbar inputs: order, size (height -25%, width -10%) === */
+/* === Toolbar sizing & order tweaks === */
 #homeView .toolbar-actions{ display:flex; gap:12px; align-items:center; }
-#homeView #globalSearchInput, #homeView #tripSearch{
-  padding-top: 7.5px; padding-bottom: 7.5px; /* ~-25% vs 10px */
+
+/* shrink both inputs to ~half of previous width */
+#homeView .toolbar-actions .input{
+  width:auto; flex: 1 1 22%; max-width: 22%; min-width: 160px;
 }
-/* widths: reduce ~10% vs full width of flex basis */
-#homeView .toolbar-actions .input{ width:auto; flex: 1 1 45%; max-width: 45%; }
-#homeView #globalSearchInput{ order:2; }
-#homeView #tripSearch{ order:1; }
 
-/* Kebab always bottom-left on cards/list */
-#tripList > li{ position: relative; }
-#tripList > li .kebab-wrap{
-  position: absolute !important;
-  bottom: 12px !important;
-  left: 12px !important;
-  right: auto !important;
-  top: auto !important;
-}
-#tripList .trip-header{ position: static !important; }
-
-/* Make trip title look clickable */
-#tripList .trip-title{ cursor:pointer; text-decoration: underline; text-underline-offset: 2px; }
-
-
-/* Force chips to the far LEFT (last) in RTL */
-#homeView .toolbar-actions .view-toggle{ order: 99; }
+/* keep order: tripSearch (1), globalSearch (2), doSearch (3), chips far left (98-99) */
+#homeView #tripSearch{ order: 1; }
+#homeView #globalSearchInput{ order: 2; }
+#homeView #doSearch{ order: 3; }
 #homeView .toolbar-actions #sortStartBtn{ order: 98; }
+#homeView .toolbar-actions .view-toggle{ order: 99; }
 
-
-/* FINAL: kebab bottom-left everywhere (wins cascade) */
-#homeView #tripList.cards > li .kebab-wrap,
-#homeView #tripList.list-mode > li .kebab-wrap{
-  position: absolute !important;
-  top: auto !important;
-  bottom: 12px !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
-  left: 12px !important;
-  right: auto !important;
-  transform: none !important;
-  margin: 0 !important;
-  z-index: 5 !important;
-}
+/* widen the sort chip so its text stays in one line */
+#sortStartBtn{ white-space: nowrap; padding-inline: 18px; flex: 0 0 auto; min-width: max-content; }

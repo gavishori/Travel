@@ -41,7 +41,7 @@
       <div class="toolbar">
         <h2>הנסיעות שלי</h2>
         <div class="toolbar-actions">
-          <input id="globalSearchInput" class="input" placeholder="חפש מילה בכל הטיולים…" aria-label="חיפוש כללי" />
+          <button id="doSearch" class="btn primary" type="button" aria-label="חפש">חפש</button>
           <input id="tripSearch" class="input" placeholder="חפש נסיעה..." />
         <button id="sortStartBtn" class="btn btn-outline" title="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
 <div class="view-toggle">
@@ -54,17 +54,6 @@
 
       <button id="addTripFab" class="fab" title="יצירת נסיעה">＋</button>
     </section>
-
-    <dialog id="globalSearchDialog" class="app-dialog">
-      <form method="dialog" class="dialog-content">
-        <header class="dialog-header">
-          <h3>תוצאות חיפוש</h3>
-          <button class="btn ghost" value="cancel" aria-label="סגור">סגור</button>
-        </header>
-        <div id="globalSearchResults" class="results-list" role="list"></div>
-      </form>
-    </dialog>
-    
 
     <!-- TRIP VIEW -->
     <section id="tripView" class="view">
