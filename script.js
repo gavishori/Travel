@@ -602,12 +602,12 @@ const viewButton = $(".view", li);
     /* bind title -> overview */
     const titleEl = $(".trip-title", li);
     if (titleEl){
-      titleEl.style.cursor="pointer";
+      titleEl.style.cursor = "pointer";
       titleEl.setAttribute("role","link");
       titleEl.tabIndex = 0;
-      const go = async()=>{ await openTrip(t.id); if (typeof switchToTab === "function") switchToTab("overview"); };
+      const go = async ()=>{ await openTrip(t.id); if (typeof switchToTab === "function") switchToTab("overview"); };
       titleEl.onclick = go;
-      titleEl.onkeydown = (ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); go(); }};
+      titleEl.onkeydown = (ev)=>{ if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); go(); } };
     }
     
     // Kebab menu -> open centered dialog (Edit/Delete)
@@ -664,7 +664,7 @@ function activateTabs(){
 async function openTrip(id){
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
-  if (!trip){ console.warn("נסיעה לא נמצאה"); return; }
+  if (!trip){ alert("נסיעה לא נמצאה"); return; }
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
   // The share controls are now in the export tab, so we don't need to get them here
@@ -1569,15 +1569,6 @@ async function init(){
     });
   }
 
-  if (el("doSearch")) el("doSearch").onclick = async ()=>{
-    renderHome();
-    const g = el("globalSearchInput");
-    const qg = g ? String(g.value||"").trim() : "";
-    if (qg && typeof performGlobalSearch === "function"){
-      const items = await performGlobalSearch(qg);
-      if (typeof renderGlobalSearchResults === "function") renderGlobalSearchResults(items);
-    }
-  };
   
   /* dlg-cancel-delegation */
   if(!window.__dlgCancelWired){
@@ -1741,7 +1732,7 @@ function openJournalDeleteDialog(tripId, entry){
   el("confirmJournalTitle").textContent = "מחיקת רישום יומן";
   const preview = (entry.text || "").trim();
   el("confirmJournalMsg").textContent = preview
-    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '…' : ''}"?`
+    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '...' : ''}"?`
     : `למחוק רישום יומן זה?`;
 
   const yesBtn = el("confirmJournalYes");
@@ -2085,45 +2076,4 @@ async function refreshMapLayers(){
   const toBound=[]; if (state.layers.expenses) toBound.push(state.layers.expenses); if (state.layers.journal) toBound.push(state.layers.journal);
   if (toBound.length){ try{ const fg=L.featureGroup(toBound); map.fitBounds(fg.getBounds().pad(.2)); }catch(_){ } }
   toggleActiveButtonsForMap();
-}
-\n
-async function performGlobalSearch(query){
-  const q = String(query||"").trim().toLowerCase();
-  if (!q) return [];
-  const trips = await Store.listTrips();
-  const results = [];
-  for (const t of trips){
-    const title = t?.destination || "";
-    if (title.toLowerCase().includes(q)){
-      results.push({ type:"יעד", tripId: t.id, label: title, snippet: "שם יעד" });
-    }
-    const full = await Store.getTrip(t.id);
-    if (!full) continue;
-    for (const e of Object.values(full.expenses||{})){
-      const blob = `${e.description||""} ${e.category||""} ${e.placeName||""}`.toLowerCase();
-      if (blob.includes(q)) results.push({ type:"הוצאה", tripId: t.id, label: full.destination||"נסיעה", snippet: e.description||e.category||e.placeName||"" });
-    }
-    for (const j of Object.values(full.journal||{})){
-      const blob = `${j.title||""} ${j.text||""}`.toLowerCase();
-      if (blob.includes(q)) results.push({ type:"יומן", tripId: t.id, label: full.destination||"נסיעה", snippet: j.title||j.text||"" });
-    }
-  }
-  return results.slice(0, 200);
-}
-function renderGlobalSearchResults(items){
-  const dlg = el("globalSearchDialog");
-  const box = el("globalSearchResults");
-  if (!dlg || !box) return;
-  box.innerHTML = "";
-  if (!items.length){ const p = document.createElement("p"); p.textContent = "לא נמצאו תוצאות."; box.appendChild(p); }
-  else {
-    for (const it of items){
-      const row = document.createElement("div");
-      row.className = "result-item"; row.setAttribute("role","listitem");
-      row.innerHTML = `<strong>${it.label}</strong> <span class="result-type">(${it.type})</span><div class="muted">${linkifyToIcon(it.snippet||"")}</div>`;
-      row.addEventListener("click", async ()=>{ await openTrip(it.tripId); if (typeof switchToTab==="function") switchToTab("overview"); try{ dlg.close(); }catch(_){ dlg.open=false; } });
-      box.appendChild(row);
-    }
-  }
-  try{ dlg.showModal(); }catch(_){ dlg.open = true; }
 }
