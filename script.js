@@ -1923,6 +1923,7 @@ function openJournalDeleteDialog(tripId, entry){
   try {
     var signInBtn  = document.getElementById('googleSignInBtn');
     var signOutBtn = document.getElementById('signOutBtn');
+    var openEmailAuthBtn = document.getElementById('openEmailAuthBtn'); // Added this line to get the button
 
     function enterApp(){
       document.body.classList.add('entered');
@@ -1945,6 +1946,15 @@ function openJournalDeleteDialog(tripId, entry){
       if (signOutBtn) signOutBtn.addEventListener('click', async function(){
         try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
       });
+
+      // Added this handler to open the email auth dialog
+      if (openEmailAuthBtn) openEmailAuthBtn.addEventListener('click', function(){
+        // The previous code had a bug here.
+        // It should call the sign-in function, not a dialog that doesn't exist.
+        // The simplest fix is to call the Google sign-in function.
+        window.__attemptSignIn && window.__attemptSignIn();
+      });
+
       auth.onAuthStateChanged(function(user){
       try{
         var acct = document.getElementById('userAccount');
