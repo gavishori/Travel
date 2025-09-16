@@ -1564,29 +1564,19 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
 
 
-/* === Toolbar: keep two inputs on single row, not full-width === */
-#homeView .toolbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap: nowrap; }
-#homeView .toolbar-actions .input{ width:auto !important; flex:0 1 24%; max-width:24%; min-width:200px; }
+/* === KEBAB: exact frame alignment to card edge (bottom-right, gallery+list) === */
+#homeView #tripList.cards > li,
+#homeView #tripList.list-mode > li{ position: relative; }
 
-
-/* === FINAL-FINAL: kebab bottom-right, gallery + list === */
 #homeView #tripList.cards > li .kebab-wrap,
 #homeView #tripList.list-mode > li .kebab-wrap{
-  position:absolute !important;
-  bottom:12px !important;
-  right:12px !important;
-  top:auto !important;
-  left:auto !important;
-  inset-inline-start:auto !important;
-  inset-inline-end:12px !important;
-  transform:none !important;
-  margin:0 !important;
-  z-index:5 !important;
-}
-
-
-/* Mobile safety: avoid horizontal overflow for toolbar */
-@media (max-width: 640px){
-  #homeView .toolbar-actions{ flex-wrap: wrap; }
-  #homeView .toolbar-actions .input{ flex: 1 1 100%; max-width: 100%; min-width: 0; }
+  position: absolute !important;
+  bottom: 12px !important;
+  inset-inline-end: 0 !important;  /* frame sits exactly on card edge */
+  inset-inline-start: auto !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
 }

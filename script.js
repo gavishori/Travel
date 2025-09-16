@@ -1,4 +1,19 @@
 // DOUBLE_TAP_GUARD_v2
+// --- Guard: soften noisy network errors (QUIC/Firestore) without altering logic ---
+window.addEventListener('error', (e)=>{
+  const src = (e.filename||'') + ' ' + (e.message||'');
+  if (src.includes('firestore.googleapis.com') || src.includes('ERR_QUIC_PROTOCOL_ERROR')){
+    console.warn('[network]', e.message||'firestore network issue'); 
+  }
+}, true);
+window.addEventListener('unhandledrejection', (e)=>{
+  const msg = String(e.reason||''); 
+  if (msg.includes('firestore.googleapis.com') || msg.includes('ERR_QUIC_PROTOCOL_ERROR')){
+    console.warn('[network]', msg);
+    e.preventDefault?.();
+  }
+}, true);
+
 (function(){
   var last = 0;
   document.addEventListener('touchend', function(e){
@@ -566,15 +581,7 @@ async function renderHome(){
   const list = el("tripList"); if (!list) return;
   list.classList.toggle("list-mode", state.viewMode==="list");
   list.innerHTML = "";
-  const gq = (el("globalSearchInput")?.value||"").trim().toLowerCase();
-const __matchTrip = (t)=>{
-  const hay = [t.destination||"", Array.isArray(t.tripType)?t.tripType.join(","):t.tripType||"", t.participants||"", t.city||"", t.country||"", t.start||"", t.end||""].join(" ").toLowerCase();
-  const okGlobal = gq ? hay.includes(gq) : true;
-  const okTrip = q ? ((t.destination||"").toLowerCase().includes(q)) : true;
-  return okGlobal && okTrip;
-};
-// -- global word filter --
-for (const t of tripsSorted.filter(__matchTrip)){
+  for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
     const li = document.createElement("li");
     const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
     
@@ -605,17 +612,6 @@ for (const t of tripsSorted.filter(__matchTrip)){
 const viewButton = $(".view", li);
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
-    }
-    
-    /* bind title -> overview */
-    const __title = $(".trip-title", li);
-    if (__title){
-      __title.style.cursor="pointer";
-      __title.setAttribute("role","link");
-      __title.tabIndex = 0;
-      const __go = async ()=>{ await openTrip(t.id); };
-      __title.onclick = __go;
-      __title.onkeydown = (ev)=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); __go(); } };
     }
     
     // Kebab menu -> open centered dialog (Edit/Delete)
@@ -672,7 +668,7 @@ function activateTabs(){
 async function openTrip(id){
   state.currentTripId = id;
   const trip = await Store.getTrip(id);
-  if (!trip){ console.warn("נסיעה לא נמצאה"); return; }
+  if (!trip){ alert("נסיעה לא נמצאה"); return; }
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
   // The share controls are now in the export tab, so we don't need to get them here
@@ -1561,14 +1557,6 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
-  if (el("globalSearchInput")){
-    let __gTimer;
-    el("globalSearchInput").addEventListener("input", ()=>{
-      clearTimeout(__gTimer);
-      __gTimer = setTimeout(()=>{ renderHome(); }, 200);
-    });
-  }
-
   
   /* dlg-cancel-delegation */
   if(!window.__dlgCancelWired){
@@ -1732,7 +1720,7 @@ function openJournalDeleteDialog(tripId, entry){
   el("confirmJournalTitle").textContent = "מחיקת רישום יומן";
   const preview = (entry.text || "").trim();
   el("confirmJournalMsg").textContent = preview
-    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '...' : ''}"?`
+    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '…' : ''}"?`
     : `למחוק רישום יומן זה?`;
 
   const yesBtn = el("confirmJournalYes");
