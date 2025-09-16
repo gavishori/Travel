@@ -10,10 +10,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%2730%27 fill=%27%238B5CF6%27/%3E%3Cpath d=%27M16 38l10-10 8 8 14-14%27 stroke=%27white%27 stroke-width=%276%27 fill=%27none%27/%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body class="splash-mode">
-  <!-- קישוטים רקע -->
   <div class="bg-ornaments" aria-hidden="true"></div>
 
-  <!-- מסך פתיחה -->
   <section id="splash" role="region" aria-label="מסך פתיחה">
     <div class="splash-card">
       <img class="splash-logo" src="data:image/png;base64,iVBORw0KGgoAAAANsfasfafjIuG5N... (base64 image data) ...a6bf869efb117" alt="FLYMILY">
@@ -26,7 +24,6 @@
     </div>
   </section>
 
-  <!-- ממשק האפליקציה -->
   <div id="app">
     <header class="app-header">
         <div class="brand">
@@ -39,7 +36,6 @@
     </header>
 
     <main id="app-main">
-        <!-- מסך הבית / רשימת טיולים -->
         <section id="homeView" class="view active">
           <div class="toolbar">
             <h2>הנסיעות שלי</h2>
@@ -58,14 +54,12 @@
           <button id="addTripFab" class="fab" title="יצירת נסיעה">＋</button>
         </section>
 
-        <!-- מסך טיול -->
         <section id="tripView" class="view">
           <div class="breadcrumbs">
             <button id="backToHome" class="btn ghost">← חזרה</button>
             <h2 id="tripTitle">שם נסיעה</h2>
           </div>
 
-          <!-- לשוניות ניווט -->
           <nav class="tabs">
             <button class="tab active" data-tab="overview">הצג הכל</button>
             <button class="tab" data-tab="meta">נתוני נסיעה</button>
@@ -76,7 +70,6 @@
           </nav>
 
           <div class="tab-panels">
-            <!-- OVERVIEW -->
             <div id="tab-overview" class="panel active">
               <div class="grid-2">
                 <div class="card">
@@ -126,7 +119,6 @@
               </div>
             </div>
 
-            <!-- META -->
             <div id="tab-meta" class="panel">
               <form id="tripMetaForm" class="form compact">
                 <div class="form-grid">
@@ -178,7 +170,6 @@
               </form>
             </div>
 
-            <!-- BUDGET -->
             <div id="tab-budget" class="panel">
               <div class="card budget-card-grid">
                   <div class="card-header">
@@ -229,7 +220,6 @@
               </div>
             </div>
 
-            <!-- JOURNAL -->
             <div id="tab-journal" class="panel">
               <div class="card">
                 <div class="table-actions">
@@ -253,7 +243,6 @@
               </div>
             </div>
 
-            <!-- MAP -->
             <div id="tab-map" class="panel">
               <div id="map-controls-row">
                 <label class="btn btn-outline" for="showExpensesToggle">
@@ -266,7 +255,6 @@
               <div id="mainMap" class="map"></div>
             </div>
 
-            <!-- EXPORT AND SHARE -->
             <div id="tab-export" class="panel">
               <div class="card">
                 <h3>ייבוא</h3>
@@ -304,8 +292,6 @@
           </div>
         </section>
 
-        <!-- MODALS -->
-        <!-- יצירת נסיעה חדשה -->
         <dialog id="tripDialog" class="dialog">
           <form method="dialog" id="tripForm" class="form">
             <h3>יצירת נסיעה</h3>
@@ -323,7 +309,6 @@
           </form>
         </dialog>
 
-        <!-- הוספה/עריכה של הוצאה -->
         <dialog id="expenseDialog" class="dialog wide">
           <form method="dialog" id="expenseForm" class="form">
             <h3 id="expenseDialogTitle">הוספת הוצאה</h3>
@@ -376,7 +361,6 @@
           </form>
         </dialog>
 
-        <!-- הוספה/עריכה של רישום יומן -->
         <dialog id="journalDialog" class="dialog wide">
           <form method="dialog" id="journalForm" class="form">
             <h3 id="journalDialogTitle">הוספת תיעוד יומי</h3>
@@ -410,7 +394,6 @@
           </form>
         </dialog>
 
-        <!-- חלון בחירת מיקום -->
         <dialog id="locationDialog" class="dialog wide">
           <form method="dialog" id="locationForm" class="form">
             <h3>בחירת מיקום</h3>
@@ -429,7 +412,6 @@
           </form>
         </dialog>
 
-        <!-- חלון אישור כללי -->
         <dialog id="confirmDialog" class="dialog">
           <form method="dialog" class="form">
             <h3 id="confirmTitle">לאשר?</h3>
@@ -441,7 +423,6 @@
           </form>
         </dialog>
 
-        <!-- חלון אישור מחיקת הוצאה -->
         <dialog id="confirmExpenseDialog" class="dialog">
           <form method="dialog" class="form">
             <h3 id="confirmExpenseTitle">מחיקת הוצאה</h3>
@@ -453,7 +434,6 @@
           </form>
         </dialog>
 
-        <!-- חלון אישור מחיקת רישום יומן -->
         <dialog id="confirmJournalDialog" class="dialog">
           <form method="dialog" class="form">
             <h3 id="confirmJournalTitle">מחיקת רישום יומן</h3>
@@ -465,7 +445,6 @@
           </form>
         </dialog>
 
-        <!-- חלון פעולות שורה (טיולים) -->
         <dialog id="rowActionDialog" class="dialog small">
           <div class="dialog-content">
             <h3 class="dialog-title">אפשרויות</h3>
@@ -478,7 +457,6 @@
           </div>
         </dialog>
 
-        <!-- חלון פעולות שורה (יומן) -->
         <dialog id="journalActionDialog" class="dialog small">
           <div class="dialog-content">
             <h3 class="dialog-title">אפשרויות</h3>
@@ -497,19 +475,16 @@
     </footer>
   </div>
 
-  <!-- External libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-  <!-- Firebase config must be defined BEFORE firebase.js -->
   <script>
     window.firebaseConfig = {
       apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
@@ -522,7 +497,6 @@
     };
   </script>
 
-  <!-- App scripts -->
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
 </body>
