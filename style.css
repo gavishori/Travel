@@ -1564,15 +1564,23 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
 
 
-/* toolbar-actions layout */
-#homeView .toolbar-actions{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
-#homeView .toolbar-actions .input{flex:0 1 26%;max-width:26%;min-width:200px}
-@media (max-width: 760px){
-  #homeView .toolbar-actions{flex-wrap:wrap}
-  #homeView .toolbar-actions .input{flex:1 1 100%;max-width:100%;min-width:0}
+/* === KEBAB: bottom-left for gallery + list (RTL/LTR safe) === */
+#homeView #tripList.cards>li,
+#homeView #tripList.list-mode>li{ position: relative; }
+#homeView #tripList .kebab-wrap{
+  position:absolute !important;
+  bottom:12px !important;
+  left:12px !important;
+  right:auto !important;
+  top:auto !important;
+  inset-inline-start:12px !important;  /* RTL-friendly left */
+  inset-inline-end:auto !important;
+  transform:none !important;
+  margin:0 !important;
+  z-index:6 !important;
 }
-
-
-/* kebab bottom-right unify */
-#homeView #tripList.cards>li,#homeView #tripList.list-mode>li{position:relative}
-#homeView #tripList .kebab-wrap{position:absolute;bottom:12px;right:12px;left:auto;top:auto;inset-inline-end:12px;inset-inline-start:auto;z-index:6}
+/* search match list under card */
+.match-list{margin-top:10px;padding:8px 10px;border-radius:12px;background:#f6f8fb}
+.match-list h6{margin:0 0 6px 0;font-size:12px;color:#667085;font-weight:600}
+.match-list ul{margin:0;padding:0 0 0 1.2em}
+.match-list li{font-size:13px;line-height:1.35;color:#1f2937;margin:4px 0}
