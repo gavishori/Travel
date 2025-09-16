@@ -1550,3 +1550,25 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
 }
 .kebab-left { margin-right: 0; }
 .kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  top: auto !important;
+  bottom: 8px !important;
+  transform: none !important;
+  inset-inline-start: 8px !important;
+  left: 8px !important;
+}
+
+@media (max-width: 600px) {
+  #tripList.list-mode > li {
+    padding-bottom: 50px !important; /* Adjust padding to accommodate the bottom-placed button */
+  }
+
+  .kebab-wrap.kebab-left {
+    position: absolute;
+    bottom: 8px; /* Position at the bottom */
+    left: 8px; /* Position on the left */
+    top: auto;
+    transform: none;
+  }
+}
