@@ -539,9 +539,9 @@ async function fetchRates(base="USD"){
 function toUSD(amount, from="USD"){
   if (!amount) return 0;
   if (from === "USD") return Number(amount);
-  if (from === "EUR") return Number(amount) / (state.rates.EUR||0.9);
-  if (from === "ILS") return Number(amount) / (state.rates.ILS||3.6);
-  if (from === "THB") return Number(amount) / (state.rates.THB||36);
+  if (from === "EUR") return Number(amount) / (state.rates.EUR || 0.9);
+  if (from === "ILS") return Number(amount) / (state.rates.ILS || 3.6);
+  if (from === "THB") return Number(amount) / (state.rates.THB || 36);
   const r = state.rates[from]; if (r) return Number(amount)/r;
   return Number(amount);
 }
@@ -578,10 +578,6 @@ async function renderHome(){
     <div class="trip-header">
       <div class="kebab-wrap">
         <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
-        <div class="kebab-menu" role="menu">
-          <button class="edit" role="menuitem">ערוך</button>
-          <button class="delete" role="menuitem">מחק</button>
-        </div>
       </div>
       <div class="trip-title">${t.destination||"—"}</div>
     </div>
@@ -605,18 +601,13 @@ const viewButton = $(".view", li);
     if (menuBtn) {
       menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
     }
-
-    const editButton = $(".edit", li);
-    if (editButton) {
-      editButton.onclick = async ()=>{
-        await openTrip(t.id);
-        // Removed the code that switches to the 'meta' tab
-        // Now it will stay on the default tab, which is 'overview'
-      };
-    }
-    const deleteButton = $(".delete", li);
-    if (deleteButton) {
-      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
+    const tripTitleEl = $(".trip-title", li);
+    if (tripTitleEl) {
+        tripTitleEl.onclick = async () => {
+            await openTrip(t.id);
+            // After opening the trip, switch to the 'overview' tab.
+            openTab('overview');
+        };
     }
     list.appendChild(li);
   }
@@ -656,20 +647,12 @@ async function openTrip(id){
   if (!trip){ alert("נסיעה לא נמצאה"); return; }
 
   el("tripTitle").textContent = trip.destination || "נסיעה";
-  // The share controls are now in the export tab, so we don't need to get them here
   
   $("#homeView")?.classList.remove("active");
   $("#tripView")?.classList.add("active");
 
   el("tripDestination").value = trip.destination || "";
   el("tripParticipants").value = trip.participants || "";
-  // multi select
-  // Removed the line that was causing the error
-  // [...el("tripType").options].forEach(opt => opt.selected = Array.isArray(trip.tripType) && trip.tripType.includes(opt.value));
-  el("tripStart").value = trip.start || "";
-  el("tripEnd").value = trip.end || "";
-  // el("tripBudgetUSD").value = trip.budget?.USD || ""; // Removed old budget field
-// Render the checkboxes for trip types
   const tripTypeCheckboxes = el("tripTypeCheckboxes");
   if(tripTypeCheckboxes) {
     const tripTypes = trip.tripType || [];
@@ -678,13 +661,10 @@ async function openTrip(id){
     });
   }
 
-  // Update budget fields
   const budgetUSD = Number(trip.budget?.USD || 0);
-  // Make sure elements exist before trying to set their values
   if (el("tripBudgetUSD")) el("tripBudgetUSD").value = formatMoney(Math.round(budgetUSD));
   if (el("tripBudgetEUR")) el("tripBudgetEUR").value = formatMoney(Math.round(budgetUSD * (state.rates?.EUR || 0.9)));
   if (el("tripBudgetILS")) el("tripBudgetILS").value = formatMoney(Math.round(budgetUSD * (state.rates?.ILS || 3.6)));
-  // Add formatting focus/blur handlers
   [el("tripBudgetUSD"), el("tripBudgetEUR"), el("tripBudgetILS")].forEach(input=>{
     if(!input) return;
     input.onfocus = ()=>{ input.value = unformatMoney(input.value); };
@@ -698,13 +678,11 @@ async function openTrip(id){
   await renderJournal();
   await renderOverviewMiniMap();
 
-  // Add event listeners for new budget fields
   if (el("tripBudgetUSD")) el("tripBudgetUSD").oninput = (e) => updateBudgetConversion(e.target.value, 'USD');
   if (el("tripBudgetEUR")) el("tripBudgetEUR").oninput = (e) => updateBudgetConversion(e.target.value, 'EUR');
   if (el("tripBudgetILS")) el("tripBudgetILS").oninput = (e) => updateBudgetConversion(e.target.value, 'ILS');
 
 
-  // New logic to handle share controls now that they are in the export tab
   const shareToggle = el("shareToggle");
   if (shareToggle) {
     shareToggle.checked = !!trip.share?.enabled;
@@ -740,6 +718,8 @@ function setupBudgetLock(trip) {
   function applyLockUI(locked) {
     usd.disabled = eur.disabled = ils.disabled = locked;
     btn.textContent = locked ? "ערוך תקציב" : "קבע תקציב";
+    btn.classList.toggle('btn-outline', !locked);
+    btn.classList.toggle('btn-primary', locked);
   }
 
   applyLockUI(!!trip.budgetLocked);
@@ -753,30 +733,22 @@ function setupBudgetLock(trip) {
   };
 }
 
-
-// Function to handle budget conversion
 function updateBudgetConversion(value, fromCurrency) {
     const rates = state.rates || {};
     const num = parseNumber(value);
     let usdValue = 0;
 
     switch (fromCurrency) {
-      case 'USD':
-        usdValue = num; break;
-      case 'EUR':
-        usdValue = num / (rates.EUR || 0.9); break;
-      case 'ILS':
-        usdValue = num / (rates.ILS || 3.6); break;
-      default:
-        usdValue = num;
+      case 'USD': usdValue = num; break;
+      case 'EUR': usdValue = num / (rates.EUR || 0.9); break;
+      case 'ILS': usdValue = num / (rates.ILS || 3.6); break;
+      default: usdValue = num;
     }
 
     if (el("tripBudgetUSD")) el("tripBudgetUSD").value = formatMoney(Math.round(usdValue));
     if (el("tripBudgetEUR")) el("tripBudgetEUR").value = formatMoney(Math.round(usdValue * (state.rates?.EUR || 0.9)));
     if (el("tripBudgetILS")) el("tripBudgetILS").value = formatMoney(Math.round(usdValue * (state.rates?.ILS || 3.6)));
 }
-
-
 
 function confirmDeleteTrip(id, name){
   const dlg = el("confirmDialog");
@@ -801,8 +773,6 @@ async function renderOverviewExpenses() {
 
   tbody.innerHTML = "";
   let expenses = await Store.listExpenses(trip.id);
-
-  // Sort newest → oldest
   expenses.sort((a, b) => b.createdAt - a.createdAt);
 
   for (const e of expenses) {
@@ -829,7 +799,6 @@ async function renderOverviewJournal() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  // Sort newest → oldest
   entries.sort((a,b) => b.createdAt - a.createdAt);
 
   for (const j of entries){
@@ -879,10 +848,7 @@ async function renderOverviewMiniMap(){
     }
   }
 
-  // overview meta
   const tripDays = (trip.start && trip.end) ? `${dayjs(trip.start).format("DD/MM/YY")}–${dayjs(trip.end).format("DD/MM/YY")}` : "—";
-  
-  // Translate trip types to Hebrew
   const translatedTripTypes = (trip.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
   
   if (el("overviewMeta")){
@@ -909,7 +875,6 @@ async function renderOverviewMiniMap(){
   }
 }
 
-// Budget
 function updateCellWithValue(elm, value, prefix) {
   if (!elm) return;
   elm.textContent = `${prefix}${formatMoney(value)}`;
@@ -928,14 +893,12 @@ async function renderBudget(){
   const tbody = $("#expenseTable tbody");
   if (tbody) tbody.innerHTML = "";
   let expenses = await Store.listExpenses(trip.id);
-  // Default sort expenses by date in descending order
   expenses.sort((a, b) => b.createdAt - a.createdAt);
 
-  // Add event listener for the sort button
   const sortButton = el("sortExpensesBtn");
   if (sortButton) {
     sortButton.onclick = () => {
-      state.sortAsc = !state.sortAsc; // Toggle sort direction
+      state.sortAsc = !state.sortAsc;
       expenses.sort((a, b) => {
         const aVal = a.createdAt;
         const bVal = b.createdAt;
@@ -945,143 +908,221 @@ async function renderBudget(){
           return bVal - aVal;
         }
       });
-      // Update the button icon
       sortButton.innerHTML = `<span>${state.sortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
       renderExpenses(expenses);
     };
   }
   
-  function renderExpenses(expensesToRender) 
+  function renderExpenses(expensesToRender) {
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    let totalUSD = 0;
+    let totalEUR = 0;
+    let totalILS = 0;
 
-{
-  if (!tbody) return;
-  tbody.innerHTML = "";
-  let totalUSD = 0;
-  let totalEUR = 0;
-  let totalILS = 0;
+    const budgetUSD = Number(trip.budget?.USD || 0);
 
-  const budgetUSD = Number(trip.budget?.USD || 0);
+    for (const e of expensesToRender){
+      const usdAmount = toUSD(e.amount, e.currency);
+      totalUSD += usdAmount;
+      totalEUR += usdAmount * (state.rates.EUR || 0.9);
+      totalILS += usdAmount * (state.rates.ILS || 3.6);
 
-  for (const e of expensesToRender){
-    const usdAmount = toUSD(e.amount, e.currency);
-    totalUSD += usdAmount;
-    totalEUR += usdAmount * (state.rates.EUR || 0.9);
-    totalILS += usdAmount * (state.rates.ILS || 3.6);
-
-    
-const tr = document.createElement("tr");
-tr.dataset.expid = e.id;
-tr.innerHTML = `
-      <td>${linkifyToIcon(e.desc||"—")}</td>
-      <td>${e.category||"—"}</td>
-      <td>${e.amount ?? 0}</td>
-      <td>${e.currency||"USD"}</td>
-      <td>${extractCityName(e.placeName)}</td>
-      <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions"><button class="kebab-btn" title="אפשרויות">⋮</button></td>
-    `;
-// If placeName missing but lat/lng exist → fetch city and persist
-(async ()=>{
-  if ((!e.placeName || e.placeName==="") && typeof e.lat === "number" && typeof e.lng === "number"){
-    const city = await reverseGeocodeCity(e.lat, e.lng);
-    if (city){
-      const td = tr.querySelectorAll("td")[4];
-      if (td) td.textContent = city;
-      try { await Store.updateExpense(trip.id, e.id, { placeName: city }); } catch(_){}
+      const tr = document.createElement("tr");
+      tr.dataset.expid = e.id;
+      tr.innerHTML = `
+        <td>${linkifyToIcon(e.desc||"—")}</td>
+        <td>${e.category||"—"}</td>
+        <td>${e.amount ?? 0}</td>
+        <td>${e.currency||"USD"}</td>
+        <td>${extractCityName(e.placeName)}</td>
+        <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
+        <td class="row-actions">
+          <div class="kebab-wrap-expense">
+            <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
+          </div>
+        </td>
+      `;
+      (async ()=>{
+        if ((!e.placeName || e.placeName==="") && typeof e.lat === "number" && typeof e.lng === "number"){
+          const city = await reverseGeocodeCity(e.lat, e.lng);
+          if (city){
+            const td = tr.querySelectorAll("td")[4];
+            if (td) td.textContent = city;
+            try { await Store.updateExpense(trip.id, e.id, { placeName: city }); } catch(_){}
+          }
+        }
+      })();
+      const menuBtn = $(".kebab-btn", tr);
+      if (menuBtn) {
+          menuBtn.onclick = (e) => {
+              e.stopPropagation();
+              openExpenseRowActionsDialog(e.target, e);
+          };
+      }
+      tbody.appendChild(tr);
     }
+
+    if (el("budgetTotalUSD")) el("budgetTotalUSD").textContent = `$${formatMoney(budgetUSD)}`;
+    if (el("budgetTotalEUR")) el("budgetTotalEUR").textContent = `€${formatMoney(budgetUSD * (state.rates.EUR || 0.9))}`;
+    if (el("budgetTotalILS")) el("budgetTotalILS").textContent = `₪${formatMoney(budgetUSD * (state.rates.ILS || 3.6))}`;
+
+    if (el("expensesActualUSD")) el("expensesActualUSD").textContent = `$${formatMoney(totalUSD)}`;
+    if (el("expensesActualEUR")) el("expensesActualEUR").textContent = `€${formatMoney(totalEUR)}`;
+    if (el("expensesActualILS")) el("expensesActualILS").textContent = `₪${formatMoney(totalILS)}`;
+
+    updateCellWithValue(el("remainingUSD"), budgetUSD - totalUSD, "$");
+    updateCellWithValue(el("remainingEUR"), budgetUSD * (state.rates.EUR || 0.9) - totalEUR, "€");
+    updateCellWithValue(el("remainingILS"), budgetUSD * (state.rates.ILS || 3.6) - totalILS, "₪");
   }
-})();
-
-    const _kbExp = $(".kebab-btn", tr); if (_kbExp){ _kbExp.onclick = (ev)=>{ ev.stopPropagation(); __openExpenseRowActions(e); }; }
-    
-    tbody.appendChild(tr);
-  }
-
-  // Update budget card UI (totals & remaining)
-  if (el("budgetTotalUSD")) el("budgetTotalUSD").textContent = `$${formatMoney(budgetUSD)}`;
-  if (el("budgetTotalEUR")) el("budgetTotalEUR").textContent = `€${formatMoney(budgetUSD * (state.rates.EUR || 0.9))}`;
-  if (el("budgetTotalILS")) el("budgetTotalILS").textContent = `₪${formatMoney(budgetUSD * (state.rates.ILS || 3.6))}`;
-
-  if (el("expensesActualUSD")) el("expensesActualUSD").textContent = `$${formatMoney(totalUSD)}`;
-  if (el("expensesActualEUR")) el("expensesActualEUR").textContent = `€${formatMoney(totalEUR)}`;
-  if (el("expensesActualILS")) el("expensesActualILS").textContent = `₪${formatMoney(totalILS)}`;
-
-  updateCellWithValue(el("remainingUSD"), budgetUSD - totalUSD, "$");
-  updateCellWithValue(el("remainingEUR"), budgetUSD * (state.rates.EUR || 0.9) - totalEUR, "€");
-  updateCellWithValue(el("remainingILS"), budgetUSD * (state.rates.ILS || 3.6) - totalILS, "₪");
-}
-
-
-
   renderExpenses(expenses);
 }
 
-// Journal
 async function renderJournal(){
   const tripId = state.currentTripId;
-  const entries = await Store.listJournal(tripId);
+  let entries = await Store.listJournal(tripId);
   const tbody = $("#journalTable tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  // newest first
   entries.sort((a,b) => b.createdAt - a.createdAt);
-  for (const j of entries){
-    const tr = document.createElement("tr");
-    tr.dataset.journalid = j.id;
-    tr.innerHTML = `
-      <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
-      <td>${extractCityName(j.placeName)}</td>
-      <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
-      <td class="row-actions">
-        <button class="kebab-btn" title="אפשרויות">⋮</button>
-      </td>
-    `;
-    (async ()=>{
-      if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
-        const city = await reverseGeocodeCity(j.lat, j.lng);
-        if (city){
-          const td = tr.querySelectorAll("td")[1];
-          if (td) td.textContent = city;
-          try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
-        }
-      }
-    })();
-    const kebabBtnJournal = $(".kebab-btn", tr);
-    if (kebabBtnJournal){ kebabBtnJournal.onclick = (e)=>{ e.stopPropagation(); __openJournalRowActions(j); }; }
-    tbody.appendChild(tr);
-  }
-}
 
+  const sortButton = el("sortJournalBtn");
+  if (sortButton) {
+    sortButton.onclick = () => {
+      state.journalSortAsc = !state.journalSortAsc;
+      entries.sort((a, b) => {
+        const aVal = a.createdAt;
+        const bVal = b.createdAt;
+        if (state.journalSortAsc) {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      });
+      sortButton.innerHTML = `<span>${state.journalSortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
+      renderJournalEntries(entries);
+    };
+  }
+
+  function renderJournalEntries(entriesToRender) {
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    for (const j of entriesToRender){
+      const tr = document.createElement("tr");
+      tr.dataset.journalid = j.id;
+      tr.innerHTML = `
+        <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
+        <td>${extractCityName(j.placeName)}</td>
+        <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
+        <td class="row-actions">
+          <div class="journal-kebab-wrap">
+            <button class="kebab-btn" title="אפשרויות">⋮</button>
+          </div>
+        </td>
+      `;
+      (async ()=>{
+        if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
+          const city = await reverseGeocodeCity(j.lat, j.lng);
+          if (city){
+            const td = tr.querySelectorAll("td")[1];
+            if (td) td.textContent = city;
+            try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
+          }
+        }
+      })();
+      const kb = $(".kebab-btn", tr);
+      if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); openJournalRowActionsDialog(e.target, j); }; }
+      tbody.appendChild(tr);
+    }
+  }
+
+  renderJournalEntries(entries);
+}
 
 // Maps
-function refreshMainMap(){
+let expensesLayer = L.featureGroup();
+let journalLayer = L.featureGroup();
+
+function refreshMainMap() {
   if (!state.currentTripId) return;
   const mapEl = el("mainMap");
-  if (mapEl){
-    if (!state.maps.main){
+  if (mapEl) {
+    if (!state.maps.main) {
       state.maps.main = L.map(mapEl);
-      setTimeout(()=>refreshMapLayers(), 0);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
+      expensesLayer.addTo(state.maps.main);
+      journalLayer.addTo(state.maps.main);
     }
     const map = state.maps.main;
-    (async ()=>{
+    (async () => {
       const trip = await Store.getTrip(state.currentTripId);
       if (!trip) return;
-      const group = L.featureGroup();
-      function addPoint(p, color){
-        const m = L.circleMarker([p.lat,p.lng], {  radius:7, color, weight:2, fillColor: color, fillOpacity: 1 }).bindPopup((p.desc||p.text||"") + (p.placeName?`<br>${p.placeName}`:""));
-        group.addLayer(m);
+
+      expensesLayer.clearLayers();
+      journalLayer.clearLayers();
+
+      const expensePoints = [];
+      if (trip.expenses) {
+        Object.values(trip.expenses).forEach(e => {
+          if (e.lat && e.lng) {
+            expensePoints.push({ ...e, lat: Number(e.lat), lng: Number(e.lng) });
+          }
+        });
       }
-      group.clearLayers();
-      if (trip.expenses) Object.values(trip.expenses).forEach(e=>{ if (e.lat && e.lng) addPoint(e, "#ff6b6b"); });
-      if (trip.journal) Object.values(trip.journal).forEach(j=>{ if (j.lat && j.lng) addPoint(j, "#5b8cff"); });
-      group.addTo(map);
-      if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.3));
-      else map.setView([31.8, 35.2], 7);
+      expensePoints.forEach(p => {
+        L.circleMarker([p.lat, p.lng], { radius: 7, color: "#ff6b6b", weight: 2, fillColor: "#ff6b6b", fillOpacity: 1 })
+          .bindPopup((p.desc || "") + (p.placeName ? `<br>${p.placeName}` : ""))
+          .addTo(expensesLayer);
+      });
+      
+      const journalPoints = [];
+      if (trip.journal) {
+        Object.values(trip.journal).forEach(j => {
+          if (j.lat && j.lng) {
+            journalPoints.push({ ...j, lat: Number(j.lat), lng: Number(j.lng) });
+          }
+        });
+      }
+      journalPoints.forEach(p => {
+        L.circleMarker([p.lat, p.lng], { radius: 7, color: "#5b8cff", weight: 2, fillColor: "#5b8cff", fillOpacity: 1 })
+          .bindPopup((p.text || "") + (p.placeName ? `<br>${p.placeName}` : ""))
+          .addTo(journalLayer);
+      });
+      
+      const allPoints = [...expensePoints, ...journalPoints];
+      if (allPoints.length) {
+        const bounds = L.latLngBounds(allPoints.map(p => [p.lat, p.lng]));
+        map.fitBounds(bounds.pad(0.3));
+      } else {
+        map.setView([31.8, 35.2], 7);
+      }
     })();
   }
 }
+function toggleExpensesOnMap() {
+  const isChecked = el('showExpensesToggle').checked;
+  if (isChecked) {
+    state.maps.main.addLayer(expensesLayer);
+  } else {
+    state.maps.main.removeLayer(expensesLayer);
+  }
+}
 
+function toggleJournalOnMap() {
+  const isChecked = el('showJournalToggle').checked;
+  if (isChecked) {
+    state.maps.main.addLayer(journalLayer);
+  } else {
+    state.maps.main.removeLayer(journalLayer);
+  }
+}
+function openTab(tabName) {
+  $$(".tab").forEach(b => b.classList.remove("active"));
+  $(`.tab[data-tab='${tabName}']`)?.classList.add("active");
+  $$(".panel").forEach(p => p.classList.remove("active"));
+  el(`tab-${tabName}`)?.classList.add("active");
+}
 function openLocationPicker(forType){
   state.locationPick = { lat:null, lng:null, forType };
   const dlg = el("locationDialog");
@@ -1144,19 +1185,15 @@ function openLocationPicker(forType){
 }
 
 // Expense dialog
-// Expense dialog
 async function openExpenseDialog(exp){
-  // prepare map + controls inside the expense dialog
-
   el("expenseDialogTitle").textContent = exp? "עריכת הוצאה" : "הוספת הוצאה";
   el("expDesc").value = exp?.desc || "";
   el("expCat").value = exp?.category || lastUsed.category;
   el("expAmount").value = exp?.amount || 0;
 
-  // set date & time fields from createdAt or now
   (function(){
     const row = el("expDateTimeRow");
-    if (exp){ // EDIT MODE: show row and prefill
+    if (exp){
       if (row) row.style.display = "";
       const ts = exp?.createdAt || Date.now();
       const d = new Date(ts);
@@ -1165,7 +1202,7 @@ async function openExpenseDialog(exp){
       const timeStr = pad(d.getHours())+":"+pad(d.getMinutes());
       if (el("expDate")) el("expDate").value = dateStr;
       if (el("expTime")) el("expTime").value = timeStr;
-    } else { // ADD MODE: hide row; createdAt is set automatically on add
+    } else {
       if (row) row.style.display = "none";
       if (el("expDate")) el("expDate").value = "";
       if (el("expTime")) el("expTime").value = "";
@@ -1183,7 +1220,6 @@ async function openExpenseDialog(exp){
   el("expLat").value = exp?.lat || "";
   el("expLng").value = exp?.lng || "";
   el("expenseDialog").showModal();
-  // initialize embedded expense map
   const mapEl = el("expenseMap");
   if (mapEl){
     if (!state.maps.expense){
@@ -1198,7 +1234,6 @@ async function openExpenseDialog(exp){
       el("expLat").value = lat;
       el("expLng").value = lng;
     }
-    // default view
     const dLat = Number(el("expLat").value) || 31.8;
     const dLng = Number(el("expLng").value) || 35.2;
     map.setView([dLat, dLng], (el("expLat").value? 13 : 7));
@@ -1268,13 +1303,31 @@ function collectExpenseForm(){
   const editId = el("expenseDialog").dataset.editId;
   if (editId) entry.id = editId;
   
-  // Save last used category and currency
   lastUsed.category = category;
   lastUsed.currency = currency;
   localStorage.setItem("lastCategory", lastUsed.category);
   localStorage.setItem("lastCurrency", lastUsed.currency);
 
   return entry;
+}
+function openExpenseRowActionsDialog(buttonEl, expense) {
+  const dlg = el("expenseActionDialog");
+  if (!dlg) return;
+
+  const editBtn = el("expense-action-edit");
+  const delBtn = el("expense-action-delete");
+
+  editBtn.onclick = () => {
+    openExpenseDialog(expense);
+    dlg.close();
+  };
+
+  delBtn.onclick = () => {
+    removeExpense(expense);
+    dlg.close();
+  };
+
+  dlg.showModal();
 }
 async function removeExpense(exp){
   const dlg = el("confirmExpenseDialog");
@@ -1285,27 +1338,26 @@ async function removeExpense(exp){
   const yesBtn = el("confirmExpenseYes");
   yesBtn.onclick = null;
 
-  
-yesBtn.onclick = async (e) => {
-  e.preventDefault();
-  try {
-    yesBtn.disabled = true;
-    console.log("[del] trip", state.currentTripId, "exp", exp.id);
-    await Store.removeExpense(state.currentTripId, exp.id);
-    setStatus("הוצאה נמחקה");
-    const row = document.querySelector(`tr[data-expid="${exp.id}"]`);
-    if (row && row.parentElement) row.parentElement.removeChild(row);
-    await renderBudget();
-    refreshMainMap();
-  } catch (err) {
-    console.error("[del] failed", err);
-    alert("מחיקה נכשלה. נסה שוב.");
-  } finally {
-    yesBtn.disabled = false;
-    dlg.close();
-  }
-};
-dlg.showModal();
+  yesBtn.onclick = async (e) => {
+    e.preventDefault();
+    try {
+      yesBtn.disabled = true;
+      console.log("[del] trip", state.currentTripId, "exp", exp.id);
+      await Store.removeExpense(state.currentTripId, exp.id);
+      setStatus("הוצאה נמחקה");
+      const row = document.querySelector(`tr[data-expid="${exp.id}"]`);
+      if (row && row.parentElement) row.parentElement.removeChild(row);
+      await renderBudget();
+      refreshMainMap();
+    } catch (err) {
+      console.error("[del] failed", err);
+      alert("מחיקה נכשלה. נסה שוב.");
+    } finally {
+      yesBtn.disabled = false;
+      dlg.close();
+    }
+  };
+  dlg.showModal();
 }
 
 // Journal dialog
@@ -1313,7 +1365,6 @@ async function openJournalDialog(journalEntry) {
   el("journalDialogTitle").textContent = journalEntry ? "עריכת תיעוד יומי" : "הוספת תיעוד יומי";
   el("journalTextarea").value = journalEntry?.text || "";
   
-  // Set date and time fields from createdAt or now
   const ts = journalEntry?.createdAt || Date.now();
   const d = new Date(ts);
   const pad = n => String(n).padStart(2,"0");
@@ -1327,7 +1378,6 @@ async function openJournalDialog(journalEntry) {
   el("journalDialog").showModal();
   el("journalDialog").dataset.editId = journalEntry?.id || "";
 
-  // Initialize embedded journal map
   const mapEl = el("journalMap");
   if (mapEl){
     if (!state.maps.journal){
@@ -1411,6 +1461,25 @@ function collectJournalForm(){
   return entry;
 }
 
+function openJournalRowActionsDialog(buttonEl, journalEntry) {
+  const dlg = el("journalActionDialog");
+  if (!dlg) return;
+
+  const editBtn = el("journal-action-edit");
+  const delBtn = el("journal-action-delete");
+
+  editBtn.onclick = () => {
+    openJournalDialog(journalEntry);
+    dlg.close();
+  };
+
+  delBtn.onclick = () => {
+    openJournalDeleteDialog(state.currentTripId, journalEntry);
+    dlg.close();
+  };
+
+  dlg.showModal();
+}
 // Exporters
 async function exportCSV(){
   const trip = await Store.getTrip(state.currentTripId);
@@ -1512,6 +1581,84 @@ async function exportPDF(){
   setStatus("PDF נוצר");
 }
 
+async function exportExcel() {
+    const trip = await Store.getTrip(state.currentTripId);
+    if (!trip) {
+        setStatus("לא ניתן לייצא, נסיעה לא נמצאה");
+        return;
+    }
+    
+    let rows = [];
+
+    // Header
+    rows.push(["Type", "Description", "Category", "Amount", "Currency", "Location", "Timestamp"]);
+
+    // Add expenses if not unchecked
+    if (!el("exportWithoutExpenses").checked && trip.expenses) {
+        for (const e of Object.values(trip.expenses)) {
+            rows.push(["Expense", e.desc || "", e.category || "", e.amount || 0, e.currency || "USD", extractCityName(e.placeName) || "", dayjs(e.createdAt).format("DD/MM/YY HH:mm")]);
+        }
+    }
+
+    // Add journal entries
+    if (trip.journal) {
+        for (const j of Object.values(trip.journal)) {
+            rows.push(["Journal", (j.text || "").replace(/[\n\r]+/g, " "), "", "", "", extractCityName(j.placeName) || "", dayjs(j.createdAt).format("DD/MM/YY HH:mm")]);
+        }
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `trip_${trip.destination || "export"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setStatus("Excel נוצר");
+}
+
+async function exportWord() {
+    const trip = await Store.getTrip(state.currentTripId);
+    if (!trip) {
+        setStatus("לא ניתן לייצא, נסיעה לא נמצאה");
+        return;
+    }
+
+    const blobContent = new Blob([JSON.stringify(trip, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blobContent);
+    a.download = `trip_${trip.destination || "report"}.doc`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus("Word נוצר");
+}
+
+
+// Importers
+async function importJSON(file) {
+    if (!file) {
+        setStatus("בחר קובץ JSON לייבוא.");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.destination && data.start && data.end) {
+                const newTrip = await Store.createTrip(data);
+                setStatus(`נסיעה "${newTrip.destination}" יובאה בהצלחה!`);
+                await renderHome();
+            } else {
+                setStatus("קובץ JSON לא תקין.");
+            }
+        } catch (error) {
+            setStatus("שגיאה בייבוא קובץ JSON: " + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
 // ---------- Init ----------
 async function init(){
   if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
@@ -1519,7 +1666,6 @@ async function init(){
   if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
   applyTheme();
   
-  // This is a new helper function to load data based on the current user.
   async function loadUserContent(){
     if (window.AppDataLayer?.mode === "firebase") {
       const user = firebase.auth().currentUser;
@@ -1528,22 +1674,18 @@ async function init(){
         await renderHome();
       } else {
         console.log("No user signed in.");
-        // Clear the trip list
         const list = el("tripList");
         if (list) list.innerHTML = "";
       }
     } else {
-      // In local mode, we just render home without checking auth
       await renderHome();
     }
   }
 
-  // Buttons
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
   
-  /* dlg-cancel-delegation */
   if(!window.__dlgCancelWired){
     window.__dlgCancelWired = true;
     document.addEventListener("click", function(e){
@@ -1593,7 +1735,6 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
 
     const selectedTripTypes = Array.from(el("tripTypeCheckboxes").querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
 
-    // Get the USD value from the input field
     const budgetUSD = parseNumber(el("tripBudgetUSD").value) || 0;
 
     const updates = {
@@ -1632,14 +1773,12 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     renderBudget(); refreshMainMap();
   };
 
-  // SAVE JOURNAL BUTTON HANDLER
   if (el("saveJournalBtn")) el("saveJournalBtn").onclick = async (e)=>{
     e.preventDefault();
     const id = state.currentTripId;
     const entry = collectJournalForm();
     if (!entry) return;
     
-    // Check if placeName is missing but lat/lng exist, then reverse geocode
     if ((!entry.placeName || entry.placeName === "") && typeof entry.lat === "number" && typeof entry.lng === "number"){
       const city = await reverseGeocodeCity(entry.lat, entry.lng);
       if (city) {
@@ -1660,42 +1799,63 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     refreshMainMap();
   };
 
-  // if (el("saveAllBtn")) el("saveAllBtn").onclick = ()=> setStatus("הכל מעודכן ✔"); // This button was removed
   if (el("copyShareLink")) el("copyShareLink").onclick = async ()=>{
     const t = await Store.getTrip(state.currentTripId);
+    const scope = el("shareScope").value || "partial";
     if (!t.share?.enabled){ alert("יש להפעיל שיתוף קודם."); return; }
-    const scope = el("shareScope").value || "full";
     const url = `${location.origin}${location.pathname}?tripId=${encodeURIComponent(t.id)}&view=shared&scope=${scope}`;
-    await navigator.clipboard.writeText(url);
+    document.execCommand('copy');
     setStatus("קישור הועתק");
   };
 
   if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
   if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
   if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
+  if (el("exportExcel")) el("exportExcel").onclick = exportExcel;
+  if (el("exportWord")) el("exportWord").onclick = exportWord;
 
+  if (el("importJSONFile")) el("importJSONFile").onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importJSON(file);
+    }
+  };
+
+  if (el("shareToggle")) {
+      el("shareToggle").onchange = async () => {
+          const id = state.currentTripId;
+          await Store.updateTrip(id, { share: { enabled: el("shareToggle").checked, scope: el("shareScope").value } });
+          setStatus(el("shareToggle").checked ? "שיתוף הופעל" : "שיתוף בוטל");
+      };
+  }
+  if (el("shareScope")) {
+      el("shareScope").onchange = async () => {
+          const id = state.currentTripId;
+          await Store.updateTrip(id, { share: { enabled: el("shareToggle").checked, scope: el("shareScope").value } });
+          setStatus("היקף שיתוף עודכן");
+      };
+  }
+
+
+  if (el("showExpensesToggle")) el("showExpensesToggle").onchange = toggleExpensesOnMap;
+  if (el("showJournalToggle")) el("showJournalToggle").onchange = toggleJournalOnMap;
+  
   await fetchRates("USD");
 
   const params = new URLSearchParams(location.search);
   if (params.get("view")==="shared" && params.get("tripId")){
-    // basic shared render (still requires owner auth per rules; for public sharing enable rules accordingly)
     await openTrip(params.get("tripId"));
     $$(".share-controls, .tabs .tab[data-tab='meta'], .tabs .tab[data-tab='export']").forEach(x=> x?.classList?.add?.("hidden"));
-    // Hide add/edit buttons as well
     if (el("addExpenseBtn")) el("addExpenseBtn").classList.add("hidden");
     if (el("addJournalBtn")) el("addJournalBtn").classList.add("hidden");
   } else {
-    // We already call renderHome() inside the onAuthStateChanged listener, so we don't need to call it here.
-    // await renderHome();
   }
 
-  // Listen for auth state changes and re-render the home view accordingly
   firebase.auth().onAuthStateChanged(user => {
     loadUserContent();
   });
 }
 
-// boot
 window.onload = init;
 
 function openJournalDeleteDialog(tripId, entry){
@@ -1731,9 +1891,6 @@ function openJournalDeleteDialog(tripId, entry){
   dlg.showModal();
 }
 
-
-
-// Splash enter (fallback if user keeps manual enter button elsewhere)
 (function(){
   var enter = document.getElementById('enterBtn');
   if(enter){
@@ -1744,7 +1901,6 @@ function openJournalDeleteDialog(tripId, entry){
   }
 })();
 
-// Google Auth
 (function(){
   try {
     var signInBtn  = document.getElementById('googleSignInBtn');
@@ -1772,7 +1928,6 @@ function openJournalDeleteDialog(tripId, entry){
         try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
       });
       auth.onAuthStateChanged(function(user){
-      /* __ACCOUNT_BIND__ */
       try{
         var acct = document.getElementById('userAccount');
         if (acct) acct.textContent = user ? (user.email || user.displayName || '') : '';
@@ -1795,14 +1950,10 @@ function openJournalDeleteDialog(tripId, entry){
 })();
 
 ;(() => {
-  // Safe init: don't touch Firestore until auth is available
   if (typeof auth !== 'undefined'){
-    // noop; onAuthStateChanged will handle entering the app
   }
 })();
 
-
-// --- Debug helper to verify auth + rules ---
 window.debugAuth = async function(){
   try {
     console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
@@ -1823,8 +1974,6 @@ window.debugAuth = async function(){
   }
 };
 
-
-// Attach Google sign-in handler safely (works with or without inline onclick)
 (function(){
   try{
     var btn = document.getElementById('googleSignInBtn');
@@ -1842,8 +1991,6 @@ window.debugAuth = async function(){
   }catch(e){ console.warn('sign-in wiring failed', e); }
 })();
 
-
-/* auth button wiring */
 document.addEventListener('DOMContentLoaded', function(){
   var loginBtn = document.getElementById('googleSignInBtn');
   if (loginBtn && !loginBtn.__wired){
@@ -1869,7 +2016,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-/* signOut wiring */
 document.addEventListener('DOMContentLoaded', function(){
   var out = document.getElementById('signOutBtn');
   if (out && !out.__wired){
@@ -1887,8 +2033,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-
-// ---- global sign-out handler ----
 window.handleSignOut = async function(){
   try{
     if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
@@ -1900,8 +2044,6 @@ window.handleSignOut = async function(){
   }
 };
 
-
-// === Row Actions Dialog wiring ===
 let __rowActionTripId = null;
 function openRowActionsDialog(tripId, destination){
   __rowActionTripId = tripId;
@@ -1915,9 +2057,6 @@ function closeRowActionsDialog(){
   if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
 }
 
-
-
-// Attach persistent listeners for dialog buttons
 document.addEventListener("DOMContentLoaded", function(){
   const dlg = document.getElementById("rowActionDialog");
   if (!dlg) return;
@@ -1930,9 +2069,6 @@ document.addEventListener("DOMContentLoaded", function(){
   dlg.addEventListener("cancel", closeRowActionsDialog);
 });
 
-
-
-// === Override addTripMarker to use solid fill circle markers ===
 function addTripMarker(lat, lng, tripId, destination){
   if(typeof L === "undefined" || !map) return;
   const marker = L.circleMarker([lat, lng], {
@@ -1948,9 +2084,6 @@ function addTripMarker(lat, lng, tripId, destination){
   return marker;
 }
 
-
-
-// Cancel buttons for confirm dialogs
 document.addEventListener("DOMContentLoaded", ()=>{
   const dlgConfirm = document.getElementById("confirmDialog");
   const dlgExpense = document.getElementById("confirmExpenseDialog");
@@ -1966,12 +2099,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 });
 
-
-// === Global robust cancel handler (no side-effects) ===
 document.addEventListener("click", function(e){
   const btn = e.target instanceof Element ? e.target.closest("button") : null;
   if (!btn) return;
-  // Match explicit IDs we use, or data attribute, or Hebrew label "ביטול"
   const isCancel =
     btn.id === "cancelTripBtn" ||
     btn.id === "confirmCancelBtn" ||
@@ -1986,67 +2116,4 @@ document.addEventListener("click", function(e){
   e.stopPropagation();
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
-}, true); // capture to beat form validation
-
-
-function __openExpenseRowActions(e){
-  openRowActionsDialog(state.currentTripId, e.desc || "הוצאה", {
-    onEdit: ()=> openExpenseDialog(e),
-    onDelete: ()=> removeExpense(e)
-  });
-}
-
-
-// trip-title click delegation
-document.addEventListener('click', (ev)=>{
-  const t = ev.target;
-  if (t && t.classList && t.classList.contains('trip-title')){
-    const li = t.closest('li'); const id = li && li.dataset && li.dataset.tripId ? li.dataset.tripId : null;
-    // Fallback: pull id from runtime variable in closure if not found (we also bind inline per-render)
-    try { openTrip(id || (t.textContent||'').trim()); } catch(_){ /* ignore */ }
-  }
-});
-
-
-// Map toggles
-document.addEventListener('click', async (e)=>{
-  const t = e.target;
-  if (!(t instanceof HTMLElement)) return;
-  if (t.id === 'btnShowExpensesOnMap'){ e.preventDefault(); state.ui = state.ui||{}; state.ui.showExpensesLayer = !state.ui.showExpensesLayer; await refreshMapLayers(); }
-  if (t.id === 'btnShowJournalOnMap'){ e.preventDefault(); state.ui = state.ui||{}; state.ui.showJournalLayer = !state.ui.showJournalLayer; await refreshMapLayers(); }
-});
-function toggleActiveButtonsForMap(){
-  const eBtn = document.getElementById('btnShowExpensesOnMap');
-  const jBtn = document.getElementById('btnShowJournalOnMap');
-  if (eBtn){ eBtn.classList.toggle('active', !!(state.ui && state.ui.showExpensesLayer)); }
-  if (jBtn){ jBtn.classList.toggle('active', !!(state.ui && state.ui.showJournalLayer)); }
-}
-async function refreshMapLayers(){
-  const map = state.maps?.main; if (!map) return;
-  // clear
-  if (state.layers?.expenses){ map.removeLayer(state.layers.expenses); }
-  if (state.layers?.journal){ map.removeLayer(state.layers.journal); }
-  state.layers = state.layers || {};
-  const trip = await Store.getTrip(state.currentTripId); if (!trip) return;
-  if (state.ui?.showExpensesLayer){
-    const g = L.featureGroup();
-    for (const e of (trip.expenses||[])){
-      if (typeof e.lat==='number' && typeof e.lng==='number'){
-        g.addLayer(L.circleMarker([e.lat,e.lng], {radius:7, color:'#ff8800', fillOpacity:.85}).bindPopup((e.desc||'')+(e.placeName?`<br>${e.placeName}`:'')));
-      }
-    }
-    state.layers.expenses = g.addTo(map);
-  }
-  if (state.ui?.showJournalLayer){
-    const g = L.featureGroup();
-    for (const j of (trip.journal||[])){
-      if (typeof j.lat==='number' && typeof j.lng==='number'){
-        g.addLayer(L.circleMarker([j.lat,j.lng], {radius:7, color:'#1976d2', fillOpacity:.85}).bindPopup((j.text||'')+(j.placeName?`<br>${j.placeName}`:'')));
-      }
-    }
-    state.layers.journal = g.addTo(map);
-  }
-  const toBound=[]; if (state.layers.expenses) toBound.push(state.layers.expenses); if (state.layers.journal) toBound.push(state.layers.journal);
-  if (toBound.length){ try{ const fg=L.featureGroup(toBound); map.fitBounds(fg.getBounds().pad(.2)); }catch(_){ } }
-  toggleActiveButtonsForMap();
-}
+}, true);
