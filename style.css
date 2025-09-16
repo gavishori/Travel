@@ -1562,3 +1562,13 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
 
 /* Active/pressed state for toggles */
 .btn.active, .btn.ghost.active { background: rgba(0,0,0,0.08); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
+
+
+/* === Ensure both search inputs sit on one row and do not stretch === */
+#homeView .toolbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap: nowrap; }
+#homeView .toolbar-actions .input{
+  width: auto !important;
+  flex: 0 1 24%;
+  max-width: 24%;
+  min-width: 200px;
+}
