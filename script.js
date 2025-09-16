@@ -595,21 +595,6 @@ async function renderHome(){
   </div>
 `;
 const viewButton = $(".view", li);
-    /* render match list */
-    (function(){
-      const gEl = el("globalSearchInput");
-      const gq = (gEl && gEl.value) ? gEl.value.trim() : "";
-      if (gq){
-        const matches = __collectMatches(t, gq);
-        if (matches.length){
-          const wrap = document.createElement("div");
-          wrap.className = "match-list";
-          wrap.innerHTML = '<h6>התאמות שמצאתי</h6>' + '<ul>' + matches.map(m=>`<li>${m.replace(/</g,'&lt;')}</li>`).join('') + '</ul>';
-          li.appendChild(wrap);
-        }
-      }
-    })();
-
     if (viewButton) {
       viewButton.onclick = ()=> openTrip(t.id);
     }
@@ -2064,51 +2049,4 @@ async function refreshMapLayers(){
   const toBound=[]; if (state.layers.expenses) toBound.push(state.layers.expenses); if (state.layers.journal) toBound.push(state.layers.journal);
   if (toBound.length){ try{ const fg=L.featureGroup(toBound); map.fitBounds(fg.getBounds().pad(.2)); }catch(_){ } }
   toggleActiveButtonsForMap();
-}
-
-
-// Collect human-readable matches for deep search to present under the card
-function __collectMatches(t, query){
-  const q = String(query||'').trim().toLowerCase();
-  if (!q) return [];
-  const out = [];
-  // Basics
-  const basicPairs = [
-    ['יעד', t.destination||''],
-    ['סוג', Array.isArray(t.tripType)?t.tripType.join(', '):(t.tripType||'')],
-    ['משתתפים', t.participants||''],
-    ['עיר', t.city||''],
-    ['מדינה', t.country||''],
-    ['תאריכים', [t.start||'', t.end||''].filter(Boolean).join('–')]
-  ];
-  for (const [label,val] of basicPairs){
-    const v = String(val||''); if (!v) continue;
-    if (v.toLowerCase().includes(q)) out.push(`${label}: ${v}`);
-  }
-  // Journal entries
-  try{
-    const journal = t.journal && typeof t.journal==='object' ? Object.values(t.journal) : [];
-    for (const j of journal){
-      const text = String(j.text||'');
-      const place = String(j.placeName||'');
-      const combo = (place + ' ' + text).toLowerCase();
-      if (q && combo.includes(q)){
-        // short snippet
-        let snip = text || place;
-        if (snip && snip.length>80) snip = snip.slice(0,77)+'...';
-        out.push(`יומן: ${place?place+' – ':''}${snip}`);
-      }
-    }
-  }catch(_){}
-  // Expenses
-  try{
-    const expenses = t.expenses && typeof t.expenses==='object' ? Object.values(t.expenses) : [];
-    for (const e of expenses){
-      const fields = [e.desc||'', e.category||'', e.placeName||'', e.currency||'', String(e.amount??'')];
-      if (fields.join(' ').toLowerCase().includes(q)){
-        out.push(`הוצאה: ${e.category||'אחר'} – ${e.desc||e.placeName||''}${e.amount? ' ('+e.amount+' '+(e.currency||'')+')':''}`);
-      }
-    }
-  }catch(_){}
-  return out.slice(0,6); // cap to avoid overflow
 }
