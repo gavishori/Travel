@@ -500,5 +500,27 @@
 
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
+
+  <!-- Email/Password Auth Dialog -->
+  <dialog id="emailAuthDialog" class="dialog">
+    <form method="dialog" class="form" id="emailAuthForm" novalidate>
+      <h3 class="dialog-title">כניסה לחשבון</h3>
+      <div id="emailAuthError" class="dialog-error" role="alert"></div>
+      <label>אימייל
+        <input type="email" id="authEmail" required placeholder="name@example.com">
+      </label>
+      <label>סיסמה
+        <input type="password" id="authPassword" required placeholder="••••••••">
+      </label>
+      <div class="dialog-actions-row">
+        <div class="left-actions">
+          <button id="emailSignInBtn" class="btn primary" value="signin">כניסה</button>
+          <button id="emailSignUpBtn" class="btn" value="signup" type="button">הרשמה</button>
+        </div>
+        <button class="btn ghost dialog-close-btn" value="cancel" aria-label="סגור">✕</button>
+      </div>
+    </form>
+  </dialog>
+
 </body>
 </html>

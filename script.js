@@ -1939,17 +1939,36 @@ function openJournalDeleteDialog(tripId, entry){
     }
 
     if (typeof auth !== 'undefined') {
+      // Open dialog from splash button
       if (openEmailAuthBtn) openEmailAuthBtn.addEventListener('click', function(){
-        // Here we should open a new dialog for email/password sign-in.
-        // For now, let's just log a message since the dialog HTML doesn't exist.
-        console.log("Opening email/password sign-in dialog...");
-        // You would insert code here to show your custom dialog.
-        // For example: document.getElementById('emailAuthDialog').showModal();
-        alert("התחברות באמצעות אימייל וסיסמה אינה זמינה עדיין. אנא השתמש במצב מקומי.");
+        window.showEmailDialog && window.showEmailDialog();
       });
 
-      if (signOutBtn) signOutBtn.addEventListener('click', async function(){
-        try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
+      // Wire dialog buttons
+      var dlg = document.getElementById('emailAuthDialog');
+      var emailEl = document.getElementById('authEmail');
+      var passEl  = document.getElementById('authPassword');
+      var signInBtn = document.getElementById('emailSignInBtn');
+      var signUpBtn = document.getElementById('emailSignUpBtn');
+      var errBox = document.getElementById('emailAuthError');
+
+      function showError(msg){
+        if (!errBox) return;
+        errBox.textContent = msg || '';
+        errBox.classList.toggle('show', !!msg);
+      }
+
+      if (signInBtn) signInBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        showError('');
+        const ok = await (window.emailSignIn && window.emailSignIn(emailEl.value, passEl.value));
+        if (ok && dlg) dlg.close();
+      });
+      if (signUpBtn) signUpBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        showError('');
+        const ok = await (window.emailSignUp && window.emailSignUp(emailEl.value, passEl.value));
+        if (ok && dlg) dlg.close();
       });
 
       auth.onAuthStateChanged(function(user){
