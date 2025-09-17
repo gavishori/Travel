@@ -42,10 +42,12 @@
             <div class="toolbar-actions">
               <input id="tripSearch" class="input" placeholder="חפש נסיעה..." />
               <input id="wordSearch" class="input" placeholder="חיפוש מילה..." />
-              <button id="sortStartBtn" class="btn btn-outline" title="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
-              <div class="view-toggle">
-                <button id="galleryViewBtn" class="btn btn-outline" title="תצוגת גלריה">גלריה</button>
-                <button id="listViewBtn" class="btn btn-outline" title="תצוגת רשימה">רשימה</button>
+              <div class="toolbar-sort-and-view">
+                <button id="sortStartBtn" class="btn btn-outline" title="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
+                <div class="view-toggle">
+                  <button id="galleryViewBtn" class="btn btn-outline" title="תצוגת גלריה">גלריה</button>
+                  <button id="listViewBtn" class="btn btn-outline" title="תצוגת רשימה">רשימה</button>
+                </div>
               </div>
             </div>
           </div>
@@ -501,7 +503,6 @@
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
 
-  <!-- Email/Password Auth Dialog -->
   <dialog id="emailAuthDialog" class="dialog">
   <form method="dialog" class="form" id="emailAuthForm" novalidate>
     <h3 class="dialog-title">כניסה לחשבון</h3>

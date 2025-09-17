@@ -88,8 +88,21 @@ main {
 .toolbar-actions {
   display: flex;
   flex-grow: 1;
+  gap: 12px;
+  align-items: center;
 }
-#tripSearch { width: 100%; }
+
+#tripSearch,
+#wordSearch {
+  width: 50%;
+  max-width: 250px;
+}
+
+.toolbar-sort-and-view {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 
 .cards {
   list-style: none;
@@ -178,7 +191,7 @@ main {
 
 .input, select.input, textarea.input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 12px;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -1312,8 +1325,9 @@ dialog#confirmDialog {
 .kebab-wrap {
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: auto;
+  bottom: 14px;
+  transform: none;
 }
 #tripList.list-mode .kebab-menu {
   inset-inline-start: 0;
@@ -1350,8 +1364,9 @@ dialog#confirmDialog {
 .kebab-wrap {
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: auto;
+  bottom: 14px;
+  transform: none;
 }
 #tripList.list-mode .kebab-menu {
   inset-inline-start: 0;
@@ -1430,7 +1445,6 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
   transform: none !important;
   z-index: 5 !important;
 }
-#homeView #tripList:not(.list-mode) > li { position: relative !important; }
 #homeView #tripList:not(.list-mode) > li .kebab-wrap {
   position: absolute !important;
   top: 16px !important;
@@ -1646,3 +1660,23 @@ dialog#emailAuthDialog .icon-btn {
   border-radius: 999px;
 }
 dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }
+
+}
+
+/* Specific overrides for the cards view to fix layout issues */
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute;
+  bottom: 14px; /* Corrected bottom alignment */
+  inset-inline-start: 14px; /* Align to the left (RTL) */
+  inset-inline-end: auto;
+  transform: none;
+  z-index: 5;
+}
+#tripList:not(.list-mode) > li .row.bottom-row {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end; /* Align the button to the right */
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
