@@ -1661,22 +1661,80 @@ dialog#emailAuthDialog .icon-btn {
 }
 dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }
 
+/* Styles from 'הנחיות לסיום.pdf' - merged & optimized */
+/* Buttons */
+.btn { border: 1px solid var(--border); }
+.btn.primary, .btn.danger { border-color: transparent; }
+.btn.ghost { background: transparent; }
+
+/* Input with button (e.g., "אמת במפה") */
+.input-with-button .btn.ghost {
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+.input-with-button .btn.ghost.primary {
+    background-color: var(--primary);
+    border-color: transparent;
+    color: #fff;
 }
 
-/* Specific overrides for the cards view to fix layout issues */
-#tripList:not(.list-mode) > li .kebab-wrap {
+/* Kebab menu alignment */
+.kebab-wrap {
   position: absolute;
-  bottom: 14px; /* Corrected bottom alignment */
-  inset-inline-start: 14px; /* Align to the left (RTL) */
-  inset-inline-end: auto;
-  transform: none;
-  z-index: 5;
+  inset-inline-start: 14px;
+  bottom: 14px;
+  top: auto;
 }
-#tripList:not(.list-mode) > li .row.bottom-row {
-    margin-top: auto;
-    display: flex;
-    justify-content: flex-end; /* Align the button to the right */
-    align-items: center;
-    gap: 10px;
-    width: 100%;
+.kebab-wrap-expense {
+    position: relative;
+    display: inline-block;
+}
+.kebab-btn {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.kebab-menu {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 100%;
+    z-index: 10;
+}
+
+/* Horizontal scrollbar removal */
+body {
+    overflow-x: hidden;
+}
+.table-wrapper {
+    overflow-x: auto;
+}
+/* This might be a bit aggressive, but per instructions... */
+.panel {
+    overflow: hidden;
+}
+
+/* Dialog transparency fix */
+.dialog {
+    background-color: var(--card) !important;
+}
+
+/* Fonts */
+body {
+    font-family: 'Rubik', sans-serif;
+}
+.form label,
+.form h3,
+.form-col h3,
+.btn {
+    font-family: 'Rubik', sans-serif;
+}
+
+/* New Map tab buttons */
+#map-controls-row .btn {
+    border-radius: 12px;
+}
+#map-controls-row .btn:has(input:checked) {
+    background-color: var(--primary);
+    color: #fff;
+    border-color: transparent;
 }
