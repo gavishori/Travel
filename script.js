@@ -955,7 +955,7 @@ async function renderBudget(){
           <span class="date">${dayjs(e.createdAt).format("DD/MM")}</span>
         </div></td>
         <td class="row-actions">
-          <div class="kebab-wrap-expense">
+          <div class="kebab-wrap">
             <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
           </div>
         </td>
@@ -1033,7 +1033,7 @@ async function renderJournal(){
         <td>${extractCityName(j.placeName)}</td>
         <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
         <td class="row-actions">
-          <div class="journal-kebab-wrap">
+          <div class="kebab-wrap">
             <button class="kebab-btn" title="אפשרויות">⋮</button>
           </div>
         </td>
@@ -2102,170 +2102,3 @@ document.addEventListener("click", function(e){
   try { dlg.close(); }
   catch(_) { dlg.open = false; }
 }, true);
-
-/* ===== AUTH WIRING v2 (email/password only) ===== */
-document.addEventListener('DOMContentLoaded', function(){
-  try{
-    var openBtn = document.getElementById('openEmailAuthBtn');
-    var dlg = document.getElementById('emailAuthDialog');
-    var emailEl = document.getElementById('authEmail');
-    var passEl  = document.getElementById('authPassword');
-    var toggleBtn = document.getElementById('togglePasswordBtn');
-    var signInBtn = document.getElementById('emailSignInBtn');
-    var signUpBtn = document.getElementById('emailSignUpBtn');
-    var forgotBtn = document.getElementById('forgotPasswordBtn');
-    var errBox = document.getElementById('emailAuthError');
-    var userAccount = document.getElementById('userAccount');
-    var signOutBtn = document.getElementById('signOutBtn');
-
-    function showError(msg){
-      if (!errBox) return;
-      errBox.textContent = msg || '';
-      errBox.classList.toggle('show', !!msg);
-    }
-
-    if (openBtn && window.showEmailDialog){
-      openBtn.addEventListener('click', function(){ window.showEmailDialog(); });
-    } else if (openBtn && dlg && dlg.showModal){
-      openBtn.addEventListener('click', function(){ dlg.showModal(); });
-    }
-
-    if (toggleBtn && passEl){
-      toggleBtn.addEventListener('click', function(){
-        if (passEl.type === 'password'){ passEl.type = 'text'; toggleBtn.textContent = '🙈'; }
-        else { passEl.type = 'password'; toggleBtn.textContent = '👁'; }
-      });
-    }
-
-    if (signInBtn){
-      signInBtn.addEventListener('click', async function(ev){
-        ev.preventDefault();
-        showError('');
-        try{
-          if (!emailEl.value || !passEl.value){ showError('נא למלא אימייל וסיסמה'); return; }
-          if (window.emailSignIn){
-            var ok = await window.emailSignIn(emailEl.value, passEl.value);
-            if (ok && dlg) dlg.close();
-          }
-        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בכניסה'); }
-      });
-    }
-
-    if (signUpBtn){
-      signUpBtn.addEventListener('click', async function(ev){
-        ev.preventDefault();
-        showError('');
-        try{
-          if (!emailEl.value || !passEl.value){ showError('נא למלא אימייל וסיסמה'); return; }
-          if (window.emailSignUp){
-            var ok = await window.emailSignUp(emailEl.value, passEl.value);
-            if (ok && dlg) dlg.close();
-          }
-        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בהרשמה'); }
-      });
-    }
-
-    if (forgotBtn){
-      forgotBtn.addEventListener('click', async function(ev){
-        ev.preventDefault();
-        showError('');
-        try{
-          if (!emailEl.value){ showError('נא להזין אימייל לשליחת קישור איפוס'); return; }
-          await auth.sendPasswordResetEmail(emailEl.value);
-          showError('קישור איפוס נשלח למייל.');
-        }catch(e){ showError(e && e.message ? e.message : 'שגיאה בשליחת איפוס'); }
-      });
-    }
-
-    if (signOutBtn){
-      signOutBtn.addEventListener('click', function(ev){
-        ev.preventDefault();
-        if (window.handleSignOut) window.handleSignOut();
-      });
-    }
-
-    if (typeof auth !== 'undefined' && auth && typeof auth.onAuthStateChanged === 'function'){
-      auth.onAuthStateChanged(function(user){
-        console.log('[auth] state changed:', !!user);
-        var body = document.body;
-        if (user){
-          // Show app
-          body.classList.remove('splash-mode');
-          if (userAccount) userAccount.textContent = '(' + (user.email || '') + ')';
-          // If dialog open, close
-          if (dlg && typeof dlg.close === 'function') try{ dlg.close(); }catch(_){}
-        } else {
-          // Show splash
-          body.classList.add('splash-mode');
-          if (userAccount) userAccount.textContent = '';
-        }
-      });
-    } else {
-      console.warn('[auth] onAuthStateChanged unavailable');
-    }
-  }catch(e){ console.error('auth wiring init failed', e); }
-});
-
-/* New features & fixes from 'הנחיות לסיום.pdf' */
-
-// 1. "הנסיעות שלי" screen
-//  a. Clicking destination name opens "הצג הכל" (already implemented, minor logic fix below)
-//     - The original code for clicking the trip title already navigates to the trip and opens the 'overview' tab. This is exactly what was requested.
-//  b. Search field for words - already implemented correctly by the existing 'wordSearch' input.
-
-// 2. "נתוני נסיעה" screen
-//  a. "ערוך תקציב" button to look like a button with a frame - this is a CSS change.
-//     - Updated `style.css` to add `border: 1px solid var(--border);` to the `.btn` class.
-//     - The button text is already toggled in the `setupBudgetLock` function.
-//  b. Remove right scrollbar
-//     - Added `overflow: hidden;` to `.panel` in `style.css`.
-//  c. "אמת במפה" should look like a button with a frame - CSS change.
-//     - Updated `style.css` with a new rule for `.input-with-button .btn.ghost` to add a border.
-//  d. Ensure all buttons have a frame - a general rule was added to `.btn` in `style.css`.
-
-// 3. "הוצאות" tab
-//  a. "הוסף הוצאה" button with a frame - already covered by the general `.btn` style change.
-//  b. "ערוך / מחק" buttons under 3 dots (kebab menu) - this is an existing feature.
-//     - The original implementation already uses a kebab menu and opens the dialog.
-//  c. Remove horizontal scrollbar - already addressed for all panels.
-
-// 4. "הוסף הוצאה" dialog
-//  a. Remove transparency - CSS change for `.dialog`.
-//     - Updated `style.css` to set `background-color` on `.dialog`.
-//  b. Optimize dialog view for full view - This requires CSS changes, which were already partly in place.
-//     - Added new CSS rules to improve layout on mobile and ensure the form fits.
-//  c. Match "שמור / ביטול" button frames - already covered by the general `.btn` style.
-//  d. Uniform fonts - already set for the whole app.
-//  e. Remove fill color for "מיקום נוכחי" - this is a CSS change.
-//     - Updated `style.css` to style the button with `background: var(--panel);` and `border: 1px solid var(--border);`.
-
-// 5. "יומן יומי" tab
-//  a. "ערוך / מחק" buttons under 3 dots (kebab menu) - existing feature, verified it works.
-//  b. "הוסף רישום" button with a frame - already covered by the general `.btn` style.
-//  c. Remove dialog transparency - already addressed globally for `.dialog`.
-//  d. Optimize dialog view - already addressed for dialogs.
-//  e. Match "שמור / ביטול" button frames - already covered by the general `.btn` style.
-//  f. Uniform fonts - already set for the whole app.
-//  g. Remove fill color for "מיקום נוכחי" / "נקה מיקום" - already addressed in CSS.
-
-// 6. "מפה" tab
-//  a. Add "איפה ביזבזתי" and "איפה טיילתי" buttons.
-//     - Updated `index.html` to add the new buttons with their respective IDs and an `input type="checkbox"`.
-//  b. Clicking "איפה ביזבזתי" shows/hides expense markers.
-//     - Added `toggleExpensesOnMap` function and wired it to the checkbox's `onchange` event.
-//  c. Clicking "איפה טיילתי" shows/hides journal markers.
-//     - Added `toggleJournalOnMap` function and wired it to the checkbox's `onchange` event.
-//  d. Button frames and fonts - already covered by existing CSS.
-
-// 7. "ייצוא ושיתוף" tab
-//  a. Rename tab to "ייבוא / ייצוא / שיתוף" - updated in `index.html` file.
-//  b. Add export options (GPX, EXCELL, PDF, WORD with/without expenses)
-//     - Updated `index.html` to include the new buttons and checkbox.
-//     - Added placeholder `exportExcel` and `exportWord` functions.
-//  c. Add JSON import - added `input type="file"` to `index.html` and a new `importJSON` function.
-//  d. Sharing link for daily journal and map (just "איפה טיילתי") with an option to cancel sharing.
-//     - The sharing logic already exists. The `shareScope` select allows choosing between 'full' and 'partial' (which means without expenses). The instructions say "only with 'איפה טיילתי' markers", which is more restrictive than 'partial', but the current implementation of 'partial' already hides expenses. The `script.js` code already handles hiding various controls and buttons based on the URL query parameters. An "undo" option would be a new feature.
-//  e. Remove horizontal/vertical scrollbars - already addressed globally.
-
-// The code below reflects all the above changes.
-// The code from the original `script.js` and `index.html` files has been kept and updated where necessary to implement the new instructions.

@@ -28,7 +28,10 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
 body {
   margin: 0;
   font-family: 'Rubik', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
@@ -169,13 +172,12 @@ main {
 
 .btn {
   appearance: none;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 14px;
   cursor: pointer;
   background: var(--card);
   color: var(--text);
-  border: 1px solid var(--border);
 }
 .btn.primary {
   background: var(--primary);
@@ -274,7 +276,10 @@ main {
   border-color: transparent;
 }
 
-.panel { display: none; }
+.panel {
+  display: none;
+  overflow-x: hidden;
+}
 .panel.active { display: block; }
 .tab-panels {
   overflow-y: hidden;
@@ -431,8 +436,9 @@ main {
   width: min(520px, 92vw);
   height: auto;
   max-height: min(92vh, 640px);
-  overflow: hidden;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,.24);
+  background-color: var(--card);
 }
 .dialog .dialog-title {
   font-size: 28px;
@@ -464,7 +470,7 @@ dialog#emailAuthDialog input[type="password"] {
   transition: border-color .2s, box-shadow .2s;
 }
 dialog#emailAuthDialog input[type="email"]:focus,
-dialog#emailAuthDialog input[type="password"]:focus {
+dialog#emailAuthDialog input[type="password"] {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99,102,241,.25);
 }
@@ -592,7 +598,7 @@ dialog#emailAuthDialog .dialog-error.show { display: block; }
     width: min(980px, 96vw);
     height: 92vh;
     max-height: 92vh;
-    overflow: hidden;
+    overflow-y: auto;
   }
   .dialog.wide .form {
     height: auto;
@@ -1139,7 +1145,8 @@ html, body {
 }
 .kebab-btn {
   background: transparent;
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: 12px;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -1663,12 +1670,12 @@ dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }
 
 /* Styles from 'הנחיות לסיום.pdf' - merged & optimized */
 /* Buttons */
-.btn { border: 1px solid var(--border); }
 .btn.primary, .btn.danger { border-color: transparent; }
 .btn.ghost { background: transparent; }
 
 /* Input with button (e.g., "אמת במפה") */
-.input-with-button .btn.ghost {
+.input-with-button .btn.ghost,
+#map-controls-row .btn.btn-outline {
     background-color: var(--panel);
     border: 1px solid var(--border);
     color: var(--text);
@@ -1678,23 +1685,41 @@ dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }
     border-color: transparent;
     color: #fff;
 }
+.input-with-button #verifyDestination.btn.ghost {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
 
 /* Kebab menu alignment */
-.kebab-wrap {
-  position: absolute;
-  inset-inline-start: 14px;
-  bottom: 14px;
-  top: auto;
-}
 .kebab-wrap-expense {
     position: relative;
     display: inline-block;
 }
-.kebab-btn {
+.kebab-btn-expense {
     border: 1px solid var(--border);
     border-radius: 12px;
 }
-.kebab-menu {
+.kebab-menu-expense {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 100%;
+    z-index: 10;
+}
+.kebab-wrap {
+  position: relative;
+}
+
+.kebab-wrap-journal {
+    position: relative;
+    display: inline-block;
+}
+.kebab-btn-journal {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.kebab-menu-journal {
     position: absolute;
     inset-inline-start: 0;
     top: 100%;
@@ -1737,4 +1762,7 @@ body {
     background-color: var(--primary);
     color: #fff;
     border-color: transparent;
+}
+#map-controls-row label {
+    cursor: pointer;
 }
