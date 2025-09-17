@@ -898,117 +898,6 @@ dialog#unsavedDialog::backdrop { background: rgba(0,0,0,.45); }
 #expenseTable th:nth-child(6),
 #expenseTable td:nth-child(6) { width: 10%; }
 :root {
-  --bg: #0b0f14;
-  --text: #e8ecf3;
-  --muted: #a6b0bb;
-  --primary: #7c3aed;
-  --accent: #22d3ee;
-  --border: rgba(255,255,255,0.16);
-  --card: rgba(17,23,34,0.55);
-  --blur: 16px;
-}
-:root.light {
-  --bg: #f7f9fc;
-  --text: #0f172a;
-  --muted: #5b6673;
-  --primary: #7c3aed;
-  --accent: #0891b2;
-  --border: rgba(0,0,0,0.08);
-  --card: rgba(255,255,255,0.8);
-  --blur: 12px;
-}
-body.splash-mode {
-  margin: 0;
-  font-family: 'Rubik', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-.bg-ornaments {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(1200px 600px at 110% -10%, rgba(124,58,237,0.23), transparent 60%), radial-gradient(900px 520px at -10% 120%, rgba(34,211,238,0.20), transparent 60%);
-}
-#splash {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.splash-card {
-  width: min(880px, 92vw);
-  padding: 40px 32px;
-  text-align: center;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 32px;
-  backdrop-filter: blur(var(--blur));
-  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
-}
-.splash-logo {
-  width: 260px;
-  margin: 0 auto 18px;
-  display: block;
-}
-.brand-title {
-  margin: 0;
-  font-size: 46px;
-  font-weight: 700;
-}
-.tagline {
-  margin: 8px 0 20px;
-  font-size: 19px;
-  color: var(--muted);
-}
-.cta-row {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.btn {
-  padding: 12px 20px;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-}
-.btn.primary {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #fff;
-}
-#app { display: none; }
-.entered #app { display: block; }
-.entered #splash, .entered .bg-ornaments { display: none; }
-@media (max-width: 520px) {
-  .cta-row .btn { width: 100%; }
-}
-#tab-journal #journalTable {
-  table-layout: fixed;
-  width: 100%;
-}
-#tab-journal #journalTable th:nth-child(1),
-#tab-journal #journalTable td:nth-child(1) {
-  width: 54%;
-  white-space: normal;
-  word-break: break-word;
-}
-#tab-journal #journalTable th:nth-child(2),
-#tab-journal #journalTable td:nth-child(2) { width: 16%; }
-#tab-journal #journalTable th:nth-child(3),
-#tab-journal #journalTable td:nth-child(3) {
-  width: 8%;
-  text-align: center;
-}
-#tab-journal #journalTable th:nth-child(4),
-#tab-journal #journalTable td:nth-child(4) {
-  width: 20%;
-  text-align: left;
-  padding-left: 0;
-}
-:root {
   --btn-primary-dark: #4a6edb;
   --btn-secondary-dark: #6c63ff;
 }
@@ -1567,116 +1456,6830 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
 
 #tripList:not(.list-mode) > li .kebab-wrap {
   position: absolute !important;
-  top: 8px !important;
-  inset-inline-end: 8px !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
   left: auto !important;
+  right: auto !important;
   transform: none !important;
   z-index: 5 !important;
 }
 #homeView #tripList:not(.list-mode) > li .kebab-wrap {
   position: absolute !important;
-  top: 16px !important;
-  inset-inline-start: 16px !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
   inset-inline-end: auto !important;
-  left: 16px !important;
+  left: 14px !important;
   right: auto !important;
   transform: none !important;
   margin: 0 !important;
   z-index: 5 !important;
 }
-#tripList:not(.list-mode) > li .kebab-wrap {
-  bottom: 8px !important;
-  top: auto !important;
-  inset-inline-start: 8px !important;
-  left: auto !important;
-  right: auto !important;
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
 }
-
-@media (max-width: 600px) {
-  #tripList.list-mode > li {
-    padding-bottom: 50px !important;
-  }
-
-  .kebab-wrap.kebab-left {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    top: auto;
-    transform: none;
-  }
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
-
-/* Password field with eye button */
-.input-with-button.password-field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.input-with-button.password-field .input {
-  flex: 1;
-}
-.input-with-button.password-field .eye-btn {
-  padding: 0 10px;
-  min-width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn.link {
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-
-/* === Auth dialog extras === */
-.input-icon-wrap { position: relative; }
-.input-icon-wrap input { width: 100%; padding-inline-end: 42px; } /* space for eye on the right (RTL) */
-.input-icon-wrap.rtl .icon-btn { right: 8px; left: auto; } /* eye on right */
-.icon-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  inline-size: 34px;
-  block-size: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  font-size: 16px;
-}
-dialog#emailAuthDialog .btn,
-dialog#emailAuthDialog .icon-btn {
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 999px;
-}
-dialog#emailAuthDialog .left-actions .btn { margin-inline-end: 8px; }
-
-}
-
-/* Specific overrides for the cards view to fix layout issues */
-#tripList:not(.list-mode) > li .kebab-wrap {
-  position: absolute;
-  bottom: 14px; /* Corrected bottom alignment */
-  inset-inline-start: 14px; /* Align to the left (RTL) */
-  inset-inline-end: auto;
-  transform: none;
-  z-index: 5;
-}
-#tripList:not(.list-mode) > li .row.bottom-row {
-    margin-top: auto;
+#exportAndImportPanel .btn-group {
     display: flex;
-    justify-content: flex-end; /* Align the button to the right */
-    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
     width: 100%;
 }
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14px !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-btn {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+.journal-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+#exportAndImportPanel .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#exportAndImportPanel .file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#exportAndImportPanel input[type="file"] {
+    display: block;
+    width: 100%;
+}
+
+#exportAndImportPanel .btn-file {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#exportAndImportPanel .btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+}
+
+#map-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-controls-row .btn {
+  flex-grow: 1;
+}
+
+.kebab-menu-journal {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  display: none;
+  min-width: 140px;
+  z-index: 10;
+}
+
+.kebab-menu-journal.open {
+  display: block;
+}
+
+.kebab-menu-journal button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.kebab-menu-journal button:hover {
+  background: var(--card, #f6f6f6);
+}
+
+.journal-kebab-wrap {
+  position: relative;
+}
+
+
+/* Force kebab menu to bottom-left inside cards */
+.kebab-left {
+  margin-right: auto;
+}
+
+
+/* bottom-row layout: kebab at bottom-left, button at bottom-right */
+.cards .row.bottom-row {
+  justify-content: space-between;
+  align-items: center;
+}
+.kebab-left { margin-right: 0; }
+.kebab-wrap { display: flex; align-items: center; }
+
+#tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  z-index: 5 !important;
+}
+#homeView #tripList:not(.list-mode) > li .kebab-wrap {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 14px !important;
+  inset-inline-start: 14px !important;
+  inset-inline-end: auto !important;
+  left: 14
