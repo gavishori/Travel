@@ -1533,24 +1533,24 @@ async function init(){
   // This is a new helper function to load data based on the current user.
   function loadUserContent(){
   (async ()=>{
+    if (window.AppDataLayer?.mode === "firebase") {
       const user = firebase.auth().currentUser;
       if (user) {
         console.log("Auth UID:", user.uid);
         await renderHome();
       } else {
         console.log("No user signed in.");
-        // Clear the trip list
         const list = el("tripList");
         if (list) list.innerHTML = "";
       }
-    })();
-} else {
-      // In local mode, we just render home without checking auth
+    } else {
+      // In local mode, render home without auth check
       await renderHome();
     }
-  }
+  })();
+}
 
-  // Buttons
+// Buttons
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
