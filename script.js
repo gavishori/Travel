@@ -548,6 +548,9 @@ function toUSD(amount, from="USD"){
 
 // ---------- Rendering ----------
 async function renderHome(){
+  const qEl = document.getElementById('globalSearch');
+  const globalQ = (qEl && qEl.value || '').trim().toLowerCase();
+
   $("#homeView")?.classList.add("active");
   $("#tripView")?.classList.remove("active");
 
@@ -583,7 +586,7 @@ async function renderHome(){
           <button class="delete" role="menuitem">מחק</button>
         </div>
       </div>
-      <div class="trip-title">${t.destination||"—"}</div>
+      <div class="trip-title">${highlightMatch(t.destination, globalQ)||"—"}</div>
     </div>
     <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
     <div class="row" style="justify-content: flex-start; margin-top: 10px;">
@@ -611,7 +614,7 @@ const viewButton = $(".view", li);
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
     if (menuBtn) {
-      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, highlightMatch(t.destination, globalQ)); };
     }
 
     const editButton = $(".edit", li);
@@ -624,7 +627,7 @@ const viewButton = $(".view", li);
     }
     const deleteButton = $(".delete", li);
     if (deleteButton) {
-      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
+      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, highlightMatch(t.destination, globalQ));
     }
     list.appendChild(li);
   }
@@ -1531,7 +1534,7 @@ async function init(){
   applyTheme();
   
   // This is a new helper function to load data based on the current user.
-  async function loadUserContent(){
+  async async function loadUserContent(){
     if (window.AppDataLayer?.mode === "firebase") {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -1553,7 +1556,7 @@ async function init(){
   if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
   if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
   if (el("tripSearch")) el("tripSearch").oninput = renderHome;
-  if (el("globalSearchInput")) el("globalSearchInput").addEventListener("keydown", async (ev)=>{ if (ev.key==="Enter"){ ev.preventDefault(); const items = await performGlobalSearch(ev.target.value); renderGlobalSearchResults(items); }});
+  if (el("globalSearch")) el("globalSearch").addEventListener("keydown", async (ev)=>{ if (ev.key==="Enter"){ ev.preventDefault(); const items = await performGlobalSearch(ev.target.value); renderGlobalSearchResults(items); }});
   
   /* dlg-cancel-delegation */
   if(!window.__dlgCancelWired){
@@ -1938,7 +1941,7 @@ document.addEventListener("DOMContentLoaded", function(){
   const delBtn   = document.getElementById("row-action-delete");
   if (closeBtn) closeBtn.onclick = closeRowActionsDialog;
   if (editBtn)  editBtn.onclick = async ()=>{ if(__rowActionTripId){ await openTrip(__rowActionTripId); } closeRowActionsDialog(); };
-  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
+  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && highlightMatch(t.destination, globalQ)); } closeRowActionsDialog(); };
   dlg.addEventListener("cancel", closeRowActionsDialog);
 });
 
@@ -2070,8 +2073,13 @@ async function performGlobalSearch(query){
   const trips = await Store.listTrips();
   const results = [];
   for (const t of trips){
-    if ((t.destination||"").toLowerCase().includes(q)){
-      results.push({ type:"יעד", tripId: t.id, label: t.destination||"—", snippet: "שם יעד" });
+    if (globalQ){
+      const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||''].join(' • ').toLowerCase();
+      if (!hay.includes(globalQ)) continue;
+    }
+
+    if ((highlightMatch(t.destination, globalQ)||"").toLowerCase().includes(q)){
+      results.push({ type:"יעד", tripId: t.id, label: highlightMatch(t.destination, globalQ)||"—", snippet: "שם יעד" });
     }
     const full = await Store.getTrip(t.id);
     if (!full) continue;
@@ -2138,10 +2146,15 @@ function renderGlobalSearchResults(items){
       const trips = await Store.listTrips();
       let results = [];
       for (const t of trips){
-        const hay = [t.title||'', t.destination||'', t.notes||'', t.description||'']
+    if (globalQ){
+      const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||''].join(' • ').toLowerCase();
+      if (!hay.includes(globalQ)) continue;
+    }
+
+        const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||'']
                       .join(' • ').toLowerCase();
         if (hay.includes(q)){
-          results.push({ tripId: t.id, where: 'trip', text: (t.title||t.destination||'טיול') });
+          results.push({ tripId: t.id, where: 'trip', text: (highlightMatch(t.title, globalQ)||highlightMatch(t.destination, globalQ)||'טיול') });
         }
         try{
           const exps = await Store.listExpenses(t.id);
@@ -2220,3 +2233,14 @@ function renderGlobalSearchResults(items){
     }
   };
 })();
+
+function highlightMatch(text, q){
+  if (!q) return text;
+  try{
+    const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc, 'gi');
+    return String(text).replace(re, m=>'<mark>'+m+'</mark>');
+  }catch(_){
+    return text;
+  }
+}
