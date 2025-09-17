@@ -1,7 +1,7 @@
-// ==== Firebase bootstrap (compat) – email/password only ====
+// ==== Firebase bootstrap (compat) with iOS redirect & tap-gate ====
 (function(){
   try {
-    // Firebase config must be defined by index.html before this file
+    // Firebase config must be defined
     window.firebaseConfig = window.firebaseConfig || {
       apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
       authDomain: "travel-416ff.firebaseapp.com",
@@ -15,58 +15,76 @@
     if (!firebase || !firebase.apps) throw new Error('Firebase SDK not loaded');
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
 
-    // Globals
     window.db = firebase.firestore();
     window.auth = firebase.auth();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
-    // iOS session persistence (popups unreliable) / others local
+    // A utility function to detect if the user is on an iOS device.
     window.isIOS = window.isIOS || function(){
       try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
     };
+
+    // Use session persistence for iOS and local persistence for other platforms.
     var persistence = (window.isIOS&&window.isIOS()) ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL;
     auth.setPersistence(persistence).catch(function(e){ console.warn('[auth] setPersistence failed', e&&e.code, e&&e.message); });
 
-    // Minimal DataLayer used by app
-    window.AppDataLayer = window.AppDataLayer || {};
+    // Check for a redirect result after sign-in.
+    auth.getRedirectResult().then(function(res){
+      if (res && res.user){ 
+        console.log('[auth] redirect ok', res.user.uid); 
+      }
+    }).catch(function(e){
+      console.error('[auth] redirect error: ', e);
+    });
+
+    // Public starter: must be called from the Google button (user gesture)
+    window.startGoogleSignIn = function(){
+        window.__attemptSignIn();
+    };
+
+    // The core sign-in logic
+    window.__attemptSignIn = async function(){
+      try{
+        if (!window.auth || !window.googleProvider) return;
+        if (auth.currentUser) return;
+
+        // On iOS, force a redirect sign-in to bypass pop-up issues.
+        // The popup is often blocked on mobile browsers.
+        if (window.isIOS && window.isIOS()){
+          console.log('[auth] iOS detected, attempting signInWithRedirect');
+          await auth.signInWithRedirect(googleProvider);
+          return;
+        }
+
+        // On other platforms, first try sign-in with a pop-up.
+        try{
+          await auth.signInWithPopup(googleProvider);
+        }catch(err){
+          var code=(err && err.code) || '';
+          // If the pop-up fails for known reasons (e.g., blocked), fall back to a redirect.
+          var fallback=(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].indexOf(code)!==-1);
+          if (fallback){
+            console.log('[auth] Pop-up blocked or cancelled, falling back to redirect');
+            await auth.signInWithRedirect(googleProvider);
+          } else {
+            console.error('[auth] sign-in failed', code, err && err.message);
+            if(code==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → local mode'); window.AppDataLayer.mode='local'; }
+          }
+        }
+      }catch(e){
+        console.error('[auth] __attemptSignIn fatal: ', e);
+        try{ if((e&&e.code)==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → switching to local mode'); window.AppDataLayer.mode='local'; } }catch(_){ }
+      }
+    };
+
+    // DataLayer surface
+    window.AppDataLayer = window.AppDataLayer || {}; /*__FALLBACK_LOCAL__*/
     window.AppDataLayer.mode = 'firebase';
     window.AppDataLayer.db = window.db;
     window.AppDataLayer.ensureAuth = async function(){
+      if (!auth.currentUser){ if (!(window.isIOS&&window.isIOS())) await window.__attemptSignIn(); }
       return (auth.currentUser && auth.currentUser.uid) || null;
-    };
-
-    // Helpers for email/password
-    window.showEmailDialog = function(){
-      var dlg = document.getElementById('emailAuthDialog');
-      if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
-    };
-    window.emailSignIn = async function(email, password){
-      try{
-        await auth.signInWithEmailAndPassword(String(email||'').trim(), String(password||''));
-        return true;
-      }catch(e){
-        if (e && e.code === 'auth/operation-not-allowed'){
-          alert('בפרויקט Firebase שלך לא הופעל ספק אימות בדוא״ל/סיסמה. פתח את Firebase Console > Authentication > Sign-in method והפעל Email/Password.');
-        } else {
-          alert(e && e.message ? e.message : 'Sign-in failed');
-        }
-        return false;
-      }
-    };
-    window.emailSignUp = async function(email, password){
-      try{
-        await auth.createUserWithEmailAndPassword(String(email||'').trim(), String(password||''));
-        return true;
-      }catch(e){
-        if (e && e.code === 'auth/operation-not-allowed'){
-          alert('Email/Password לא מופעל בפרויקט Firebase.');
-        } else {
-          alert(e && e.message ? e.message : 'Sign-up failed');
-        }
-        return false;
-      }
-    };
-    window.handleSignOut = async function(){
-      try{ await auth.signOut(); }catch(e){ console.error(e); alert('התנתקות נכשלה'); }
     };
 
     console.info('Firebase init complete');
