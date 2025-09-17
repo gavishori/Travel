@@ -548,9 +548,6 @@ function toUSD(amount, from="USD"){
 
 // ---------- Rendering ----------
 async function renderHome(){
-  const qEl = document.getElementById('globalSearch');
-  const globalQ = (qEl && qEl.value || '').trim().toLowerCase();
-
   $("#homeView")?.classList.add("active");
   $("#tripView")?.classList.remove("active");
 
@@ -586,7 +583,7 @@ async function renderHome(){
           <button class="delete" role="menuitem">מחק</button>
         </div>
       </div>
-      <div class="trip-title">${highlightMatch(t.destination, globalQ)||"—"}</div>
+      <div class="trip-title">${t.destination||"—"}</div>
     </div>
     <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
     <div class="row" style="justify-content: flex-start; margin-top: 10px;">
@@ -614,7 +611,7 @@ const viewButton = $(".view", li);
     const menuWrap = $(".kebab-wrap", li);
     const menuBtn  = $(".kebab-btn", li);
     if (menuBtn) {
-      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, highlightMatch(t.destination, globalQ)); };
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
     }
 
     const editButton = $(".edit", li);
@@ -627,7 +624,7 @@ const viewButton = $(".view", li);
     }
     const deleteButton = $(".delete", li);
     if (deleteButton) {
-      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, highlightMatch(t.destination, globalQ));
+      deleteButton.onclick = ()=> confirmDeleteTrip(t.id, t.destination);
     }
     list.appendChild(li);
   }
@@ -1534,8 +1531,8 @@ async function init(){
   applyTheme();
   
   // This is a new helper function to load data based on the current user.
-  async async function loadUserContent(){
-    if (window.AppDataLayer?.mode === "firebase") {
+  function loadUserContent(){
+  (async ()=>{
       const user = firebase.auth().currentUser;
       if (user) {
         console.log("Auth UID:", user.uid);
@@ -1546,7 +1543,8 @@ async function init(){
         const list = el("tripList");
         if (list) list.innerHTML = "";
       }
-    } else {
+    })();
+} else {
       // In local mode, we just render home without checking auth
       await renderHome();
     }
@@ -1941,7 +1939,7 @@ document.addEventListener("DOMContentLoaded", function(){
   const delBtn   = document.getElementById("row-action-delete");
   if (closeBtn) closeBtn.onclick = closeRowActionsDialog;
   if (editBtn)  editBtn.onclick = async ()=>{ if(__rowActionTripId){ await openTrip(__rowActionTripId); } closeRowActionsDialog(); };
-  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && highlightMatch(t.destination, globalQ)); } closeRowActionsDialog(); };
+  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
   dlg.addEventListener("cancel", closeRowActionsDialog);
 });
 
@@ -2073,13 +2071,8 @@ async function performGlobalSearch(query){
   const trips = await Store.listTrips();
   const results = [];
   for (const t of trips){
-    if (globalQ){
-      const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||''].join(' • ').toLowerCase();
-      if (!hay.includes(globalQ)) continue;
-    }
-
-    if ((highlightMatch(t.destination, globalQ)||"").toLowerCase().includes(q)){
-      results.push({ type:"יעד", tripId: t.id, label: highlightMatch(t.destination, globalQ)||"—", snippet: "שם יעד" });
+    if ((t.destination||"").toLowerCase().includes(q)){
+      results.push({ type:"יעד", tripId: t.id, label: t.destination||"—", snippet: "שם יעד" });
     }
     const full = await Store.getTrip(t.id);
     if (!full) continue;
@@ -2115,132 +2108,3 @@ function renderGlobalSearchResults(items){
   try{ dlg.showModal(); }catch(_){ dlg.open = true; }
 }
 
-
-
-// === Added (safe) : Global search + title click → show-all (regex-free) ===
-(function(){
-  function ensureSearchContainer(){
-    if (!document.getElementById('globalSearchResults')){
-      const cont = document.createElement('div');
-      cont.id = 'globalSearchResults';
-      cont.className = 'card';
-      cont.style.marginTop = '10px';
-      const toolbar = document.querySelector('.toolbar');
-      if (toolbar && toolbar.parentElement){
-        toolbar.parentElement.insertBefore(cont, toolbar.nextSibling);
-      } else {
-        document.body.appendChild(cont);
-      }
-    }
-    return document.getElementById('globalSearchResults');
-  }
-
-  async function runGlobalSearch(q){
-    const box = ensureSearchContainer();
-    if (!q || !q.trim()){
-      box.innerHTML = '';
-      return;
-    }
-    q = q.trim().toLowerCase();
-    try{
-      const trips = await Store.listTrips();
-      let results = [];
-      for (const t of trips){
-    if (globalQ){
-      const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||''].join(' • ').toLowerCase();
-      if (!hay.includes(globalQ)) continue;
-    }
-
-        const hay = [highlightMatch(t.title, globalQ)||'', highlightMatch(t.destination, globalQ)||'', t.notes||'', t.description||'']
-                      .join(' • ').toLowerCase();
-        if (hay.includes(q)){
-          results.push({ tripId: t.id, where: 'trip', text: (highlightMatch(t.title, globalQ)||highlightMatch(t.destination, globalQ)||'טיול') });
-        }
-        try{
-          const exps = await Store.listExpenses(t.id);
-          for (const e of exps){
-            const txt = [e.title||'', e.note||'', e.category||''].join(' • ').toLowerCase();
-            if (txt.includes(q)){
-              results.push({ tripId: t.id, where: 'expense', text: (e.title||'הוצאה') });
-            }
-          }
-        }catch(_){}
-        try{
-          const jr = await Store.listJournal(t.id);
-          for (const j of jr){
-            const txt = [j.title||'', j.text||''].join(' • ').toLowerCase();
-            if (txt.includes(q)){
-              results.push({ tripId: t.id, where: 'journal', text: (j.title||'רישום') });
-            }
-          }
-        }catch(_){}
-      }
-      if (!results.length){
-        box.innerHTML = '<div class="muted">אין תוצאות.</div>';
-        return;
-      }
-      box.innerHTML = '<h3 style="margin-top:0">תוצאות חיפוש</h3>' +
-        '<ul class="list">' +
-        results.map(r=>'<li data-tripid="'+r.tripId+'" class="search-hit"><strong>['+r.where+']</strong> '+(r.text||'')+'</li>').join('') +
-        '</ul>';
-      box.querySelectorAll('.search-hit').forEach(li=>{
-        li.addEventListener('click', ()=>{
-          const id = li.getAttribute('data-tripid');
-          if (id){ openTripShowAll(id); }
-        });
-      });
-    }catch(e){
-      console.warn('global search failed', e);
-    }
-  }
-
-  document.addEventListener('input', function(e){
-    if (e.target && e.target.id === 'globalSearch'){
-      runGlobalSearch(e.target.value);
-    }
-  });
-
-  function on(container, evt, selector, handler){
-    container.addEventListener(evt, function(e){
-      const el = e.target.closest(selector);
-      if (el){ handler(e, el); }
-    });
-  }
-
-  on(document, 'click', '.trip-title, [data-trip-title]', function(e, el){
-    const li = el.closest('[data-trip-id]');
-    const id = li && li.getAttribute('data-trip-id');
-    if (id){
-      e.preventDefault();
-      openTripShowAll(id);
-    }
-  });
-
-  window.openTripShowAll = function(tripId){
-    try{
-      if (typeof state !== 'undefined'){
-        state.currentTripId = tripId;
-        state.viewMode = 'gallery';
-      }
-      const tabs = Array.from(document.querySelectorAll('.tab'));
-      const showAllTab = tabs.find(t => (t.textContent || '').includes('הצג הכל'));
-      if (showAllTab){ showAllTab.click(); }
-      document.querySelectorAll('[data-trip-id]').forEach(el=>{
-        el.classList.toggle('active', el.getAttribute('data-trip-id')===tripId);
-      });
-    }catch(e){
-      console.warn('openTripShowAll failed', e);
-    }
-  };
-})();
-
-function highlightMatch(text, q){
-  if (!q) return text;
-  try{
-    const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(esc, 'gi');
-    return String(text).replace(re, m=>'<mark>'+m+'</mark>');
-  }catch(_){
-    return text;
-  }
-}

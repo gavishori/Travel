@@ -1608,21 +1608,3 @@ td .expense-datetime { display: inline-flex; gap: 4px; align-items: center; }
   margin: 0 !important;
   z-index: 5 !important;
 }
-
-
-/* === Hotfix: visible borders for buttons & tabs === */
-button, .btn, .tab {
-  border: 1.5px solid var(--border, #d0d5dd) !important;
-}
-
-/* === Hotfix: expenses panel no page scroll === */
-#tab-budget.panel {
-  overflow: hidden; /* no outer scroll */
-}
-#tab-budget .budget-card-grid {
-  max-height: calc(100svh - 220px); /* header+tabs approx */
-  overflow: auto; /* internal scroll if needed */
-}
-
-/* Optional utility if page still scrolls due to margins */
-#tab-budget .card { margin-bottom: 12px; }
