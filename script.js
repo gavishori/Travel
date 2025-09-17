@@ -2109,9 +2109,8 @@ function renderGlobalSearchResults(items){
 
 
 
-// === Added: Global search & title click → show-all (spec §1) ===
+// === Added (safe) : Global search + title click → show-all (regex-free) ===
 (function(){
-  // Create a results container if not present
   function ensureSearchContainer(){
     if (!document.getElementById('globalSearchResults')){
       const cont = document.createElement('div');
@@ -2134,55 +2133,47 @@ function renderGlobalSearchResults(items){
       box.innerHTML = '';
       return;
     }
-    q = q.trim();
+    q = q.trim().toLowerCase();
     try{
-      // Load trips
       const trips = await Store.listTrips();
       let results = [];
       for (const t of trips){
-        const hay = [
-          t.title||'', t.destination||'', t.notes||'', t.description||''
-        ].join(' • ');
-        if (hay && hay.toLowerCase().includes(q.toLowerCase())){
+        const hay = [t.title||'', t.destination||'', t.notes||'', t.description||'']
+                      .join(' • ').toLowerCase();
+        if (hay.includes(q)){
           results.push({ tripId: t.id, where: 'trip', text: (t.title||t.destination||'טיול') });
         }
-        // search expenses
         try{
           const exps = await Store.listExpenses(t.id);
           for (const e of exps){
-            const txt = [e.title||'', e.note||'', e.category||''].join(' • ');
-            if (txt.toLowerCase().includes(q.toLowerCase())){
+            const txt = [e.title||'', e.note||'', e.category||''].join(' • ').toLowerCase();
+            if (txt.includes(q)){
               results.push({ tripId: t.id, where: 'expense', text: (e.title||'הוצאה') });
             }
           }
         }catch(_){}
-        // search journal
         try{
           const jr = await Store.listJournal(t.id);
           for (const j of jr){
-            const txt = [j.title||'', j.text||''].join(' • ');
-            if (txt.toLowerCase().includes(q.toLowerCase())){
+            const txt = [j.title||'', j.text||''].join(' • ').toLowerCase();
+            if (txt.includes(q)){
               results.push({ tripId: t.id, where: 'journal', text: (j.title||'רישום') });
             }
           }
         }catch(_){}
       }
-
       if (!results.length){
         box.innerHTML = '<div class="muted">אין תוצאות.</div>';
         return;
       }
-      // Render list
       box.innerHTML = '<h3 style="margin-top:0">תוצאות חיפוש</h3>' +
         '<ul class="list">' +
-        results.map(r=>'<li data-tripid="'+r.tripId+'" class="search-hit"><strong>['+r.where+']</strong> '+(r.text||'')</li>').join('') +
+        results.map(r=>'<li data-tripid="'+r.tripId+'" class="search-hit"><strong>['+r.where+']</strong> '+(r.text||'')+'</li>').join('') +
         '</ul>';
-
-      // click handler to open trip in show-all (view)
       box.querySelectorAll('.search-hit').forEach(li=>{
         li.addEventListener('click', ()=>{
           const id = li.getAttribute('data-tripid');
-          if (id && typeof openTripShowAll === 'function'){ openTripShowAll(id); }
+          if (id){ openTripShowAll(id); }
         });
       });
     }catch(e){
@@ -2190,38 +2181,37 @@ function renderGlobalSearchResults(items){
     }
   }
 
-  // Wire input
   document.addEventListener('input', function(e){
     if (e.target && e.target.id === 'globalSearch'){
       runGlobalSearch(e.target.value);
     }
   });
 
-  // Click on trip title → show all
-  function delegate(container, selector, handler){
-    container.addEventListener('click', function(e){
-      const target = e.target.closest(selector);
-      if (target){ handler(e, target); }
+  function on(container, evt, selector, handler){
+    container.addEventListener(evt, function(e){
+      const el = e.target.closest(selector);
+      if (el){ handler(e, el); }
     });
   }
-  delegate(document, '.trip-title, [data-trip-title]', function(e, el){
+
+  on(document, 'click', '.trip-title, [data-trip-title]', function(e, el){
     const li = el.closest('[data-trip-id]');
-    const tripId = li && li.getAttribute('data-trip-id');
-    if (tripId){
+    const id = li && li.getAttribute('data-trip-id');
+    if (id){
       e.preventDefault();
-      if (typeof openTripShowAll === 'function'){ openTripShowAll(tripId); }
+      openTripShowAll(id);
     }
   });
 
-  // Minimal navigation helper
-  window.openTripShowAll = async function(tripId){
+  window.openTripShowAll = function(tripId){
     try{
-      state.currentTripId = tripId;
-      state.viewMode = 'gallery'; // ensure gallery/list root
-      // Switch to main "הצג הכל" if tabs exist
-      const showAllTab = Array.from(document.querySelectorAll('.tab')).find(t=>/הצג הכל/.test(t.textContent||''));
+      if (typeof state !== 'undefined'){
+        state.currentTripId = tripId;
+        state.viewMode = 'gallery';
+      }
+      const tabs = Array.from(document.querySelectorAll('.tab'));
+      const showAllTab = tabs.find(t => (t.textContent || '').includes('הצג הכל'));
       if (showAllTab){ showAllTab.click(); }
-      // Optionally highlight the trip
       document.querySelectorAll('[data-trip-id]').forEach(el=>{
         el.classList.toggle('active', el.getAttribute('data-trip-id')===tripId);
       });
