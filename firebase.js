@@ -20,6 +20,23 @@
     window.googleProvider = new firebase.auth.GoogleAuthProvider();
     try{ window.googleProvider.setCustomParameters({ prompt: 'select_account' }); }catch(e){}
 
+// === AUTH ERROR UI ===
+function showAuthError(message){
+  try{
+    var id = "auth-error-banner";
+    var el = document.getElementById(id);
+    if (!el){
+      el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = "position:fixed;inset-inline:12px;bottom:12px;padding:10px 12px;border:1px solid #fecaca;background:#fee2e2;color:#7f1d1d;border-radius:10px;z-index:9999;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;";
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    setTimeout(()=>{ if (el && el.parentNode) el.parentNode.removeChild(el); }, 8000);
+  }catch(e){ console.warn('showAuthError failed', e); }
+}
+
+
     // A utility function to detect if the user is on an iOS device.
     window.isIOS = window.isIOS || function(){
       try{ var ua=navigator.userAgent||''; return /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }catch(e){ return false; }
@@ -67,7 +84,23 @@
           if (fallback){
             console.log('[auth] Pop-up blocked or cancelled, falling back to redirect');
             await auth.signInWithRedirect(googleProvider);
-          } else {
+
+} else {
+  // extra handling for auth errors
+  console.error('[auth] popup sign-in error:', err && err.code, err && err.message);
+  if (code === 'auth/unauthorized-domain'){
+    showAuthError('הדומיין לא מאושר בפיירבייס: ' + location.origin + ' — הוסף אותו ב-Firebase Console > Authentication > Settings > Authorized domains.');
+    return;
+  }
+  if (code === 'auth/operation-not-supported-in-this-environment'){
+    console.log('[auth] falling back to redirect (unsupported env)');
+    await auth.signInWithRedirect(googleProvider);
+    return;
+  }
+  // generic: try redirect as a fallback
+  await auth.signInWithRedirect(googleProvider);
+}
+
             console.error('[auth] sign-in failed', code, err && err.message);
             if(code==='auth/operation-not-allowed'){ console.warn('[auth] provider disabled → local mode'); window.AppDataLayer.mode='local'; }
           }
@@ -88,6 +121,7 @@
     };
 
     console.info('Firebase init complete');
+    console.log('[auth] origin:', location.origin);
   } catch(e){
     console.error('Firebase init error → local mode', e);
     window.AppDataLayer = { mode: 'local' };
