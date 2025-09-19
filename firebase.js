@@ -12,7 +12,7 @@
     // Auth & DB (compat)
     var auth = firebase.auth();
     var db   = (firebase.firestore ? firebase.firestore() : null);
-    var googleProvider = new firebase.auth.GoogleProvider ? new firebase.auth.GoogleProvider() : new firebase.auth.GoogleAuthProvider();
+    var googleProvider = new firebase.auth.GoogleAuthProvider() // fixed ? new firebase.auth.GoogleProvider() : new firebase.auth.GoogleAuthProvider();
     try { googleProvider.setCustomParameters({ prompt: 'select_account' }); } catch(_){}
 
     // expose
