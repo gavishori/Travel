@@ -1558,3 +1558,12 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
 .map-chips-inline .chip-toggle[aria-pressed="false"] {
   opacity: 0.85;
 }
+
+/* ---- S2 addition: meta tab scroll/spacing fix ---- */
+#tab-meta { 
+  overflow-y: auto; /* allow internal scroll if needed */
+}
+@media (min-height: 700px) {
+  #tab-meta { max-height: calc(100vh - 160px); }
+}
+#tab-meta .btn { margin: 2px 0; }

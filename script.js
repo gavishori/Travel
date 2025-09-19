@@ -719,7 +719,7 @@ function setupBudgetLock(trip) {
     usd.disabled = eur.disabled = ils.disabled = locked;
     btn.textContent = locked ? "ערוך תקציב" : "קבע תקציב";
     btn.classList.toggle('btn-outline', !locked);
-    btn.classList.toggle('btn-primary', locked);
+    btn.classList.toggle('primary', locked);
   }
 
   applyLockUI(!!trip.budgetLocked);
