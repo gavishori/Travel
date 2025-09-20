@@ -244,7 +244,6 @@ function renderJournal(t){
   $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('');
 }
 
-}
 
 function renderExpenseSummary(t){
   const budget = t.budget||{USD:0,EUR:0,ILS:0};
