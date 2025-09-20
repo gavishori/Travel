@@ -68,7 +68,7 @@ FB.onAuthStateChanged(auth, async (user) => {
     // Header
     if (btnLogin) btnLogin.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'inline-block';
-    if (badge) { badge.style.display = 'inline-block'; badge.textContent = user.displayName || user.email || 'משתמש'; }
+    if (badge) { badge.style.display = 'inline-block'; badge.textContent = user.email || user.displayName || 'משתמש'; }
     // Screens
     if (login) login.style.display = 'none';
     if (container) container.style.display = 'grid';
@@ -114,6 +114,9 @@ async function subscribeTrips(){
   FB.onSnapshot(q, (snap)=>{
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
+  }, (err)=>{
+    console.warn('subscribeTrips error', err);
+    showToast('אין הרשאה לקרוא נתונים (בדוק את חוקי Firestore)');
   });
 }
 
@@ -207,7 +210,7 @@ async function loadTrip(){
 
 function renderExpenses(t){
   const body = $('#tblExpenses'); body.innerHTML = '';
-  const arr = Object.entries(t.expenses||{}).map(([id,e])=>({id,...e})).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+  const arr = Object.entries(t.expenses||{}).map(([id,e])=>({id,...e})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
   arr.forEach(e=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
@@ -228,7 +231,7 @@ function renderExpenses(t){
 
 function renderJournal(t){
   const body = $('#tblJournal'); body.innerHTML = '';
-  const arr = Object.entries(t.journal||{}).map(([id,j])=>({id,...j})).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+  const arr = Object.entries(t.journal||{}).map(([id,j])=>({id,...j})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
   arr.forEach(j=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
@@ -438,11 +441,11 @@ function exportPDF(){
   const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'p',unit:'pt'});
   doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text(`דוח נסיעה — ${t.destination||''}`, 40, 40);
   doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.text(`${fmtDate(t.start)} – ${fmtDate(t.end)}`, 40, 60);
-  const jr = Object.values(t.journal||{}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
+  const jr = Object.values(t.journal||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
   doc.text('יומן', 40, 90);
   doc.autoTable({ startY: 100, head:[['תאריך','מקום','תיאור']], body: jr.map(j=>[fmtDateTime(j.createdAt), j.placeName||'', j.text||'']) });
   if(withExp){
-    const ex = Object.values(t.expenses||{}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
+    const ex = Object.values(t.expenses||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
     doc.text('הוצאות', 40, doc.lastAutoTable.finalY + 30);
     doc.autoTable({ startY: doc.lastAutoTable.finalY + 40, head:[['תיאור','קטגוריה','סכום','מטבע','תאריך']], body: ex.map(e=>[e.desc||'', e.category||'', num(e.amount), e.currency||'', fmtDateTime(e.createdAt)]) });
   }
@@ -466,8 +469,8 @@ async function exportWord(){
   const withExp = $('#exportWithExpenses').value==='yes';
   const t = state.current; if(!t) return;
   const { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType } = window.docx;
-  const jr = Object.values(t.journal||{}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
-  const ex = Object.values(t.expenses||{}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
+  const jr = Object.values(t.journal||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
+  const ex = Object.values(t.expenses||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
   const doc = new Document({ sections:[{ properties:{}, children:[
     new Paragraph({ text:`דוח נסיעה — ${t.destination||''}`, heading:HeadingLevel.HEADING_1 }),
     new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
@@ -484,7 +487,7 @@ async function exportWord(){
 
 function exportGPX(){
   const t = state.current; if(!t) return;
-  const jr = Object.values(t.journal||{}).filter(j=>j.lat&&j.lng).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
+  const jr = Object.values(t.journal||{}).filter(j=>j.lat&&j.lng).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">
 <trk><name>${xml( t.destination||'Trip' )}</name><trkseg>
