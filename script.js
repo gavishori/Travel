@@ -21,13 +21,8 @@ function pickInitialCurrency(allSets, trip){
 function getMainCurrency(allSets){
   const saved = localStorage.getItem(MAIN_CCY_KEY);
   if (saved) return saved;
-  // Try infer from current trip
   const trip = (state && state.current) ? state.current : null;
   return pickInitialCurrency(allSets, trip);
-}).forEach(obj=>{
-    Object.keys(obj||{}).forEach(k=> union.add(k));
-  });
-  return union.has('ILS') ? 'ILS' : (Array.from(union)[0] || 'ILS');
 }
 function setMainCurrency(ccy){ try{ localStorage.setItem(MAIN_CCY_KEY, ccy); }catch(e){} }
 function nextCurrency(current, dataSets){
@@ -1096,4 +1091,3 @@ document.addEventListener('click', async (ev)=>{
     if (expenseId){ ev.preventDefault(); openEditExpenseDialog(expenseId); }
   }
 });
-
