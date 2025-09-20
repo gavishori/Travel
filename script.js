@@ -1,101 +1,6 @@
 
 import { auth, db, FB } from './firebase.js';
 
-
-// === Budget currency toggle helpers ===
-const MAIN_CCY_KEY = 'budgetMainCurrency';
-function pickInitialCurrency(allSets, trip){
-  const prefer = (trip && (trip.defaultCurrency || trip.currency)) || null;
-  const union = new Set();
-  Object.values(allSets||{}).forEach(obj=> Object.keys(obj||{}).forEach(k=> union.add(k)));
-  const arr = Array.from(union);
-  if(prefer && arr.includes(prefer)) return prefer;
-  // prefer a currency with non-zero budget value
-  if(allSets && allSets.budget){
-    const nonZero = Object.entries(allSets.budget).filter(([k,v]) => Number(v||0) !== 0).map(([k])=>k);
-    if(nonZero.length) return nonZero[0];
-  }
-  return arr.includes('ILS') ? 'ILS' : (arr[0] || 'ILS');
-}
-
-function getMainCurrency(allSets){
-  const saved = localStorage.getItem(MAIN_CCY_KEY);
-  if (saved) return saved;
-  const trip = (state && state.current) ? state.current : null;
-  return pickInitialCurrency(allSets, trip);
-}
-function setMainCurrency(ccy){ try{ localStorage.setItem(MAIN_CCY_KEY, ccy); }catch(e){} }
-function nextCurrency(current, dataSets){
-  const union = new Set();
-  Object.values(dataSets).forEach(obj=> Object.keys(obj||{}).forEach(k=> union.add(k)));
-  const arr = Array.from(union);
-  if (arr.length===0) return current;
-  const idx = arr.indexOf(current);
-  return arr[(idx+1)%arr.length];
-}
-
-function attachStatTooltips(dataSets){
-  // Prepare each .stat tooltip with all currencies
-  document.querySelectorAll('.budget-stats .stat').forEach(statEl=>{
-    const group = statEl.getAttribute('data-group'); // 'budget' | 'expenses' | 'balance'
-    const obj = (dataSets && dataSets[group]) || {};
-    // Build tooltip HTML
-    const rows = Object.entries(obj)
-      .sort(([a],[b])=> a.localeCompare(b))
-      .map(([ccy,val])=> `<div class="tip-row"><span class="ccy">${ccy}</span><span class="val">${num(val||0)}</span></div>`)
-      .join('') || '<div class="tip-row empty">אין נתונים</div>';
-    let tip = statEl.querySelector('.stat-tooltip');
-    if(!tip){
-      tip = document.createElement('div');
-      tip.className = 'stat-tooltip';
-      tip.setAttribute('role','status');
-      tip.setAttribute('aria-live','polite');
-      tip.hidden = true;
-      statEl.appendChild(tip);
-    }
-    tip.innerHTML = `<div class="tip-inner">${rows}</div>`;
-
-    // Helpers to show/hide
-    const show = ()=>{ tip.hidden = false; statEl.classList.add('tip-open'); };
-    const hide = ()=>{ tip.hidden = true; statEl.classList.remove('tip-open'); };
-
-    // Open on hover/focus
-    const triggers = statEl.querySelectorAll('[data-role="toggle-currency"], .stat-title');
-    triggers.forEach(tr=>{
-      tr.addEventListener('mouseenter', show);
-      tr.addEventListener('focus', show, true);
-      tr.addEventListener('mouseleave', hide);
-      tr.addEventListener('blur', hide, true);
-      // On touch/click toggle tooltip without interfering with currency toggle
-      tr.addEventListener('click', (e)=>{
-        // If click was for toggling currency, tooltip should also open briefly
-        if(tip.hidden){ show(); } else { hide(); }
-      });
-    });
-
-    // Hide when mouse leaves the stat area
-    statEl.addEventListener('mouseleave', hide);
-    // Click outside closes
-    document.addEventListener('click', (e)=>{
-      if(!statEl.contains(e.target)) hide();
-    });
-  });
-}
-function enableCurrencyToggling(dataSets){
-  document.querySelectorAll('[data-role="toggle-currency"]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const current = getMainCurrency(dataSets);
-      const next = nextCurrency(current, dataSets);
-      setMainCurrency(next);
-      // re-render current trip summary with new main currency
-      if (state && state.current) renderExpenseSummary(state.current);
-    });
-    el.addEventListener('keydown', (e)=>{
-      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); el.click(); }
-    });
-  });
-}
-
 // Day.js setup
 dayjs.extend(window.dayjs_plugin_advancedFormat);
 dayjs.extend(window.dayjs_plugin_utc);
@@ -340,66 +245,18 @@ function renderJournal(t){
 }
 
 
-
 function renderExpenseSummary(t){
-  let budgetObj = t.budget;
-  // Backward compatibility: if budget is a number, map it to trip currency
-  if(typeof budgetObj === 'number'){
-    const ccy = t.defaultCurrency || t.currency || 'ILS';
-    const tmp = { USD:0, EUR:0, ILS:0 }; tmp[ccy] = Number(budgetObj)||0; budgetObj = tmp;
-  }
-  const budget = budgetObj || {USD:0,EUR:0,ILS:0};
+  const budget = t.budget||{USD:0,EUR:0,ILS:0};
   const exps = Object.values(t.expenses||{});
   const totals = { USD:0, EUR:0, ILS:0 };
   exps.forEach(e=>{ if(totals[e.currency] != null) totals[e.currency]+= Number(e.amount||0); });
-  const balance = {
-    USD: (Number(budget.USD||0) - Number(totals.USD||0)),
-    EUR: (Number(budget.EUR||0) - Number(totals.EUR||0)),
-    ILS: (Number(budget.ILS||0) - Number(totals.ILS||0)),
-  };
-  const dataSets = { budget, expenses: totals, balance };
-
-  // Ensure main currency preference
-  const mainCurrency = getMainCurrency(dataSets);
-
-  // Build pills layout
-  const stat = (label, key, colorClass) => {
-    const data = dataSets[key] || {};
-    const mainVal = num(data[mainCurrency]||0);
-    const others = Object.entries(data)
-      .filter(([ccy])=> ccy !== mainCurrency)
-      .sort(([a],[b])=> a.localeCompare(b))
-      .filter(([ccy,val])=> Number(val||0)!==0)
-      .slice(0,2)
-      .map(([ccy,val])=> `<span class="pill">${ccy} ${num(val||0)}</span>`)
-      .join('');
-    const hidden = Object.entries(data).filter(([ccy,val])=> ccy!==mainCurrency && Number(val||0)!==0).length - 2;
-    const more = hidden>0 ? `<span class="pill pill-more">+${hidden}</span>` : '';
-    const pillsRow = others + more;
-
-    return `
-      <div class="stat ${colorClass}" data-group="${key}">
-        <div class="stat-head">
-          <button class="stat-icon" data-role="toggle-currency" aria-label="החלף מטבע עיקרי">₪</button>
-          <span class="stat-title">${label}</span>
-        </div>
-        <div class="stat-amount" data-role="toggle-currency">${mainCurrency} ${mainVal}</div>
-        <div class="stat-pills">${pillsRow}</div>
-      </div>`;
-  };
-
   const html = `
-    <div class="budget-stats" dir="rtl">
-      ${stat('תקציב','budget','is-budget')}
-      ${stat('הוצאות','expenses','is-expense')}
-      ${stat('יתרה','balance','is-balance')}
-    </div>`;
-
+    <div><strong>תקציב:</strong> USD ${num(budget.USD)} | EUR ${num(budget.EUR)} | ILS ${num(budget.ILS)}</div>
+    <div><strong>הוצאות:</strong> USD ${num(totals.USD)} | EUR ${num(totals.EUR)} | ILS ${num(totals.ILS)}</div>
+    <div><strong>יתרה:</strong> USD ${num(budget.USD - totals.USD)} | EUR ${num(budget.EUR - totals.EUR)} | ILS ${num(budget.ILS - totals.ILS)}</div>
+  `;
   $('#expenseSummary').innerHTML = html;
-  enableCurrencyToggling(dataSets);
-  attachStatTooltips(dataSets);
 }
-
 
 // Mini map
 function initMiniMap(t){
@@ -1090,4 +947,27 @@ document.addEventListener('click', async (ev)=>{
     const expenseId = btn.getAttribute('data-id');
     if (expenseId){ ev.preventDefault(); openEditExpenseDialog(expenseId); }
   }
+});
+
+
+// === Sort expenses by date/time toggle ===
+let _sortExpensesAsc = false;
+$('#btnSortExpenses').addEventListener('click', ()=>{
+  _sortExpensesAsc = !_sortExpensesAsc;
+  const t = state.current; if(!t) return;
+  const entries = Object.entries(t.expenses||{})
+    .map(([id,e])=>({id, ...e}))
+    .sort((a,b)=> (_sortExpensesAsc?1:-1) * (new Date(a.createdAt||0) - new Date(b.createdAt||0)));
+  // Rebuild table body
+  const body = $('#tblExpenses'); if(!body) return; body.innerHTML='';
+  entries.forEach(e=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${e.id}">...</button></td>
+      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${num(e.amount||0)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
+    const menuBtn = tr.querySelector('.menu-btn');
+    menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
+    body.appendChild(tr);
+  });
+  // Update recent list too
+  $('#tblRecentExpenses').innerHTML = entries.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${num(e.amount||0)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
 });
