@@ -1559,11 +1559,10 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
   opacity: 0.85;
 }
 
-/* ---- S2 addition: meta tab scroll/spacing fix ---- */
-#tab-meta { 
-  overflow-y: auto; /* allow internal scroll if needed */
+/* Email auth dialog inputs */
+#emailAuthDialog .form label { display:block; margin:8px 0; }
+#emailAuthDialog input[type="email"],
+#emailAuthDialog input[type="password"]{
+  width:100%; padding:10px 12px; border:1px solid var(--border,#ddd);
+  border-radius:12px; background:var(--card,#fff); color:var(--text,#222);
 }
-@media (min-height: 700px) {
-  #tab-meta { max-height: calc(100vh - 160px); }
-}
-#tab-meta .btn { margin: 2px 0; }

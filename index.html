@@ -16,7 +16,7 @@
   <!-- מסך פתיחה -->
   <section id="splash" role="region" aria-label="מסך פתיחה">
     <div class="splash-card">
-      <img class="splash-logo" src="data:image/png;base64,iVBORw0KGgoAAAANsfasfafjIuG5N... (base64 image data) ...a6bf869efb117" alt="FLYMILY">
+      <img class="splash-logo" src="img/logo.png" alt="FLYMILY">
       <h1 class="brand-title">FLYMILY</h1>
       <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
       <div class="cta-row">
@@ -45,12 +45,6 @@
             <h2>הנסיעות שלי</h2>
             <div class="toolbar-actions">
               <input id="tripSearch" class="input" placeholder="חפש נסיעה..." />
-<!-- Global Search Results Panel (non-intrusive) -->
-<div id="globalSearchResults" style="display:none; position:absolute; z-index:9999; max-height:50vh; overflow:auto; inset:auto auto auto 0; background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.12); width:min(780px, 90vw);">
-  <div style="padding:10px 12px; border-bottom:1px solid #eee; font-weight:600">תוצאות חיפוש</div>
-  <div id="globalSearchBody" style="padding:6px 8px"></div>
-</div>
-
               <button id="sortStartBtn" class="btn btn-outline" title="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
               <div class="view-toggle">
                 <button id="galleryViewBtn" class="btn btn-outline" title="תצוגת גלריה">גלריה</button>
@@ -140,7 +134,7 @@
                     <label>יעד
                       <div class="input-with-button">
                         <input type="text" id="tripDestination" class="input" placeholder="עיר / מדינה" list="destList" required />
-                        <button type="button" id="verifyDestination" class="btn btn-outline">אמת במפה</button>
+                        <button type="button" id="verifyDestination" class="btn ghost">אמת במפה</button>
                         <datalist id="destList"></datalist>
                       </div>
                     </label>
@@ -528,193 +522,25 @@
   <script src="./firebase.js"></script>
   <script src="./script.js"></script>
 
-<script>
-// Safe handler to ensure 'clicking on destination name' opens overview
-(function(){
-  try {
-    function ensureOverviewOnTitleClick() {
-      var selectors = [
-        '[data-role="trip-title"]',
-        '.trip-title',
-        '.card .title',
-        'a.trip-name',
-        '.trip-card .trip-name'
-      ];
-      var elements = [];
-      selectors.forEach(function(sel){
-        document.querySelectorAll(sel).forEach(function(el){
-          if(!elements.includes(el)) elements.push(el);
-        });
-      });
-      elements.forEach(function(el){
-        if (el.__ensureOverviewBound) return;
-        el.__ensureOverviewBound = true;
-        el.addEventListener('click', function(e){
-          try {
-            // Prefer using existing API if available
-            if (typeof openTrip === 'function' && el.dataset && el.dataset.tripId) {
-              openTrip(el.dataset.tripId);
-              if (typeof openTab === 'function') openTab('overview');
-              return;
-            }
-            // Fallback: trigger existing click then navigate overview
-            // (Let native handler run first using setTimeout)
-            setTimeout(function(){
-              if (typeof openTab === 'function') openTab('overview');
-            }, 0);
-          } catch(err){ console.warn('ensureOverviewOnTitleClick handler error', err); }
-        }, true);
-      });
-    }
-    // Run on DOMContentLoaded and after small delay to catch dynamic lists
-    document.addEventListener('DOMContentLoaded', ensureOverviewOnTitleClick);
-    setTimeout(ensureOverviewOnTitleClick, 1000);
-  } catch(e){ console.warn('ensureOverviewOnTitleClick init error', e); }
-})();
-</script>
-
-
-<script>
-(function(){
-  function debounce(fn, ms){ var t; return function(){ var args=arguments, ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, ms||200); }; }
-  var panel, body, anchorInput;
-  function initGlobalSearch(){
-    panel = document.getElementById('globalSearchResults');
-    body  = document.getElementById('globalSearchBody');
-    anchorInput = document.getElementById('tripSearch');
-    if(!panel || !body || !anchorInput) return;
-    function positionPanel(){
-      var r = anchorInput.getBoundingClientRect();
-      panel.style.left = r.left + window.scrollX + 'px';
-      panel.style.top  = (r.bottom + window.scrollY + 6) + 'px';
-      panel.style.width = Math.min(780, Math.max(360, r.width)) + 'px';
-    }
-    window.addEventListener('resize', positionPanel);
-    window.addEventListener('scroll', positionPanel, true);
-    positionPanel();
-    function closePanel(){ panel.style.display='none'; }
-    function openPanel(){ panel.style.display='block'; positionPanel(); }
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePanel(); });
-    anchorInput.addEventListener('focus', openPanel);
-    anchorInput.addEventListener('blur', function(){ setTimeout(closePanel, 200); });
-    anchorInput.addEventListener('input', debounce(function(e){
-      var q = (anchorInput.value||'').trim().toLowerCase();
-      if(!q){ body.innerHTML = '<div style="padding:10px;color:#777">הקלד כדי לחפש…</div>'; return; }
-      try { runGlobalSearch(q); } catch(err){ console.warn('runGlobalSearch missing', err); }
-    }, 250));
-  }
-
-  // Collects data from DOM as a fallback (if no Store APIs exposed)
-  function collectDomData(){
-    var results = [];
-    // Trips list: cards with data-trip-id or similar
-    document.querySelectorAll('[data-trip-id], .trip-card').forEach(function(card){
-      try{
-        var tripId = card.getAttribute('data-trip-id') || (card.dataset ? card.dataset.tripId : '') || '';
-        var titleEl = card.querySelector('[data-role="trip-title"], .trip-title, .title, .trip-name') || card;
-        var title = (titleEl.textContent||'').trim();
-        if(title) results.push({type:'trip', tripId: tripId, label:title, element: titleEl});
-      }catch(e){}
-    });
-    // Expenses table rows (optional)
-    document.querySelectorAll('#tab-expenses table tbody tr').forEach(function(row){
-      var txt = (row.textContent||'').trim();
-      if(txt) results.push({type:'expense', tripId:'', label:txt, element: row});
-    });
-    // Journal entries (optional)
-    document.querySelectorAll('#tab-journal .entry').forEach(function(entry){
-      var txt = (entry.textContent||'').trim();
-      if(txt) results.push({type:'journal', tripId:'', label:txt, element: entry});
-    });
-    return results;
-  }
-
-  // Render and navigate
-  function renderSearchResults(list, q){
-    if(!Array.isArray(list)) list = [];
-    var limited = list.slice(0, 50);
-    if(!limited.length){ body.innerHTML = '<div style="padding:10px;color:#777">אין תוצאות.</div>'; return; }
-    body.innerHTML = '';
-    limited.forEach(function(item, i){
-      var row = document.createElement('div');
-      row.style.padding = '8px 10px';
-      row.style.borderBottom = '1px solid #f0f0f0';
-      row.style.cursor = 'pointer';
-      row.innerHTML = '<div style="font-size:12px;color:#555">'+ (item.type || 'trip') +'</div>' +
-                      '<div style="font-weight:600; line-height:1.25">'+ (item.label||'').replace(new RegExp(q, 'ig'), function(m){ return '<mark>'+m+'</mark>'; }) +'</div>';
-      row.addEventListener('click', function(){
-        try {
-          if(item.tripId && typeof openTrip === 'function'){ openTrip(item.tripId); }
-          if(item.type==='expense' && typeof openTab === 'function'){ openTab('budget'); }
-          else if(item.type==='journal' && typeof openTab === 'function'){ openTab('journal'); }
-          else if(typeof openTab === 'function'){ openTab('overview'); }
-          // Highlight target element if exists on current DOM
-          setTimeout(function(){
-            try {
-              var el = item.element;
-              if(el){ el.classList.add('__highlight'); setTimeout(function(){ el.classList.remove('__highlight'); }, 2200); }
-            } catch(e){}
-          }, 100);
-        } catch(e){ console.warn('navigate error', e); }
-      });
-      body.appendChild(row);
-    });
-  }
-
-  // Primary search function (tries Store API; falls back to DOM scan)
-  window.runGlobalSearch = function(q){
-    var dataset = [];
-    var usedStore = false;
-    try{
-      if (window.Store && typeof Store.listTrips === 'function'){
-        usedStore = true;
-        return Promise.resolve(Store.listTrips())
-          .then(function(trips){
-            trips = trips || [];
-            trips.forEach(function(t){
-              if(!t) return;
-              var label = [t.destination||t.name||'', t.participants?(' · '+t.participants):''].join('');
-              if(label.toLowerCase().includes(q)){
-                dataset.push({type:'trip', tripId: t.id||t.tripId||'', label: label});
-              }
-            });
-            // Expenses
-            var expensePromises = trips.map(function(t){
-              if(!Store.listExpenses) return Promise.resolve([]);
-              return Promise.resolve(Store.listExpenses(t.id||t.tripId||''))
-                .then(function(exps){ (exps||[]).forEach(function(e){
-                  var label = [e.description||'', e.category?(' · '+e.category):'', e.place?(' · '+e.place):''].join('');
-                  if(label.toLowerCase().includes(q)){
-                    dataset.push({type:'expense', tripId: t.id||t.tripId||'', label: label});
-                  }
-                }); });
-            });
-            // Journal
-            var journalPromises = trips.map(function(t){
-              if(!Store.listJournal) return Promise.resolve([]);
-              return Promise.resolve(Store.listJournal(t.id||t.tripId||''))
-                .then(function(js){ (js||[]).forEach(function(j){
-                  var label = [j.description||'', j.place?(' · '+j.place):''].join('');
-                  if(label.toLowerCase().includes(q)){
-                    dataset.push({type:'journal', tripId: t.id||t.tripId||'', label: label});
-                  }
-                }); });
-            });
-            return Promise.all(expensePromises.concat(journalPromises)).then(function(){
-              renderSearchResults(dataset, q);
-            });
-          })
-          .catch(function(){ renderSearchResults(collectDomData().filter(function(r){ return (r.label||'').toLowerCase().includes(q); }), q); });
-      }
-    } catch(e){ console.warn('Store access failed', e); }
-    // Fallback: DOM
-    var results = collectDomData().filter(function(r){ return (r.label||'').toLowerCase().includes(q); });
-    renderSearchResults(results, q);
-  };
-
-  document.addEventListener('DOMContentLoaded', initGlobalSearch);
-})();
-</script>
-
+    <!-- Email/Password Auth Dialog -->
+    <dialog id="emailAuthDialog" class="dialog">
+      <form method="dialog" id="emailAuthForm" class="form">
+        <h3 style="margin-top:0">התחברות / הרשמה</h3>
+        <label>אימייל
+          <input id="authEmail" type="email" placeholder="name@example.com" required />
+        </label>
+        <label>סיסמה
+          <input id="authPassword" type="password" placeholder="********" minlength="6" required />
+        </label>
+        <div class="row" style="gap:8px; margin-top:10px">
+          <button id="btnEmailSignIn" class="btn primary" value="default">כניסה</button>
+          <button id="btnEmailSignUp" class="btn btn-outline" value="signup">הרשמה</button>
+          <button id="btnEmailReset" class="btn btn-outline" value="reset">איפוס סיסמה</button>
+          <button class="btn" value="cancel">ביטול</button>
+        </div>
+        <p id="authError" class="muted" style="color:#b00; display:none; margin-top:8px"></p>
+      </form>
+    </dialog>
+    
 </body>
 </html>

@@ -719,7 +719,7 @@ function setupBudgetLock(trip) {
     usd.disabled = eur.disabled = ils.disabled = locked;
     btn.textContent = locked ? "ערוך תקציב" : "קבע תקציב";
     btn.classList.toggle('btn-outline', !locked);
-    btn.classList.toggle('primary', locked);
+    btn.classList.toggle('btn-primary', locked);
   }
 
   applyLockUI(!!trip.budgetLocked);
@@ -2272,4 +2272,87 @@ document.addEventListener("click", function(e){
     await buildLayers();
     applyVisibility();
   };
+})();
+
+
+
+// === Email/Password auth wiring (added) ===
+(function(){
+  function el(id){ return document.getElementById(id); }
+  function showDialog(id){ var d=el(id); if(!d) return; try{ d.showModal(); }catch(e){ d.setAttribute('open',''); } }
+  function closeDialog(id){ var d=el(id); if(!d) return; try{ d.close(); }catch(e){ d.removeAttribute('open'); } }
+  var openBtn = el('openEmailAuthBtn');
+  var dlg = el('emailAuthDialog');
+  var form = el('emailAuthForm');
+  var signInBtn = el('btnEmailSignIn');
+  var signUpBtn = el('btnEmailSignUp');
+  var resetBtn  = el('btnEmailReset');
+  var emailInp = el('authEmail');
+  var passInp  = el('authPassword');
+  var errEl = el('authError');
+  var signOutBtn = el('signOutBtn');
+
+  function setError(msg){ if(!errEl) return; errEl.textContent = msg||''; errEl.style.display = msg ? 'block' : 'none'; }
+
+  if (openBtn){
+    openBtn.addEventListener('click', function(){ setError(''); showDialog('emailAuthDialog'); });
+  }
+
+  if (signInBtn){
+    signInBtn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      setError('');
+      var email=(emailInp&&emailInp.value||'').trim();
+      var pass =(passInp&&passInp.value||'');
+      if(!email || !pass){ setError('נא למלא אימייל וסיסמה.'); return; }
+      if (!window.emailAuth || !window.emailAuth.signIn){ setError('שגיאת התחברות: ספק אימייל לא מוכן.'); return; }
+      window.emailAuth.signIn(email, pass)
+        .then(function(){ closeDialog('emailAuthDialog'); })
+        .catch(function(e){ setError(e && e.message ? e.message : 'שגיאת התחברות'); });
+    });
+  }
+
+  if (signUpBtn){
+    signUpBtn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      setError('');
+      var email=(emailInp&&emailInp.value||'').trim();
+      var pass =(passInp&&passInp.value||'');
+      if(!email || !pass){ setError('נא למלא אימייל וסיסמה.'); return; }
+      if (pass.length < 6){ setError('סיסמה חייבת להיות לפחות 6 תווים.'); return; }
+      if (!window.emailAuth || !window.emailAuth.signUp){ setError('שגיאת הרשמה: ספק אימייל לא מוכן.'); return; }
+      window.emailAuth.signUp(email, pass)
+        .then(function(){ closeDialog('emailAuthDialog'); })
+        .catch(function(e){ setError(e && e.message ? e.message : 'שגיאת הרשמה'); });
+    });
+  }
+
+  if (resetBtn){
+    resetBtn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      setError('');
+      var email=(emailInp&&emailInp.value||'').trim();
+      if(!email){ setError('הזן אימייל לאיפוס סיסמה.'); return; }
+      if (!window.emailAuth || !window.emailAuth.reset){ setError('שגיאת איפוס: ספק אימייל לא מוכן.'); return; }
+      window.emailAuth.reset(email)
+        .then(function(){ setError('נשלח מייל לאיפוס סיסמה (אם המשתמש קיים).'); })
+        .catch(function(e){ setError(e && e.message ? e.message : 'שגיאת איפוס'); });
+    });
+  }
+
+  // Sign-out
+  window.handleSignOut = function(){
+    try{ return auth.signOut(); }catch(e){ console.error(e); alert('שגיאת התנתקות'); }
+  };
+
+  // Auth state UI updates
+  try{
+    if (typeof auth !== 'undefined'){
+      auth.onAuthStateChanged(function(user){
+        if (openBtn)  openBtn.style.display  = user ? 'none' : 'inline-flex';
+        if (signOutBtn) signOutBtn.style.display = user ? 'inline-flex' : 'none';
+        if (user){ try{ closeDialog('emailAuthDialog'); }catch(e){} }
+      });
+    }
+  }catch(e){ console.warn(e); }
 })();
