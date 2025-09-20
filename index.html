@@ -40,11 +40,27 @@
       <div class="spacer"></div>
       <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
       <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
-      <button id="btnLogin" class="btn primary">התחברות / הרשמה</button>
+      <button id="btnLogin" class="btn primary" style="display:none">התחברות / הרשמה</button>
       <button id="btnLogout" class="btn" style="display:none">התנתקות</button>
     </header>
 
-    <div class="container home-mode">
+    
+<div id="loginScreen" class="login-screen" style="display:none">
+  <div class="login-card">
+    <img src="./flymily-logo.png" alt="FLYMILY" style="height:56px;margin-bottom:12px;opacity:.95">
+    <h1>כניסה ל‑FLYMILY</h1>
+    <p class="muted" style="margin-top:-6px">נהל ותכנן טיולים – בעברית וב־RTL</p>
+    <label>אימייל<input id="lsEmail" type="email" class="input" placeholder="name@example.com"/></label>
+    <label>סיסמה<input id="lsPass" type="password" class="input" placeholder="••••••••"/></label>
+    <div class="row" style="margin-top:8px">
+      <button id="lsSignIn" class="btn primary">כניסה</button>
+      <button id="lsSignUp" class="btn">הרשמה</button>
+      <button id="lsReset" class="btn">איפוס סיסמה</button>
+    </div>
+    <p id="lsError" class="muted" style="color:var(--danger);min-height:1.5em"></p>
+  </div>
+</div>
+<div class="container home-mode">
       <aside class="sidebar" id="sidebar">
         <div class="section-title">
           <h2 style="margin:0">הנסיעות שלי</h2>
@@ -52,7 +68,7 @@
           <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
         </div>
         <div class="list-actions">
-          <input id="searchTrips" class="input" placeholder="חפש נסיעה" />
+          <input id="searchTrips" class="input" placeholder="חפש נסיעה / מילה" />
           <button id="btnSortTrips" class="btn">מיין תאריך יציאה</button>
         </div>
         <div class="list-actions">

@@ -58,12 +58,17 @@ $$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
 // Auth UI
 FB.onAuthStateChanged(auth, async (user) => {
   state.user = user;
-  $('#btnLogin').style.display = user ? 'none' : 'inline-block';
-  $('#btnLogout').style.display = user ? 'inline-block' : 'none';
+  const container = document.querySelector('.container');
+  const login = document.getElementById('loginScreen');
+  $('#btnLogin').style.display = 'none';
   if(user && !state.shared.readOnly){
+    if (login) login.style.display = 'none';
+    if (container) container.style.display = 'grid';
     subscribeTrips();
     enterHomeMode();
   } else if(!user && !state.shared.readOnly){
+    if (container) container.style.display = 'none';
+    if (login) login.style.display = 'grid';
     $('#tripList').innerHTML = '';
     $('#tabs').style.display = 'none';
     showView('welcome');
@@ -103,18 +108,21 @@ function renderTripList(){
   const list = $('#tripList');
   const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
+  let s = null;
   if(search){
-    const s = search.toLowerCase();
-    items = items.filter(t=> (t.destination||'').toLowerCase().includes(s) || Object.values(t.expenses||{}).some(e=> (e.desc||'').toLowerCase().includes(s)) || Object.values(t.journal||{}).some(j=> (j.text||'').toLowerCase().includes(s)) );
+    s = search.toLowerCase();
+    items = items.map(t=> ({...t, __match: matchInfo(t, s)}))
+                 .filter(t=> t.__match.hit)
+                 .sort((a,b)=> b.__match.score - a.__match.score);
   }
   list.className = state.viewMode==='grid' ? 'grid' : 'list';
-  list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t) : rowHTML(t)).join('');
+  list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
   list.querySelectorAll('[data-trip]').forEach(el=>{
     el.addEventListener('click', ()=> openTrip(el.dataset.trip));
   });
 }
-function cardHTML(t){
-  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
+function cardHTML(t, s){
+  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`; const where = t.__match?.where || [];
   return `<div class="trip-card" data-trip="${t.id}">
     <div style="display:flex;justify-content:space-between;gap:8px">
       <div>
@@ -123,13 +131,15 @@ function cardHTML(t){
       </div>
       <span class="pill">${esc((t.types||'').toString())}</span>
     </div>
+    ${s ? `<div class="muted" style="margin-top:6px">התאמות: ${where.map(w=>`<span class="pill">${w}</span>`).join(' ')}</div>` : ''}
   </div>`
 }
-function rowHTML(t){
-  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
+function rowHTML(t, s){
+  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`; const where = t.__match?.where || [];
   return `<div class="trip-row" data-trip="${t.id}">
     <div><strong>${esc(t.destination||'ללא יעד')}</strong><div class="muted">${period}</div></div>
     <div class="pill">${esc((t.types||'').toString())}</div>
+    ${s ? `<div class="muted" style="grid-column:1/-1;margin-top:4px">התאמות: ${where.map(w=>`<span class="pill">${w}</span>`).join(' ')}</div>` : ''}
   </div>`
 }
 
@@ -187,7 +197,7 @@ function renderExpenses(t){
   const arr = Object.entries(t.expenses||{}).map(([id,e])=>({id,...e})).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
   arr.forEach(e=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn">⋮</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
+    tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
       <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
     const menuBtn = tr.querySelector('.menu-btn');
     const menu = tr.querySelector('.menu-list');
@@ -208,7 +218,7 @@ function renderJournal(t){
   const arr = Object.entries(t.journal||{}).map(([id,j])=>({id,...j})).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
   arr.forEach(j=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn">⋮</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
+    tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
       <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
     const menuBtn = tr.querySelector('.menu-btn');
     const menu = tr.querySelector('.menu-list');
@@ -531,3 +541,43 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ document.query
 //     }
 //   }
 // }
+
+// Login screen actions
+$('#lsSignIn').addEventListener('click', async ()=>{
+  try{
+    await FB.signInWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
+    $('#lsError').textContent = ''; 
+  }catch(e){ $('#lsError').textContent = xErr(e); }
+});
+$('#lsSignUp').addEventListener('click', async ()=>{
+  try{
+    await FB.createUserWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
+    $('#lsError').textContent = '';
+  }catch(e){ $('#lsError').textContent = xErr(e); }
+});
+$('#lsReset').addEventListener('click', async ()=>{
+  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
+});
+
+function mark(text, s){
+  if(!s) return esc(text||''); const t = String(text||''); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
+  return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+s.length)) + '</mark>' + esc(t.slice(i+s.length));
+}
+function snippet(text, s, len=60){
+  if(!text) return ''; const t = String(text); const idx = t.toLowerCase().indexOf(s);
+  if(idx<0) return esc(t.slice(0,len));
+  const start = Math.max(0, idx - Math.floor(len/3)); const end = Math.min(t.length, idx + s.length + Math.floor(len/3));
+  const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
+  return pre + mark(seg, s) + post;
+}
+function matchInfo(t, s){
+  let score = 0, where = [];
+  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push(`יעד: ${snippet(dst,s)}`); }
+  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push(`סוגים: ${snippet(types,s)}`); }
+  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push(`משתתפים: ${snippet(people,s)}`); }
+  const ex = Object.values(t.expenses||{}); let exHits = 0; ex.forEach(e=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push(`הוצאות: ${snippet(e.desc||e.category||'', s)}`);} });
+  if(exHits) score += Math.min(3, exHits);
+  const jr = Object.values(t.journal||{}); let jrHits = 0; jr.forEach(j=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push(`יומן: ${snippet(j.text||j.placeName||'', s)}`);} });
+  if(jrHits) score += Math.min(3, jrHits);
+  return { hit: score>0, score, where };
+}

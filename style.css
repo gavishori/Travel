@@ -84,3 +84,10 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 .container.trip-mode .content{ display: block; }
 
 .brand-text{font-weight:700;letter-spacing:.5px}
+
+
+/* Centered login screen */
+.login-screen{display:grid;place-items:center;height:calc(100vh - 56px);padding:20px}
+.login-card{width:min(420px,92vw);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.login-card h1{font-size:1.6rem;margin:.2rem 0 .4rem}
+.login-card .input{width:100%}
