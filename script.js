@@ -36,9 +36,6 @@ function enterTripMode(){
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
   $('#tabs').style.display = 'flex';
-  
-  /* trip-mode map refresh */
-  if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   $('#btnAllTrips').style.display = 'inline-block';
 }
 $('#btnAllTrips').addEventListener('click', enterHomeMode);
@@ -55,8 +52,7 @@ $$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
   btn.classList.add('active');
   $$('.tabview').forEach(v=>v.hidden = true);
   $('#view-'+btn.dataset.tab).hidden = false;
-  if(btn.dataset.tab==='map'){ setTimeout(initBigMap, 50); setTimeout(()=>{ try{ state.maps.big && state.maps.big.invalidateSize(); }catch{} }, 200); requestAnimationFrame(()=>window.dispatchEvent(new Event('resize'))); }
-    
+  if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
 }));
 
 // Auth UI
@@ -103,9 +99,6 @@ if (token && tripId) {
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
-  
-  /* trip-mode map refresh */
-  if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
   container.classList.remove('home-mode'); container.classList.add('trip-mode');
@@ -121,7 +114,6 @@ async function subscribeTrips(){
   FB.onSnapshot(q, (snap)=>{
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
-  /* home-mode spacer */ 
   }, (err)=>{
     console.warn('subscribeTrips error', err);
     showToast('אין הרשאה לקרוא נתונים (בדוק את חוקי Firestore)');
@@ -216,55 +208,43 @@ async function loadTrip(){
   renderExpenseSummary(t);
 }
 
+
 function renderExpenses(t){
   const body = $('#tblExpenses'); body.innerHTML = '';
-  const arr = Object.entries(t.expenses||{}).map(([id,e])=>({id,...e})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  if(arr.length===0){
-    const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="6" class="muted">אין עדיין הוצאות</td>'; body.appendChild(tr);
-  } else {
-    arr.forEach(e=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
-        <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
-      const menuBtn = tr.querySelector('.menu-btn');
-      const menu = tr.querySelector('.menu-list');
-      menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
-      menu.addEventListener('click', (ev)=>{
-        const act = ev.target?.dataset?.act; if(!act) return;
-        if(act==='edit') openExpenseModal(e); else if(act==='del') deleteExpense(e.id);
-        menu.classList.remove('open');
-      });
-      body.appendChild(tr);
-    });
-  }
+  const arr = Object.entries(t.expenses||{})
+    .map(([id,e])=>({id, ...e}))
+    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  arr.forEach(e=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${e.id}">...</button></td>
+      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
+    const menuBtn = tr.querySelector('.menu-btn');
+    menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
+    body.appendChild(tr);
+  });
   // Recent for overview
-  const recent = arr.slice(0,5);
-  $('#tblRecentExpenses').innerHTML = recent.length ? recent.map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">אין עדיין הוצאות</td></tr>';
+  $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
 }
+
+}
+
 
 function renderJournal(t){
   const body = $('#tblJournal'); body.innerHTML = '';
-  const arr = Object.entries(t.journal||{}).map(([id,j])=>({id,...j})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  if(arr.length===0){
-    const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="4" class="muted">אין עדיין רישומים ביומן</td>'; body.appendChild(tr);
-  } else {
-    arr.forEach(j=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
-        <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
-      const menuBtn = tr.querySelector('.menu-btn');
-      const menu = tr.querySelector('.menu-list');
-      menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
-      menu.addEventListener('click', (ev)=>{
-        const act = ev.target?.dataset?.act; if(!act) return;
-        if(act==='edit') openJournalModal(j); else if(act==='del') deleteJournal(j.id);
-        menu.classList.remove('open');
-      });
-      body.appendChild(tr);
-    });
-  }
-  const recent = arr.slice(0,5);
-  $('#tblRecentJournal').innerHTML = recent.length ? recent.map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">אין עדיין רישומים ביומן</td></tr>';
+  const arr = Object.entries(t.journal||{})
+    .map(([id,j])=>({id, ...j}))
+    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  arr.forEach(j=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
+      <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
+    const menuBtn = tr.querySelector('.menu-btn');
+    menuBtn.addEventListener('click', ()=>{ _rowActionJournal = j; $('#rowMenuModal').showModal(); });
+    body.appendChild(tr);
+  });
+  $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('');
+}
+
 }
 
 function renderExpenseSummary(t){
@@ -367,12 +347,9 @@ $('#tripSave').addEventListener('click', async ()=>{
 $('#searchTrips').addEventListener('input', renderTripList);
 let sortAsc = false; $('#btnSortTrips').addEventListener('click', ()=>{
   sortAsc = !sortAsc; state.trips.sort((a,b)=> sortAsc ? (a.start||'').localeCompare(b.start||'') : (b.start||'').localeCompare(a.start||'')); renderTripList();
-  /* home-mode spacer */ 
 });
-$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList();
-  /* home-mode spacer */  });
-$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList();
-  /* home-mode spacer */  });
+$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList(); });
+$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList(); });
 
 // Meta save, verify, budgets
 $('#btnSaveMeta').addEventListener('click', async ()=>{
@@ -607,3 +584,38 @@ function snippet(text, s, len=60){
   const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
   return pre + mark(seg, s) + post;
 }
+function matchInfo(t, s){
+  let score = 0, where = [];
+  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push(`יעד: ${snippet(dst,s)}`); }
+  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push(`סוגים: ${snippet(types,s)}`); }
+  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push(`משתתפים: ${snippet(people,s)}`); }
+  const ex = Object.values(t.expenses||{}); let exHits = 0; ex.forEach(e=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push(`הוצאות: ${snippet(e.desc||e.category||'', s)}`);} });
+  if(exHits) score += Math.min(3, exHits);
+  const jr = Object.values(t.journal||{}); let jrHits = 0; jr.forEach(j=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push(`יומן: ${snippet(j.text||j.placeName||'', s)}`);} });
+  if(jrHits) score += Math.min(3, jrHits);
+  return { hit: score>0, score, where };
+}
+
+// Global modal state for row actions
+let _rowActionExpense = null;
+let _rowActionJournal = null;
+(() => {
+  const modal = document.getElementById('rowMenuModal');
+  if (!modal) return;
+  const btnEdit = document.getElementById('rowMenuEdit');
+  const btnDel = document.getElementById('rowMenuDelete');
+  const btnCancel = document.getElementById('rowMenuCancel');
+  if (btnEdit) btnEdit.addEventListener('click', ()=>{
+    if (_rowActionExpense) { openExpenseModal(_rowActionExpense); }
+    else if (_rowActionJournal) { openJournalModal(_rowActionJournal); }
+    modal.close(); _rowActionExpense = _rowActionJournal = null;
+  });
+  if (btnDel) btnDel.addEventListener('click', ()=>{
+    if (_rowActionExpense) { deleteExpense(_rowActionExpense.id); }
+    else if (_rowActionJournal) { deleteJournal(_rowActionJournal.id); }
+    modal.close(); _rowActionExpense = _rowActionJournal = null;
+  });
+  if (btnCancel) btnCancel.addEventListener('click', ()=>{
+    modal.close(); _rowActionExpense = _rowActionJournal = null;
+  });
+})();

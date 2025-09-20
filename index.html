@@ -90,7 +90,33 @@
           <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
         </nav>
 
-        <section id="view-overview" class="tabview" hidden></section>
+        <section id="view-overview" class="tabview" hidden>
+          <h2>סקירה כללית</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>נתוני נסיעה</h3>
+              <div id="metaSummary" class="muted"></div>
+            </div>
+            <div class="card">
+              <h3>הוצאות (אחרונות)</h3>
+              <table>
+                <thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>תאריך</th></tr></thead>
+                <tbody id="tblRecentExpenses"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>יומן יומי (אחרונים)</h3>
+              <table>
+                <thead><tr><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
+                <tbody id="tblRecentJournal"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>מיקומים אחרונים</h3>
+              <div id="miniMap" style="height:280px" class="leaflet-container"></div>
+            </div>
+          </div>
+        </section>
 
         <section id="view-meta" class="tabview" hidden>
           <h2>נתוני נסיעה</h2>
@@ -243,6 +269,19 @@
       <button id="expCancel" class="btn">ביטול</button>
     </div>
   </dialog>
+
+
+
+<dialog id="rowMenuModal" class="modal">
+  <header><strong>פעולות</strong></header>
+  <div class="body"><p class="muted">בחר פעולה עבור הפריט.</p></div>
+  <div class="footer">
+    <button id="rowMenuEdit" class="btn">ערוך</button>
+    <button id="rowMenuDelete" class="btn danger">מחק</button>
+    <button id="rowMenuCancel" class="btn">ביטול</button>
+  </div>
+</dialog>
+
 
   <dialog id="journalModal" class="modal">
     <header><strong>רישום יומן</strong></header>

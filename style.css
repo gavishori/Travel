@@ -30,7 +30,7 @@ textarea{min-height:80px}
 .row > *{flex:1}
 
 .list-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.tabs{position:sticky;top:0;z-index:1000;background:var(--bg);padding:8px 0 16px;margin:0;border-bottom:1px solid var(--border);}
+.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);padding-bottom:8px;z-index:4}
 .tabs button{padding:10px 12px;border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--card)}
 .tabs button.active{outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent)}
 
@@ -94,38 +94,3 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 
 /* user badge */
 #userBadge{padding:6px 10px;border:1px solid var(--border);border-radius:999px}
-
-
-/* Overview stacked layout: each section full width, vertical order */
-#view-overview .cards{grid-template-columns:1fr; gap:18px}
-#view-overview .card{width:100%}
-
-
-/* Avoid sticky tabs overlapping content */
-.tabview{ padding-top: 12px; }
-.tabs{ box-shadow: 0 2px 0 0 var(--border); }
-
-
-/* Overview anchor pills */
-.anchor-nav{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
-.anchor-nav a{border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:var(--card);color:var(--ink)}
-html{scroll-behavior:smooth}
-
-
-/* --- Tabs spacing fix (prevent visual overlap with content) --- */
-.tabs{ position: sticky; top: 0; z-index: 5; background: var(--bg); margin-bottom: 20px; }
-.tabview{ scroll-margin-top: 72px; } /* when navigating to anchors, keep section title visible */
-
-
-/* --- Tabs mask strip (covers any text peeking below tabs) --- */
-.tabs{ position: sticky; top: 0; z-index: 7; background: var(--bg); }
-
-
-#tabsSpacer{display:none !important;height:0 !important;}
-
-
-/* === FINAL: Sticky tabs with solid mask (no bleed-through) === */
-.tabs{ position: sticky; top: 0; z-index: 100; background: transparent; }
-
-.tabs > *{ position: relative; z-index:1; } /* keep tab pills above the mask */
-#tabsSpacer{display:none !important;height:0 !important;} /* spacer no longer needed with absolute mask */
