@@ -60,13 +60,26 @@ FB.onAuthStateChanged(auth, async (user) => {
   state.user = user;
   const container = document.querySelector('.container');
   const login = document.getElementById('loginScreen');
-  $('#btnLogin').style.display = 'none';
+  const btnLogin = $('#btnLogin');
+  const btnLogout = $('#btnLogout');
+  const badge = $('#userBadge');
+
   if(user && !state.shared.readOnly){
+    // Header
+    if (btnLogin) btnLogin.style.display = 'none';
+    if (btnLogout) btnLogout.style.display = 'inline-block';
+    if (badge) { badge.style.display = 'inline-block'; badge.textContent = user.displayName || user.email || 'משתמש'; }
+    // Screens
     if (login) login.style.display = 'none';
     if (container) container.style.display = 'grid';
     subscribeTrips();
     enterHomeMode();
   } else if(!user && !state.shared.readOnly){
+    // Header
+    if (btnLogin) btnLogin.style.display = 'inline-block';
+    if (btnLogout) btnLogout.style.display = 'none';
+    if (badge) { badge.style.display = 'none'; badge.textContent=''; }
+    // Screens
     if (container) container.style.display = 'none';
     if (login) login.style.display = 'grid';
     $('#tripList').innerHTML = '';
@@ -293,7 +306,7 @@ $('#btnToggleVisited').addEventListener('click', ()=>{
 });
 
 // Auth modal
-$('#btnLogin').addEventListener('click', ()=> $('#authModal').showModal());
+$('#btnLogin').addEventListener('click', ()=> { const s=document.getElementById('loginScreen'); if(s) s.style.display='grid'; const c=document.querySelector('.container'); if(c) c.style.display='none'; });
 $('#authCancel').addEventListener('click', ()=> $('#authModal').close());
 $('#authSignIn').addEventListener('click', async ()=>{
   try{
