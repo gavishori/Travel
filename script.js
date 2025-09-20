@@ -596,6 +596,7 @@ $('#lsReset').addEventListener('click', async ()=>{
   try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
 });
 
+}
 function mark(text, s){
   if(!s) return esc(text||''); const t = String(text||''); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
   return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+s.length)) + '</mark>' + esc(t.slice(i+s.length));
@@ -606,21 +607,3 @@ function snippet(text, s, len=60){
   const start = Math.max(0, idx - Math.floor(len/3)); const end = Math.min(t.length, idx + s.length + Math.floor(len/3));
   const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
   return pre + mark(seg, s) + post;
-}
-function matchInfo(t, s){
-  let score = 0, where = [];
-  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push(`יעד: ${snippet(dst,s)}`); }
-  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push(`סוגים: ${snippet(types,s)}`); }
-  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push(`משתתפים: ${snippet(people,s)}`); }
-  const ex = Object.values(t.expenses||{}); let exHits = 0; ex.forEach(e=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push(`הוצאות: ${snippet(e.desc||e.category||'', s)}`);} });
-  if(exHits) score += Math.min(3, exHits);
-  const jr = Object.values(t.journal||{}); let jrHits = 0; jr.forEach(j=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push(`יומן: ${snippet(j.text||j.placeName||'', s)}`);} });
-  if(jrHits) score += Math.min(3, jrHits);
-  return { hit: score>0, score, where };
-}
-  // Measure actual rendered height + safe gap
-  const h = tabs.getBoundingClientRect().height;
-  spacer.style.height = Math.ceil(h + 8) + 'px';
-}
-
-// Recompute spacer on events that change layout
