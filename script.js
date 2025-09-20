@@ -226,7 +226,6 @@ function renderExpenses(t){
   $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
 }
 
-}
 
 
 function renderJournal(t){
