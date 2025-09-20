@@ -36,6 +36,8 @@ function enterTripMode(){
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
   $('#tabs').style.display = 'flex';
+  /* trip-mode map refresh */
+  if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   $('#btnAllTrips').style.display = 'inline-block';
 }
 $('#btnAllTrips').addEventListener('click', enterHomeMode);
@@ -52,7 +54,7 @@ $$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
   btn.classList.add('active');
   $$('.tabview').forEach(v=>v.hidden = true);
   $('#view-'+btn.dataset.tab).hidden = false;
-  if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
+  if(btn.dataset.tab==='map'){ setTimeout(initBigMap, 50); setTimeout(()=>{ try{ state.maps.big && state.maps.big.invalidateSize(); }catch{} }, 200); requestAnimationFrame(()=>window.dispatchEvent(new Event('resize'))); }
 }));
 
 // Auth UI
@@ -99,6 +101,8 @@ if (token && tripId) {
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
+  /* trip-mode map refresh */
+  if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
   container.classList.remove('home-mode'); container.classList.add('trip-mode');
@@ -211,42 +215,52 @@ async function loadTrip(){
 function renderExpenses(t){
   const body = $('#tblExpenses'); body.innerHTML = '';
   const arr = Object.entries(t.expenses||{}).map(([id,e])=>({id,...e})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  arr.forEach(e=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
-      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
-    const menuBtn = tr.querySelector('.menu-btn');
-    const menu = tr.querySelector('.menu-list');
-    menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
-    menu.addEventListener('click', (ev)=>{
-      const act = ev.target?.dataset?.act; if(!act) return;
-      if(act==='edit') openExpenseModal(e); else if(act==='del') deleteExpense(e.id);
-      menu.classList.remove('open');
+  if(arr.length===0){
+    const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="6" class="muted">אין עדיין הוצאות</td>'; body.appendChild(tr);
+  } else {
+    arr.forEach(e=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
+        <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
+      const menuBtn = tr.querySelector('.menu-btn');
+      const menu = tr.querySelector('.menu-list');
+      menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
+      menu.addEventListener('click', (ev)=>{
+        const act = ev.target?.dataset?.act; if(!act) return;
+        if(act==='edit') openExpenseModal(e); else if(act==='del') deleteExpense(e.id);
+        menu.classList.remove('open');
+      });
+      body.appendChild(tr);
     });
-    body.appendChild(tr);
-  });
+  }
   // Recent for overview
-  $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
+  const recent = arr.slice(0,5);
+  $('#tblRecentExpenses').innerHTML = recent.length ? recent.map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">אין עדיין הוצאות</td></tr>';
 }
 
 function renderJournal(t){
   const body = $('#tblJournal'); body.innerHTML = '';
   const arr = Object.entries(t.journal||{}).map(([id,j])=>({id,...j})).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  arr.forEach(j=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
-      <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
-    const menuBtn = tr.querySelector('.menu-btn');
-    const menu = tr.querySelector('.menu-list');
-    menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
-    menu.addEventListener('click', (ev)=>{
-      const act = ev.target?.dataset?.act; if(!act) return;
-      if(act==='edit') openJournalModal(j); else if(act==='del') deleteJournal(j.id);
-      menu.classList.remove('open');
+  if(arr.length===0){
+    const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="4" class="muted">אין עדיין רישומים ביומן</td>'; body.appendChild(tr);
+  } else {
+    arr.forEach(j=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="menu"><button class="menu-btn">...</button><div class="menu-list"><button data-act="edit">ערוך</button><button data-act="del">מחק</button></div></td>
+        <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
+      const menuBtn = tr.querySelector('.menu-btn');
+      const menu = tr.querySelector('.menu-list');
+      menuBtn.addEventListener('click',()=>menu.classList.toggle('open'));
+      menu.addEventListener('click', (ev)=>{
+        const act = ev.target?.dataset?.act; if(!act) return;
+        if(act==='edit') openJournalModal(j); else if(act==='del') deleteJournal(j.id);
+        menu.classList.remove('open');
+      });
+      body.appendChild(tr);
     });
-    body.appendChild(tr);
-  });
-  $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('');
+  }
+  const recent = arr.slice(0,5);
+  $('#tblRecentJournal').innerHTML = recent.length ? recent.map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">אין עדיין רישומים ביומן</td></tr>';
 }
 
 function renderExpenseSummary(t){

@@ -99,3 +99,14 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 /* Overview stacked layout: each section full width, vertical order */
 #view-overview .cards{grid-template-columns:1fr; gap:18px}
 #view-overview .card{width:100%}
+
+
+/* Avoid sticky tabs overlapping content */
+.tabview{ padding-top: 12px; }
+.tabs{ box-shadow: 0 2px 0 0 var(--border); }
+
+
+/* Overview anchor pills */
+.anchor-nav{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.anchor-nav a{border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:var(--card);color:var(--ink)}
+html{scroll-behavior:smooth}
