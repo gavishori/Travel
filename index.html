@@ -1,525 +1,309 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>FLYMILY</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%2730%27 fill=%27%238B5CF6%27/%3E%3Cpath d=%27M16 38l10-10 8 8 14-14%27 stroke=%27white%27 stroke-width=%276%27 fill=%27none%27/%3E%3C/svg%3E" type="image/svg+xml">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLYMILY — מנהל נסיעות</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- Favicon (Data URI) -->
+  <link rel="icon" type="image/png" href="./flymily-logo.png">
+
+  <!-- Day.js -->
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
+
+  <!-- jsPDF + autotable -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- SheetJS (Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- docx (Word) -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 </head>
-<body class="splash-mode">
-  <!-- קישוטים רקע -->
-  <div class="bg-ornaments" aria-hidden="true"></div>
-
-  <!-- מסך פתיחה -->
-  <section id="splash" role="region" aria-label="מסך פתיחה">
-    <div class="splash-card">
-      <img class="splash-logo" src="data:image/png;base64,iVBORw0KGgoAAAANsfasfafjIuG5N... (base64 image data) ...a6bf869efb117" alt="FLYMILY">
-      <h1 class="brand-title">FLYMILY</h1>
-      <p class="tagline">הדרך החכמה לנהל את כל הטיולים שלך במקום אחד</p>
-      <div class="cta-row">
-        <button class="btn primary" id="openEmailAuthBtn">כניסה</button>
-        <button class="btn" id="signOutBtn" onclick="handleSignOut()" style="display:none">התנתק</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ממשק האפליקציה -->
-  <div id="app">
-    <header class="app-header">
-        <div class="brand">
-          <span class="logo">🧭</span>
-          <h1>מנהל נסיעות <span id="userAccount" class="muted"></span> <button id="signOutBtn" onclick="handleSignOut()" class="btn ghost small" title="החלף משתמש" style="margin-inline-start:8px;">התנתק</button></h1>
-        </div>
-        <div class="header-actions">
-          <button id="themeToggle" class="btn ghost" title="מצב כהה/בהיר">🌗</button>
-        </div>
+<body data-theme="dark">
+  <div class="app">
+    <header>
+      <div class="brand" style="display:flex;align-items:center;gap:8px"><img src="./flymily-logo.png" alt="FLYMILY" style="height:28px;vertical-align:middle"> <span class="brand-text">FLYMILY</span></div>
+      <div class="spacer"></div>
+      <span id="userBadge" class="muted" style="display:none"></span>
+      <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
+      <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
+      <button id="btnLogin" class="btn primary">התחברות / הרשמה</button>
+      <button id="btnLogout" class="btn" style="display:none">התנתקות</button>
     </header>
 
-    <main id="app-main">
-        <!-- מסך הבית / רשימת טיולים -->
-        <section id="homeView" class="view active">
-          <div class="toolbar">
-            <h2>הנסיעות שלי</h2>
-            <div class="toolbar-actions">
-              <input id="tripSearch" class="input" placeholder="חפש נסיעה..." />
-              <button id="sortStartBtn" class="btn btn-outline" title="מיין לפי תאריך יציאה">מיין תאריך יציאה</button>
-              <div class="view-toggle">
-                <button id="galleryViewBtn" class="btn btn-outline" title="תצוגת גלריה">גלריה</button>
-                <button id="listViewBtn" class="btn btn-outline" title="תצוגת רשימה">רשימה</button>
-              </div>
-            </div>
-          </div>
-
-          <ul id="tripList" class="cards"></ul>
-
-          <button id="addTripFab" class="fab" title="יצירת נסיעה">＋</button>
-        </section>
-
-        <!-- מסך טיול -->
-        <section id="tripView" class="view">
-          <div class="breadcrumbs">
-            <button id="backToHome" class="btn ghost">← חזרה</button>
-            <h2 id="tripTitle">שם נסיעה</h2>
-          </div>
-
-          <!-- לשוניות ניווט -->
-          <nav class="tabs">
-            <button class="tab active" data-tab="overview">הצג הכל</button>
-            <button class="tab" data-tab="meta">נתוני נסיעה</button>
-            <button class="tab" data-tab="budget">הוצאות</button>
-            <button class="tab" data-tab="journal">יומן יומי</button>
-            <button class="tab" data-tab="map">מפה</button>
-            <button class="tab" data-tab="export">ייבוא / ייצוא / שיתוף</button>
-            <div id="mapChipsInline" class="map-chips-inline" aria-hidden="true">    <button id="chipJournal" class="btn btn-outline chip-toggle" type="button" aria-pressed="false">איפה טיילתי</button>    <button id="chipExpenses" class="btn btn-outline chip-toggle" type="button" aria-pressed="false">איפה ביזבזתי</button>  </div></nav>
-
-          <div class="tab-panels">
-            <!-- OVERVIEW -->
-            <div id="tab-overview" class="panel active">
-              <div class="grid-2">
-                <div class="card">
-                  <h3>נתוני נסיעה</h3>
-                  <div id="overviewMeta"></div>
-                  <div id="tripBudgetILSDisplay" class="muted"></div>
-                </div>
-                <div class="card">
-                  <h3>הוצאות</h3>
-                  <div class="table-wrapper">
-                    <table class="table" id="overviewExpenseTable">
-                      <thead>
-                        <tr>
-                          <th>תיאור</th>
-                          <th>קטגוריה</th>
-                          <th>סכום</th>
-                          <th>מטבע</th>
-                          <th>מקום</th>
-                          <th>זמן</th>
-                        </tr>
-                      </thead>
-                      <tbody></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-              <div class="grid-2">
-                <div class="card">
-                  <h3>יומן יומי</h3>
-                  <div class="table-wrapper">
-                    <table class="table" id="overviewJournalTable">
-                      <thead>
-                        <tr>
-                          <th>תיאור</th>
-                          <th>מקום</th>
-                          <th>זמן</th>
-                        </tr>
-                      </thead>
-                      <tbody></tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="card">
-                  <h3>מיקומים אחרונים</h3>
-                  <div id="miniMap" class="map"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- META -->
-            <div id="tab-meta" class="panel">
-              <form id="tripMetaForm" class="form compact">
-                <div class="form-grid">
-                  <div class="form-col">
-                    <label>יעד
-                      <div class="input-with-button">
-                        <input type="text" id="tripDestination" class="input" placeholder="עיר / מדינה" list="destList" required />
-                        <button type="button" id="verifyDestination" class="btn ghost">אמת במפה</button>
-                        <datalist id="destList"></datalist>
-                      </div>
-                    </label>
-
-                    <label>סוג טיול
-                      <div class="checkbox-group" id="tripTypeCheckboxes">
-                        <label><input type="checkbox" value="beach"> בטן-גב</label>
-                        <label><input type="checkbox" value="ski"> סקי</label>
-                        <label><input type="checkbox" value="trek"> טרקים</label>
-                        <label><input type="checkbox" value="urban"> עירוני</label>
-                        <label><input type="checkbox" value="other"> אחר</label>
-                      </div>
-                    </label>
-
-                    <label>משתתפים
-                      <input type="text" id="tripParticipants" class="input" placeholder="שמות, פסיקים ביניהם" />
-                    </label>
-                  </div>
-                  
-                  <div class="form-col">
-                    <div class="two">
-                      <label>תאריך התחלה <input type="date" id="tripStart" class="input" required /></label>
-                      <label>תאריך סיום <input type="date" id="tripEnd" class="input" required /></label>
-                    </div>
-                    
-                    <label>תקציב בסיס
-                      <div class="two currency-inputs">
-                        <input type="text" id="tripBudgetUSD" class="input" placeholder="USD" min="0" step="0.01" />
-                        <input type="text" id="tripBudgetEUR" class="input" placeholder="EUR" min="0" step="0.01" />
-                        <input type="text" id="tripBudgetILS" class="input" placeholder="ILS" min="0" step="0.01" />
-                      </div>
-                    </label>
-
-                    <button type="button" id="toggleBudgetLock" class="btn">קבע תקציב</button>
-                  </div>
-                </div>
-                
-                <div class="form-actions">
-                  <button type="submit" class="btn primary">שמור</button>
-                </div>
-              </form>
-            </div>
-
-            <!-- BUDGET -->
-            <div id="tab-budget" class="panel">
-              <div class="card budget-card-grid">
-                  <div class="card-header">
-                    <h3>ניהול תקציב</h3>
-                  </div>
-                  <div class="budget-row">
-                    <div class="budget-label">תקציב כולל</div>
-                    <div class="currency-cell" id="budgetTotalUSD">USD</div>
-                    <div class="currency-cell" id="budgetTotalEUR">EUR</div>
-                    <div class="currency-cell" id="budgetTotalILS">ILS</div>
-                  </div>
-                  <div class="budget-row">
-                    <div class="budget-label">הוצאות בפועל</div>
-                    <div class="currency-cell" id="expensesActualUSD">—</div>
-                    <div class="currency-cell" id="expensesActualEUR">—</div>
-                    <div class="currency-cell" id="expensesActualILS">—</div>
-                  </div>
-                  <div class="budget-row">
-                    <div class="budget-label">יתרה</div>
-                    <div class="currency-cell" id="remainingUSD">—</div>
-                    <div class="currency-cell" id="remainingEUR">—</div>
-                    <div class="currency-cell" id="remainingILS">—</div>
-                  </div>
-              </div>
-
-              <div class="card">
-                <div class="table-actions">
-                  <h3>הוצאות</h3>
-                  <button id="addExpenseBtn" class="btn">הוסף הוצאה</button>
-                  <button id="sortExpensesBtn" class="btn"><span>&#9650;&#9660;</span> מיין</button>
-                </div>
-                <div class="table-wrapper">
-                  <table class="table" id="expenseTable">
-                    <thead>
-                      <tr>
-                        <th>תיאור</th>
-                        <th>קטגוריה</th>
-                        <th>סכום</th>
-                        <th>מטבע</th>
-                        <th>מקום</th>
-                        <th>זמן</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- JOURNAL -->
-            <div id="tab-journal" class="panel">
-              <div class="card">
-                <div class="table-actions">
-                  <h3>יומן יומי</h3>
-                  <button id="addJournalBtn" class="btn">הוסף רישום</button>
-                  <button id="sortJournalBtn" class="btn"><span>&#9650;&#9660;</span> מיין</button>
-                </div>
-                <div class="table-wrapper">
-                  <table class="table" id="journalTable">
-                    <thead>
-                      <tr>
-                        <th>תיאור</th>
-                        <th>מקום</th>
-                        <th>זמן</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- MAP -->
-            <div id="tab-map" class="panel">
-              <div id="map-controls-row">
-  <input type="checkbox" id="showJournalToggle" style="display:none" />
-  <input type="checkbox" id="showExpensesToggle" style="display:none" />
+    
+<div id="loginScreen" class="login-screen" style="display:none">
+  <div class="login-card">
+    <img src="./flymily-logo.png" alt="FLYMILY" style="height:96px;margin-bottom:12px;opacity:.95">
+    <h1>כניסה ל‑FLYMILY</h1>
+    <p class="muted" style="margin-top:-6px">נהל ותכנן טיולים – בעברית וב־RTL</p>
+    <label>אימייל<input id="lsEmail" type="email" class="input" placeholder="name@example.com"/></label>
+    <label>סיסמה<input id="lsPass" type="password" class="input" placeholder="••••••••"/></label>
+    <div class="row" style="margin-top:8px">
+      <button id="lsSignIn" class="btn primary">כניסה</button>
+      <button id="lsSignUp" class="btn">הרשמה</button>
+      <button id="lsReset" class="btn">איפוס סיסמה</button>
+    </div>
+    <p id="lsError" class="muted" style="color:var(--danger);min-height:1.5em"></p>
+  </div>
 </div>
-              <div id="mainMap" class="map"></div>
-            </div>
+<div class="container home-mode">
+      <aside class="sidebar" id="sidebar">
+        <div class="section-title">
+          <h2 style="margin:0">הנסיעות שלי</h2>
+          <div class="spacer"></div>
+      <span id="userBadge" class="muted" style="display:none"></span>
+          <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
+        </div>
+        <div class="list-actions">
+          <input id="searchTrips" class="input" placeholder="חפש נסיעה / מילה" />
+          <button id="btnSortTrips" class="btn">מיין תאריך יציאה</button>
+        </div>
+        <div class="list-actions">
+          <button id="btnViewGrid" class="btn">גלריה</button>
+          <button id="btnViewList" class="btn">רשימה</button>
+        </div>
+        <div id="tripList" class="grid" aria-live="polite"></div>
+      </aside>
 
-            <!-- EXPORT AND SHARE -->
-            <div id="tab-export" class="panel">
-              <div class="card">
-                <h3>ייבוא</h3>
-                <div class="file-upload-section">
-                  <label for="importJSONFile" class="btn-file">
-                    בחר קובץ JSON
-                    <input type="file" id="importJSONFile" accept=".json" />
-                  </label>
-                </div>
-              </div>
-              <div class="card">
-                <h3>ייצוא</h3>
-                <div class="btn-group">
-                  <button id="exportPDF" class="btn">ייצוא PDF</button>
-                  <button id="exportExcel" class="btn">ייצוא Excel</button>
-                </div>
-                <div class="btn-group">
-                  <button id="exportWord" class="btn">ייצוא Word</button>
-                  <button id="exportGPX" class="btn">ייצוא GPX</button>
-                </div>
-                <label><input type="checkbox" id="exportWithoutExpenses"> ללא הוצאות</label>
-              </div>
-              <div class="card">
-                <h3>שיתוף נסיעה</h3>
-                <div class="share-controls">
-                  <label><input type="checkbox" id="shareToggle"> הפעל שיתוף</label>
-                  <select id="shareScope">
-                    <option value="full">מלא (כולל הוצאות)</option>
-                    <option value="partial">חלקי (ללא הוצאות)</option>
-                  </select>
-                  <button id="copyShareLink" class="btn ghost">העתק קישור</button>
-                </div>
-              </div>
+      <main class="content" id="main">
+        <nav class="tabs" id="tabs" style="display:none">
+          <button data-tab="overview" class="active">הצג הכל</button>
+          <button data-tab="meta">נתוני נסיעה</button>
+          <button data-tab="expenses">הוצאות</button>
+          <button data-tab="journal">יומן יומי</button>
+          <button data-tab="map">מפה</button>
+          <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
+        </nav>
+
+        <section id="view-overview" class="tabview" hidden>
+          <h2>סקירה כללית</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>נתוני נסיעה</h3>
+              <div id="metaSummary" class="muted"></div>
+            </div>
+            <div class="card">
+              <h3>הוצאות (אחרונות)</h3>
+              <table>
+                <thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>תאריך</th></tr></thead>
+                <tbody id="tblRecentExpenses"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>יומן יומי (אחרונים)</h3>
+              <table>
+                <thead><tr><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
+                <tbody id="tblRecentJournal"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>מיקומים אחרונים</h3>
+              <div id="miniMap" style="height:280px" class="leaflet-container"></div>
             </div>
           </div>
         </section>
 
-        <!-- MODALS -->
-        <!-- יצירת נסיעה חדשה -->
-        <dialog id="tripDialog" class="dialog">
-          <form method="dialog" id="tripForm" class="form">
-            <h3>יצירת נסיעה</h3>
-            <label>שם / יעד
-              <input id="newTripDestination" class="input" required placeholder="למשל: מילאנו, איטליה" />
-            </label>
-            <div class="two">
-              <label>התחלה <input type="date" id="newTripStart" class="input" required /></label>
-              <label>סיום <input type="date" id="newTripEnd" class="input" required /></label>
-            </div>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="createTripBtn" class="btn primary">צור</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- הוספה/עריכה של הוצאה -->
-        <dialog id="expenseDialog" class="dialog wide">
-          <form method="dialog" id="expenseForm" class="form">
-            <h3 id="expenseDialogTitle">הוספת הוצאה</h3>
-            <div class="expense-dialog-grid">
-              <div class="map-side">
-                <div class="dialog-actions-row tight">
-                  <button type="button" id="useCurrentLocExp" class="btn primary">מיקום נוכחי</button>
-                  <div class="input-with-button">
-                    <input id="searchPlaceExp" class="input" placeholder="חפש שם מקום/כתובת" />
-                    <button type="button" id="searchPlaceBtnExp" class="btn">חפש</button>
-                  </div>
-                  <button type="button" id="clearLocExp" class="btn ghost danger">נקה מיקום</button>
-                </div>
-                <div id="expenseMap" class="map tall"></div>
-              </div>
-              <div class="form-side">
-                <label>תיאור <input id="expDesc" class="input" /></label>
-                <div class="two">
-                  <label>קטגוריה
-                    <select id="expCat" class="input">
-                      <option>טיסה</option>
-                      <option>תקשורת</option>
-                      <option>לינה</option>
-                      <option>רכב</option>
-                      <option>ביטוח רפואי</option>
-                      <option>מזון</option>
-                      <option>קניות</option>
-                      <option>אטרקציות</option>
-                      <option>אחר</option>
-                    </select>
-                  </label>
-                  <label>סכום <input type="number" min="0" step="0.01" class="input" id="expAmount" /></label>
-                </div>
-                <div class="two">
-                  <label>מטבע
-                    <select id="expCurrency" class="input"></select>
-                  </label>
-                </div>
-                <div id="expDateTimeRow" class="two">
-                  <label>תאריך <input type="date" id="expDate" class="input" /></label>
-                  <label>שעה <input type="time" id="expTime" class="input" /></label>
-                </div>
-                <input type="hidden" id="expLat"><input type="hidden" id="expLng">
+        <section id="view-meta" class="tabview" hidden>
+          <h2>נתוני נסיעה</h2>
+          <div class="row">
+            <div class="card">
+              <label>יעד<input id="metaDestination" class="input"/></label>
+              <div class="row"><label>תאריך התחלה<input type="date" id="metaStart" class="input"></label><label>תאריך סיום<input type="date" id="metaEnd" class="input"></label></div>
+              <label>משתתפים (מופרדים בפסיק)<input id="metaPeople" class="input"/></label>
+              <label>סוגי טיול (עסקים/פנאי/משפחה...)<input id="metaTypes" class="input"/></label>
+              <div class="row">
+                <button id="btnSaveMeta" class="btn primary">שמור</button>
+                <button id="btnVerifyOnMap" class="btn">אמת במפה</button>
               </div>
             </div>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="saveExpenseBtn" class="btn primary">שמור</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- הוספה/עריכה של רישום יומן -->
-        <dialog id="journalDialog" class="dialog wide">
-          <form method="dialog" id="journalForm" class="form">
-            <h3 id="journalDialogTitle">הוספת תיעוד יומי</h3>
-            <div class="journal-dialog-grid">
-              <div class="map-side">
-                <div class="dialog-actions-row tight">
-                  <button type="button" id="useCurrentLocJournal" class="btn primary">מיקום נוכחי</button>
-                  <div class="input-with-button">
-                    <input id="searchPlaceJournal" class="input" placeholder="חפש שם מקום/כתובת" />
-                    <button type="button" id="searchPlaceBtnJournal" class="btn">חפש</button>
-                  </div>
-                  <button type="button" id="clearLocJournal" class="btn ghost danger">נקה מיקום</button>
-                </div>
-                <div id="journalMap" class="map tall"></div>
-              </div>
-              <div class="form-side">
-                <label>מה קרה היום?
-                  <textarea id="journalTextarea" class="input" rows="10"></textarea>
-                </label>
-                <div id="journalDateTimeRow" class="two">
-                  <label>תאריך <input type="date" id="journalDate" class="input" /></label>
-                  <label>שעה <input type="time" id="journalTime" class="input" /></label>
-                </div>
-                <input type="hidden" id="journalLat"><input type="hidden" id="journalLng">
-              </div>
-            </div>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="saveJournalBtn" class="btn primary">שמור</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- חלון בחירת מיקום -->
-        <dialog id="locationDialog" class="dialog wide">
-          <form method="dialog" id="locationForm" class="form">
-            <h3>בחירת מיקום</h3>
-            <div class="dialog-actions-row">
-              <button type="button" id="useCurrentLoc" class="btn primary">מיקום נוכחי</button>
-              <div class="input-with-button">
-                <input id="searchPlace" class="input" placeholder="חפש מקום (שם/כתובת)" />
-                <button type="button" id="searchPlaceBtn" class="btn">חפש</button>
-              </div>
-            </div>
-            <div id="locationMap" class="map tall"></div>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="saveLocationBtn" class="btn primary">שמור מיקום</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- חלון אישור כללי -->
-        <dialog id="confirmDialog" class="dialog">
-          <form method="dialog" class="form">
-            <h3 id="confirmTitle">לאשר?</h3>
-            <p id="confirmMsg">האם אתה בטוח?</p>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="confirmYes" class="btn danger" type="button">מחק</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- חלון אישור מחיקת הוצאה -->
-        <dialog id="confirmExpenseDialog" class="dialog">
-          <form method="dialog" class="form">
-            <h3 id="confirmExpenseTitle">מחיקת הוצאה</h3>
-            <p id="confirmExpenseMsg">האם אתה בטוח שברצונך למחוק את ההוצאה?</p>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="confirmExpenseYes" class="btn danger" type="button">מחק</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- חלון אישור מחיקת רישום יומן -->
-        <dialog id="confirmJournalDialog" class="dialog">
-          <form method="dialog" class="form">
-            <h3 id="confirmJournalTitle">מחיקת רישום יומן</h3>
-            <p id="confirmJournalMsg">האם אתה בטוח שברצונך למחוק את הרישום?</p>
-            <menu class="form-actions">
-              <button type="button" data-cancel="dialog" class="btn ghost">ביטול</button>
-              <button id="confirmJournalYes" class="btn danger" type="button">מחק</button>
-            </menu>
-          </form>
-        </dialog>
-
-        <!-- חלון פעולות שורה (טיולים) -->
-        <dialog id="rowActionDialog" class="dialog small">
-          <div class="dialog-content">
-            <h3 class="dialog-title">אפשרויות</h3>
-            <div class="dialog-body">
-              <div class="two flat">
-                <button id="row-action-edit" class="btn primary" autofocus>ערוך</button>
-                <button id="row-action-delete" class="btn danger">מחק</button>
-              </div>
+            <div class="card">
+              <h3>תקציב</h3>
+              <div class="row"><label>USD<input id="bUSD" type="number" step="0.01" class="input"></label><label>EUR<input id="bEUR" type="number" step="0.01" class="input"></label><label>ILS<input id="bILS" type="number" step="0.01" class="input"></label></div>
+              <div class="row"><button id="btnBudgetEdit" class="btn">ערוך תקציב</button><span class="muted">שינוי אחד יעדכן את השאר לפי שערים</span></div>
+              <details style="margin-top:8px"><summary class="muted">שערי המרה (ניתנים לעריכה)</summary>
+                <div class="row"><label>USD→EUR<input id="rateUSDEUR" type="number" step="0.0001" class="input"></label><label>USD→ILS<input id="rateUSDILS" type="number" step="0.0001" class="input"></label></div>
+              </details>
             </div>
           </div>
-        </dialog>
+        </section>
 
-        <!-- חלון פעולות שורה (יומן) -->
-        <dialog id="journalActionDialog" class="dialog small">
-          <div class="dialog-content">
-            <h3 class="dialog-title">אפשרויות</h3>
-            <div class="dialog-body">
-              <div class="two flat">
-                <button id="journal-action-edit" class="btn primary" autofocus>ערוך</button>
-                <button id="journal-action-delete" class="btn danger">מחק</button>
+        <section id="view-expenses" class="tabview" hidden>
+          <div class="section-title"><h2 style="margin:0">ניהול תקציב</h2></div>
+          <div class="cards">
+            <div class="card" id="expenseSummary"></div>
+          </div>
+          <div class="list-actions">
+            <button id="btnAddExpense" class="btn primary">הוסף הוצאה</button>
+            <button id="btnSortExpenses" class="btn">מיין</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th></th><th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תאריך</th></tr></thead>
+              <tbody id="tblExpenses"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-journal" class="tabview" hidden>
+          <div class="list-actions">
+            <button id="btnAddJournal" class="btn primary">הוסף רישום</button>
+            <button id="btnSortJournal" class="btn">מיין</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th></th><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
+              <tbody id="tblJournal"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-map" class="tabview" hidden>
+          <div style="position:relative">
+            <div class="map-toolbar">
+              <button id="btnToggleSpent" class="btn">איפה ביזבזתי</button>
+              <button id="btnToggleVisited" class="btn">איפה טיילתי</button>
+            </div>
+            <div id="bigMap" class="leaflet-container"></div>
+          </div>
+        </section>
+
+        <section id="view-share" class="tabview" hidden>
+          <h2>ייבוא / ייצוא / שיתוף</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>ייבוא JSON</h3>
+              <input type="file" id="importFile" accept="application/json" class="input"/>
+              <div class="row"><button id="btnImport" class="btn primary">ייבא</button></div>
+            </div>
+            <div class="card">
+              <h3>ייצוא</h3>
+              <div class="row">
+                <select id="exportWithExpenses" class="input"><option value="yes">עם הוצאות</option><option value="no">בלי הוצאות</option></select>
+              </div>
+              <div class="row">
+                <button id="btnExportPDF" class="btn">PDF</button>
+                <button id="btnExportExcel" class="btn">Excel</button>
+                <button id="btnExportWord" class="btn">Word</button>
+                <button id="btnExportGPX" class="btn">GPX</button>
               </div>
             </div>
+            <div class="card">
+              <h3>שיתוף</h3>
+              <div class="row">
+                <button id="btnEnableShare" class="btn">הפעל שיתוף</button>
+                <button id="btnDisableShare" class="btn danger">בטל שיתוף</button>
+              </div>
+              <div class="row">
+                <input id="shareLink" class="input" readonly placeholder="לחץ על 'הפעל שיתוף'" />
+                <button id="btnCopyShare" class="btn">העתק קישור</button>
+              </div>
+              <p class="muted">קישור שיתוף יציג <strong>יומן יומי</strong> ו<strong>מפה</strong> בלבד, עם סימוני "איפה טיילתי" בלבד.</p>
+            </div>
           </div>
-        </dialog>
-    </main>
+        </section>
 
-    <footer class="app-footer">
-      <span id="statusLine">מוכן.</span>
-    </footer>
+        <section id="view-welcome" class="tabview">
+          <div class="trip-card">
+            <img src="./flymily-logo.png" alt="FLYMILY" style="height:42px;opacity:.9"><h2>ברוכים הבאים ל-FLYMILY</h2>
+            <p class="muted">התחברו כדי לנהל, לעקוב, ולשתף טיולים — בעברית ובכיווניות RTL.</p>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
 
-  <!-- External libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+  <!-- מודאלים -->
+  <dialog id="authModal" class="modal">
+    <header style="display:flex;align-items:center;gap:8px"><img src="./flymily-logo.png" alt="FLYMILY" style="height:22px"><strong>התחברות / הרשמה</strong></header>
+    <div class="body">
+      <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
+      <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
+      <p id="authError" class="muted" style="color:var(--danger);"></p>
+    </div>
+    <div class="footer">
+      <button id="authSignIn" class="btn primary">כניסה</button>
+      <button id="authSignUp" class="btn">הרשמה</button>
+      <button id="authReset" class="btn">איפוס סיסמה</button>
+      <button id="authCancel" class="btn">ביטול</button>
+    </div>
+  </dialog>
 
-  <!-- Firebase SDKs (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <dialog id="tripModal" class="modal">
+    <header><strong>נסיעה חדשה</strong></header>
+    <div class="body">
+      <label>יעד<input id="tripDest" class="input"/></label>
+      <div class="row"><label>תאריך התחלה<input type="date" id="tripStart" class="input"></label><label>תאריך סיום<input type="date" id="tripEnd" class="input"></label></div>
+    </div>
+    <div class="footer">
+      <button id="tripSave" class="btn primary">שמור</button>
+      <button id="tripCancel" class="btn">ביטול</button>
+    </div>
+  </dialog>
 
-  <!-- Firebase config must be defined BEFORE firebase.js -->
-  <script>
-    window.firebaseConfig = {
-      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
-      authDomain: "travel-416ff.firebaseapp.com",
-      projectId: "travel-416ff",
-      storageBucket: "travel-416ff.firebasestorage.app",
-      messagingSenderId: "1075073511694",
-      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-      measurementId: "G-FT56H33X5J"
-    };
-  </script>
+  <dialog id="expenseModal" class="modal">
+    <header><strong>הוצאה</strong></header>
+    <div class="body">
+      <label>תיאור<input id="expDesc" class="input"/></label>
+      <label>קטגוריה<input id="expCat" class="input" placeholder="לינה/תחבורה/אוכל/בידור..."/></label>
+      <div class="row"><label>סכום<input id="expAmount" type="number" step="0.01" class="input"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
+      <div class="row"><label>רוחב<input id="expLat" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label><label>אורך<input id="expLng" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label></div>
+    </div>
+    <div class="footer">
+      <button id="expSave" class="btn primary">שמור</button>
+      <button id="expDelete" class="btn danger" style="display:none">מחק</button>
+      <button id="expCancel" class="btn">ביטול</button>
+    </div>
+  </dialog>
 
-  <!-- App scripts -->
-  <script src="./firebase.js"></script>
-  <script src="./script.js"></script>
+
+
+<dialog id="rowMenuModal" class="modal">
+  <header><strong>פעולות</strong></header>
+  <div class="body"><p class="muted">בחר פעולה עבור הפריט.</p></div>
+  <div class="footer">
+    <button id="rowMenuEdit" class="btn">ערוך</button>
+    <button id="rowMenuDelete" class="btn danger">מחק</button>
+    <button id="rowMenuCancel" class="btn">ביטול</button>
+  </div>
+</dialog>
+
+
+  <dialog id="journalModal" class="modal">
+    <header><strong>רישום יומן</strong></header>
+    <div class="body">
+      <label>תיאור<textarea id="jrText" class="input"></textarea></label>
+      <label>שם מקום<input id="jrPlace" class="input"/></label>
+      <div class="row"><label>רוחב<input id="jrLat" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label><label>אורך<input id="jrLng" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label></div>
+    </div>
+    <div class="footer">
+      <button id="jrSave" class="btn primary">שמור</button>
+      <button id="jrDelete" class="btn danger" style="display:none">מחק</button>
+      <button id="jrCancel" class="btn">ביטול</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Firebase + App scripts -->
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./script.js"></script>
 </body>
 </html>
