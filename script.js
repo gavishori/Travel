@@ -69,9 +69,9 @@ if (token && tripId) {
 
 // Firestore: subscribe to user's trips
 async function subscribeTrips(){
-  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid), FB.orderBy('start', 'desc'));
+  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   FB.onSnapshot(q, (snap)=>{
-    state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
   });
 }
@@ -111,8 +111,9 @@ function rowHTML(t){
 }
 
 function showView(view){
-  $$('.tabview').forEach(v=>v.hidden = true);
-  $('#view-'+view).hidden = false;
+  $$('.tabview').forEach(v=>{ if (v) v.hidden = true });
+  const el = $('#view-'+view);
+  if (el) { el.hidden = /*noop*/; } else { console.warn('View not found:', view); }
 }
 
 // Open a trip -> Overview tab
