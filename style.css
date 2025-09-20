@@ -110,3 +110,8 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 .anchor-nav{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
 .anchor-nav a{border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:var(--card);color:var(--ink)}
 html{scroll-behavior:smooth}
+
+
+/* --- Tabs spacing fix (prevent visual overlap with content) --- */
+.tabs{ position: sticky; top: 0; z-index: 5; background: var(--bg); margin-bottom: 20px; }
+.tabview{ scroll-margin-top: 72px; } /* when navigating to anchors, keep section title visible */
