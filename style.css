@@ -119,11 +119,6 @@ html{scroll-behavior:smooth}
 
 /* --- Tabs mask strip (covers any text peeking below tabs) --- */
 .tabs{ position: sticky; top: 0; z-index: 7; background: var(--bg); }
-.tabs::after{
-  content: "";
-  display: block;
-  height: 22px;               /* mask area below tabs */
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  margin-top: 6px;
-}
+.tabs::after{height:0}
+
+#tabsSpacer{width:100%; height:0;}

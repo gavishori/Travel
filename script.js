@@ -36,6 +36,7 @@ function enterTripMode(){
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
   $('#tabs').style.display = 'flex';
+  ensureTabsSpacer();
   /* trip-mode map refresh */
   if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   $('#btnAllTrips').style.display = 'inline-block';
@@ -55,6 +56,7 @@ $$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
   $$('.tabview').forEach(v=>v.hidden = true);
   $('#view-'+btn.dataset.tab).hidden = false;
   if(btn.dataset.tab==='map'){ setTimeout(initBigMap, 50); setTimeout(()=>{ try{ state.maps.big && state.maps.big.invalidateSize(); }catch{} }, 200); requestAnimationFrame(()=>window.dispatchEvent(new Event('resize'))); }
+    setTimeout(ensureTabsSpacer,0);
 }));
 
 // Auth UI
@@ -101,6 +103,7 @@ if (token && tripId) {
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
+  ensureTabsSpacer();
   /* trip-mode map refresh */
   if($('#tabs .active')?.dataset?.tab==='map'){ setTimeout(initBigMap, 50); }
   // Switch to trip-mode so content is visible
@@ -118,6 +121,7 @@ async function subscribeTrips(){
   FB.onSnapshot(q, (snap)=>{
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
+  /* home-mode spacer */ setTimeout(ensureTabsSpacer,0);
   }, (err)=>{
     console.warn('subscribeTrips error', err);
     showToast('אין הרשאה לקרוא נתונים (בדוק את חוקי Firestore)');
@@ -363,9 +367,12 @@ $('#tripSave').addEventListener('click', async ()=>{
 $('#searchTrips').addEventListener('input', renderTripList);
 let sortAsc = false; $('#btnSortTrips').addEventListener('click', ()=>{
   sortAsc = !sortAsc; state.trips.sort((a,b)=> sortAsc ? (a.start||'').localeCompare(b.start||'') : (b.start||'').localeCompare(a.start||'')); renderTripList();
+  /* home-mode spacer */ setTimeout(ensureTabsSpacer,0);
 });
-$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList(); });
-$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList(); });
+$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList();
+  /* home-mode spacer */ setTimeout(ensureTabsSpacer,0); });
+$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList();
+  /* home-mode spacer */ setTimeout(ensureTabsSpacer,0); });
 
 // Meta save, verify, budgets
 $('#btnSaveMeta').addEventListener('click', async ()=>{
@@ -610,4 +617,22 @@ function matchInfo(t, s){
   const jr = Object.values(t.journal||{}); let jrHits = 0; jr.forEach(j=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push(`יומן: ${snippet(j.text||j.placeName||'', s)}`);} });
   if(jrHits) score += Math.min(3, jrHits);
   return { hit: score>0, score, where };
+}
+function ensureTabsSpacer(){
+  const tabs = $('#tabs'); if(!tabs) return;
+  let spacer = $('#tabsSpacer');
+  if(!spacer){
+    spacer = document.createElement('div');
+    spacer.id = 'tabsSpacer';
+    tabs.insertAdjacentElement('afterend', spacer);
+  }
+  // Measure actual rendered height + safe gap
+  const h = tabs.getBoundingClientRect().height;
+  spacer.style.height = Math.ceil(h + 8) + 'px';
+}
+
+// Recompute spacer on events that change layout
+window.addEventListener('resize', ()=> setTimeout(ensureTabsSpacer, 0));
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(()=> setTimeout(ensureTabsSpacer, 0));
 }
