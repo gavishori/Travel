@@ -21,6 +21,25 @@ const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 const showToast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
 
+// Mode management: 'home' (pick a trip) vs 'trip' (focus one)
+function enterHomeMode(){
+  const container = document.querySelector('.container');
+  container.classList.add('home-mode');
+  container.classList.remove('trip-mode');
+  $('#tabs').style.display = 'none';
+  $('#btnAllTrips').style.display = 'none';
+  state.currentTripId = null;
+  showView('welcome');
+}
+function enterTripMode(){
+  const container = document.querySelector('.container');
+  container.classList.add('trip-mode');
+  container.classList.remove('home-mode');
+  $('#tabs').style.display = 'flex';
+  $('#btnAllTrips').style.display = 'inline-block';
+}
+$('#btnAllTrips').addEventListener('click', enterHomeMode);
+
 // Theme toggle
 $('#btnTheme').addEventListener('click', () => {
   document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
@@ -43,6 +62,7 @@ FB.onAuthStateChanged(auth, async (user) => {
   $('#btnLogout').style.display = user ? 'inline-block' : 'none';
   if(user && !state.shared.readOnly){
     subscribeTrips();
+    enterHomeMode();
   } else if(!user && !state.shared.readOnly){
     $('#tripList').innerHTML = '';
     $('#tabs').style.display = 'none';
@@ -61,13 +81,16 @@ if (token && tripId) {
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
+  // Switch to trip-mode so content is visible
+  const container = document.querySelector('.container');
+  container.classList.remove('home-mode'); container.classList.add('trip-mode');
   // Only journal + map
   $$('#tabs button').forEach(b=>{ if(!['journal','map'].includes(b.dataset.tab)) b.style.display='none'; });
   showView('journal');
   await loadSharedTrip(tripId, token);
 }
 
-// Firestore: subscribe to user's trips
+// Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
 async function subscribeTrips(){
   const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   FB.onSnapshot(q, (snap)=>{
@@ -109,6 +132,7 @@ function rowHTML(t){
     <div class="pill">${esc((t.types||'').toString())}</div>
   </div>`
 }
+
 function showView(view){
   try {
     $$('.tabview').forEach(v=>{ if (v) v.hidden = true; });
@@ -117,11 +141,10 @@ function showView(view){
   } catch(e){ console.warn('showView error', e); }
 }
 
-
 // Open a trip -> Overview tab
 async function openTrip(id){
   state.currentTripId = id;
-  $('#tabs').style.display = 'flex';
+  enterTripMode();
   $$('#tabs button').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
   first.classList.add('active');
@@ -484,7 +507,6 @@ async function loadSharedTrip(id, token){
   renderJournal(t); initBigMap();
   $('#btnAddJournal').style.display = 'none';
 }
-
 
 // Utilities
 function fmtDate(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY'); }
