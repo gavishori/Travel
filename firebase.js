@@ -1,6 +1,5 @@
-
 // firebase.js — ES module that initializes Firebase and exports handles
-// Replace the config object with your Firebase project credentials.
+// Auto-filled from your provided credentials.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
@@ -12,12 +11,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+  authDomain: "travel-416ff.firebaseapp.com",
+  projectId: "travel-416ff",
+  storageBucket: "travel-416ff.appspot.com",
+  messagingSenderId: "1075073511694",
+  appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+  measurementId: "G-FT56H33X5J"
 };
 
 export const app = initializeApp(firebaseConfig);
