@@ -1,619 +1,2441 @@
+// DOUBLE_TAP_GUARD_v2
+(function(){
+  var last = 0;
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if (now - last < 350){
+      e.preventDefault();
+    }
+    last = now;
+  }, {passive:false, capture:true});
+})();
+// script.js (clean rebuild)
 
-import { auth, db, FB } from './firebase.js';
+// Ensure Leaflet default marker assets resolve correctly (prevent 404s)
+if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
+  L.Icon.Default.mergeOptions({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+  });
+}
 
-// Day.js setup
-dayjs.extend(window.dayjs_plugin_advancedFormat);
-dayjs.extend(window.dayjs_plugin_utc);
-dayjs.extend(window.dayjs_plugin_timezone);
+// ---------- DOM helpers ----------
 
-// App State
+// --- Replace URLs with a 🔗 icon link ---
+function linkifyToIcon(text){
+  if (!text) return "";
+  // remove accidental leading slashes or spaces before http(s)
+  text = String(text).replace(/\s*\/+(https?:\/\/)/g, '$1');
+  // Regex to find URLs
+  const urlRe = /(https?:\/\/[^\s)\]}>"']+)/g;
+  return text.replace(urlRe, (m)=>{
+    const safe = m.replace(/["'<>&]/g, '');
+    return `<a class="link-icon" href="${safe}" target="_blank" rel="noopener" title="פתח קישור">🔗</a>`;
+  });
+}
+const el = (id) => document.getElementById(id);
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+// ---------- Global state ----------
+const COUNTRY_CCY = {
+  "IL":"ILS","US":"USD","GB":"GBP","DE":"EUR","FR":"EUR","ES":"EUR","IT":"EUR","PT":"EUR","NL":"EUR","BE":"EUR",
+  "AT":"EUR","IE":"EUR","FI":"EUR","GR":"EUR","PL":"PLN","CZ":"CZK","SK":"EUR","HU":"HUF","RO":"RON","BG":"BGN",
+  "HR":"EUR","SI":"EUR","SE":"SEK","NO":"NOK","DN":"DKK","DK":"DKK","CH":"CHF","TR":"TRY","IS":"ISK","CA":"CAD",
+  "AU":"AUD","NZ":"NZD","JP":"JPY","CN":"CNY","HK":"HKD","SG":"SGD","TH":"THB","AE":"AED","SA":"SAR","EG":"EGP",
+  "JO":"JOD","MA":"MAD","ZA":"ZAR","BR":"BRL","AR":"ARS","MX":"MXN"
+}
+
+
+// helper to extract just the city name from a place string
+function extractCityName(placeName){
+  if (!placeName) return "—";
+  const parts = placeName.split(",").map(p=>p.trim()).filter(Boolean);
+  return parts[0] || placeName;
+}
+// --- Helpers: destination → currency options ---
+async function detectCountryCodeFromDestination(dest){
+  if (!dest) return null;
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(dest)}`;
+    const res = await fetch(url, { headers: { "Accept-Language": "he" } });
+    const data = await res.json();
+    const cc = data?.[0]?.address?.country_code?.toUpperCase();
+    return cc || null;
+  }catch(e){
+    console.warn("country detect failed", e);
+    return null;
+  }
+}
+
+async function getAllowedCurrenciesForTrip(trip){
+  const base = new Set(["USD","EUR","ILS"]);
+  let detected = null;
+  if (trip?.destination){
+    detected = await detectCountryCodeFromDestination(trip.destination);
+  }
+  const stored = trip?.countryCode || null;
+  const cc = detected || stored || null;
+  const ccy = COUNTRY_CCY[cc];
+  if (cc && cc !== stored){
+    try { await Store.updateTrip(trip.id, { countryCode: cc, localCurrency: ccy || undefined }); } catch(_){}
+  }
+  if (ccy) base.add(ccy);
+  return Array.from(base);
+}
+
+function renderCurrencyOptions(selectEl, allowed, ensureExtra){
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+  allowed.forEach(code=>{
+    const opt = document.createElement("option");
+    opt.value = code; opt.textContent = code;
+    selectEl.appendChild(opt);
+  });
+  if (ensureExtra && !allowed.includes(ensureExtra)){
+    const opt = document.createElement("option");
+    opt.value = ensureExtra; opt.textContent = ensureExtra;
+    selectEl.appendChild(opt);
+  }
+}
+;
+
 const state = {
-  user: null,
+  viewMode: "gallery",
   trips: [],
   currentTripId: null,
-  viewMode: 'grid',
-  rates: { USDEUR: 0.92, USDILS: 3.7 },
-  maps: { mini: null, big: null, layers: { expenses: null, journal: null } },
-  shared: { enabled: false, token: null, readOnly: false }
+  rates: { USD:1, EUR:0.9, ILS:3.6 },
+  localCurrency: "USD",
+  theme: localStorage.getItem("theme") || "dark",
+  maps: { mini:null, main:null, location:null, expense:null, journal: null },
+  locationPick: { lat:null, lng:null, forType:null, tempId:null },
+  lastStatusTimer: null,
+  sortAsc: false,
+  journalSortAsc: false
 };
 
-const $ = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
-const showToast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
+// Map for translating trip types to Hebrew
+const TRIP_TYPE_HEBREW = {
+  "beach": "בטן-גב",
+  "ski": "סקי",
+  "trek": "טרקים",
+  "other": "אחר",
+  "urban": "עירוני"
+};
 
-// Mode management: 'home' (pick a trip) vs 'trip' (focus one)
-function enterHomeMode(){
-  const container = document.querySelector('.container');
-  container.classList.add('home-mode');
-  container.classList.remove('trip-mode');
-  $('#tabs').style.display = 'none';
-  $('#btnAllTrips').style.display = 'none';
-  state.currentTripId = null;
-  showView('welcome');
-}
-function enterTripMode(){
-  const container = document.querySelector('.container');
-  container.classList.add('trip-mode');
-  container.classList.remove('home-mode');
-  $('#tabs').style.display = 'flex';
-  $('#btnAllTrips').style.display = 'inline-block';
-}
-$('#btnAllTrips').addEventListener('click', enterHomeMode);
+// Store last used category and currency in local storage
+const lastUsed = {
+  category: localStorage.getItem("lastCategory") || "אחר",
+  currency: localStorage.getItem("lastCurrency") || "USD",
+};
 
-// Theme toggle
-$('#btnTheme').addEventListener('click', () => {
-  document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
+function addCurrencyToState(code){
+  if (!code) return;
+  if (!(code in state.rates)) state.rates[code] = null;
+}
+
+// ---------- Store (Firebase or Local) ----------
+const Store = (()=>{
+  const mode = window.AppDataLayer?.mode || "local";
+  const db = window.AppDataLayer?.db;
+  let currentUid = null;
+
+  const LS_KEY = "travel_journal_data_v2";
+  function loadLS(){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY)) || { trips: {} }; }
+    catch{ return { trips: {} }; }
+  }
+  function saveLS(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+  async function ensureAuthIfNeeded(){
+    if (mode === "firebase"){
+      await window.AppDataLayer.ensureAuth?.();
+      currentUid = firebase.auth().currentUser?.uid || null;
+    }
+    return currentUid;
+  }
+
+  async function listTrips(){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listTrips blocked until sign-in");
+    return [];
+  }
+
+    if (mode === "firebase"){
+      const uid = await ensureAuthIfNeeded();
+      const snap = await db.collection("trips").where("ownerUid","==", uid).get();
+      // Sort from newest to oldest
+      return snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+    } else {
+      const data = loadLS();
+      // Sort from newest to oldest
+      return Object.entries(data.trips).map(([id, t]) => ({ id, ...t })).sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
+    }
+  }
+
+  async function createTrip(meta){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] createTrip blocked until sign-in");
+    return null;
+  }
+
+    const nowTs = Date.now();
+    const trip = {
+      ...meta,
+      createdAt: nowTs, updatedAt: nowTs,
+      budget: { USD: Number(meta.budgetUSD||0) },
+      budgetLocked: !!meta.budgetLocked,
+      share: { enabled:false, scope:"full" }
+    };
+    if (mode === "firebase"){
+      const uid = await ensureAuthIfNeeded();
+      const docData = { ...trip, ownerUid: uid, expenses: {}, journal: {} };
+      const ref = await db.collection("trips").add(docData);
+      return { id: ref.id, ...docData };
+    } else {
+      const data = loadLS();
+      const id = "t_"+ (crypto.randomUUID ? crypto.randomUUID() : String(nowTs));
+      data.trips[id] = { ...trip, expenses: {}, journal: {} };
+      saveLS(data);
+      return { id, ...data.trips[id] };
+    }
+  }
+
+  async function getTrip(id){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] getTrip blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      await ensureAuthIfNeeded();
+      const doc = await db.collection("trips").doc(id).get();
+      if (!doc.exists) return null;
+      const trip = { id: doc.id, ...doc.data() };
+      // ensure fields
+      trip.expenses = trip.expenses || {};
+      trip.journal = trip.journal || {};
+      return trip;
+    } else {
+      const data = loadLS();
+      const t = data.trips[id];
+      if (!t) return null;
+      return { id, ...t };
+    }
+  }
+
+  async function updateTrip(id, updates){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateTrip blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      updates.updatedAt = Date.now();
+      await db.collection("trips").doc(id).set(updates, { merge:true });
+    } else {
+      const data = loadLS();
+      data.trips[id] = { ...(data.trips[id]||{}), ...updates, updatedAt: Date.now() };
+      saveLS(data);
+    }
+  }
+
+  async function deleteTrip(id){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] deleteTrip blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      await db.collection("trips").doc(id).delete();
+    } else {
+      const data = loadLS();
+      delete data.trips[id];
+      saveLS(data);
+    }
+  }
+
+  // Expenses
+  async function listExpenses(tripId){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listExpenses blocked until sign-in");
+    return [];
+  }
+
+    const trip = await getTrip(tripId);
+    const exp = trip?.expenses || {};
+    return Object.entries(exp).map(([id, v])=>({ id, ...v }));
+  }
+  async function addExpense(tripId, entry){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] addExpense blocked until sign-in");
+    return null;
+  }
+
+    entry.createdAt = Date.now();
+    if (mode === "firebase"){
+      const trip = await getTrip(tripId);
+      const id = "e_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
+      const expenses = { ...(trip.expenses||{}), [id]: entry };
+      await updateTrip(tripId, { expenses });
+    } else {
+      const data = loadLS();
+      const id = "e_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
+      data.trips[tripId].expenses ||= {};
+      data.trips[tripId].expenses[id] = entry;
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+  async function updateExpense(tripId, expId, updates){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateExpense blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      const trip = await getTrip(tripId);
+      const expenses = { ...(trip.expenses||{}) };
+      expenses[expId] = { ...(expenses[expId]||{}), ...updates };
+      await updateTrip(tripId, { expenses });
+    } else {
+      const data = loadLS();
+      Object.assign(data.trips[tripId].expenses[expId], updates);
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+  async function removeExpense(tripId, expId){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] removeExpense blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      // Properly delete a nested map key in Firestore
+      const del = firebase.firestore.FieldValue.delete();
+      await db.collection("trips").doc(tripId).update({ [`expenses.${expId}`]: del, updatedAt: Date.now() });
+    } else {
+      const data = loadLS();
+      if (data.trips[tripId]?.expenses){ delete data.trips[tripId].expenses[expId]; }
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+
+  // Journal
+  async function listJournal(tripId){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] listJournal blocked until sign-in");
+    return [];
+  }
+
+    const trip = await getTrip(tripId);
+    const j = trip?.journal || {};
+    return Object.entries(j).map(([id, v])=>({ id, ...v }));
+  }
+  async function addJournal(tripId, entry){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] addJournal blocked until sign-in");
+    return null;
+  }
+
+    entry.createdAt = Date.now();
+    if (mode === "firebase"){
+      const trip = await getTrip(tripId);
+      const id = "j_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
+      const journal = { ...(trip.journal||{}), [id]: entry };
+      await updateTrip(tripId, { journal });
+    } else {
+      const data = loadLS();
+      const id = "j_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
+      data.trips[tripId].journal ||= {};
+      data.trips[tripId].journal[id] = entry;
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+  async function updateJournal(tripId, jId, updates){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] updateJournal blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      const trip = await getTrip(tripId);
+      const journal = { ...(trip.journal||{}) };
+      journal[jId] = { ...(journal[jId]||{}), ...updates };
+      await updateTrip(tripId, { journal });
+    } else {
+      const data = loadLS();
+      Object.assign(data.trips[tripId].journal[jId], updates);
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+  async function removeJournal(tripId, jId){
+  if (mode === "firebase" && !firebase.auth().currentUser) {
+    console.warn("[guard] removeJournal blocked until sign-in");
+    return null;
+  }
+
+    if (mode === "firebase"){
+      const trip = await getTrip(tripId);
+      const journal = { ...(trip.journal||{}) };
+      delete journal[jId];
+      await updateTrip(tripId, { journal });
+    } else {
+      const data = loadLS();
+      delete data.trips[tripId].journal[jId];
+      data.trips[tripId].updatedAt = Date.now();
+      saveLS(data);
+    }
+  }
+
+  return {
+    listTrips, createTrip, getTrip, updateTrip, deleteTrip,
+    listExpenses, addExpense, updateExpense, removeExpense,
+    listJournal, addJournal, updateJournal, removeJournal,
+    mode
+  };
+})();
+
+
+// --- Helper: reverse geocode → city name (Nominatim) ---
+async function reverseGeocodeCity(lat, lng){
+  try{
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`;
+    const res = await fetch(url, { headers: { "Accept-Language": "he" } });
+    const data = await res.json();
+    const city = data?.address?.city || data?.address?.town || data?.address?.village || data?.address?.county || null;
+    return city || null;
+  }catch(e){
+    console.warn("reverseGeocodeCity failed", e);
+    return null;
+  }
+}
+
+// --- Unsaved changes guard ---
+let hasUnsavedChanges = false;
+document.addEventListener("input", e=>{
+  if (e.target.closest("#tripForm, #expenseDialog, #journalDialog")) {
+    hasUnsavedChanges = true;
+  }
 });
-
-// Tabs logic
-$$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
-  if (btn.classList.contains('active')) return;
-  $$('#tabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  $$('.tabview').forEach(v=>v.hidden = true);
-  $('#view-'+btn.dataset.tab).hidden = false;
-  if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
-}));
-
-// Auth UI
-FB.onAuthStateChanged(auth, async (user) => {
-  state.user = user;
-  const container = document.querySelector('.container');
-  const login = document.getElementById('loginScreen');
-  const btnLogin = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const badge = $('#userBadge');
-
-  if(user && !state.shared.readOnly){
-    // Header
-    if (btnLogin) btnLogin.style.display = 'none';
-    if (btnLogout) btnLogout.style.display = 'inline-block';
-    if (badge) { badge.style.display = 'inline-block'; badge.textContent = user.email || user.displayName || 'משתמש'; }
-    // Screens
-    if (login) login.style.display = 'none';
-    if (container) container.style.display = 'grid';
-    subscribeTrips();
-    enterHomeMode();
-  } else if(!user && !state.shared.readOnly){
-    // Header
-    if (btnLogin) btnLogin.style.display = 'inline-block';
-    if (btnLogout) btnLogout.style.display = 'none';
-    if (badge) { badge.style.display = 'none'; badge.textContent=''; }
-    // Screens
-    if (container) container.style.display = 'none';
-    if (login) login.style.display = 'grid';
-    $('#tripList').innerHTML = '';
-    $('#tabs').style.display = 'none';
-    showView('welcome');
+document.addEventListener("change", e=>{
+  if (e.target.closest("#tripMetaForm, #tripForm, #expenseForm, #expenseDialog, #journalForm, #journalDialog")) {
+    hasUnsavedChanges = true;
   }
 });
 
-// Handle share link mode (read-only)
-const url = new URL(location.href);
-const token = url.searchParams.get('share');
-const tripId = url.searchParams.get('tripId');
-if (token && tripId) {
-  state.shared.readOnly = true;
-  state.currentTripId = tripId;
-  $('#sidebar').style.display = 'none';
-  $('#btnLogin').style.display = 'none';
-  $('#btnLogout').style.display = 'none';
-  $('#tabs').style.display = 'flex';
-  // Switch to trip-mode so content is visible
-  const container = document.querySelector('.container');
-  container.classList.remove('home-mode'); container.classList.add('trip-mode');
-  // Only journal + map
-  $$('#tabs button').forEach(b=>{ if(!['journal','map'].includes(b.dataset.tab)) b.style.display='none'; });
-  showView('journal');
-  await loadSharedTrip(tripId, token);
+// --- Unsaved changes modal ---
+function ensureUnsavedDialog(){
+  if (el("unsavedDialog")) return el("unsavedDialog");
+  const d = document.createElement("dialog");
+  d.id = "unsavedDialog";
+  d.innerHTML = `
+    <form method="dialog" class="unsaved-modal">
+      <h3>יש נתונים שלא נשמרו</h3>
+      <p>האם לשמור את הנתונים לפני היציאה?</p>
+      <menu>
+        <button value="save" class="btn primary">שמור</button>
+        <button value="discard" class="btn danger">צא בלי לשמור</button>
+        <button value="cancel" class="btn ghost">בטל</button>
+      </menu>
+    </form>`;
+  document.body.appendChild(d);
+  return d;
 }
-
-// Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-async function subscribeTrips(){
-  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
-  FB.onSnapshot(q, (snap)=>{
-    state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
-    renderTripList();
-  }, (err)=>{
-    console.warn('subscribeTrips error', err);
-    showToast('אין הרשאה לקרוא נתונים (בדוק את חוקי Firestore)');
+async function askToSave(){
+  const d = ensureUnsavedDialog();
+  return new Promise((resolve)=>{
+    d.onclose = ()=> resolve(d.returnValue||"cancel");
+    d.showModal();
   });
 }
-
-function renderTripList(){
-  const list = $('#tripList');
-  const search = $('#searchTrips').value?.trim();
-  let items = [...state.trips];
-  let s = null;
-  if(search){
-    s = search.toLowerCase();
-    items = items.map(t=> ({...t, __match: matchInfo(t, s)}))
-                 .filter(t=> t.__match.hit)
-                 .sort((a,b)=> b.__match.score - a.__match.score);
+async function saveCurrentContext(){
+  // Try expense dialog first
+  if (el("expenseDialog")?.open){
+    el("saveExpenseBtn")?.click();
+    await new Promise(r=> setTimeout(r, 100)); // allow handlers to run
+    return;
   }
-  list.className = state.viewMode==='grid' ? 'grid' : 'list';
-  list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
-  list.querySelectorAll('[data-trip]').forEach(el=>{
-    el.addEventListener('click', ()=> openTrip(el.dataset.trip));
-  });
+  // Then try journal dialog
+  if (el("journalDialog")?.open){
+    el("saveJournalBtn")?.click();
+    await new Promise(r=> setTimeout(r, 100)); // allow handlers to run
+    return;
+  }
+  // Else try trip meta form
+  if (el("tab-meta")?.classList.contains("active")){
+    el("tripMetaForm")?.requestSubmit();
+    await new Promise(r=> setTimeout(r, 150));
+    return;
+  }
 }
-function cardHTML(t, s){
-  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`; const where = t.__match?.where || [];
-  return `<div class="trip-card" data-trip="${t.id}">
-    <div style="display:flex;justify-content:space-between;gap:8px">
-      <div>
-        <strong style="font-size:1.1rem">${esc(t.destination||'ללא יעד')}</strong>
-        <div class="muted">${period}</div>
+window.addEventListener("beforeunload", (e)=>{
+  if (hasUnsavedChanges){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+// Wrapper for navigation to confirm unsaved changes
+async function guardedNavigate(tabName){
+  if (hasUnsavedChanges){
+    const action = await askToSave();
+    if (action === "cancel") return;
+    if (action === "save") { await saveCurrentContext(); }
+    hasUnsavedChanges = false;
+  }
+  openTab(tabName);
+}
+// ---------- Utilities ----------
+function setStatus(msg, timeout=1800){
+  const s = el("statusLine");
+  if (!s) return;
+  s.textContent = msg;
+  if (state.lastStatusTimer) clearTimeout(state.lastStatusTimer);
+  state.lastStatusTimer = setTimeout(()=> s.textContent = "מוכן.", timeout);
+}
+// Updated to show no decimal places for currency fields
+function formatMoney(n){ return Number(n||0).toLocaleString('he-IL', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+
+function parseNumber(v){ return Number(String(v||"").replace(/[^\d.-]/g,""))||0; }
+function unformatMoney(str){ return String(str||"").replace(/[,\s]/g,""); }
+function formatInputEl(elm){ if (!elm) return; elm.value = formatMoney(parseNumber(elm.value)); }
+
+
+function applyTheme(){
+  if (state.theme === "light"){ document.documentElement.classList.add("light"); }
+  else { document.documentElement.classList.remove("light"); }
+  localStorage.setItem("theme", state.theme);
+}
+function toggleTheme(){
+  state.theme = (state.theme === "light") ? "dark" : "light";
+  applyTheme();
+}
+
+// Currency rates
+async function fetchRates(base="USD"){
+  try{
+    const res = await fetch(`https://api.exchangerate.host/latest?base=${base}`);
+    const data = await res.json();
+    const wanted = new Set(["USD","EUR","ILS", "THB"]);
+    Object.keys(state.rates||{}).forEach(k=> wanted.add(k));
+    const rates = {};
+    wanted.forEach(k=> rates[k] = (k===base?1:(data.rates?.[k] || state.rates[k] || 1)));
+    state.rates = rates;
+    const eur = rates.EUR, ils = rates.ILS;
+    const extra = (state.localCurrency && !["USD","EUR","ILS"].includes(state.localCurrency) && rates[state.localCurrency])
+      ? ` • ${formatMoney(rates[state.localCurrency])}` : "";
+    if (el("liveRates")) el("liveRates").textContent = `שערים חיים: 1 USD = ${formatMoney(eur)} EUR • ${formatMoney(ils)} ₪${extra}`;
+  }catch(e){
+    console.warn("Rate fetch failed, using fallback.", e);
+    if (el("liveRates")) el("liveRates").textContent = "שערים (גיבוי): USD→EUR≈0.90 • USD→ILS≈3.60";
+  }
+}
+
+function toUSD(amount, from="USD"){
+  if (!amount) return 0;
+  if (from === "USD") return Number(amount);
+  if (from === "EUR") return Number(amount) / (state.rates.EUR || 0.9);
+  if (from === "ILS") return Number(amount) / (state.rates.ILS || 3.6);
+  if (from === "THB") return Number(amount) / (state.rates.THB || 36);
+  const r = state.rates[from]; if (r) return Number(amount)/r;
+  return Number(amount);
+}
+
+// ---------- Rendering ----------
+async function renderHome(){
+  $("#homeView")?.classList.add("active");
+  $("#tripView")?.classList.remove("active");
+
+  const trips = await Store.listTrips();
+  state.trips = trips;
+
+  // Sort by start date only
+  const sortAsc = state.sortAsc ?? true;
+  const tripsSorted = trips.slice().sort((a,b)=>{
+    const as = a && a.start ? new Date(a.start).getTime() : 0;
+    const bs = b && b.start ? new Date(b.start).getTime() : 0;
+    return sortAsc ? (as - bs) : (bs - as);
+  });
+
+  const q = (el("tripSearch")?.value||"").trim().toLowerCase();
+  const list = el("tripList"); if (!list) return;
+  list.classList.toggle("list-mode", state.viewMode==="list");
+  list.innerHTML = "";
+  for (const t of tripsSorted.filter(x => (x.destination||"").toLowerCase().includes(q))){
+    const li = document.createElement("li");
+    const days = (t.start && t.end) ? (dayjs(t.end).diff(dayjs(t.start), "day")+1) : 0;
+    
+    // Translate trip types to Hebrew
+    const translatedTripTypes = (t.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
+
+    li.innerHTML = `
+  <div>
+    <div class="trip-header">
+      <div class="kebab-wrap">
+        <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
       </div>
-      <span class="pill">${esc((t.types||'').toString())}</span>
+      <div class="trip-title">${t.destination||"—"}</div>
     </div>
-    ${s ? `<div class="muted" style="margin-top:6px">התאמות: ${where.map(w=>`<span class="pill">${w}</span>`).join(' ')}</div>` : ''}
-  </div>`
-}
-function rowHTML(t, s){
-  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`; const where = t.__match?.where || [];
-  return `<div class="trip-row" data-trip="${t.id}">
-    <div><strong>${esc(t.destination||'ללא יעד')}</strong><div class="muted">${period}</div></div>
-    <div class="pill">${esc((t.types||'').toString())}</div>
-    ${s ? `<div class="muted" style="grid-column:1/-1;margin-top:4px">התאמות: ${where.map(w=>`<span class="pill">${w}</span>`).join(' ')}</div>` : ''}
-  </div>`
+    <div class="muted">${t.start?dayjs(t.start).format("DD/MM/YY"):""}–${t.end?dayjs(t.end).format("DD/MM/YY"):""} • ${days||"?"} ימים</div>
+    <div class="row" style="justify-content: flex-start; margin-top: 10px;">
+      <span class="badge">${translatedTripTypes||"—"}</span>
+    </div>
+  </div>
+  <div class="row bottom-row">
+    <button class="btn view">פתח</button>
+  </div>
+`;
+const viewButton = $(".view", li);
+    if (viewButton) {
+      viewButton.onclick = ()=> openTrip(t.id);
+    }
+    
+    // Kebab menu -> open centered dialog (Edit/Delete)
+    const menuWrap = $(".kebab-wrap", li);
+    const menuBtn  = $(".kebab-btn", li);
+    if (menuBtn) {
+      menuBtn.onclick = (e)=>{ e.stopPropagation(); openRowActionsDialog(t.id, t.destination); };
+    }
+    const tripTitleEl = $(".trip-title", li);
+    if (tripTitleEl) {
+        tripTitleEl.onclick = async () => {
+            await openTrip(t.id);
+            // After opening the trip, switch to the 'overview' tab.
+            openTab('overview');
+        };
+    }
+    list.appendChild(li);
+  }
 }
 
-function showView(view){
-  try {
-    $$('.tabview').forEach(v=>{ if (v) v.hidden = true; });
-    const el = document.querySelector('#view-' + view);
-    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
-  } catch(e){ console.warn('showView error', e); }
+function activateTabs(){
+  $$(".tab").forEach(btn => {
+    btn.addEventListener("click", ()=>{
+      const tab = btn.dataset.tab;
+      if (hasUnsavedChanges){
+        (async ()=>{
+          const action = await askToSave();
+          if (action === "cancel") return;
+          if (action === "save") { await saveCurrentContext(); }
+          hasUnsavedChanges = false;
+          $$(".tab").forEach(b=> b.classList.remove("active"));
+          btn.classList.add("active");
+          $$(".panel").forEach(p=> p.classList.remove("active"));
+          el("tab-"+tab)?.classList.add("active");
+          if (tab === "map") refreshMainMap();
+        })();
+        return;
+      }
+      $$(".tab").forEach(b=> b.classList.remove("active"));
+      btn.classList.add("active");
+      $$(".panel").forEach(p=> p.classList.remove("active"));
+      el("tab-"+tab)?.classList.add("active");
+      if (tab === "map") refreshMainMap();
+    });
+  });
 }
 
-// Open a trip -> Overview tab
+
 async function openTrip(id){
   state.currentTripId = id;
-  enterTripMode();
-  $$('#tabs button').forEach(b=>b.classList.remove('active'));
-  const first = $('#tabs [data-tab="overview"]');
-  first.classList.add('active');
-  showView('overview');
-  await loadTrip();
-}
+  const trip = await Store.getTrip(id);
+  if (!trip){ alert("נסיעה לא נמצאה"); return; }
 
-async function loadTrip(){
-  const ref = FB.doc(db, 'trips', state.currentTripId);
-  const snap = await FB.getDoc(ref);
-  if(!snap.exists()) return;
-  const t = { id: snap.id, ...snap.data() };
-  state.current = t;
-  // Overview meta
-  $('#metaSummary').innerHTML = `
-    <div><strong>${esc(t.destination||'')}</strong></div>
-    <div class="muted">${fmtDate(t.start)} – ${fmtDate(t.end)}</div>
-    <div>משתתפים: ${esc((t.people||[]).join(', '))}</div>
-    <div>סוגים: ${esc((t.types||[]).join(', '))}</div>
-  `;
-  // Populate meta form
-  $('#metaDestination').value = t.destination||'';
-  $('#metaStart').value = t.start||'';
-  $('#metaEnd').value = t.end||'';
-  $('#metaPeople').value = (t.people||[]).join(', ');
-  $('#metaTypes').value = (t.types||[]).join(', ');
-  const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
-  $('#bUSD').value = budget.USD||0; $('#bEUR').value = budget.EUR||0; $('#bILS').value = budget.ILS||0;
-  if(t.rates){ state.rates = t.rates; }
-  $('#rateUSDEUR').value = state.rates.USDEUR; $('#rateUSDILS').value = state.rates.USDILS;
+  el("tripTitle").textContent = trip.destination || "נסיעה";
+  
+  $("#homeView")?.classList.remove("active");
+  $("#tripView")?.classList.add("active");
 
-  renderExpenses(t);
-  renderJournal(t);
-  initMiniMap(t);
-  renderExpenseSummary(t);
-}
-
-
-function renderExpenses(t){
-  const body = $('#tblExpenses'); body.innerHTML = '';
-  const arr = Object.entries(t.expenses||{})
-    .map(([id,e])=>({id, ...e}))
-    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  arr.forEach(e=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${e.id}">...</button></td>
-      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
-    const menuBtn = tr.querySelector('.menu-btn');
-    menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
-    body.appendChild(tr);
-  });
-  // Recent for overview
-  $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
-}
-
-
-
-function renderJournal(t){
-  const body = $('#tblJournal'); body.innerHTML = '';
-  const arr = Object.entries(t.journal||{})
-    .map(([id,j])=>({id, ...j}))
-    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  arr.forEach(j=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
-      <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
-    const menuBtn = tr.querySelector('.menu-btn');
-    menuBtn.addEventListener('click', ()=>{ _rowActionJournal = j; $('#rowMenuModal').showModal(); });
-    body.appendChild(tr);
-  });
-  $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('');
-}
-
-
-function renderExpenseSummary(t){
-  const budget = t.budget||{USD:0,EUR:0,ILS:0};
-  const exps = Object.values(t.expenses||{});
-  const totals = { USD:0, EUR:0, ILS:0 };
-  exps.forEach(e=>{ if(totals[e.currency] != null) totals[e.currency]+= Number(e.amount||0); });
-  const html = `
-    <div><strong>תקציב:</strong> USD ${num(budget.USD)} | EUR ${num(budget.EUR)} | ILS ${num(budget.ILS)}</div>
-    <div><strong>הוצאות:</strong> USD ${num(totals.USD)} | EUR ${num(totals.EUR)} | ILS ${num(totals.ILS)}</div>
-    <div><strong>יתרה:</strong> USD ${num(budget.USD - totals.USD)} | EUR ${num(budget.EUR - totals.EUR)} | ILS ${num(budget.ILS - totals.ILS)}</div>
-  `;
-  $('#expenseSummary').innerHTML = html;
-}
-
-// Mini map
-function initMiniMap(t){
-  if(!state.maps.mini){
-    state.maps.mini = L.map('miniMap');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM'}).addTo(state.maps.mini);
+  el("tripDestination").value = trip.destination || "";
+  el("tripParticipants").value = trip.participants || "";
+  const tripTypeCheckboxes = el("tripTypeCheckboxes");
+  if(tripTypeCheckboxes) {
+    const tripTypes = trip.tripType || [];
+    Array.from(tripTypeCheckboxes.querySelectorAll('input[type="checkbox"]')).forEach(checkbox => {
+      checkbox.checked = tripTypes.includes(checkbox.value);
+    });
   }
-  const m = state.maps.mini;
-  const journal = Object.values(t.journal||{}).filter(j=>j.lat&&j.lng);
-  const expenses = Object.values(t.expenses||{}).filter(e=>e.lat&&e.lng);
-  const group = [];
-  expenses.slice(-5).forEach(e=> group.push(L.circleMarker([e.lat,e.lng], {radius:6,color:'#ff8c00'})) );
-  journal.slice(-5).forEach(j=> group.push(L.circleMarker([j.lat,j.lng], {radius:6,color:'#1e90ff'})) );
-  const layer = L.layerGroup(group).addTo(m);
-  try{ m.fitBounds(layer.getBounds(), { padding:[20,20] }); }catch{}
-  setTimeout(()=> m.invalidateSize(), 80);
+
+  const budgetUSD = Number(trip.budget?.USD || 0);
+  if (el("tripBudgetUSD")) el("tripBudgetUSD").value = formatMoney(Math.round(budgetUSD));
+  if (el("tripBudgetEUR")) el("tripBudgetEUR").value = formatMoney(Math.round(budgetUSD * (state.rates?.EUR || 0.9)));
+  if (el("tripBudgetILS")) el("tripBudgetILS").value = formatMoney(Math.round(budgetUSD * (state.rates?.ILS || 3.6)));
+  [el("tripBudgetUSD"), el("tripBudgetEUR"), el("tripBudgetILS")].forEach(input=>{
+    if(!input) return;
+    input.onfocus = ()=>{ input.value = unformatMoney(input.value); };
+    input.onblur  = ()=>{ formatInputEl(input); };
+  });
+
+  
+  await renderBudget();
+  await renderOverviewExpenses();
+  await renderOverviewJournal();
+  await renderJournal();
+  await renderOverviewMiniMap();
+
+  if (el("tripBudgetUSD")) el("tripBudgetUSD").oninput = (e) => updateBudgetConversion(e.target.value, 'USD');
+  if (el("tripBudgetEUR")) el("tripBudgetEUR").oninput = (e) => updateBudgetConversion(e.target.value, 'EUR');
+  if (el("tripBudgetILS")) el("tripBudgetILS").oninput = (e) => updateBudgetConversion(e.target.value, 'ILS');
+
+
+  const shareToggle = el("shareToggle");
+  if (shareToggle) {
+    shareToggle.checked = !!trip.share?.enabled;
+  }
+  const shareScope = el("shareScope");
+  if (shareScope) {
+    shareScope.value = trip.share?.scope || "full";
+  }
+
+  if (shareToggle){
+    shareToggle.onchange = async ()=>{
+      await Store.updateTrip(id, { share: { enabled: shareToggle.checked, scope: el("shareScope").value } });
+      setStatus(shareToggle.checked ? "שיתוף הופעל" : "שיתוף בוטל");
+    };
+  }
+  if (el("shareScope")){
+    el("shareScope").onchange = async ()=>{
+      await Store.updateTrip(id, { share: { enabled: el("shareToggle").checked, scope: el("shareScope").value } });
+      setStatus("היקף שיתוף עודכן");
+    };
+  }
+  setupBudgetLock(trip);
 }
 
-// Big map with toggles
-function initBigMap(){
-  if(!state.current) return;
-  if(!state.maps.big){
-    state.maps.big = L.map('bigMap');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM'}).addTo(state.maps.big);
-    state.maps.layers.expenses = L.layerGroup().addTo(state.maps.big);
-    state.maps.layers.journal = L.layerGroup().addTo(state.maps.big);
+function setupBudgetLock(trip) {
+  const btn = el("toggleBudgetLock");
+  const usd = el("tripBudgetUSD");
+  const eur = el("tripBudgetEUR");
+  const ils = el("tripBudgetILS");
+
+  if (!btn || !usd || !eur || !ils) return;
+
+  function applyLockUI(locked) {
+    usd.disabled = eur.disabled = ils.disabled = locked;
+    btn.textContent = locked ? "ערוך תקציב" : "קבע תקציב";
+    btn.classList.toggle('btn-outline', !locked);
+    btn.classList.toggle('btn-primary', locked);
+  }
+
+  applyLockUI(!!trip.budgetLocked);
+
+  btn.onclick = async () => {
+    const newLocked = !trip.budgetLocked;
+    trip.budgetLocked = newLocked;
+    applyLockUI(newLocked);
+    await Store.updateTrip(trip.id, { budgetLocked: newLocked });
+    setStatus(newLocked ? "התקציב ננעל" : "התקציב פתוח לעריכה");
+  };
+}
+
+function updateBudgetConversion(value, fromCurrency) {
+    const rates = state.rates || {};
+    const num = parseNumber(value);
+    let usdValue = 0;
+
+    switch (fromCurrency) {
+      case 'USD': usdValue = num; break;
+      case 'EUR': usdValue = num / (rates.EUR || 0.9); break;
+      case 'ILS': usdValue = num / (rates.ILS || 3.6); break;
+      default: usdValue = num;
+    }
+
+    if (el("tripBudgetUSD")) el("tripBudgetUSD").value = formatMoney(Math.round(usdValue));
+    if (el("tripBudgetEUR")) el("tripBudgetEUR").value = formatMoney(Math.round(usdValue * (state.rates?.EUR || 0.9)));
+    if (el("tripBudgetILS")) el("tripBudgetILS").value = formatMoney(Math.round(usdValue * (state.rates?.ILS || 3.6)));
+}
+
+function confirmDeleteTrip(id, name){
+  const dlg = el("confirmDialog");
+  if (!dlg) return;
+  el("confirmTitle").textContent = "מחיקת נסיעה";
+  el("confirmMsg").textContent = `למחוק את "${name||"נסיעה"}"? לא ניתן לשחזור.`;
+  dlg.showModal();
+  el("confirmYes").onclick = async ()=>{
+    await Store.deleteTrip(id);
+    dlg.close();
+    setStatus("נסיעה נמחקה");
+    renderHome();
+  };
+}
+
+async function renderOverviewExpenses() {
+  const trip = await Store.getTrip(state.currentTripId);
+  if (!trip) return;
+
+  const tbody = $("#overviewExpenseTable tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  let expenses = await Store.listExpenses(trip.id);
+  expenses.sort((a, b) => b.createdAt - a.createdAt);
+
+  for (const e of expenses) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${linkifyToIcon(e.desc||"—")}</td>
+      <td>${e.category||"—"}</td>
+      <td>${e.amount ?? 0}</td>
+      <td>${e.currency||"USD"}</td>
+      <td>${extractCityName(e.placeName)}</td>
+      <td><div class="expense-datetime">
+        <span class="time">${dayjs(e.createdAt).format("HH:mm")}</span>
+        <span class="date">${dayjs(e.createdAt).format("DD/MM")}</span>
+      </div></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function renderOverviewJournal() {
+  const tripId = state.currentTripId;
+  const entries = await Store.listJournal(tripId);
+  const tbody = $("#overviewJournalTable tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  entries.sort((a,b) => b.createdAt - a.createdAt);
+
+  for (const j of entries){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${linkifyToIcon((j.text || "").replace(/\n|\r/g, " "))}</td>
+      <td>${extractCityName(j.placeName)}</td>
+      <td><div class="expense-datetime">
+        <span class="time">${dayjs(j.createdAt).format("HH:mm")}</span>
+        <span class="date">${dayjs(j.createdAt).format("DD/MM")}</span>
+      </div></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function renderOverviewMiniMap(){
+  const trip = await Store.getTrip(state.currentTripId);
+  if (!trip) return;
+  const points = [];
+  if (trip.expenses){
+    Object.values(trip.expenses).forEach(e=>{ const lat=Number(e.lat), lng=Number(e.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...e, lat, lng, type:"expense" }); });
+  }
+  if (trip.journal){
+    Object.values(trip.journal).forEach(j=>{ const lat=Number(j.lat), lng=Number(j.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...j, lat, lng, type:"journal" }); });
+  }
+
+  const mapEl = el("miniMap");
+  if (mapEl){
+    if (!state.maps.mini){
+      state.maps.mini = L.map(mapEl, { zoomControl:false, attributionControl:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.mini);
+    }
+    const map = state.maps.mini;
+    if (!state.miniGroup) { state.miniGroup = L.featureGroup(); }
+    const group = state.miniGroup;
+    if (group && group.clearLayers) group.clearLayers();
+    points.forEach(p=>{
+      const marker = L.circleMarker([p.lat,p.lng], {  radius:6, weight:1, color: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillColor: (p.type==="expense"?"#ff6b6b":"#5b8cff") , fillOpacity: 1 }).bindPopup(p.desc||p.text||"");
+      group.addLayer(marker);
+    });
+    group.addTo(map);
+    if (points.length){
+      map.fitBounds(group.getBounds().pad(0.4));
+    } else {
+      map.setView([31.8, 35.2], 7);
+    }
+  }
+
+  const tripDays = (trip.start && trip.end) ? `${dayjs(trip.start).format("DD/MM/YY")}–${dayjs(trip.end).format("DD/MM/YY")}` : "—";
+  const translatedTripTypes = (trip.tripType || []).map(type => TRIP_TYPE_HEBREW[type] || type).join(", ");
+  
+  if (el("overviewMeta")){
+    el("overviewMeta").innerHTML = `
+      <div><strong>יעד:</strong> ${linkifyToIcon(trip.destination||"—")}</div>
+      <div><strong>תאריכים:</strong> ${tripDays}</div>
+      <div><strong>משתתפים:</strong> ${linkifyToIcon(trip.participants||"—")}</div>
+      <div><strong>סוג:</strong> ${translatedTripTypes||"—"}</div>
+    `;
+  if (el("tripBudgetILSDisplay")) {
+    const ilsBudget = Math.round((trip.budget?.USD || 0) * (state.rates?.ILS || 3.6));
+    el("tripBudgetILSDisplay").innerHTML = `<strong>תקציב הטיול:</strong> ₪${formatMoney(ilsBudget)}`;
+  }
+
+  }
+
+  const jList = el("recentJournal"); if (jList){ jList.innerHTML = "";
+    const journal = await Store.listJournal(trip.id);
+    journal.slice(0,5).forEach(j=>{
+      const li = document.createElement("li");
+      li.innerHTML = `<div>${j.text||"—"}</div><div class="muted">${dayjs(j.createdAt).format("DD/MM HH:mm")}</div>`;
+      jList.appendChild(li);
+    });
+  }
+}
+
+function updateCellWithValue(elm, value, prefix) {
+  if (!elm) return;
+  elm.textContent = `${prefix}${formatMoney(value)}`;
+  if (value < 0) {
+    elm.classList.add("negative");
   } else {
-    state.maps.layers.expenses.clearLayers();
-    state.maps.layers.journal.clearLayers();
+    elm.classList.remove("negative");
   }
-  const t = state.current;
-  const exps = Object.values(t.expenses||{}).filter(e=>e.lat&&e.lng);
-  const jrs = Object.values(t.journal||{}).filter(j=>j.lat&&j.lng);
-  exps.forEach(e=> L.circleMarker([e.lat,e.lng], {radius:7,color:'#ff8c00'}).bindPopup(`${esc(e.desc||'')}: ${num(e.amount)} ${e.currency}`).addTo(state.maps.layers.expenses));
-  jrs.forEach(j=> L.circleMarker([j.lat,j.lng], {radius:7,color:'#1e90ff'}).bindPopup(`${esc(j.placeName||'')}: ${esc(j.text||'')}`).addTo(state.maps.layers.journal));
-  const all = [...exps.map(e=>[e.lat,e.lng]), ...jrs.map(j=>[j.lat,j.lng])];
-  if(all.length){ try{ state.maps.big.fitBounds(all, { padding:[40,40] }); }catch{} }
-  setTimeout(()=> state.maps.big.invalidateSize(), 80);
 }
 
-$('#btnToggleSpent').addEventListener('click', ()=>{
-  const m = state.maps.layers.expenses; if(!m) return; if(state.maps.big.hasLayer(m)){ state.maps.big.removeLayer(m); } else { state.maps.big.addLayer(m); }
-});
-$('#btnToggleVisited').addEventListener('click', ()=>{
-  const m = state.maps.layers.journal; if(!m) return; if(state.maps.big.hasLayer(m)){ state.maps.big.removeLayer(m); } else { state.maps.big.addLayer(m); }
-});
+async function renderBudget(){
+  const trip = await Store.getTrip(state.currentTripId);
+  if (!trip) return;
+  if (trip.localCurrency){ state.localCurrency = trip.localCurrency; addCurrencyToState(trip.localCurrency); }
 
-// Auth modal
-$('#btnLogin').addEventListener('click', ()=> { const s=document.getElementById('loginScreen'); if(s) s.style.display='grid'; const c=document.querySelector('.container'); if(c) c.style.display='none'; });
-$('#authCancel').addEventListener('click', ()=> $('#authModal').close());
-$('#authSignIn').addEventListener('click', async ()=>{
-  try{
-    const email = $('#authEmail').value.trim(); const pass = $('#authPass').value;
-    await FB.signInWithEmailAndPassword(auth, email, pass);
-    $('#authModal').close(); showToast('מחובר ✅');
-  }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#authSignUp').addEventListener('click', async ()=>{
-  try{
-    const email = $('#authEmail').value.trim(); const pass = $('#authPass').value;
-    await FB.createUserWithEmailAndPassword(auth, email, pass);
-    $('#authModal').close(); showToast('נרשם והתחבר ✅');
-  }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#authReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#btnLogout').addEventListener('click', async ()=>{ await FB.signOut(auth); showToast('התנתקת'); });
+  const tbody = $("#expenseTable tbody");
+  if (tbody) tbody.innerHTML = "";
+  let expenses = await Store.listExpenses(trip.id);
+  expenses.sort((a, b) => b.createdAt - a.createdAt);
 
-// New trip modal
-$('#btnNewTrip').addEventListener('click', ()=>{ $('#tripModal').showModal(); });
-$('#tripCancel').addEventListener('click', ()=> $('#tripModal').close());
-$('#tripSave').addEventListener('click', async ()=>{
-  const dest = $('#tripDest').value.trim(); const start = $('#tripStart').value; const end = $('#tripEnd').value;
-  if(!dest||!start||!end) return showToast('אנא מלא יעד ותאריכים');
-  const id = crypto.randomUUID();
-  await FB.setDoc(FB.doc(db, 'trips', id), {
-    ownerUid: state.user.uid, destination: dest, start, end,
-    createdAt: new Date().toISOString(), expenses:{}, journal:{},
-    budget:{USD:0,EUR:0,ILS:0}, rates:{...state.rates}, share:{enabled:false}
-  });
-  $('#tripModal').close(); showToast('נוצרה נסיעה');
-});
+  const sortButton = el("sortExpensesBtn");
+  if (sortButton) {
+    sortButton.onclick = () => {
+      state.sortAsc = !state.sortAsc;
+      expenses.sort((a, b) => {
+        const aVal = a.createdAt;
+        const bVal = b.createdAt;
+        if (state.sortAsc) {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      });
+      sortButton.innerHTML = `<span>${state.sortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
+      renderExpenses(expenses);
+    };
+  }
+  
+  function renderExpenses(expensesToRender) {
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    let totalUSD = 0;
+    let totalEUR = 0;
+    let totalILS = 0;
 
-// Sidebar actions
-$('#searchTrips').addEventListener('input', renderTripList);
-let sortAsc = false; $('#btnSortTrips').addEventListener('click', ()=>{
-  sortAsc = !sortAsc; state.trips.sort((a,b)=> sortAsc ? (a.start||'').localeCompare(b.start||'') : (b.start||'').localeCompare(a.start||'')); renderTripList();
-});
-$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList(); });
-$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList(); });
+    const budgetUSD = Number(trip.budget?.USD || 0);
 
-// Meta save, verify, budgets
-$('#btnSaveMeta').addEventListener('click', async ()=>{
-  const ref = FB.doc(db, 'trips', state.currentTripId);
-  const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const types = $('#metaTypes').value.split(',').map(s=>s.trim()).filter(Boolean);
-  await FB.updateDoc(ref, { destination: $('#metaDestination').value.trim(), start: $('#metaStart').value, end: $('#metaEnd').value, people, types });
-  showToast('נשמר'); loadTrip();
-});
-$('#btnVerifyOnMap').addEventListener('click', ()=>{
-  $$('#tabs button').forEach(b=>b.classList.remove('active'));
-  $('#tabs [data-tab="map"]').classList.add('active');
-  showView('map'); setTimeout(initBigMap, 50);
-});
+    for (const e of expensesToRender){
+      const usdAmount = toUSD(e.amount, e.currency);
+      totalUSD += usdAmount;
+      totalEUR += usdAmount * (state.rates.EUR || 0.9);
+      totalILS += usdAmount * (state.rates.ILS || 3.6);
 
-// Budget edit + currency sync
-function syncBudget(from){
-  const usd = Number($('#bUSD').value||0);
-  const eur = Number($('#bEUR').value||0);
-  const ils = Number($('#bILS').value||0);
-  if(from==='USD'){ $('#bEUR').value = (usd*state.rates.USDEUR).toFixed(2); $('#bILS').value=(usd*state.rates.USDILS).toFixed(2); }
-  if(from==='EUR'){ const u = eur / state.rates.USDEUR; $('#bUSD').value=u.toFixed(2); $('#bILS').value=(u*state.rates.USDILS).toFixed(2); }
-  if(from==='ILS'){ const u = ils / state.rates.USDILS; $('#bUSD').value=u.toFixed(2); $('#bEUR').value=(u*state.rates.USDEUR).toFixed(2); }
+      const tr = document.createElement("tr");
+      tr.dataset.expid = e.id;
+      tr.innerHTML = `
+        <td>${linkifyToIcon(e.desc||"—")}</td>
+        <td>${e.category||"—"}</td>
+        <td>${e.amount ?? 0}</td>
+        <td>${e.currency||"USD"}</td>
+        <td>${extractCityName(e.placeName)}</td>
+        <td><div class="expense-datetime"><span class="time">${dayjs(e.createdAt).format("HH:mm")}</span><span class="date">${dayjs(e.createdAt).format("DD/MM")}</span></div></td>
+        <td class="row-actions">
+          <div class="kebab-wrap-expense">
+            <button class="kebab-btn" aria-haspopup="true" aria-expanded="false" title="אפשרויות">⋮</button>
+          </div>
+        </td>
+      `;
+      (async ()=>{
+        if ((!e.placeName || e.placeName==="") && typeof e.lat === "number" && typeof e.lng === "number"){
+          const city = await reverseGeocodeCity(e.lat, e.lng);
+          if (city){
+            const td = tr.querySelectorAll("td")[4];
+            if (td) td.textContent = city;
+            try { await Store.updateExpense(trip.id, e.id, { placeName: city }); } catch(_){}
+          }
+        }
+      })();
+      const menuBtn = $(".kebab-btn", tr);
+      if (menuBtn) {
+          menuBtn.onclick = (e) => {
+              e.stopPropagation();
+              openExpenseRowActionsDialog(e.target, e);
+          };
+      }
+      tbody.appendChild(tr);
+    }
+
+    if (el("budgetTotalUSD")) el("budgetTotalUSD").textContent = `$${formatMoney(budgetUSD)}`;
+    if (el("budgetTotalEUR")) el("budgetTotalEUR").textContent = `€${formatMoney(budgetUSD * (state.rates.EUR || 0.9))}`;
+    if (el("budgetTotalILS")) el("budgetTotalILS").textContent = `₪${formatMoney(budgetUSD * (state.rates.ILS || 3.6))}`;
+
+    if (el("expensesActualUSD")) el("expensesActualUSD").textContent = `$${formatMoney(totalUSD)}`;
+    if (el("expensesActualEUR")) el("expensesActualEUR").textContent = `€${formatMoney(totalEUR)}`;
+    if (el("expensesActualILS")) el("expensesActualILS").textContent = `₪${formatMoney(totalILS)}`;
+
+    updateCellWithValue(el("remainingUSD"), budgetUSD - totalUSD, "$");
+    updateCellWithValue(el("remainingEUR"), budgetUSD * (state.rates.EUR || 0.9) - totalEUR, "€");
+    updateCellWithValue(el("remainingILS"), budgetUSD * (state.rates.ILS || 3.6) - totalILS, "₪");
+  }
+  renderExpenses(expenses);
 }
-['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).addEventListener('input', ()=> syncBudget(id.replace('b','')) ));
-$('#rateUSDEUR').addEventListener('input', e=> state.rates.USDEUR = Number(e.target.value||0.92));
-$('#rateUSDILS').addEventListener('input', e=> state.rates.USDILS = Number(e.target.value||3.7));
-$('#btnBudgetEdit').addEventListener('click', async ()=>{
-  const ref = FB.doc(db,'trips', state.currentTripId);
-  await FB.updateDoc(ref, { budget: { USD:Number($('#bUSD').value||0), EUR:Number($('#bEUR').value||0), ILS:Number($('#bILS').value||0) }, rates: {...state.rates} });
-  showToast('עודכן תקציב'); renderExpenseSummary(state.current);
-});
 
-// Expenses CRUD
-$('#btnAddExpense').addEventListener('click', ()=> openExpenseModal());
-$('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
-$('#expSave').addEventListener('click', saveExpense);
-$('#expDelete').addEventListener('click', ()=> deleteExpense($('#expenseModal').dataset.id));
+async function renderJournal(){
+  const tripId = state.currentTripId;
+  let entries = await Store.listJournal(tripId);
+  const tbody = $("#journalTable tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  entries.sort((a,b) => b.createdAt - a.createdAt);
 
-function openExpenseModal(e){
-  $('#expenseModal').dataset.id = e?.id||'';
-  $('#expDesc').value = e?.desc||''; $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||''; $('#expCurr').value = e?.currency||'USD'; $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
-  $('#expDelete').style.display = e? 'inline-block':'none';
-  $('#expenseModal').showModal();
+  const sortButton = el("sortJournalBtn");
+  if (sortButton) {
+    sortButton.onclick = () => {
+      state.journalSortAsc = !state.journalSortAsc;
+      entries.sort((a, b) => {
+        const aVal = a.createdAt;
+        const bVal = b.createdAt;
+        if (state.journalSortAsc) {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      });
+      sortButton.innerHTML = `<span>${state.journalSortAsc ? '&#9650;' : '&#9660;'}</span> מיין`;
+      renderJournalEntries(entries);
+    };
+  }
+
+  function renderJournalEntries(entriesToRender) {
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    for (const j of entriesToRender){
+      const tr = document.createElement("tr");
+      tr.dataset.journalid = j.id;
+      tr.innerHTML = `
+        <td class="journal-text">${linkifyToIcon(j.text || "")}</td>
+        <td>${extractCityName(j.placeName)}</td>
+        <td><div class="expense-datetime"><span class="time">${dayjs(j.createdAt).format("HH:mm")}</span><span class="date">${dayjs(j.createdAt).format("DD/MM")}</span></div></td>
+        <td class="row-actions">
+          <div class="journal-kebab-wrap">
+            <button class="kebab-btn" title="אפשרויות">⋮</button>
+          </div>
+        </td>
+      `;
+      (async ()=>{
+        if ((!j.placeName || j.placeName==="") && typeof j.lat === "number" && typeof j.lng === "number"){
+          const city = await reverseGeocodeCity(j.lat, j.lng);
+          if (city){
+            const td = tr.querySelectorAll("td")[1];
+            if (td) td.textContent = city;
+            try { await Store.updateJournal(tripId, j.id, { placeName: city }); } catch(_){}
+          }
+        }
+      })();
+      const kb = $(".kebab-btn", tr);
+      if (kb){ kb.onclick = (e)=>{ e.stopPropagation(); openJournalRowActionsDialog(e.target, j); }; }
+      tbody.appendChild(tr);
+    }
+  }
+
+  renderJournalEntries(entries);
 }
-async function saveExpense(){
-  const ref = FB.doc(db,'trips', state.currentTripId); const snap = await FB.getDoc(ref); const t = snap.data();
-  const id = $('#expenseModal').dataset.id || crypto.randomUUID();
-  t.expenses = t.expenses || {};
-  t.expenses[id] = { desc:$('#expDesc').value.trim(), category:$('#expCat').value.trim(), amount:Number($('#expAmount').value||0), currency:$('#expCurr').value, lat: numOrNull($('#expLat').value), lng: numOrNull($('#expLng').value), createdAt: t.expenses[id]?.createdAt || new Date().toISOString() };
-  await FB.updateDoc(ref, { expenses: t.expenses });
-  $('#expenseModal').close(); showToast('ההוצאה נשמרה'); loadTrip();
-}
-async function deleteExpense(id){ if(!id) return; const ref = FB.doc(db,'trips', state.currentTripId); const snap = await FB.getDoc(ref); const t = snap.data(); delete t.expenses[id]; await FB.updateDoc(ref,{ expenses: t.expenses }); showToast('נמחק'); loadTrip(); }
 
-// Journal CRUD
-$('#btnAddJournal').addEventListener('click', ()=> openJournalModal());
-$('#jrCancel').addEventListener('click', ()=> $('#journalModal').close());
-$('#jrSave').addEventListener('click', saveJournal);
-$('#jrDelete').addEventListener('click', ()=> deleteJournal($('#journalModal').dataset.id));
+// Maps
+let expensesLayer = L.featureGroup();
+let journalLayer = L.featureGroup();
 
-function openJournalModal(j){
-  $('#journalModal').dataset.id = j?.id||'';
-  $('#jrText').value = j?.text||''; $('#jrPlace').value = j?.placeName||''; $('#jrLat').value = j?.lat||''; $('#jrLng').value = j?.lng||'';
-  $('#jrDelete').style.display = j? 'inline-block':'none';
-  $('#journalModal').showModal();
-}
-async function saveJournal(){
-  const ref = FB.doc(db,'trips', state.currentTripId); const snap = await FB.getDoc(ref); const t = snap.data();
-  const id = $('#journalModal').dataset.id || crypto.randomUUID();
-  t.journal = t.journal || {};
-  t.journal[id] = { text:$('#jrText').value.trim(), placeName:$('#jrPlace').value.trim(), lat: numOrNull($('#jrLat').value), lng: numOrNull($('#jrLng').value), createdAt: t.journal[id]?.createdAt || new Date().toISOString() };
-  await FB.updateDoc(ref, { journal: t.journal });
-  $('#journalModal').close(); showToast('הרישום נשמר'); loadTrip();
-}
-async function deleteJournal(id){ if(!id) return; const ref = FB.doc(db,'trips', state.currentTripId); const snap = await FB.getDoc(ref); const t = snap.data(); delete t.journal[id]; await FB.updateDoc(ref,{ journal: t.journal }); showToast('נמחק'); loadTrip(); }
+function refreshMainMap() {
+  if (!state.currentTripId) return;
+  const mapEl = el("mainMap");
+  if (mapEl) {
+    if (!state.maps.main) {
+      state.maps.main = L.map(mapEl);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.main);
+      expensesLayer.addTo(state.maps.main);
+      journalLayer.addTo(state.maps.main);
+    }
+    const map = state.maps.main;
+    (async () => {
+      const trip = await Store.getTrip(state.currentTripId);
+      if (!trip) return;
 
+      expensesLayer.clearLayers();
+      journalLayer.clearLayers();
+
+      const expensePoints = [];
+      if (trip.expenses) {
+        Object.values(trip.expenses).forEach(e => {
+          if (e.lat && e.lng) {
+            expensePoints.push({ ...e, lat: Number(e.lat), lng: Number(e.lng) });
+          }
+        });
+      }
+      expensePoints.forEach(p => {
+        L.circleMarker([p.lat, p.lng], { radius: 7, color: "#ff6b6b", weight: 2, fillColor: "#ff6b6b", fillOpacity: 1 })
+          .bindPopup((p.desc || "") + (p.placeName ? `<br>${p.placeName}` : ""))
+          .addTo(expensesLayer);
+      });
+      
+      const journalPoints = [];
+      if (trip.journal) {
+        Object.values(trip.journal).forEach(j => {
+          if (j.lat && j.lng) {
+            journalPoints.push({ ...j, lat: Number(j.lat), lng: Number(j.lng) });
+          }
+        });
+      }
+      journalPoints.forEach(p => {
+        L.circleMarker([p.lat, p.lng], { radius: 7, color: "#5b8cff", weight: 2, fillColor: "#5b8cff", fillOpacity: 1 })
+          .bindPopup((p.text || "") + (p.placeName ? `<br>${p.placeName}` : ""))
+          .addTo(journalLayer);
+      });
+      
+      const allPoints = [...expensePoints, ...journalPoints];
+      if (allPoints.length) {
+        const bounds = L.latLngBounds(allPoints.map(p => [p.lat, p.lng]));
+        map.fitBounds(bounds.pad(0.3));
+      } else {
+        map.setView([31.8, 35.2], 7);
+      }
+    })();
+  }
+}
+function toggleExpensesOnMap() {
+  const isChecked = el('showExpensesToggle').checked;
+  if (isChecked) {
+    state.maps.main.addLayer(expensesLayer);
+  } else {
+    state.maps.main.removeLayer(expensesLayer);
+  }
+}
+
+function toggleJournalOnMap() {
+  const isChecked = el('showJournalToggle').checked;
+  if (isChecked) {
+    state.maps.main.addLayer(journalLayer);
+  } else {
+    state.maps.main.removeLayer(journalLayer);
+  }
+}
+function openTab(tabName) {
+  $$(".tab").forEach(b => b.classList.remove("active"));
+  $(`.tab[data-tab='${tabName}']`)?.classList.add("active");
+  $$(".panel").forEach(p => p.classList.remove("active"));
+  el(`tab-${tabName}`)?.classList.add("active");
+}
+function openLocationPicker(forType){
+  state.locationPick = { lat:null, lng:null, forType };
+  const dlg = el("locationDialog");
+  if (!dlg) return;
+  dlg.showModal();
+
+  const mapEl = el("locationMap");
+  if (!state.maps.location){
+    state.maps.location = L.map(mapEl);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.location);
+    state.maps.location.on("click", (e)=>{
+      state.locationPick.lat = e.latlng.lat;
+      state.locationPick.lng = e.latlng.lng;
+      setStatus(`נבחר: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`);
+    });
+  }
+  state.maps.location.setView([31.8, 35.2], 7);
+
+  el("useCurrentLoc").onclick = ()=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const {latitude, longitude} = pos.coords;
+      state.locationPick.lat = latitude; state.locationPick.lng = longitude;
+      state.maps.location.setView([latitude,longitude], 13);
+      setStatus("זוהה מיקום נוכחי");
+    }, ()=> alert("לא ניתן לזהות מיקום"));
+  };
+
+  const searchPlaceInput = el("searchPlace");
+  const searchPlaceBtn = el("searchPlaceBtn");
+  searchPlaceBtn.onclick = async ()=>{
+    const q = searchPlaceInput.value.trim();
+    if (!q) return;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { "Accept-Language": "he" } });
+    const data = await res.json();
+    if (data?.[0]){
+      const r = data[0];
+      const lat = Number(r.lat), lng = Number(r.lon);
+      state.locationPick.lat = lat; state.locationPick.lng = lng;
+      state.maps.location.setView([lat,lng], 14);
+      L.marker([lat,lng]).addTo(state.maps.location);
+      setStatus(r.display_name);
+    } else {
+      alert("לא נמצא מיקום מתאים");
+    }
+  };
+
+
+  el("saveLocationBtn").onclick = ()=>{
+    if (state.locationPick.lat && state.locationPick.lng){
+      if (state.locationPick.forType === "expense"){
+        el("expLat").value = state.locationPick.lat;
+        el("expLng").value = state.locationPick.lng;
+      }
+      dlg.close();
+    } else {
+      alert("בחר מיקום ע\"י לחיצה על המפה או חיפוש.");
+    }
+  };
+}
+
+// Expense dialog
+async function openExpenseDialog(exp){
+  el("expenseDialogTitle").textContent = exp? "עריכת הוצאה" : "הוספת הוצאה";
+  el("expDesc").value = exp?.desc || "";
+  el("expCat").value = exp?.category || lastUsed.category;
+  el("expAmount").value = exp?.amount || 0;
+
+  (function(){
+    const row = el("expDateTimeRow");
+    if (exp){
+      if (row) row.style.display = "";
+      const ts = exp?.createdAt || Date.now();
+      const d = new Date(ts);
+      const pad = n => String(n).padStart(2,"0");
+      const dateStr = d.toISOString().slice(0,10);
+      const timeStr = pad(d.getHours())+":"+pad(d.getMinutes());
+      if (el("expDate")) el("expDate").value = dateStr;
+      if (el("expTime")) el("expTime").value = timeStr;
+    } else {
+      if (row) row.style.display = "none";
+      if (el("expDate")) el("expDate").value = "";
+      if (el("expTime")) el("expTime").value = "";
+    }
+  })();
+
+  const trip = await Store.getTrip(state.currentTripId);
+  const allowed = await getAllowedCurrenciesForTrip(trip);
+  renderCurrencyOptions(el("expCurrency"), allowed, exp?.currency);
+
+  const destCurrency = allowed.find(c => !["USD","EUR","ILS"].includes(c));
+  let defaultCcy = exp?.currency || destCurrency || lastUsed.currency || "USD";
+  el("expCurrency").value = defaultCcy;
+
+  el("expLat").value = exp?.lat || "";
+  el("expLng").value = exp?.lng || "";
+  el("expenseDialog").showModal();
+  const mapEl = el("expenseMap");
+  if (mapEl){
+    if (!state.maps.expense){
+      state.maps.expense = L.map(mapEl);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.expense);
+    }
+    const map = state.maps.expense;
+    let marker;
+    function setMarker(lat,lng){
+      if (marker){ marker.setLatLng([lat,lng]); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
+      el("expLat").value = lat;
+      el("expLng").value = lng;
+    }
+    const dLat = Number(el("expLat").value) || 31.8;
+    const dLng = Number(el("expLng").value) || 35.2;
+    map.setView([dLat, dLng], (el("expLat").value? 13 : 7));
+    if (el("expLat").value && el("expLng").value){ setMarker(dLat, dLng); }
+
+    map.off("click");
+    map.on("click", e=> setMarker(e.latlng.lat, e.latlng.lng));
+
+    const btnCur = el("useCurrentLocExp");
+    if (btnCur){
+      btnCur.onclick = ()=>{
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const {latitude, longitude} = pos.coords;
+          map.setView([latitude, longitude], 13);
+          setMarker(latitude, longitude);
+          setStatus("זוהה מיקום נוכחי");
+        }, ()=> alert("לא ניתן לזהות מיקום"));
+      };
+    }
+    const sInp = el("searchPlaceExp");
+    const clearBtn = el("clearLocExp");
+    if (clearBtn){
+      clearBtn.onclick = ()=>{
+        if (marker){ marker.remove(); marker = null; }
+        el("expLat").value = ""; el("expLng").value = "";
+        setStatus("המיקום נוקה");
+      };
+    }
+    const sBtn = el("searchPlaceBtnExp");
+    if (sBtn){
+      sBtn.onclick = async ()=>{
+        const q = (sInp?.value||'').trim();
+        if (!q) return;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { headers: { "Accept-Language": "he" } });
+        const data = await res.json();
+        if (data?.[0]){
+          const r = data[0];
+          const lat = Number(r.lat), lng = Number(r.lon);
+          map.setView([lat,lng], 14);
+          setMarker(lat,lng);
+          setStatus(r.display_name);
+        } else {
+          alert("לא נמצא מיקום מתאים");
+        }
+      };
+    }
+  }
+  el("expenseDialog").dataset.editId = exp?.id || "";
+}
+
+function collectExpenseForm(){
+  const desc = el("expDesc").value.trim();
+  const category = el("expCat").value;
+  const amount = Number(el("expAmount").value||0);
+  const currency = el("expCurrency").value;
+  const lat = parseFloat(el("expLat").value||"");
+  const lng = parseFloat(el("expLng").value||"");
+  const entry = { desc, category, amount, currency };
+  const dStr = el("expDate")?.value || "";
+  const tStr = el("expTime")?.value || "";
+  if (dStr){
+    const ts = new Date(dStr + "T" + (tStr||"12:00") + ":00").getTime();
+    if (!isNaN(ts)) entry.createdAt = ts;
+  }
+  if (!isNaN(lat) && !isNaN(lng)){ entry.lat = lat; entry.lng = lng; }
+  const editId = el("expenseDialog").dataset.editId;
+  if (editId) entry.id = editId;
+  
+  lastUsed.category = category;
+  lastUsed.currency = currency;
+  localStorage.setItem("lastCategory", lastUsed.category);
+  localStorage.setItem("lastCurrency", lastUsed.currency);
+
+  return entry;
+}
+function openExpenseRowActionsDialog(buttonEl, expense) {
+  const dlg = el("expenseActionDialog");
+  if (!dlg) return;
+
+  const editBtn = el("expense-action-edit");
+  const delBtn = el("expense-action-delete");
+
+  editBtn.onclick = () => {
+    openExpenseDialog(expense);
+    dlg.close();
+  };
+
+  delBtn.onclick = () => {
+    removeExpense(expense);
+    dlg.close();
+  };
+
+  dlg.showModal();
+}
+async function removeExpense(exp){
+  const dlg = el("confirmExpenseDialog");
+  if (!dlg) return;
+  el("confirmExpenseTitle").textContent = "מחיקת הוצאה";
+  el("confirmExpenseMsg").textContent = `למחוק "${exp.desc||"הוצאה"}"?`;
+
+  const yesBtn = el("confirmExpenseYes");
+  yesBtn.onclick = null;
+
+  yesBtn.onclick = async (e) => {
+    e.preventDefault();
+    try {
+      yesBtn.disabled = true;
+      console.log("[del] trip", state.currentTripId, "exp", exp.id);
+      await Store.removeExpense(state.currentTripId, exp.id);
+      setStatus("הוצאה נמחקה");
+      const row = document.querySelector(`tr[data-expid="${exp.id}"]`);
+      if (row && row.parentElement) row.parentElement.removeChild(row);
+      await renderBudget();
+      refreshMainMap();
+    } catch (err) {
+      console.error("[del] failed", err);
+      alert("מחיקה נכשלה. נסה שוב.");
+    } finally {
+      yesBtn.disabled = false;
+      dlg.close();
+    }
+  };
+  dlg.showModal();
+}
+
+// Journal dialog
+async function openJournalDialog(journalEntry) {
+  el("journalDialogTitle").textContent = journalEntry ? "עריכת תיעוד יומי" : "הוספת תיעוד יומי";
+  el("journalTextarea").value = journalEntry?.text || "";
+  
+  const ts = journalEntry?.createdAt || Date.now();
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2,"0");
+  const dateStr = d.toISOString().slice(0,10);
+  const timeStr = pad(d.getHours())+":"+pad(d.getMinutes());
+  el("journalDate").value = dateStr;
+  el("journalTime").value = timeStr;
+
+  el("journalLat").value = journalEntry?.lat || "";
+  el("journalLng").value = journalEntry?.lng || "";
+  el("journalDialog").showModal();
+  el("journalDialog").dataset.editId = journalEntry?.id || "";
+
+  const mapEl = el("journalMap");
+  if (mapEl){
+    if (!state.maps.journal){
+      state.maps.journal = L.map(mapEl);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(state.maps.journal);
+    }
+    const map = state.maps.journal;
+    let marker;
+    function setMarker(lat,lng){
+      if (marker){ marker.setLatLng([lat,lng]); }
+      else { marker = L.marker([lat,lng]).addTo(map); }
+      el("journalLat").value = lat;
+      el("journalLng").value = lng;
+    }
+    
+    const dLat = Number(el("journalLat").value) || 31.8;
+    const dLng = Number(el("journalLng").value) || 35.2;
+    map.setView([dLat, dLng], (el("journalLat").value? 13 : 7));
+    if (el("journalLat").value && el("journalLng").value){ setMarker(dLat, dLng); }
+
+    map.off("click");
+    map.on("click", e=> setMarker(e.latlng.lat, e.latlng.lng));
+
+    const btnCur = el("useCurrentLocJournal");
+    if (btnCur){
+      btnCur.onclick = ()=>{
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const {latitude, longitude} = pos.coords;
+          map.setView([latitude, longitude], 13);
+          setMarker(latitude, longitude);
+          setStatus("זוהה מיקום נוכחי");
+        }, ()=> alert("לא ניתן לזהות מיקום"));
+      };
+    }
+    const sInp = el("searchPlaceJournal");
+    const clearBtn = el("clearLocJournal");
+    if (clearBtn){
+      clearBtn.onclick = ()=>{
+        if (marker){ marker.remove(); marker = null; }
+        el("journalLat").value = ""; el("journalLng").value = "";
+        setStatus("המיקום נוקה");
+      };
+    }
+    const sBtn = el("searchPlaceBtnJournal");
+    if (sBtn){
+      sBtn.onclick = async ()=>{
+        const q = (sInp?.value||'').trim();
+        if (!q) return;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { headers: { "Accept-Language": "he" } });
+        const data = await res.json();
+        if (data?.[0]){
+          const r = data[0];
+          const lat = Number(r.lat), lng = Number(r.lon);
+          map.setView([lat,lng], 14);
+          setMarker(lat,lng);
+          setStatus(r.display_name);
+        } else {
+          alert("לא נמצא מיקום מתאים");
+        }
+      };
+    }
+  }
+}
+
+function collectJournalForm(){
+  const text = el("journalTextarea").value.trim();
+  const lat = parseFloat(el("journalLat").value||"");
+  const lng = parseFloat(el("journalLng").value||"");
+  const entry = { text };
+  const dStr = el("journalDate")?.value || "";
+  const tStr = el("journalTime")?.value || "";
+  if (dStr){
+    const ts = new Date(dStr + "T" + (tStr||"12:00") + ":00").getTime();
+    if (!isNaN(ts)) entry.createdAt = ts;
+  }
+  if (!isNaN(lat) && !isNaN(lng)){ entry.lat = lat; entry.lng = lng; }
+  const editId = el("journalDialog").dataset.editId;
+  if (editId) entry.id = editId;
+
+  return entry;
+}
+
+function openJournalRowActionsDialog(buttonEl, journalEntry) {
+  const dlg = el("journalActionDialog");
+  if (!dlg) return;
+
+  const editBtn = el("journal-action-edit");
+  const delBtn = el("journal-action-delete");
+
+  editBtn.onclick = () => {
+    openJournalDialog(journalEntry);
+    dlg.close();
+  };
+
+  delBtn.onclick = () => {
+    openJournalDeleteDialog(state.currentTripId, journalEntry);
+    dlg.close();
+  };
+
+  dlg.showModal();
+}
 // Exporters
-$('#btnExportPDF').addEventListener('click', exportPDF);
-$('#btnExportExcel').addEventListener('click', exportExcel);
-$('#btnExportWord').addEventListener('click', exportWord);
-$('#btnExportGPX').addEventListener('click', exportGPX);
-
-function exportPDF(){
-  const withExp = $('#exportWithExpenses').value==='yes';
-  const t = state.current; if(!t) return;
-  const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'p',unit:'pt'});
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text(`דוח נסיעה — ${t.destination||''}`, 40, 40);
-  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.text(`${fmtDate(t.start)} – ${fmtDate(t.end)}`, 40, 60);
-  const jr = Object.values(t.journal||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
-  doc.text('יומן', 40, 90);
-  doc.autoTable({ startY: 100, head:[['תאריך','מקום','תיאור']], body: jr.map(j=>[fmtDateTime(j.createdAt), j.placeName||'', j.text||'']) });
-  if(withExp){
-    const ex = Object.values(t.expenses||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
-    doc.text('הוצאות', 40, doc.lastAutoTable.finalY + 30);
-    doc.autoTable({ startY: doc.lastAutoTable.finalY + 40, head:[['תיאור','קטגוריה','סכום','מטבע','תאריך']], body: ex.map(e=>[e.desc||'', e.category||'', num(e.amount), e.currency||'', fmtDateTime(e.createdAt)]) });
+async function exportCSV(){
+  const trip = await Store.getTrip(state.currentTripId);
+  const rows = [["type","desc","category","amount","currency","lat","lng","timestamp"]];
+  if (!el("exportWithoutExpenses").checked && trip.expenses){
+    for (const e of Object.values(trip.expenses)){
+      rows.push(["expense", e.desc||"", e.category||"", e.amount||0, e.currency||"USD", e.lat||"", e.lng||"", e.createdAt||""]);
+    }
   }
-  doc.save(`FLYMILY_${slug(t.destination)}.pdf`);
-}
-
-function exportExcel(){
-  const withExp = $('#exportWithExpenses').value==='yes';
-  const t = state.current; if(!t) return;
-  const wb = XLSX.utils.book_new();
-  const jr = Object.values(t.journal||{}).map(j=>({ תאריך:fmtDateTime(j.createdAt), מקום:j.placeName||'', תיאור:j.text||'', lat:j.lat||'', lng:j.lng||'' }));
-  const wsJ = XLSX.utils.json_to_sheet(jr); XLSX.utils.book_append_sheet(wb, wsJ, 'יומן');
-  if(withExp){
-    const ex = Object.values(t.expenses||{}).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:num(e.amount), מטבע:e.currency||'', תאריך:fmtDateTime(e.createdAt), lat:e.lat||'', lng:e.lng||'' }));
-    const wsE = XLSX.utils.json_to_sheet(ex); XLSX.utils.book_append_sheet(wb, wsE, 'הוצאות');
+  if (trip.journal){
+    for (const j of Object.values(trip.journal)){
+      rows.push(["journal", (j.text||"").replace(/[\n\r]+/g," "), "", "", "", j.lat||"", j.lng||"", j.createdAt||""]);
+    }
   }
-  XLSX.writeFile(wb, `FLYMILY_${slug(t.destination)}.xlsx`);
+  const csv = rows.map(r=> r.map(x=> `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `trip_${trip.destination||"export"}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus("CSV נוצר");
 }
 
-async function exportWord(){
-  const withExp = $('#exportWithExpenses').value==='yes';
-  const t = state.current; if(!t) return;
-  const { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType } = window.docx;
-  const jr = Object.values(t.journal||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
-  const ex = Object.values(t.expenses||{}).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
-  const doc = new Document({ sections:[{ properties:{}, children:[
-    new Paragraph({ text:`דוח נסיעה — ${t.destination||''}`, heading:HeadingLevel.HEADING_1 }),
-    new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
-    new Paragraph({ text:`יומן`, heading:HeadingLevel.HEADING_2 }),
-    tableFrom([['תאריך','מקום','תיאור']], jr.map(j=>[fmtDateTime(j.createdAt), j.placeName||'', j.text||''])),
-    ...(withExp? [ new Paragraph({ text:`הוצאות`, heading:HeadingLevel.HEADING_2 }), tableFrom([['תיאור','קטגוריה','סכום','מטבע','תאריך']], ex.map(e=>[e.desc||'', e.category||'', String(num(e.amount)), e.currency||'', fmtDateTime(e.createdAt)])) ]: [])
-  ]}]});
-  function tableFrom(head, rows){
-    return new Table({ width:{size:100, type:WidthType.PERCENTAGE}, rows:[ new TableRow({ children: head[0].map(h=> new TableCell({ children:[new Paragraph({ text:h })] })) }), ...rows.map(r=> new TableRow({ children: r.map(c=> new TableCell({ children:[new Paragraph({ text: String(c) })] })) })) ]});
+async function exportGPX(){
+  const trip = await Store.getTrip(state.currentTripId);
+  function wpt(lat,lng,name,desc,time){
+    return `<wpt lat="${lat}" lon="${lng}"><name>${name||""}</name><desc>${desc||""}</desc><time>${new Date(time||Date.now()).toISOString()}</time></wpt>`;
   }
-  const blob = await Packer.toBlob(doc);
-  downloadBlob(blob, `FLYMILY_${slug(t.destination)}.docx`);
+  let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TravelJournal" xmlns="http://www.topografix.com/GPX/1/1">
+`;
+  if (!el("exportWithoutExpenses").checked && trip.expenses){
+    for (const e of Object.values(trip.expenses)){
+      if (e.lat && e.lng) gpx += wpt(e.lat,e.lng, e.category||"Expense", e.desc||"", e.createdAt);
+    }
+  }
+  if (trip.journal){
+    for (const j of Object.values(trip.journal)){
+      if (j.lat && j.lng) gpx += wpt(j.lat,j.lng, "Journal", j.text||"", j.createdAt);
+    }
+  }
+  gpx += "\n</gpx>";
+  const blob = new Blob([gpx], {type:"application/gpx+xml"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `trip_${trip.destination||"export"}.gpx`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus("GPX נוצר");
 }
 
-function exportGPX(){
-  const t = state.current; if(!t) return;
-  const jr = Object.values(t.journal||{}).filter(j=>j.lat&&j.lng).sort((a,b)=> new Date(a.createdAt||0) - new Date(b.createdAt||0));
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">
-<trk><name>${xml( t.destination||'Trip' )}</name><trkseg>
-${jr.map(j=>`<trkpt lat="${j.lat}" lon="${j.lng}"><time>${j.createdAt}</time><name>${xml(j.placeName||'')}</name><desc>${xml(j.text||'')}</desc></trkpt>`).join('\n')}
-</trkseg></trk></gpx>`;
-  const blob = new Blob([gpx], {type:'application/gpx+xml'});
-  downloadBlob(blob, `FLYMILY_${slug(t.destination)}.gpx`);
+async function exportPDF(){
+  const trip = await Store.getTrip(state.currentTripId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"pt", compress:true });
+  const margin = 40;
+  let y = margin;
+
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(18);
+  doc.text(`דוח נסיעה: ${trip.destination||""}`, margin, y);
+  y += 22;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica","normal");
+  if (trip.start && trip.end) doc.text(`תאריכים: ${dayjs(trip.start).format("DD/MM/YY")}–${dayjs(trip.end).format("DD/MM/YY")}`, margin, y);
+  y+=16;
+  doc.text(`משתתפים: ${trip.participants||"—"}`, margin, y); y+=16;
+  doc.text(`סוג: ${(trip.tripType||[]).join(", ")||"—"}`, margin, y); y+=20;
+
+  const expenses = await Store.listExpenses(trip.id);
+  const totalUSD = expenses.reduce((s,e)=> s + toUSD(e.amount, e.currency), 0);
+  doc.setFont("helvetica","bold"); doc.text("סיכום תקציב", margin, y); y+=16;
+  doc.setFont("helvetica","normal");
+  doc.text(`תקציב USD: $${formatMoney(trip.budget?.USD||0)}`, margin, y); y+=14;
+  const rem = (trip.budget?.USD||0) - totalUSD;
+  doc.text(`יתרה: $${formatMoney(rem)}`, margin, y); y+=20;
+
+  if (!el("exportWithoutExpenses").checked && expenses.length){
+    doc.setFont("helvetica","bold"); doc.text("הוצאות", margin, y); y+=8;
+    doc.autoTable({
+      startY: y+8, margin:{ left:margin, right:margin },
+      styles:{ fontSize:10 }, head:[["תיאור","קטגוריה","סכום","מטבע","זמן"]],
+      body: expenses.map(e=> [e.desc||"", e.category||"", String(e.amount||0), e.currency||"USD", dayjs(e.createdAt).format("DD/MM HH:mm")])
+    });
+    y = doc.lastAutoTable.finalY + 20;
+  }
+
+  const journal = await Store.listJournal(trip.id);
+  doc.setFont("helvetica","bold"); doc.text("יומן", margin, y); y+=8;
+  doc.setFont("helvetica","normal");
+  const lines = [];
+  journal.forEach(j=>{ lines.push(`${dayjs(j.createdAt).format("DD/MM HH:mm")} – ${j.text||""}`); });
+  const split = doc.splitTextToSize(lines.join("\n"), 530);
+  doc.text(split, margin, y+14);
+
+  doc.save(`trip_${trip.destination||"report"}.pdf`);
+  setStatus("PDF נוצר");
 }
 
-// Import JSON
-$('#btnImport').addEventListener('click', async ()=>{
-  const file = $('#importFile').files?.[0]; if(!file) return showToast('בחר קובץ');
-  const text = await file.text();
-  let data; try{ data = JSON.parse(text); }catch{ return showToast('קובץ לא תקין'); }
-  const id = crypto.randomUUID();
-  data.ownerUid = state.user?.uid || 'unknown'; data.createdAt = new Date().toISOString();
-  await FB.setDoc(FB.doc(db,'trips', id), data);
-  showToast('יובא בהצלחה');
-});
+async function exportExcel() {
+    const trip = await Store.getTrip(state.currentTripId);
+    if (!trip) {
+        setStatus("לא ניתן לייצא, נסיעה לא נמצאה");
+        return;
+    }
+    
+    let rows = [];
 
-// Sharing
-$('#btnEnableShare').addEventListener('click', async ()=>{
-  const ref = FB.doc(db,'trips', state.currentTripId);
-  const token = crypto.randomUUID().replace(/-/g,'');
-  await FB.updateDoc(ref, { share: { enabled:true, token } });
-  const link = `${location.origin}${location.pathname}?tripId=${state.currentTripId}&share=${token}`;
-  $('#shareLink').value = link;
-  showToast('שיתוף הופעל');
-});
-$('#btnDisableShare').addEventListener('click', async ()=>{
-  const ref = FB.doc(db,'trips', state.currentTripId);
-  await FB.updateDoc(ref, { share: { enabled:false, token: null } });
-  $('#shareLink').value = '';
-  showToast('השיתוף בוטל');
-});
-$('#btnCopyShare').addEventListener('click', async ()=>{ const v = $('#shareLink').value; if(!v) return; await navigator.clipboard.writeText(v); showToast('הועתק'); });
+    // Header
+    rows.push(["Type", "Description", "Category", "Amount", "Currency", "Location", "Timestamp"]);
 
-// Shared read-only loader
-async function loadSharedTrip(id, token){
-  const ref = FB.doc(db,'trips', id); const snap = await FB.getDoc(ref); const t = snap.data();
-  if(!t?.share?.enabled || t.share.token !== token){ $('#main').innerHTML = '<div class="trip-card">קישור לא תקין או בוטל</div>'; return; }
-  state.current = { id, ...t };
-  renderJournal(t); initBigMap();
-  $('#btnAddJournal').style.display = 'none';
+    // Add expenses if not unchecked
+    if (!el("exportWithoutExpenses").checked && trip.expenses) {
+        for (const e of Object.values(trip.expenses)) {
+            rows.push(["Expense", e.desc || "", e.category || "", e.amount || 0, e.currency || "USD", extractCityName(e.placeName) || "", dayjs(e.createdAt).format("DD/MM/YY HH:mm")]);
+        }
+    }
+
+    // Add journal entries
+    if (trip.journal) {
+        for (const j of Object.values(trip.journal)) {
+            rows.push(["Journal", (j.text || "").replace(/[\n\r]+/g, " "), "", "", "", extractCityName(j.placeName) || "", dayjs(j.createdAt).format("DD/MM/YY HH:mm")]);
+        }
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `trip_${trip.destination || "export"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setStatus("Excel נוצר");
 }
 
-// Utilities
-function fmtDate(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY'); }
-function fmtDateTime(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY HH:mm'); }
-function esc(s){ return String(s||'').replace(/[&<>\"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]) ); }
-function xml(s){ return esc(s); }
-function num(n){ return (Number(n)||0).toFixed(2); }
-function numOrNull(v){ const n = Number(v); return isFinite(n) ? n : null; }
-function slug(s){ return (s||'trip').toString().replace(/\s+/g,'_').replace(/[^\w\-]/g,''); }
-function downloadBlob(blob, name){ const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); }
-function xErr(e){ return e?.message?.replace('Firebase:', '').trim() || 'שגיאה'; }
+async function exportWord() {
+    const trip = await Store.getTrip(state.currentTripId);
+    if (!trip) {
+        setStatus("לא ניתן לייצא, נסיעה לא נמצאה");
+        return;
+    }
 
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ document.querySelectorAll('dialog[open]').forEach(d=>d.close()); } });
-
-// Firestore rules reference (put in Firebase Console):
-// rules_version = '2';
-// service cloud.firestore {
-//   match /databases/{database}/documents {
-//     match /trips/{tripId} {
-//       allow read, write: if request.auth != null && request.auth.uid == resource.data.ownerUid;
-//       allow read: if resource.data.share.enabled == true;
-//     }
-//   }
-// }
-
-// Login screen actions
-$('#lsSignIn').addEventListener('click', async ()=>{
-  try{
-    await FB.signInWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
-    $('#lsError').textContent = ''; 
-  }catch(e){ $('#lsError').textContent = xErr(e); }
-});
-$('#lsSignUp').addEventListener('click', async ()=>{
-  try{
-    await FB.createUserWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
-    $('#lsError').textContent = '';
-  }catch(e){ $('#lsError').textContent = xErr(e); }
-});
-$('#lsReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
-});
-
-function mark(text, s){
-  if(!s) return esc(text||''); const t = String(text||''); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
-  return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+s.length)) + '</mark>' + esc(t.slice(i+s.length));
-}
-function snippet(text, s, len=60){
-  if(!text) return ''; const t = String(text); const idx = t.toLowerCase().indexOf(s);
-  if(idx<0) return esc(t.slice(0,len));
-  const start = Math.max(0, idx - Math.floor(len/3)); const end = Math.min(t.length, idx + s.length + Math.floor(len/3));
-  const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
-  return pre + mark(seg, s) + post;
-}
-function matchInfo(t, s){
-  let score = 0, where = [];
-  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push(`יעד: ${snippet(dst,s)}`); }
-  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push(`סוגים: ${snippet(types,s)}`); }
-  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push(`משתתפים: ${snippet(people,s)}`); }
-  const ex = Object.values(t.expenses||{}); let exHits = 0; ex.forEach(e=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push(`הוצאות: ${snippet(e.desc||e.category||'', s)}`);} });
-  if(exHits) score += Math.min(3, exHits);
-  const jr = Object.values(t.journal||{}); let jrHits = 0; jr.forEach(j=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push(`יומן: ${snippet(j.text||j.placeName||'', s)}`);} });
-  if(jrHits) score += Math.min(3, jrHits);
-  return { hit: score>0, score, where };
+    const blobContent = new Blob([JSON.stringify(trip, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blobContent);
+    a.download = `trip_${trip.destination || "report"}.doc`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus("Word נוצר");
 }
 
-// Global modal state for row actions
-let _rowActionExpense = null;
-let _rowActionJournal = null;
-(() => {
-  const modal = document.getElementById('rowMenuModal');
-  if (!modal) return;
-  const btnEdit = document.getElementById('rowMenuEdit');
-  const btnDel = document.getElementById('rowMenuDelete');
-  const btnCancel = document.getElementById('rowMenuCancel');
-  if (btnEdit) btnEdit.addEventListener('click', ()=>{
-    if (_rowActionExpense) { openExpenseModal(_rowActionExpense); }
-    else if (_rowActionJournal) { openJournalModal(_rowActionJournal); }
-    modal.close(); _rowActionExpense = _rowActionJournal = null;
+
+// Importers
+async function importJSON(file) {
+    if (!file) {
+        setStatus("בחר קובץ JSON לייבוא.");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.destination && data.start && data.end) {
+                const newTrip = await Store.createTrip(data);
+                setStatus(`נסיעה "${newTrip.destination}" יובאה בהצלחה!`);
+                await renderHome();
+            } else {
+                setStatus("קובץ JSON לא תקין.");
+            }
+        } catch (error) {
+            setStatus("שגיאה בייבוא קובץ JSON: " + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ---------- Init ----------
+async function init(){
+  if (el("galleryViewBtn")) el("galleryViewBtn").onclick = ()=>{ state.viewMode="gallery"; renderHome(); };
+  if (el("listViewBtn")) el("listViewBtn").onclick = ()=>{ state.viewMode="list"; renderHome(); };
+  if (el("sortStartBtn")) el("sortStartBtn").onclick = ()=>{ state.sortAsc = !state.sortAsc; renderHome(); };
+  applyTheme();
+  
+  async function loadUserContent(){
+    if (window.AppDataLayer?.mode === "firebase") {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        console.log("Auth UID:", user.uid);
+        await renderHome();
+      } else {
+        console.log("No user signed in.");
+        const list = el("tripList");
+        if (list) list.innerHTML = "";
+      }
+    } else {
+      await renderHome();
+    }
+  }
+
+  if (el("themeToggle")) el("themeToggle").onclick = toggleTheme;
+  if (el("addTripFab")) el("addTripFab").onclick = ()=> el("tripDialog").showModal();
+  if (el("tripSearch")) el("tripSearch").oninput = renderHome;
+  
+  if(!window.__dlgCancelWired){
+    window.__dlgCancelWired = true;
+    document.addEventListener("click", function(e){
+      const btn = e.target.closest("[data-cancel=\"dialog\"]");
+      if (!btn) return;
+      const dlg = btn.closest("dialog");
+      if (!dlg) return;
+      e.preventDefault();
+      try{ dlg.close(); } catch(_){ dlg.open = false; }
+    }, true);
+  }
+  if (el("cancelTripBtn")) el("cancelTripBtn").onclick = (e)=>{
+    e.preventDefault();
+    try{ el("tripDialog").close(); } catch(_){ el("tripDialog").open = false; }
+  };
+if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
+    e.preventDefault();
+    const dest = el("newTripDestination").value.trim();
+    const start = el("newTripStart").value;
+    const end = el("newTripEnd").value;
+    if (!dest || !start || !end) return;
+    const t = await Store.createTrip({ destination: dest, start, end, tripType: [], participants:"" });
+    el("tripDialog").close();
+    setStatus("נסיעה נוצרה");
+    await renderHome();
+    openTrip(t.id);
+  };
+  if (el("backToHome")) el("backToHome").onclick = renderHome;
+
+  activateTabs();
+  if (el("goToBudget")) el("goToBudget").onclick = ()=>{
+    $$(".tab").forEach(b=> b.classList.remove("active"));
+    $('[data-tab="budget"]').classList.add("active");
+    $$(".panel").forEach(p=> p.classList.remove("active"));
+    el("tab-budget").classList.add("active");
+  };
+  if (el("editMetaFromOverview")) el("editMetaFromOverview").onclick = ()=>{
+    $$(".tab").forEach(b=> b.classList.remove("active"));
+    $('[data-tab="meta"]').classList.add("active");
+    $$(".panel").forEach(p=> p.classList.remove("active"));
+    el("tab-meta").classList.add("active");
+  };
+
+  if (el("tripMetaForm")) el("tripMetaForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const id = state.currentTripId;
+
+    const selectedTripTypes = Array.from(el("tripTypeCheckboxes").querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+    const budgetUSD = parseNumber(el("tripBudgetUSD").value) || 0;
+
+    const updates = {
+      destination: el("tripDestination").value.trim(),
+      participants: el("tripParticipants").value.trim(),
+      
+      start: el("tripStart").value,
+      end: el("tripEnd").value,
+      budget: { USD: budgetUSD },
+};
+    if (selectedTripTypes && selectedTripTypes.length) { updates.tripType = selectedTripTypes; }
+    await Store.updateTrip(id, updates);
+    setStatus("נתוני נסיעה נשמרו ✔");
+    el("tripTitle").textContent = updates.destination || "נסיעה";
+    renderBudget();
+    await renderOverviewMiniMap();
+  };
+
+  if (el("addExpenseBtn")) el("addExpenseBtn").onclick = ()=> openExpenseDialog(null);
+  if (el("addJournalBtn")) el("addJournalBtn").onclick = () => openJournalDialog(null);
+  if (el("pickLocationBtn")) el("pickLocationBtn").onclick = ()=> openLocationPicker("expense");
+  if (el("saveExpenseBtn")) el("saveExpenseBtn").onclick = async (e)=>{
+    e.preventDefault();
+    const id = state.currentTripId;
+    const entry = collectExpenseForm();
+    if (!entry) return;
+    if (entry.id){
+      const { id:expId, ...rest } = entry;
+      await Store.updateExpense(id, expId, rest);
+      setStatus("הוצאה עודכנה");
+    } else {
+      await Store.addExpense(id, entry);
+      setStatus("הוצאה נוספה");
+    }
+    el("expenseDialog").close();
+    renderBudget(); refreshMainMap();
+  };
+
+  if (el("saveJournalBtn")) el("saveJournalBtn").onclick = async (e)=>{
+    e.preventDefault();
+    const id = state.currentTripId;
+    const entry = collectJournalForm();
+    if (!entry) return;
+    
+    if ((!entry.placeName || entry.placeName === "") && typeof entry.lat === "number" && typeof entry.lng === "number"){
+      const city = await reverseGeocodeCity(entry.lat, entry.lng);
+      if (city) {
+        entry.placeName = city;
+      }
+    }
+
+    if (entry.id){
+      const { id:jId, ...rest } = entry;
+      await Store.updateJournal(id, jId, rest);
+      setStatus("רישום יומן עודכן");
+    } else {
+      await Store.addJournal(id, entry);
+      setStatus("רישום יומן נוסף");
+    }
+    el("journalDialog").close();
+    renderJournal(); 
+    refreshMainMap();
+  };
+
+  if (el("copyShareLink")) el("copyShareLink").onclick = async ()=>{
+    const t = await Store.getTrip(state.currentTripId);
+    const scope = el("shareScope").value || "partial";
+    if (!t.share?.enabled){ alert("יש להפעיל שיתוף קודם."); return; }
+    const url = `${location.origin}${location.pathname}?tripId=${encodeURIComponent(t.id)}&view=shared&scope=${scope}`;
+    document.execCommand('copy');
+    setStatus("קישור הועתק");
+  };
+
+  if (el("exportPDF")) el("exportPDF").onclick = exportPDF;
+  if (el("exportCSV")) el("exportCSV").onclick = exportCSV;
+  if (el("exportGPX")) el("exportGPX").onclick = exportGPX;
+  if (el("exportExcel")) el("exportExcel").onclick = exportExcel;
+  if (el("exportWord")) el("exportWord").onclick = exportWord;
+
+  if (el("importJSONFile")) el("importJSONFile").onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importJSON(file);
+    }
+  };
+
+  if (el("shareToggle")) {
+      el("shareToggle").onchange = async () => {
+          const id = state.currentTripId;
+          await Store.updateTrip(id, { share: { enabled: el("shareToggle").checked, scope: el("shareScope").value } });
+          setStatus(el("shareToggle").checked ? "שיתוף הופעל" : "שיתוף בוטל");
+      };
+  }
+  if (el("shareScope")) {
+      el("shareScope").onchange = async () => {
+          const id = state.currentTripId;
+          await Store.updateTrip(id, { share: { enabled: el("shareToggle").checked, scope: el("shareScope").value } });
+          setStatus("היקף שיתוף עודכן");
+      };
+  }
+
+
+  if (el("showExpensesToggle")) el("showExpensesToggle").onchange = toggleExpensesOnMap;
+  if (el("showJournalToggle")) el("showJournalToggle").onchange = toggleJournalOnMap;
+  
+  await fetchRates("USD");
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("view")==="shared" && params.get("tripId")){
+    await openTrip(params.get("tripId"));
+    $$(".share-controls, .tabs .tab[data-tab='meta'], .tabs .tab[data-tab='export']").forEach(x=> x?.classList?.add?.("hidden"));
+    if (el("addExpenseBtn")) el("addExpenseBtn").classList.add("hidden");
+    if (el("addJournalBtn")) el("addJournalBtn").classList.add("hidden");
+  } else {
+  }
+
+  firebase.auth().onAuthStateChanged(user => {
+    loadUserContent();
   });
-  if (btnDel) btnDel.addEventListener('click', ()=>{
-    if (_rowActionExpense) { deleteExpense(_rowActionExpense.id); }
-    else if (_rowActionJournal) { deleteJournal(_rowActionJournal.id); }
-    modal.close(); _rowActionExpense = _rowActionJournal = null;
-  });
-  if (btnCancel) btnCancel.addEventListener('click', ()=>{
-    modal.close(); _rowActionExpense = _rowActionJournal = null;
-  });
+}
+
+window.onload = init;
+
+function openJournalDeleteDialog(tripId, entry){
+  const dlg = el("confirmJournalDialog");
+  if (!dlg) return;
+
+  el("confirmJournalTitle").textContent = "מחיקת רישום יומן";
+  const preview = (entry.text || "").trim();
+  el("confirmJournalMsg").textContent = preview
+    ? `למחוק את הרישום: "${preview.slice(0, 60)}${preview.length > 60 ? '…' : ''}"?`
+    : `למחוק רישום יומן זה?`;
+
+  const yesBtn = el("confirmJournalYes");
+  yesBtn.onclick = null;
+
+  yesBtn.onclick = async (e) => {
+    e.preventDefault();
+    try {
+      yesBtn.disabled = true;
+      await Store.removeJournal(tripId, entry.id);
+      setStatus("רישום נמחק");
+      dlg.close();
+      renderJournal();
+      refreshMainMap();
+    } catch (err) {
+      console.error(err);
+      alert("מחיקה נכשלה. נסה שוב.");
+    } finally {
+      yesBtn.disabled = false;
+    }
+  };
+
+  dlg.showModal();
+}
+
+(function(){
+  var enter = document.getElementById('enterBtn');
+  if(enter){
+    enter.addEventListener('click', function(){
+      document.body.classList.add('entered');
+      document.body.classList.remove('splash-mode');
+    });
+  }
 })();
+
+(function(){
+  try {
+    var signInBtn  = document.getElementById('googleSignInBtn');
+    var signOutBtn = document.getElementById('signOutBtn');
+
+    function enterApp(){
+      document.body.classList.add('entered');
+      document.body.classList.remove('splash-mode');
+      var app = document.getElementById('app');
+      if (app) app.style.display = 'block';
+    }
+    function showSplash(){
+      document.body.classList.remove('entered');
+      document.body.classList.add('splash-mode');
+      var app = document.getElementById('app');
+      if (app) app.style.display = 'none';
+    }
+
+    if (typeof auth !== 'undefined' && typeof googleProvider !== 'undefined') {
+      if (signInBtn) signInBtn.addEventListener('click', async function(){
+        try { await window.__attemptSignIn && window.__attemptSignIn(); }
+        catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-in failed'); }
+      });
+      if (signOutBtn) signOutBtn.addEventListener('click', async function(){
+        try { await auth.signOut(); } catch(err){ console.error(err); alert(err && err.message ? err.message : 'Sign-out failed'); }
+      });
+      auth.onAuthStateChanged(function(user){
+      try{
+        var acct = document.getElementById('userAccount');
+        if (acct) acct.textContent = user ? (user.email || user.displayName || '') : '';
+      }catch(e){}
+    
+      console.log("[auth] state changed:", !!user);
+
+        if (user){
+          if (signInBtn)  signInBtn.style.display = 'none';
+          if (signOutBtn) signOutBtn.style.display = 'inline-flex';
+          enterApp();
+        } else {
+          if (signInBtn)  signInBtn.style.display = 'inline-flex';
+          if (signOutBtn) signOutBtn.style.display = 'none';
+          showSplash();
+        }
+      });
+    }
+  } catch(e){ console.warn('Auth init error', e); }
+})();
+
+;(() => {
+  if (typeof auth !== 'undefined'){
+  }
+})();
+
+window.debugAuth = async function(){
+  try {
+    console.log("[dbg] auth?", !!window.auth, "provider?", !!window.googleProvider);
+    if (!auth.currentUser){
+      console.log("[dbg] no user → opening popup");
+      await window.__attemptSignIn && window.__attemptSignIn();
+    }
+    const uid = auth.currentUser && auth.currentUser.uid;
+    console.log("[dbg] uid:", uid || null);
+    if (!uid) return;
+
+    const ref = AppDataLayer.db.collection("trips").doc("debug__" + uid.slice(0,6));
+    await ref.set({ ownerUid: uid, createdAt: Date.now(), title: "DEBUG" });
+    const snap = await ref.get();
+    console.log("[dbg] read:", snap.exists, snap.data());
+  } catch (e) {
+    console.error("[dbg] error:", e.code || "", e.message || e);
+  }
+};
+
+(function(){
+  try{
+    var btn = document.getElementById('googleSignInBtn');
+    if (btn && !btn.__wired){
+      btn.__wired = true;
+      btn.addEventListener('click', function(e){
+        if (typeof window.debugAuth === 'function') {
+          return window.debugAuth();
+        }
+        if (window.auth && window.googleProvider) {
+          window.__attemptSignIn && window.__attemptSignIn();
+        }
+      });
+    }
+  }catch(e){ console.warn('sign-in wiring failed', e); }
+})();
+
+document.addEventListener('DOMContentLoaded', function(){
+  var loginBtn = document.getElementById('googleSignInBtn');
+  if (loginBtn && !loginBtn.__wired){
+    loginBtn.__wired = true;
+    loginBtn.addEventListener('click', function(){
+      if (typeof startGoogleSignIn === 'function') return startGoogleSignIn();
+      if (typeof window.__attemptSignIn === 'function') return window.__attemptSignIn();
+    });
+  }
+  var sw = document.getElementById('switchUserBtn');
+  if (sw && !sw.__wired){
+    sw.__wired = true;
+    sw.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('switch user error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function(){
+  var out = document.getElementById('signOutBtn');
+  if (out && !out.__wired){
+    out.__wired = true;
+    out.addEventListener('click', async function(){
+      try{
+        if (firebase && firebase.auth) await firebase.auth().signOut();
+        if (typeof startGoogleSignIn === 'function') startGoogleSignIn();
+        else if (typeof window.__attemptSignIn === 'function') window.__attemptSignIn();
+      }catch(err){
+        console.error(err);
+        if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+      }
+    });
+  }
+});
+
+window.handleSignOut = async function(){
+  try{
+    if (window.firebase && firebase.auth) { await firebase.auth().signOut(); }
+    if (typeof startGoogleSignIn === 'function') { startGoogleSignIn(); return; }
+    if (typeof window.__attemptSignIn === 'function') { window.__attemptSignIn(); return; }
+  }catch(err){
+    console.error(err);
+    if (typeof logLine==='function') logLine('sign-out error: '+(err && (err.code||err.message)||err),'auth');
+  }
+};
+
+let __rowActionTripId = null;
+function openRowActionsDialog(tripId, destination){
+  __rowActionTripId = tripId;
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  try { dlg.showModal(); } catch(_) { dlg.open = true; }
+}
+function closeRowActionsDialog(){
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  if (typeof dlg.close === "function") dlg.close(); else dlg.open = false;
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  const dlg = document.getElementById("rowActionDialog");
+  if (!dlg) return;
+  const closeBtn = document.getElementById("row-action-close");
+  const editBtn  = document.getElementById("row-action-edit");
+  const delBtn   = document.getElementById("row-action-delete");
+  if (closeBtn) closeBtn.onclick = closeRowActionsDialog;
+  if (editBtn)  editBtn.onclick = async ()=>{ if(__rowActionTripId){ await openTrip(__rowActionTripId); } closeRowActionsDialog(); };
+  if (delBtn)   delBtn.onclick  = ()=>{ if(__rowActionTripId){ const t = Store.getTripById ? Store.getTripById(__rowActionTripId) : null; confirmDeleteTrip(__rowActionTripId, t && t.destination); } closeRowActionsDialog(); };
+  dlg.addEventListener("cancel", closeRowActionsDialog);
+});
+
+function addTripMarker(lat, lng, tripId, destination){
+  if(typeof L === "undefined" || !map) return;
+  const marker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: '#2563eb',
+    weight: 2,
+    fillColor: '#2563eb',
+    fillOpacity: 1
+  }).addTo(map);
+  marker.on('click', ()=>{
+    if(tripId){ openTrip(tripId); }
+  });
+  return marker;
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  const dlgConfirm = document.getElementById("confirmDialog");
+  const dlgExpense = document.getElementById("confirmExpenseDialog");
+  const dlgJournal = document.getElementById("confirmJournalDialog");
+  document.getElementById("confirmCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgConfirm?.close(); }catch(_){ if(dlgConfirm) dlgConfirm.open = false; }
+  });
+  document.getElementById("confirmExpenseCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgExpense?.close(); }catch(_){ if(dlgExpense) dlgExpense.open = false; }
+  });
+  document.getElementById("confirmJournalCancelBtn")?.addEventListener("click", ()=>{
+    try{ dlgJournal?.close(); }catch(_){ if(dlgJournal) dlgJournal.open = false; }
+  });
+});
+
+document.addEventListener("click", function(e){
+  const btn = e.target instanceof Element ? e.target.closest("button") : null;
+  if (!btn) return;
+  const isCancel =
+    btn.id === "cancelTripBtn" ||
+    btn.id === "confirmCancelBtn" ||
+    btn.id === "confirmExpenseCancelBtn" ||
+    btn.id === "confirmJournalCancelBtn" ||
+    btn.getAttribute("data-close") === "dialog" ||
+    (btn.textContent && btn.textContent.trim() === "ביטול");
+  if (!isCancel) return;
+  const dlg = btn.closest("dialog");
+  if (!dlg) return;
+  e.preventDefault();
+  e.stopPropagation();
+  try { dlg.close(); }
+  catch(_) { dlg.open = false; }
+}, true);
+
+
+// === MAP TAB: Expenses/Journal chip logic (scoped to Section 6) ===
+(function(){
+  if (typeof window === 'undefined') return;
+  // guard single init
+  if (window.__mapChipsInit) return;
+  window.__mapChipsInit = true;
+
+  // Internal state for layer groups
+  const layers = {
+    expenses: null,
+    journal: null
+  };
+  let chipsWired = false;
+  let defaultApplied = false;
+
+  function getMap(){ try{ return (state && state.maps && state.maps.main) || null; }catch(_){ return null; } }
+
+  // Util: create or clear a layer group
+  function ensureLayer(name){
+    const map = getMap();
+    if (!map) return null;
+    if (!layers[name]) {
+      layers[name] = L.layerGroup();
+      // don't add yet; visibility controlled by chips
+    } else {
+      try { layers[name].clearLayers(); } catch(_){}
+    }
+    return layers[name];
+  }
+
+  // Load markers from Store for current trip
+  async function buildLayers(){
+    const map = getMap();
+    if (!map || !state.currentTripId) return;
+
+    // Ensure groups
+    const expGroup = ensureLayer('expenses');
+    const jrnGroup = ensureLayer('journal');
+
+    // Heuristic to read lat/lng from entries
+    const readLatLng = (obj)=>{
+      if (!obj || typeof obj !== 'object') return null;
+      const lat = obj.lat ?? obj.latitude ?? obj?.location?.lat ?? obj?.geo?.lat;
+      const lng = obj.lng ?? obj.lon ?? obj.long ?? obj.longitude ?? obj?.location?.lng ?? obj?.geo?.lng;
+      return (typeof lat === 'number' && typeof lng === 'number') ? {lat, lng} : null;
+    };
+
+    // Expenses
+    try{
+      const expenses = await Store.listExpenses(state.currentTripId);
+      (expenses||[]).forEach(e=>{
+        const p = readLatLng(e);
+        if (p){
+          const m = L.marker([p.lat, p.lng], { title: e.description || 'Expense' });
+          // orange-ish icon via circleMarker (leaflet default marker is png; to avoid asset pull, use circle)
+          const c = L.circleMarker([p.lat, p.lng], { radius: 7, weight: 2, color: '#ff8c32', fillColor: '#ff8c32', fillOpacity: 0.85 });
+          const html = `<div><strong>הוצאה</strong><br>${(e.description||'—')}<br>${(e.place||'')}</div>`;
+          c.bindPopup(html);
+          expGroup && expGroup.addLayer(c);
+        }
+      });
+    }catch(_){}
+
+    // Journal
+    try{
+      const journal = await Store.listJournal(state.currentTripId);
+      (journal||[]).forEach(j=>{
+        const p = readLatLng(j);
+        if (p){
+          const c = L.circleMarker([p.lat, p.lng], { radius: 7, weight: 2, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.85 });
+          const html = `<div><strong>יומן</strong><br>${(j.description||'—')}<br>${(j.place||'')}</div>`;
+          c.bindPopup(html);
+          jrnGroup && jrnGroup.addLayer(c);
+        }
+      });
+    }catch(_){}
+  }
+
+  // Apply visibility based on chip pressed states
+  function applyVisibility(){
+    const map = getMap(); if (!map) return;
+    const expChip = document.getElementById('chipExpenses');
+    const jrnChip = document.getElementById('chipJournal');
+
+    const expOn = expChip ? expChip.getAttribute('aria-pressed') === 'true' : true;
+    const jrnOn = jrnChip ? jrnChip.getAttribute('aria-pressed') === 'true' : true;
+
+    if (layers.expenses){
+      if (expOn && !map.hasLayer(layers.expenses)) layers.expenses.addTo(map);
+      if (!expOn && map.hasLayer(layers.expenses)) map.removeLayer(layers.expenses);
+    }
+    if (layers.journal){
+      if (jrnOn && !map.hasLayer(layers.journal)) layers.journal.addTo(map);
+      if (!jrnOn && map.hasLayer(layers.journal)) map.removeLayer(layers.journal);
+    }
+  }
+
+  // Default state: both ON when entering map tab
+  function ensureDefaultPressed(){
+    const expChip = document.getElementById('chipExpenses');
+    const jrnChip = document.getElementById('chipJournal');
+    if (!expChip || !jrnChip) return;
+    if (defaultApplied) return;
+    expChip.setAttribute('aria-pressed','true');
+    jrnChip.setAttribute('aria-pressed','true');
+    defaultApplied = true;
+  }
+
+  // Wire chip clicks
+  function wireChips(){
+    if (chipsWired) return;
+    const expChip = document.getElementById('chipExpenses');
+    const jrnChip = document.getElementById('chipJournal');
+    if (!expChip || !jrnChip) return;
+
+    function toggleChip(btn){
+      const cur = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', cur ? 'false' : 'true');
+      applyVisibility();
+    }
+
+    expChip.addEventListener('click', ()=> toggleChip(expChip), { passive: true });
+    jrnChip.addEventListener('click', ()=> toggleChip(jrnChip), { passive: true });
+    chipsWired = true;
+  }
+
+  // Hook into existing refreshMainMap if present; else create a light wrapper
+  const originalRefresh = typeof window.refreshMainMap === 'function' ? window.refreshMainMap : null;
+  window.refreshMainMap = async function(){
+    // Call original map refresh first to ensure map exists and base layers are set
+    if (originalRefresh){
+      await originalRefresh();
+    } else {
+      // Fallback: initialize map if missing (non-invasive)
+      try{
+        if (!state.maps.main && typeof L !== 'undefined'){
+          state.maps.main = L.map('mainMap').setView([31.771959, 35.217018], 6); // Israel-ish
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+          }).addTo(state.maps.main);
+        }
+      }catch(e){ console.warn('Fallback map init failed', e); }
+    }
+
+    // Ensure default pressed ON every time we enter the tab
+    ensureDefaultPressed();
+    wireChips();
+
+    // Rebuild layers (fresh from store) and then apply visibility
+    await buildLayers();
+    applyVisibility();
+  };
+})();
+
+
+// === Expense dialog & location picking ===
+
+function ensureExpenseDialog(){
+  let dlg = el("expenseDialog");
+  if (dlg) return dlg;
+
+  dlg = document.createElement("dialog");
+  dlg.id = "expenseDialog";
+  dlg.className = "dialog wide";
+  dlg.innerHTML = `
+    <form id="expenseForm" method="dialog" class="form">
+      <h3 class="dialog-title">הוספת הוצאה</h3>
+      <div class="actions-inline">
+        <label>תיאור
+          <input id="expDesc" class="input" placeholder="מה קנית?" />
+        </label>
+        <div class="actions-right">
+          <label>סכום
+            <input id="expAmount" class="input" inputmode="decimal" placeholder="0" />
+          </label>
+          <label>מטבע
+            <select id="expCurrency" class="input">
+              <option>USD</option><option>EUR</option><option>ILS</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="actions-inline">
+        <label>קטגוריה
+          <input id="expCategory" class="input" placeholder="אוכל / תחבורה / לינה / אחר" />
+        </label>
+        <label>מקום
+          <input id="expPlace" class="input" placeholder="עיר/מקום (ימולא אוטומטית אם תבחר מיקום)" />
+        </label>
+      </div>
+
+      <div class="dialog-actions-row">
+        <div class="left-actions">
+          <button type="button" id="pickLocationBtn" class="btn ghost">בחר מיקום על מפה</button>
+          <button type="button" id="useGPSBtn" class="btn ghost">שימוש ב-GPS</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="right-actions">
+          <button value="cancel" class="btn">בטל</button>
+          <button id="saveExpenseBtn" value="default" class="btn primary">שמור</button>
+        </div>
+      </div>
+    </form>`;
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
+async function openExpenseDialog(){
+  const dlg = ensureExpenseDialog();
+  // Prefill last used values
+  $("#expCurrency", dlg).value = lastUsed.currency || "USD";
+  $("#expCategory", dlg).value = lastUsed.category || "אחר";
+
+  // Wire buttons (idempotent)
+  $("#pickLocationBtn", dlg).onclick = () => startPickLocation('expense');
+  $("#useGPSBtn", dlg).onclick = async ()=>{
+    try{
+      const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:6000}));
+      const {latitude, longitude} = pos.coords||{};
+      dlg.dataset.lat = latitude; dlg.dataset.lng = longitude;
+      const city = await reverseGeocodeCity(latitude, longitude);
+      $("#expPlace", dlg).value = city || "";
+      setStatus("המיקום נתפס מה-GPS");
+    }catch(e){
+      alert("לא ניתן לקבל מיקום מה-GPS");
+    }
+  };
+
+  dlg.onclose = null;
+  dlg.showModal();
+
+  $("#saveExpenseBtn", dlg).onclick = async (e)=>{
+    e.preventDefault();
+    const desc = $("#expDesc", dlg).value.trim();
+    const amount = parseNumber($("#expAmount", dlg).value);
+    const currency = ($("#expCurrency", dlg).value || "USD").toUpperCase();
+    const category = $("#expCategory", dlg).value.trim() || "אחר";
+    const placeName = $("#expPlace", dlg).value.trim() || "—";
+    if (!amount){ alert("אנא הזן סכום"); return; }
+
+    // remember last used
+    localStorage.setItem("lastCurrency", currency);
+    localStorage.setItem("lastCategory", category);
+    lastUsed.currency = currency; lastUsed.category = category;
+
+    const entry = { desc, amount, currency, category, placeName };
+    const lat = Number(dlg.dataset.lat||""); const lng = Number(dlg.dataset.lng||"");
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)){ entry.lat = lat; entry.lng = lng; }
+
+    await Store.addExpense(state.currentTripId, entry);
+    dlg.close();
+    await renderBudget();
+    await renderOverviewExpenses();
+    await renderJournal();
+    setStatus("הוצאה נוספה");
+  };
+}
+
+// Picking location mode (click on map to select). Minimal fallback if map not visible.
+function startPickLocation(forType){
+  state.locationPick.forType = forType || 'expense';
+  // ensure main map
+  if (!state.maps.main){ refreshMainMap?.(); }
+  const map = state.maps.main;
+  if (!map){
+    alert("המפה לא זמינה, נסה שוב לאחר פתיחת לשונית 'מפה'");
+    return;
+  }
+  setStatus("לחץ על המפה לבחירת מיקום להוצאה");
+  const once = (e)=>{
+    const lat = e.latlng.lat, lng = e.latlng.lng;
+    const dlg = el("expenseDialog");
+    if (dlg){
+      dlg.dataset.lat = lat; dlg.dataset.lng = lng;
+      reverseGeocodeCity(lat,lng).then(city=>{ if ($("#expPlace", dlg)) $("#expPlace", dlg).value = city || ""; });
+      setStatus("נבחר מיקום להוצאה");
+    }
+    map.off("click", once);
+  };
+  map.on("click", once);
+}
+
+
+
+// === wireBudgetAndExpenseButtons() ===
+
+function wireBudgetAndExpenseButtons(){
+  if (el("addExpenseBtn")) el("addExpenseBtn").onclick = openExpenseDialog;
+  if (el("sortExpensesBtn")) el("sortExpensesBtn").onclick = async ()=>{
+    // Simple re-render toggling sort order handled elsewhere; for now just refresh.
+    await renderOverviewExpenses();
+  };
+}
+document.addEventListener("DOMContentLoaded", wireBudgetAndExpenseButtons);
+
+
+
+// === Trip Meta submit budget persist ===
+
+// Persist budget on Trip Meta form submit and recompute
+const tripMetaForm = document.getElementById("tripMetaForm");
+if (tripMetaForm){
+  tripMetaForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const tripId = state.currentTripId;
+    if (!tripId) return;
+    const usd = parseNumber(el("tripBudgetUSD")?.value);
+    const destination = el("tripDestination")?.value || "";
+    const participants = el("tripParticipants")?.value || "";
+    const tripType = Array.from(document.querySelectorAll('#tripTypeCheckboxes input[type="checkbox"]:checked')).map(c=>c.value);
+    const start = el("tripStart")?.value || null;
+    const end = el("tripEnd")?.value || null;
+    await Store.updateTrip(tripId, { destination, participants, tripType, start, end, budget: { USD: usd } });
+    hasUnsavedChanges = false;
+    await renderBudget();
+    setStatus("הנתונים נשמרו");
+  });
+}
+
