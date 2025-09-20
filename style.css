@@ -94,3 +94,46 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 
 /* user badge */
 #userBadge{padding:6px 10px;border:1px solid var(--border);border-radius:999px}
+
+/* === Budget stats pills layout === */
+.budget-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  background:#fff;
+  border:1px solid var(--border, #e6e9ef);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:var(--shadow, 0 6px 20px rgba(10,20,30,.04));
+}
+@media (max-width:900px){ .budget-stats{ grid-template-columns:1fr; } }
+.stat{ padding:6px 10px; }
+.stat-head{ display:flex; align-items:center; gap:10px; justify-content:flex-end; }
+.stat-title{ font-weight:700; color:var(--ink,#0e1116); }
+.stat-icon{
+  width:34px;height:34px; display:inline-grid; place-items:center;
+  border-radius:50%; border:none; cursor:pointer; outline:none;
+  color:#fff; font-weight:700;
+  background:#576ff7; transition:transform .08s ease, box-shadow .12s ease;
+}
+.stat-icon:hover{ transform:translateY(-1px); }
+.stat-icon:focus-visible{ box-shadow:0 0 0 3px rgba(87,111,247,.3); }
+.is-expense .stat-icon{ background:#f76955; }
+.is-balance .stat-icon{ background:#31b075; }
+.stat-amount{ font-weight:800; font-size:28px; text-align:right; margin-top:6px; color:var(--ink,#0e1116); }
+.stat-pills{ display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin-top:8px; }
+.stat-pills .pill{ padding:6px 12px; border-radius:999px; border:1px solid var(--border,#e6e9ef); background:#f3f6fa; color:#495a6b; font-size:14px; }
+
+/* === Budget stat tooltip === */
+.stat{ position:relative; }
+.stat-tooltip{
+  position:absolute; inset:auto 10px -8px auto; transform:translateY(100%);
+  background:#ffffff; border:1px solid var(--border,#e6e9ef); border-radius:12px;
+  box-shadow:0 10px 24px rgba(10,20,30,.12);
+  min-width:180px; max-width:280px; padding:8px; z-index:40;
+}
+.tip-inner{ display:flex; flex-direction:column; gap:6px; }
+.tip-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px; color:#2a3340; }
+.tip-row .ccy{ font-weight:700; color:#11161c; }
+.tip-row.empty{ color:#778390; font-style:italic; }
+.stat.tip-open .stat-amount{ text-decoration:underline dotted; text-underline-offset:3px; }
