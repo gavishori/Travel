@@ -1,35 +1,32 @@
-// ==== Firebase bootstrap (compat) – email/password only ====
-(function(){
-  try{
-    if (!window.firebaseConfig) throw new Error('Missing firebaseConfig');
-    if (typeof firebase === 'undefined') throw new Error('Firebase SDK not loaded');
 
-    // Initialize only once
-    if (!firebase.apps.length) { firebase.initializeApp(window.firebaseConfig); }
+// firebase.js — ES module that initializes Firebase and exports handles
+// Replace the config object with your Firebase project credentials.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, sendPasswordResetEmail, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, query, where, orderBy, onSnapshot,
+  doc, getDoc, setDoc, updateDoc, deleteField
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Expose services
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
+export const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "",
+  appId: ""
+};
 
-    // Persistence (LOCAL by default)
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .catch(function(e){ console.warn('[auth] setPersistence failed:', e && e.message); });
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-    // Email helpers
-    window.emailAuth = window.emailAuth || {};
-    window.emailAuth.signIn = function(email, password){ return auth.signInWithEmailAndPassword(email, password); };
-    window.emailAuth.signUp = function(email, password){ return auth.createUserWithEmailAndPassword(email, password); };
-    window.emailAuth.reset  = function(email){ return auth.sendPasswordResetEmail(email); };
-
-    // AppDataLayer shims
-    window.AppDataLayer = window.AppDataLayer || {};
-    window.AppDataLayer.mode = 'firebase';
-    window.AppDataLayer.db = window.db;
-    window.AppDataLayer.ensureAuth = async function(){ return (auth.currentUser && auth.currentUser.uid) || null; };
-
-    console.info('Firebase init complete');
-  }catch(e){
-    console.error('Firebase init error → local mode', e);
-    window.AppDataLayer = { mode: 'local' };
-  }
-})();
+// Re-export helpers for convenience
+export const FB = {
+  onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  sendPasswordResetEmail, signOut, collection, query, where, orderBy,
+  onSnapshot, doc, getDoc, setDoc, updateDoc, deleteField
+};
