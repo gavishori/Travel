@@ -198,7 +198,7 @@ const Store = (()=>{
       const id = "t_"+ (crypto.randomUUID ? crypto.randomUUID() : String(nowTs));
       data.trips[id] = { trip, expenses: {}, journal: {} };
       saveLS(data);
-      return { id, data.trips[id] };
+      return { id, ...data.trips[id] };
     }
   }
 
