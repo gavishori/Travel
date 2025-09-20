@@ -166,7 +166,7 @@ const Store = (()=>{
       const uid = await ensureAuthIfNeeded();
       const snap = await db.collection("trips").where("ownerUid","==", uid).get();
       // Sort from newest to oldest
-      return snap.docs.map(d => ({ id:d.id, d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+      return snap.docs.map(d => ({ id: d.id, ...d.data()})).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
     } else {
       const data = loadLS();
       // Sort from newest to oldest
