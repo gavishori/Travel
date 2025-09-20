@@ -101,3 +101,26 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 .onecell[data-group="expenses"] .oc-amount{ font-weight:600; }
 .onecell[data-group="balance"] .oc-amount{ font-weight:600; color: var(--danger,#d9363e); }
 .onecurrency-sticky{ position: sticky; top: 8px; z-index: 5; }
+
+/* Single-row widget */
+.onecurrency-row{
+  display:grid; grid-template-columns:auto 1fr 1fr 1fr;
+  align-items:center; gap:12px; padding:10px 14px;
+  border:1px solid var(--border,#e6e9ef); border-radius:12px;
+  background:var(--card,#fff); box-shadow:var(--shadow,0 6px 16px rgba(10,20,30,.04));
+  cursor:pointer; user-select:none;
+}
+.oc-curr{ font-weight:800; font-size:13px; padding:6px 10px; border:1px solid var(--border,#e6e9ef); border-radius:999px; background:#f3f6fa; min-width:54px; text-align:center; }
+.onecell{ display:grid; grid-template-rows:auto auto; justify-items:end; padding:2px 6px; }
+.oc-label{ font-size:13px; font-weight:600; opacity:.85; }
+.oc-amount{ font-size:20px; font-weight:600; }
+.onecell.is-budget .oc-amount{ font-weight:800; }      /* רק התקציב בבולד */
+.onecell.is-expenses .oc-amount{ font-weight:600; }    /* הוצאות רגיל */
+.onecell.is-balance .oc-amount{ font-weight:600; color:var(--danger,#d9363e); } /* יתרה אדום */
+.onecurrency-sticky{ position:sticky; top:8px; z-index:5; }
+@media(max-width:900px){
+  .onecurrency-row{ grid-template-columns:auto 1fr; grid-template-rows:auto auto auto auto; }
+  .onecurrency-row .onecell:nth-child(2){ grid-column:2; grid-row:2; }
+  .onecurrency-row .onecell:nth-child(3){ grid-column:2; grid-row:3; }
+  .onecurrency-row .onecell:nth-child(4){ grid-column:2; grid-row:4; }
+}

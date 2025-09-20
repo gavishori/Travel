@@ -245,18 +245,54 @@ function renderJournal(t){
 }
 
 
+
 function renderExpenseSummary(t){
-  const budget = t.budget||{USD:0,EUR:0,ILS:0};
-  const exps = Object.values(t.expenses||{});
+  // normalize budget
+  let budgetObj = t.budget;
+  if(typeof budgetObj === 'number'){
+    const ccy = t.defaultCurrency || t.currency || 'ILS';
+    const tmp = { USD:0, EUR:0, ILS:0 }; tmp[ccy] = Number(budgetObj)||0; budgetObj = tmp;
+  }
+  const budget = budgetObj || {USD:0,EUR:0,ILS:0};
   const totals = { USD:0, EUR:0, ILS:0 };
-  exps.forEach(e=>{ if(totals[e.currency] != null) totals[e.currency]+= Number(e.amount||0); });
+  Object.values(t.expenses||{}).forEach(e=>{ if(totals[e.currency]!=null) totals[e.currency]+=Number(e.amount||0); });
+  const balance = {
+    USD: (Number(budget.USD||0) - Number(totals.USD||0)),
+    EUR: (Number(budget.EUR||0) - Number(totals.EUR||0)),
+    ILS: (Number(budget.ILS||0) - Number(totals.ILS||0)),
+  };
+  const sets = { budget, expenses: totals, balance };
+  const mainCurrency = getMainCurrency(sets);
+
+  const cell = (label, key, cls='') => {
+    const val = num0((sets[key]||{})[mainCurrency]||0);
+    return `<div class="onecell ${cls}" data-group="${key}">
+      <div class="oc-label">${label}</div>
+      <div class="oc-amount">${val}</div>
+    </div>`;
+  };
+
   const html = `
-    <div><strong>תקציב:</strong> USD ${num(budget.USD)} | EUR ${num(budget.EUR)} | ILS ${num(budget.ILS)}</div>
-    <div><strong>הוצאות:</strong> USD ${num(totals.USD)} | EUR ${num(totals.EUR)} | ILS ${num(totals.ILS)}</div>
-    <div><strong>יתרה:</strong> USD ${num(budget.USD - totals.USD)} | EUR ${num(budget.EUR - totals.EUR)} | ILS ${num(budget.ILS - totals.ILS)}</div>
-  `;
+    <div class="onecurrency-row onecurrency-sticky" dir="rtl" data-role="toggle-currency" title="לחיצה מחליפה מטבע">
+      <div class="oc-curr">${mainCurrency}</div>
+      ${cell('תקציב','budget','is-budget')}
+      ${cell('הוצאות','expenses','is-expenses')}
+      ${cell('יתרה','balance','is-balance')}
+    </div>`;
   $('#expenseSummary').innerHTML = html;
+
+  const row = document.querySelector('.onecurrency-row');
+  if(row){
+    row.addEventListener('click', ()=>{
+      const next = nextCurrency(mainCurrency, sets);
+      setMainCurrency(next);
+      renderExpenseSummary(state.current);
+    });
+    row.tabIndex = 0;
+    row.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); } });
+  }
 }
+
 
 // Mini map
 function initMiniMap(t){
