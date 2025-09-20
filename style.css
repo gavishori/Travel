@@ -94,3 +94,8 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 
 /* user badge */
 #userBadge{padding:6px 10px;border:1px solid var(--border);border-radius:999px}
+
+
+/* Overview stacked layout: each section full width, vertical order */
+#view-overview .cards{grid-template-columns:1fr; gap:18px}
+#view-overview .card{width:100%}
