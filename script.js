@@ -109,12 +109,14 @@ function rowHTML(t){
     <div class="pill">${esc((t.types||'').toString())}</div>
   </div>`
 }
-
 function showView(view){
-  $$('.tabview').forEach(v=>{ if (v) v.hidden = true });
-  const el = $('#view-'+view);
-  if (el) { el.hidden = /*noop*/; } else { console.warn('View not found:', view); }
+  try {
+    $$('.tabview').forEach(v=>{ if (v) v.hidden = true; });
+    const el = document.querySelector('#view-' + view);
+    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
+  } catch(e){ console.warn('showView error', e); }
 }
+
 
 // Open a trip -> Overview tab
 async function openTrip(id){
@@ -481,6 +483,15 @@ async function loadSharedTrip(id, token){
   state.current = { id, ...t };
   renderJournal(t); initBigMap();
   $('#btnAddJournal').style.display = 'none';
+}
+
+
+function showView(view){
+  try {
+    document.querySelectorAll('.tabview').forEach(v => { v.hidden = true; });
+    const el = document.querySelector('#view-' + view);
+    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
+  } catch(e){ console.warn('showView error', e); }
 }
 
 // Utilities
