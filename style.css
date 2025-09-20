@@ -115,3 +115,15 @@ html{scroll-behavior:smooth}
 /* --- Tabs spacing fix (prevent visual overlap with content) --- */
 .tabs{ position: sticky; top: 0; z-index: 5; background: var(--bg); margin-bottom: 20px; }
 .tabview{ scroll-margin-top: 72px; } /* when navigating to anchors, keep section title visible */
+
+
+/* --- Tabs mask strip (covers any text peeking below tabs) --- */
+.tabs{ position: sticky; top: 0; z-index: 7; background: var(--bg); }
+.tabs::after{
+  content: "";
+  display: block;
+  height: 22px;               /* mask area below tabs */
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  margin-top: 6px;
+}
