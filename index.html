@@ -542,5 +542,140 @@
       </form>
     </dialog>
     
+
+<script>
+// Idempotent binder: clicking on trip title opens overview
+(function(){
+  function bindOverviewOnTitleClick(){
+    var sels = ['[data-role="trip-title"]','.trip-title','a.trip-name','.trip-card .trip-name'];
+    var seen = new WeakSet();
+    sels.forEach(function(sel){
+      document.querySelectorAll(sel).forEach(function(el){
+        if (seen.has(el)) return;
+        seen.add(el);
+        el.addEventListener('click', function(){
+          try {
+            var id = el.dataset && (el.dataset.tripId || el.closest('[data-trip-id]')?.dataset.tripId) || null;
+            if (typeof openTrip === 'function' && id) openTrip(id);
+            if (typeof openTab === 'function') openTab('overview');
+          } catch(e){ console.warn('overview binder error', e); }
+        }, true);
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', bindOverviewOnTitleClick);
+  setTimeout(bindOverviewOnTitleClick, 800);
+})();
+</script>
+
+
+<!-- Global Search Results (Section 1B) -->
+<div id="globalSearchResults" style="display:none;position:absolute;z-index:9999;max-height:50vh;overflow:auto;background:#fff;border:1px solid #ddd;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.12);width:min(760px,90vw)">
+  <div style="padding:10px 12px;border-bottom:1px solid #eee;font-weight:600">תוצאות חיפוש</div>
+  <div id="globalSearchBody" style="padding:6px 8px"></div>
+</div>
+
+
+<script>
+(function(){
+  function debounce(fn, ms){ var t; return function(){ clearTimeout(t); var a=arguments,c=this; t=setTimeout(function(){ fn.apply(c,a); }, ms||200); }; }
+  var panel, body, anchorInput;
+  function init(){
+    panel = document.getElementById('globalSearchResults');
+    body  = document.getElementById('globalSearchBody');
+    anchorInput = document.getElementById('tripSearch');
+    if(!panel || !body || !anchorInput) return;
+    function pos(){
+      var r = anchorInput.getBoundingClientRect();
+      panel.style.left = (r.left + window.scrollX) + 'px';
+      panel.style.top  = (r.bottom + window.scrollY + 6) + 'px';
+      panel.style.width = Math.min(760, Math.max(360, r.width)) + 'px';
+    }
+    window.addEventListener('resize', pos, {passive:true});
+    window.addEventListener('scroll', pos, true);
+    pos();
+    function open(){ panel.style.display='block'; pos(); }
+    function close(){ panel.style.display='none'; }
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); }, {passive:true});
+    anchorInput.addEventListener('focus', open, {passive:true});
+    anchorInput.addEventListener('blur', function(){ setTimeout(close, 180); }, {passive:true});
+    anchorInput.addEventListener('input', debounce(function(){
+      var q = (anchorInput.value||'').trim().toLowerCase();
+      if(!q){ body.innerHTML = '<div style="padding:10px;color:#777">הקלד כדי לחפש…</div>'; return; }
+      runGlobalSearch(q);
+    }, 220));
+  }
+  document.addEventListener('DOMContentLoaded', init);
+
+  function collectDomData(){
+    var out=[];
+    document.querySelectorAll('[data-trip-id], .trip-card').forEach(function(card){
+      var id = card.dataset && card.dataset.tripId || '';
+      var titleEl = card.querySelector('[data-role=\"trip-title\"], .trip-title, .title, .trip-name') || card;
+      var title = (titleEl.textContent||'').trim();
+      if(title) out.push({type:'trip', tripId:id, label:title, element:titleEl});
+    });
+    document.querySelectorAll('#tab-expenses table tbody tr').forEach(function(row){
+      var txt=(row.textContent||'').trim(); if(txt) out.push({type:'expense', label:txt, element:row});
+    });
+    document.querySelectorAll('#tab-journal .entry').forEach(function(entry){
+      var txt=(entry.textContent||'').trim(); if(txt) out.push({type:'journal', label:txt, element:entry});
+    });
+    return out;
+  }
+
+  function render(list,q){
+    list=(list||[]).slice(0,50);
+    if(!list.length){ body.innerHTML='<div style="padding:10px;color:#777">אין תוצאות.</div>'; return; }
+    body.innerHTML='';
+    list.forEach(function(item){
+      var row=document.createElement('div');
+      row.style.cssText='padding:8px 10px;border-bottom:1px solid #f0f0f0;cursor:pointer';
+      row.innerHTML='<div style="font-size:12px;color:#555">'+(item.type||'trip')+'</div>' +
+                    '<div style="font-weight:600">'+ (item.label||'').replace(new RegExp(q,'ig'), function(m){return '<mark>'+m+'</mark>';}) +'</div>';
+      row.addEventListener('click', function(){
+        try{
+          if(item.tripId && typeof openTrip==='function'){ openTrip(item.tripId); }
+          if(item.type==='expense' && typeof openTab==='function'){ openTab('budget'); }
+          else if(item.type==='journal' && typeof openTab==='function'){ openTab('journal'); }
+          else if(typeof openTab==='function'){ openTab('overview'); }
+          setTimeout(function(){ try{ item.element&&item.element.classList.add('__highlight'); setTimeout(function(){ item.element&&item.element.classList.remove('__highlight'); },2000);}catch(e){} },100);
+        }catch(e){ console.warn('nav error',e); }
+      });
+      body.appendChild(row);
+    });
+  }
+
+  window.runGlobalSearch = function(q){
+    if (window.Store && typeof Store.listTrips==='function'){
+      Promise.resolve(Store.listTrips()).then(function(trips){
+        var data=[]; (trips||[]).forEach(function(t){
+          var label=((t.destination||t.name||'') + (t.participants?(' · '+t.participants):''));
+          if (label.toLowerCase().includes(q)) data.push({type:'trip', tripId:(t.id||t.tripId||''), label:label});
+        });
+        var exps = (trips||[]).map(function(t){
+          return (Store.listExpenses?Promise.resolve(Store.listExpenses(t.id||t.tripId||'')):Promise.resolve([]))
+            .then(function(xs){ (xs||[]).forEach(function(e){
+              var label=[e.description||'', e.category?(' · '+e.category):'', e.place?(' · '+e.place):''].join('');
+              if(label.toLowerCase().includes(q)) data.push({type:'expense', tripId:(t.id||t.tripId||''), label:label});
+            }); });
+        });
+        var journ = (trips||[]).map(function(t){
+          return (Store.listJournal?Promise.resolve(Store.listJournal(t.id||t.tripId||'')):Promise.resolve([]))
+            .then(function(js){ (js||[]).forEach(function(j){
+              var label=[j.description||'', j.place?(' · '+j.place):''].join('');
+              if(label.toLowerCase().includes(q)) data.push({type:'journal', tripId:(t.id||t.tripId||''), label:label});
+            }); });
+        });
+        Promise.all(exps.concat(journ)).then(function(){ render(data,q); })
+          .catch(function(){ render(collectDomData().filter(function(r){return (r.label||'').toLowerCase().includes(q);}), q); });
+      }).catch(function(){ render(collectDomData().filter(function(r){return (r.label||'').toLowerCase().includes(q);}), q); });
+    } else {
+      render(collectDomData().filter(function(r){return (r.label||'').toLowerCase().includes(q);}), q);
+    }
+  };
+})();
+</script>
+
 </body>
 </html>

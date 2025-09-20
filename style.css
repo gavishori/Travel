@@ -1568,9 +1568,4 @@ dialog::backdrop { background: rgba(0,0,0,0.4); }
 }
 
 
-/* -- Shrink email auth dialog by ~20% -- */
-#emailAuthDialog { max-height: 512px; padding: 19px 19px 14px; }
-#emailAuthDialog h3 { margin: 0 0 8px; }
-#emailAuthDialog .row { margin-top: 6px !important; }
-#emailAuthDialog label { margin: 6px 0 !important; }
-#emailAuthDialog input { padding-top: 9px; padding-bottom: 9px; }
+
