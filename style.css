@@ -137,3 +137,18 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 .tip-row .ccy{ font-weight:700; color:#11161c; }
 .tip-row.empty{ color:#778390; font-style:italic; }
 .stat.tip-open .stat-amount{ text-decoration:underline dotted; text-underline-offset:3px; }
+
+/* === Compact visual tuning for budget stats === */
+.budget-stats{ padding:12px 14px; gap:12px; border-radius:14px; }
+.stat{ padding:4px 8px; }
+.stat-head{ gap:8px; }
+.stat-title{ font-weight:700; font-size:15px; }
+.stat-icon{ width:28px; height:28px; font-size:14px; }
+.stat-amount{ font-size:22px; margin-top:4px; }
+.stat-pills{ gap:6px; margin-top:6px; }
+.stat-pills .pill{ padding:4px 10px; font-size:12px; }
+.pill-more{ background:#eef2f7; color:#5f6e7e; }
+@media (max-width:900px){
+  .stat-icon{ display:none; } /* מפנה מקום במובייל */
+  .stat-amount{ font-size:20px; }
+}

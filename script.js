@@ -4,11 +4,27 @@ import { auth, db, FB } from './firebase.js';
 
 // === Budget currency toggle helpers ===
 const MAIN_CCY_KEY = 'budgetMainCurrency';
+function pickInitialCurrency(allSets, trip){
+  const prefer = (trip && (trip.defaultCurrency || trip.currency)) || null;
+  const union = new Set();
+  Object.values(allSets||{}).forEach(obj=> Object.keys(obj||{}).forEach(k=> union.add(k)));
+  const arr = Array.from(union);
+  if(prefer && arr.includes(prefer)) return prefer;
+  // prefer a currency with non-zero budget value
+  if(allSets && allSets.budget){
+    const nonZero = Object.entries(allSets.budget).filter(([k,v]) => Number(v||0) !== 0).map(([k])=>k);
+    if(nonZero.length) return nonZero[0];
+  }
+  return arr.includes('ILS') ? 'ILS' : (arr[0] || 'ILS');
+}
+
 function getMainCurrency(allSets){
   const saved = localStorage.getItem(MAIN_CCY_KEY);
   if (saved) return saved;
-  const union = new Set();
-  Object.values(allSets||{}).forEach(obj=>{
+  // Try infer from current trip
+  const trip = (state && state.current) ? state.current : null;
+  return pickInitialCurrency(allSets, trip);
+}).forEach(obj=>{
     Object.keys(obj||{}).forEach(k=> union.add(k));
   });
   return union.has('ILS') ? 'ILS' : (Array.from(union)[0] || 'ILS');
@@ -331,7 +347,13 @@ function renderJournal(t){
 
 
 function renderExpenseSummary(t){
-  const budget = t.budget||{USD:0,EUR:0,ILS:0};
+  let budgetObj = t.budget;
+  // Backward compatibility: if budget is a number, map it to trip currency
+  if(typeof budgetObj === 'number'){
+    const ccy = t.defaultCurrency || t.currency || 'ILS';
+    const tmp = { USD:0, EUR:0, ILS:0 }; tmp[ccy] = Number(budgetObj)||0; budgetObj = tmp;
+  }
+  const budget = budgetObj || {USD:0,EUR:0,ILS:0};
   const exps = Object.values(t.expenses||{});
   const totals = { USD:0, EUR:0, ILS:0 };
   exps.forEach(e=>{ if(totals[e.currency] != null) totals[e.currency]+= Number(e.amount||0); });
@@ -352,8 +374,13 @@ function renderExpenseSummary(t){
     const others = Object.entries(data)
       .filter(([ccy])=> ccy !== mainCurrency)
       .sort(([a],[b])=> a.localeCompare(b))
+      .filter(([ccy,val])=> Number(val||0)!==0)
+      .slice(0,2)
       .map(([ccy,val])=> `<span class="pill">${ccy} ${num(val||0)}</span>`)
       .join('');
+    const hidden = Object.entries(data).filter(([ccy,val])=> ccy!==mainCurrency && Number(val||0)!==0).length - 2;
+    const more = hidden>0 ? `<span class="pill pill-more">+${hidden}</span>` : '';
+    const pillsRow = others + more;
 
     return `
       <div class="stat ${colorClass}" data-group="${key}">
@@ -362,7 +389,7 @@ function renderExpenseSummary(t){
           <span class="stat-title">${label}</span>
         </div>
         <div class="stat-amount" data-role="toggle-currency">${mainCurrency} ${mainVal}</div>
-        <div class="stat-pills">${others}</div>
+        <div class="stat-pills">${pillsRow}</div>
       </div>`;
   };
 
