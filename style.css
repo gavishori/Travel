@@ -125,7 +125,7 @@ html{scroll-behavior:smooth}
 
 
 /* === FINAL: Sticky tabs with solid mask (no bleed-through) === */
-.tabs{ position: sticky; top: 0; z-index: 100; background: var(--bg);  box-shadow: 0 2px 0 0 var(--border); }
+.tabs{ position: sticky; top: 0; z-index: 100; background: transparent; }
 
 .tabs > *{ position: relative; z-index:1; } /* keep tab pills above the mask */
 #tabsSpacer{display:none !important;height:0 !important;} /* spacer no longer needed with absolute mask */

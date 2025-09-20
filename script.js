@@ -606,3 +606,4 @@ function snippet(text, s, len=60){
   const start = Math.max(0, idx - Math.floor(len/3)); const end = Math.min(t.length, idx + s.length + Math.floor(len/3));
   const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
   return pre + mark(seg, s) + post;
+}
