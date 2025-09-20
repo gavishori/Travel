@@ -166,11 +166,11 @@ const Store = (()=>{
       const uid = await ensureAuthIfNeeded();
       const snap = await db.collection("trips").where("ownerUid","==", uid).get();
       // Sort from newest to oldest
-      return snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+      return snap.docs.map(d => ({ id:d.id, d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
     } else {
       const data = loadLS();
       // Sort from newest to oldest
-      return Object.entries(data.trips).map(([id, t]) => ({ id, ...t })).sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
+      return Object.entries(data.trips).map(([id, t]) => ({ id, t })).sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
     }
   }
 
@@ -182,7 +182,7 @@ const Store = (()=>{
 
     const nowTs = Date.now();
     const trip = {
-      ...meta,
+      meta,
       createdAt: nowTs, updatedAt: nowTs,
       budget: { USD: Number(meta.budgetUSD||0) },
       budgetLocked: !!meta.budgetLocked,
@@ -190,15 +190,15 @@ const Store = (()=>{
     };
     if (mode === "firebase"){
       const uid = await ensureAuthIfNeeded();
-      const docData = { ...trip, ownerUid: uid, expenses: {}, journal: {} };
+      const docData = { trip, ownerUid: uid, expenses: {}, journal: {} };
       const ref = await db.collection("trips").add(docData);
-      return { id: ref.id, ...docData };
+      return { id: ref.id, docData };
     } else {
       const data = loadLS();
       const id = "t_"+ (crypto.randomUUID ? crypto.randomUUID() : String(nowTs));
-      data.trips[id] = { ...trip, expenses: {}, journal: {} };
+      data.trips[id] = { trip, expenses: {}, journal: {} };
       saveLS(data);
-      return { id, ...data.trips[id] };
+      return { id, data.trips[id] };
     }
   }
 
@@ -212,7 +212,7 @@ const Store = (()=>{
       await ensureAuthIfNeeded();
       const doc = await db.collection("trips").doc(id).get();
       if (!doc.exists) return null;
-      const trip = { id: doc.id, ...doc.data() };
+      const trip = { id: doc.id, doc.data() };
       // ensure fields
       trip.expenses = trip.expenses || {};
       trip.journal = trip.journal || {};
@@ -221,7 +221,7 @@ const Store = (()=>{
       const data = loadLS();
       const t = data.trips[id];
       if (!t) return null;
-      return { id, ...t };
+      return { id, t };
     }
   }
 
@@ -236,7 +236,7 @@ const Store = (()=>{
       await db.collection("trips").doc(id).set(updates, { merge:true });
     } else {
       const data = loadLS();
-      data.trips[id] = { ...(data.trips[id]||{}), ...updates, updatedAt: Date.now() };
+      data.trips[id] = { (data.trips[id]||{}), updates, updatedAt: Date.now() };
       saveLS(data);
     }
   }
@@ -265,7 +265,7 @@ const Store = (()=>{
 
     const trip = await getTrip(tripId);
     const exp = trip?.expenses || {};
-    return Object.entries(exp).map(([id, v])=>({ id, ...v }));
+    return Object.entries(exp).map(([id, v])=>({ id, v }));
   }
   async function addExpense(tripId, entry){
   if (mode === "firebase" && !firebase.auth().currentUser) {
@@ -277,7 +277,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       const trip = await getTrip(tripId);
       const id = "e_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
-      const expenses = { ...(trip.expenses||{}), [id]: entry };
+      const expenses = { (trip.expenses||{}), [id]: entry };
       await updateTrip(tripId, { expenses });
     } else {
       const data = loadLS();
@@ -296,8 +296,8 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       const trip = await getTrip(tripId);
-      const expenses = { ...(trip.expenses||{}) };
-      expenses[expId] = { ...(expenses[expId]||{}), ...updates };
+      const expenses = { (trip.expenses||{}) };
+      expenses[expId] = { (expenses[expId]||{}), updates };
       await updateTrip(tripId, { expenses });
     } else {
       const data = loadLS();
@@ -333,7 +333,7 @@ const Store = (()=>{
 
     const trip = await getTrip(tripId);
     const j = trip?.journal || {};
-    return Object.entries(j).map(([id, v])=>({ id, ...v }));
+    return Object.entries(j).map(([id, v])=>({ id, v }));
   }
   async function addJournal(tripId, entry){
   if (mode === "firebase" && !firebase.auth().currentUser) {
@@ -345,7 +345,7 @@ const Store = (()=>{
     if (mode === "firebase"){
       const trip = await getTrip(tripId);
       const id = "j_"+ (crypto.randomUUID ? crypto.randomUUID() : String(entry.createdAt));
-      const journal = { ...(trip.journal||{}), [id]: entry };
+      const journal = { (trip.journal||{}), [id]: entry };
       await updateTrip(tripId, { journal });
     } else {
       const data = loadLS();
@@ -364,8 +364,8 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       const trip = await getTrip(tripId);
-      const journal = { ...(trip.journal||{}) };
-      journal[jId] = { ...(journal[jId]||{}), ...updates };
+      const journal = { (trip.journal||{}) };
+      journal[jId] = { (journal[jId]||{}), updates };
       await updateTrip(tripId, { journal });
     } else {
       const data = loadLS();
@@ -382,7 +382,7 @@ const Store = (()=>{
 
     if (mode === "firebase"){
       const trip = await getTrip(tripId);
-      const journal = { ...(trip.journal||{}) };
+      const journal = { (trip.journal||{}) };
       delete journal[jId];
       await updateTrip(tripId, { journal });
     } else {
@@ -820,10 +820,10 @@ async function renderOverviewMiniMap(){
   if (!trip) return;
   const points = [];
   if (trip.expenses){
-    Object.values(trip.expenses).forEach(e=>{ const lat=Number(e.lat), lng=Number(e.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...e, lat, lng, type:"expense" }); });
+    Object.values(trip.expenses).forEach(e=>{ const lat=Number(e.lat), lng=Number(e.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ e, lat, lng, type:"expense" }); });
   }
   if (trip.journal){
-    Object.values(trip.journal).forEach(j=>{ const lat=Number(j.lat), lng=Number(j.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ ...j, lat, lng, type:"journal" }); });
+    Object.values(trip.journal).forEach(j=>{ const lat=Number(j.lat), lng=Number(j.lng); if (Number.isFinite(lat)&&Number.isFinite(lng)) points.push({ j, lat, lng, type:"journal" }); });
   }
 
   const mapEl = el("miniMap");
@@ -1066,7 +1066,7 @@ function refreshMainMap() {
       if (trip.expenses) {
         Object.values(trip.expenses).forEach(e => {
           if (e.lat && e.lng) {
-            expensePoints.push({ ...e, lat: Number(e.lat), lng: Number(e.lng) });
+            expensePoints.push({ e, lat: Number(e.lat), lng: Number(e.lng) });
           }
         });
       }
@@ -1080,7 +1080,7 @@ function refreshMainMap() {
       if (trip.journal) {
         Object.values(trip.journal).forEach(j => {
           if (j.lat && j.lng) {
-            journalPoints.push({ ...j, lat: Number(j.lat), lng: Number(j.lng) });
+            journalPoints.push({ j, lat: Number(j.lat), lng: Number(j.lng) });
           }
         });
       }
@@ -1090,7 +1090,7 @@ function refreshMainMap() {
           .addTo(journalLayer);
       });
       
-      const allPoints = [...expensePoints, ...journalPoints];
+      const allPoints = [expensePoints, journalPoints];
       if (allPoints.length) {
         const bounds = L.latLngBounds(allPoints.map(p => [p.lat, p.lng]));
         map.fitBounds(bounds.pad(0.3));
@@ -1762,7 +1762,7 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     const entry = collectExpenseForm();
     if (!entry) return;
     if (entry.id){
-      const { id:expId, ...rest } = entry;
+      const { id:expId, rest } = entry;
       await Store.updateExpense(id, expId, rest);
       setStatus("הוצאה עודכנה");
     } else {
@@ -1787,7 +1787,7 @@ if (el("createTripBtn")) el("createTripBtn").onclick = async (e)=>{
     }
 
     if (entry.id){
-      const { id:jId, ...rest } = entry;
+      const { id:jId, rest } = entry;
       await Store.updateJournal(id, jId, rest);
       setStatus("רישום יומן עודכן");
     } else {
