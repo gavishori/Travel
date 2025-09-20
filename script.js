@@ -596,7 +596,6 @@ $('#lsReset').addEventListener('click', async ()=>{
   try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
 });
 
-}
 function mark(text, s){
   if(!s) return esc(text||''); const t = String(text||''); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
   return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+s.length)) + '</mark>' + esc(t.slice(i+s.length));
