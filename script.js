@@ -486,14 +486,6 @@ async function loadSharedTrip(id, token){
 }
 
 
-function showView(view){
-  try {
-    document.querySelectorAll('.tabview').forEach(v => { v.hidden = true; });
-    const el = document.querySelector('#view-' + view);
-    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
-  } catch(e){ console.warn('showView error', e); }
-}
-
 // Utilities
 function fmtDate(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY'); }
 function fmtDateTime(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY HH:mm'); }
