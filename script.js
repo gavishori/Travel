@@ -19,6 +19,17 @@ const state = {
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+// --- Numeric helpers for budget display (thousands separator, integers only) ---
+function formatInt(n){
+  n = Math.max(0, Math.floor(Number(n)||0));
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function parseIntSafe(s){
+  const n = String(s||'').replace(/[^\d]/g,'');
+  return Math.floor(Number(n||0)||0);
+}
+
 const showToast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
 
 // Mode management: 'home' (pick a trip) vs 'trip' (focus one)
@@ -198,7 +209,7 @@ async function loadTrip(){
   $('#metaPeople').value = (t.people||[]).join(', ');
   $('#metaTypes').value = (t.types||[]).join(', ');
   const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
-  $('#bUSD').value = budget.USD||0; $('#bEUR').value = budget.EUR||0; $('#bILS').value = budget.ILS||0;
+  $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? 'ביטול נעילה' : 'קבע תקציב'; be.classList.toggle('locked', !!t.budgetLocked);}
   if(t.rates){ state.rates = t.rates; }
   $('#rateUSDEUR').value = state.rates.USDEUR; $('#rateUSDILS').value = state.rates.USDILS;
 
@@ -247,50 +258,50 @@ function renderJournal(t){
 
 
 function renderExpenseSummary(t){
-  // normalize budget
-  let budgetObj = t.budget;
-  if(typeof budgetObj === 'number'){
-    const ccy = t.defaultCurrency || t.currency || 'ILS';
-    const tmp = { USD:0, EUR:0, ILS:0 }; tmp[ccy] = Number(budgetObj)||0; budgetObj = tmp;
-  }
-  const budget = budgetObj || {USD:0,EUR:0,ILS:0};
+  const budget = t.budget||{USD:0,EUR:0,ILS:0};
+  const exps = Object.values(t.expenses||{});
+  // Determine active currency
+  let cur = getActiveCurrencyFromTrip(t);
+  // Totals per currency
   const totals = { USD:0, EUR:0, ILS:0 };
-  Object.values(t.expenses||{}).forEach(e=>{ if(totals[e.currency]!=null) totals[e.currency]+=Number(e.amount||0); });
-  const balance = {
-    USD: (Number(budget.USD||0) - Number(totals.USD||0)),
-    EUR: (Number(budget.EUR||0) - Number(totals.EUR||0)),
-    ILS: (Number(budget.ILS||0) - Number(totals.ILS||0)),
-  };
-  const sets = { budget, expenses: totals, balance };
-  const mainCurrency = getMainCurrency(sets);
+  exps.forEach(e=>{ if(totals[e.currency] != null) totals[e.currency]+= Number(e.amount||0); });
+  const paid = (totals[cur]||0);
+  const totalBudget = Number(budget[cur]||0);
+  const balance = totalBudget - paid;
 
-  const cell = (label, key, cls='') => {
-    const val = num0((sets[key]||{})[mainCurrency]||0);
-    return `<div class="onecell ${cls}" data-group="${key}">
-      <div class="oc-label">${label}</div>
-      <div class="oc-amount">${val}</div>
-    </div>`;
-  };
-
+  const negClass = balance < 0 ? 'neg' : '';
   const html = `
-    <div class="onecurrency-row onecurrency-sticky" dir="rtl" data-role="toggle-currency" title="לחיצה מחליפה מטבע">
-      <div class="oc-curr">${mainCurrency}</div>
-      ${cell('תקציב','budget','is-budget')}
-      ${cell('הוצאות','expenses','is-expenses')}
-      ${cell('יתרה','balance','is-balance')}
-    </div>`;
+    <div class="budget-bar">
+      <div class="bar-actions">
+        <button id="barSort" class="btn subtle">מיין</button>
+        <button id="barAdd" class="btn subtle">הוסף</button>
+      </div>
+      <div class="bar-cols">
+        <div class="col"><span class="lbl">תקציב</span><span class="val bold">${num(totalBudget)}</span></div>
+        <div class="col"><span class="lbl">שולם</span><span class="val">${num(paid)}</span></div>
+        <div class="col"><span class="lbl">יתרה</span><span id="balanceVal" class="val ${negClass}">${num(balance)}</span></div>
+      </div>
+      <button id="barCurrency" class="badge">${cur}</button>
+    </div>
+  `;
   $('#expenseSummary').innerHTML = html;
 
-  const row = document.querySelector('.onecurrency-row');
-  if(row){
-    row.addEventListener('click', ()=>{
-      const next = nextCurrency(mainCurrency, sets);
-      setMainCurrency(next);
-      renderExpenseSummary(state.current);
-    });
-    row.tabIndex = 0;
-    row.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); } });
-  }
+  // Hide duplicate external buttons in Expenses tab
+  const ext = document.querySelector('#view-expenses .list-actions');
+  if (ext) ext.style.display = 'none';
+
+  // Wire actions to existing global handlers (if present)
+  const addBtn = document.querySelector('#btnAddExpense');
+  const sortBtn = document.querySelector('#btnSortExpenses');
+  $('#barAdd')?.addEventListener('click', ()=> addBtn?.click());
+  $('#barSort')?.addEventListener('click', ()=> sortBtn?.click());
+
+  // Currency toggle with persistence
+  $('#barCurrency')?.addEventListener('click', ()=>{
+    cur = cycleCurrency(cur);
+    setActiveCurrency(cur);
+    renderExpenseSummary(t); // re-render in-place
+  });
 }
 
 
@@ -401,22 +412,28 @@ $('#btnVerifyOnMap').addEventListener('click', ()=>{
 
 // Budget edit + currency sync
 function syncBudget(from){
-  const usd = Number($('#bUSD').value||0);
-  const eur = Number($('#bEUR').value||0);
-  const ils = Number($('#bILS').value||0);
-  if(from==='USD'){ $('#bEUR').value = (usd*state.rates.USDEUR).toFixed(2); $('#bILS').value=(usd*state.rates.USDILS).toFixed(2); }
-  if(from==='EUR'){ const u = eur / state.rates.USDEUR; $('#bUSD').value=u.toFixed(2); $('#bILS').value=(u*state.rates.USDILS).toFixed(2); }
-  if(from==='ILS'){ const u = ils / state.rates.USDILS; $('#bUSD').value=u.toFixed(2); $('#bEUR').value=(u*state.rates.USDEUR).toFixed(2); }
+  let usd = parseIntSafe($('#bUSD').value);
+  let eur = parseIntSafe($('#bEUR').value);
+  let ils = parseIntSafe($('#bILS').value);
+  if(from==='USD'){ eur = Math.round(usd*state.rates.USDEUR); ils = Math.round(usd*state.rates.USDILS); }
+  if(from==='EUR'){ const u = Math.round(eur/state.rates.USDEUR); usd = u; ils = Math.round(u*state.rates.USDILS); }
+  if(from==='ILS'){ const u = Math.round(ils/state.rates.USDILS); usd = u; eur = Math.round(u*state.rates.USDEUR); }
+  $('#bUSD').value = formatInt(usd); $('#bEUR').value = formatInt(eur); $('#bILS').value = formatInt(ils);
 }
 ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).addEventListener('input', ()=> syncBudget(id.replace('b','')) ));
-$('#rateUSDEUR').addEventListener('input', e=> state.rates.USDEUR = Number(e.target.value||0.92));
-$('#rateUSDILS').addEventListener('input', e=> state.rates.USDILS = Number(e.target.value||3.7));
+if($('#rateUSDEUR')) $('#rateUSDEUR').addEventListener('input', e=> state.rates.USDEUR = Number(e.target.value||0.92));
+if($('#rateUSDILS')) $('#rateUSDILS').addEventListener('input', e=> state.rates.USDILS = Number(e.target.value||3.7));
 $('#btnBudgetEdit').addEventListener('click', async ()=>{
+  const btn = $('#btnBudgetEdit');
+  const locking = !btn.classList.contains('locked');
   const ref = FB.doc(db,'trips', state.currentTripId);
-  await FB.updateDoc(ref, { budget: { USD:Number($('#bUSD').value||0), EUR:Number($('#bEUR').value||0), ILS:Number($('#bILS').value||0) }, rates: {...state.rates} });
-  showToast('עודכן תקציב'); renderExpenseSummary(state.current);
+  const budget = { USD: parseIntSafe($('#bUSD').value), EUR: parseIntSafe($('#bEUR').value), ILS: parseIntSafe($('#bILS').value) };
+  await FB.updateDoc(ref, { budget, rates: {...state.rates}, budgetLocked: locking });
+  ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = locking);
+  btn.classList.toggle('locked', locking);
+  btn.textContent = locking ? 'ביטול נעילה' : 'קבע תקציב';
+  showToast(locking ? 'התקציב נקבע' : 'התקציב פתוח לעריכה');
 });
-
 // Expenses CRUD
 $('#btnAddExpense').addEventListener('click', ()=> openExpenseModal());
 $('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
@@ -571,6 +588,32 @@ function fmtDate(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY'); }
 function fmtDateTime(d){ if(!d) return ''; return dayjs(d).format('DD/MM/YYYY HH:mm'); }
 function esc(s){ return String(s||'').replace(/[&<>\"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]) ); }
 function xml(s){ return esc(s); }
+
+// === Budget Bar Helpers ===
+function getSavedCurrencyKey(){
+  return state.currentTripId ? `flymily.currency.${state.currentTripId}` : 'flymily.currency';
+}
+function getActiveCurrencyFromTrip(t){
+  // priority: explicit baseCurrency -> saved localStorage -> first non-zero budget -> 'EUR'
+  if (t && t.baseCurrency && ['USD','EUR','ILS'].includes(t.baseCurrency)) return t.baseCurrency;
+  const saved = localStorage.getItem(getSavedCurrencyKey());
+  if (saved && ['USD','EUR','ILS'].includes(saved)) return saved;
+  if (t && t.budget){
+    for (const c of ['USD','EUR','ILS']){
+      if (Number(t.budget[c]||0) > 0) return c;
+    }
+  }
+  return 'EUR';
+}
+function setActiveCurrency(cur){
+  if (!['USD','EUR','ILS'].includes(cur)) return;
+  localStorage.setItem(getSavedCurrencyKey(), cur);
+}
+function cycleCurrency(cur){
+  const order = ['USD','EUR','ILS'];
+  const i = order.indexOf(cur);
+  return order[(i+1)%order.length];
+}
 function num(n){ return (Number(n)||0).toFixed(2); }
 function numOrNull(v){ const n = Number(v); return isFinite(n) ? n : null; }
 function slug(s){ return (s||'trip').toString().replace(/\s+/g,'_').replace(/[^\w\-]/g,''); }
@@ -653,357 +696,3 @@ let _rowActionJournal = null;
     modal.close(); _rowActionExpense = _rowActionJournal = null;
   });
 })();
-
-// Location helper buttons for Expense modal (keep original look)
-(function(){
-  const ensureButtons = () => {
-    const latInput = document.getElementById('expLat');
-    const lngInput = document.getElementById('expLng');
-    if(!latInput || !lngInput) return;
-
-    // Avoid duplicates
-    if (document.getElementById('expPickOnMap')) return;
-
-    const btnMap = document.createElement('button');
-    btnMap.id = 'expPickOnMap';
-    btnMap.type = 'button';
-    btnMap.className = 'btn ghost';
-    btnMap.textContent = 'בחר מהמפה';
-
-    const btnGPS = document.createElement('button');
-    btnGPS.id = 'expUseGPS';
-    btnGPS.type = 'button';
-    btnGPS.className = 'btn ghost';
-    btnGPS.textContent = 'קח מיקום GPS';
-
-    // Place buttons right after lng input
-    lngInput.parentElement?.appendChild(btnMap);
-    lngInput.parentElement?.appendChild(btnGPS);
-
-    btnMap.addEventListener('click', ()=>{
-      // Ensure big map exists
-      if(!state.maps.big){
-        showToast('פתח לשונית "מפה" ואז נסה שוב');
-        return;
-      }
-      showToast('לחץ על המפה לבחירת מיקום');
-      const once = (e)=>{
-        try{
-          const { lat, lng }= e.latlng || {};
-          if (lat!=null && lng!=null){
-            latInput.value = String(lat.toFixed(6));
-            lngInput.value = String(lng.toFixed(6));
-            showToast('נבחר מיקום להוצאה');
-          }
-        }finally{
-          state.maps.big.off('click', once);
-        }
-      };
-      state.maps.big.on('click', once);
-    });
-
-    btnGPS.addEventListener('click', ()=>{
-      if (!navigator.geolocation){ showToast('GPS לא זמין בדפדפן'); return; }
-      navigator.geolocation.getCurrentPosition(
-        (pos)=>{
-          const { latitude, longitude } = pos.coords || {};
-          if (latitude!=null && longitude!=null){
-            latInput.value = String(latitude.toFixed(6));
-            lngInput.value = String(longitude.toFixed(6));
-            showToast('המיקום זוהה');
-          }
-        },
-        ()=> showToast('לא ניתן לאחזר GPS'), { enableHighAccuracy:true, timeout:6000 }
-      );
-    });
-  };
-
-  // When expense modal opens, ensure buttons exist
-  const origOpen = window.openExpenseModal;
-  window.openExpenseModal = function(e){
-    origOpen.call(this, e);
-    setTimeout(ensureButtons, 10);
-  };
-})();
-
-
-// === Basic helpers for DOM/currency ===
-
-// Utility DOM helpers if missing
-window.$ = window.$ || function(sel, root){ return (root||document).querySelector(sel); };
-window.el = window.el || function(id){ return document.getElementById(id); };
-function parseNumber(v){ if (typeof v==='number') return v; if (!v) return 0; return Number(String(v).replace(/[^\d.\-]/g,'')) || 0; }
-function formatMoney(n){ try{ return new Intl.NumberFormat('he-IL',{maximumFractionDigits:0}).format(Math.round(n||0)); }catch(e){ return Math.round(n||0); } }
-window.state = window.state || { rates:{USD:1, EUR:0.9, ILS:3.6}, maps:{}, locationPick:{}, currentTripId:null };
-window.lastUsed = window.lastUsed || { currency: localStorage.getItem('lastCurrency')||'USD', category: localStorage.getItem('lastCategory')||'אחר' };
-window.setStatus = window.setStatus || function(msg){ console.log('[STATUS]', msg); };
-// Currency conversion helper
-function toUSD(amount, ccy){
-  const r = (state.rates||{});
-  const C = (ccy||'USD').toUpperCase();
-  if (C==='USD') return amount;
-  if (C==='EUR') return amount / (r.EUR||0.9);
-  if (C==='ILS') return amount / (r.ILS||3.6);
-  return amount;
-}
-
-
-
-// === reverseGeocodeCity() ===
-
-async function reverseGeocodeCity(lat, lng){
-  try{
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=10`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'he' } });
-    if (!res.ok) throw new Error('http '+res.status);
-    const data = await res.json();
-    const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || data.address?.country;
-    return city || "";
-  }catch(e){
-    console.warn('reverseGeocodeCity failed', e);
-    return "";
-  }
-}
-
-
-
-// === postExpenseSavedHook() ===
-
-async function postExpenseSavedHook(entry){
-  try{
-    if ((!entry.placeName || entry.placeName==='—') && typeof entry.lat==='number' && typeof entry.lng==='number'){
-      const city = await reverseGeocodeCity(entry.lat, entry.lng);
-      if (city){
-        entry.placeName = city;
-        if (window.Store && Store.updateLastExpensePlace){
-          await Store.updateLastExpensePlace(state.currentTripId, city);
-        }
-      }
-    }
-  }catch(e){ console.warn('postExpenseSavedHook', e); }
-  await checkBudgetCaps();
-}
-
-
-
-// === patch Store.addExpense for hooks ===
-
-// Monkey-patch Store.addExpense to run our hook after save (non-breaking)
-if (window.Store && !Store.__patchedAddExpense){
-  const _orig = Store.addExpense;
-  Store.addExpense = async function(tripId, entry){
-    const res = await _orig.call(Store, tripId, entry);
-    try { await postExpenseSavedHook(entry); } catch(e){}
-    return res;
-  };
-  Store.__patchedAddExpense = true;
-}
-
-
-
-// === Taxonomy loading (categories & trip types) ===
-
-// ---- Taxonomies (categories + trip types) pulled from the "second" app when possible
-async function loadTaxonomies(){
-  let categories = null, tripTypes = null;
-  try{
-    if (window.Store && Store.getTaxonomies){
-      const t = await Store.getTaxonomies();
-      categories = t?.categories || null;
-      tripTypes = t?.tripTypes || null;
-    }
-  }catch(e){ console.warn('getTaxonomies failed', e); }
-  // Fallbacks that mirror the second-app defaults
-  if (!Array.isArray(categories) || categories.length===0){
-    categories = ["לינה","תחבורה","אוכל","בידור","קניות","אטרקציות","דלק","בריאות","אחר"];
-  }
-  if (!Array.isArray(tripTypes) || tripTypes.length===0){
-    tripTypes = ["עיר","טבע","ים","סקי","כביש (Road Trip)","משפחתי","קמפינג","איקסטרים"];
-  }
-  state.taxonomies = { categories, tripTypes };
-  populateCategoryList(categories);
-  populateTripTypeCheckboxes(tripTypes);
-}
-// Attach a datalist to the existing category input to preserve original look
-function ensureCategoryDatalist(){
-  let dl = document.getElementById('categoryList');
-  if (!dl){
-    dl = document.createElement('datalist');
-    dl.id = 'categoryList';
-    document.body.appendChild(dl);
-  }
-  // Bind the input if exists
-  const input = document.getElementById('expCategory') || document.querySelector('input[name="expCategory"]');
-  if (input && !input.getAttribute('list')){
-    input.setAttribute('list', 'categoryList');
-  }
-  return dl;
-}
-function populateCategoryList(categories){
-  const dl = ensureCategoryDatalist();
-  if (!dl) return;
-  dl.innerHTML = categories.map(c=>`<option value="${c}">`).join('');
-}
-function populateTripTypeCheckboxes(tripTypes){
-  const box = document.getElementById('tripTypeCheckboxes');
-  if (!box) return; // keep original UI if not present
-  // Only add missing; keep original layout
-  const existingVals = new Set(Array.from(box.querySelectorAll('input[type="checkbox"]')).map(i=>i.value));
-  const frag = document.createDocumentFragment();
-  for (const t of tripTypes){
-    if (existingVals.has(t)) continue;
-    const label = document.createElement('label');
-    label.className = 'chip';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = t;
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(' '+t));
-    frag.appendChild(label);
-  }
-  box.appendChild(frag);
-}
-document.addEventListener('DOMContentLoaded', ()=>{ loadTaxonomies(); });
-
-
-
-// === Edit Expense dialog with location ===
-
-// ---- Edit Expense dialog: preserves original look but adds map/GPS location setting
-function ensureEditExpenseDialog(){
-  let dlg = document.getElementById('editExpenseDialog');
-  if (dlg) return dlg;
-  dlg = document.createElement('dialog');
-  dlg.id = 'editExpenseDialog';
-  dlg.className = 'dialog wide';
-  dlg.innerHTML = `
-    <form id="editExpenseForm" method="dialog" class="form">
-      <h3 class="dialog-title">עריכת הוצאה</h3>
-      <div class="actions-inline">
-        <label>תיאור
-          <input id="editDesc" class="input" />
-        </label>
-        <div class="actions-right">
-          <label>סכום
-            <input id="editAmount" class="input" inputmode="decimal" />
-          </label>
-          <label>מטבע
-            <select id="editCurrency" class="input">
-              <option>USD</option><option>EUR</option><option>ILS</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div class="actions-inline">
-        <label>קטגוריה
-          <input id="editCategory" class="input" list="categoryList" />
-        </label>
-        <label>מקום
-          <input id="editPlace" class="input" placeholder="עיר/מקום" />
-        </label>
-      </div>
-      <div class="dialog-actions-row">
-        <div class="left-actions">
-          <button type="button" id="editPickLocationBtn" class="btn ghost">בחר מיקום על מפה</button>
-          <button type="button" id="editUseGPSBtn" class="btn ghost">שימוש ב-GPS</button>
-        </div>
-        <div class="spacer"></div>
-        <div class="right-actions">
-          <button value="cancel" class="btn">בטל</button>
-          <button id="updateExpenseBtn" value="default" class="btn primary">עדכן</button>
-        </div>
-      </div>
-    </form>`;
-  document.body.appendChild(dlg);
-  return dlg;
-}
-
-async function openEditExpenseDialog(expenseId){
-  const tripId = state.currentTripId;
-  const exp = await Store.getExpense(tripId, expenseId);
-  const dlg = ensureEditExpenseDialog();
-  dlg.dataset.expenseId = expenseId;
-  // Prefill
-  $('#editDesc', dlg).value = exp.desc || '';
-  $('#editAmount', dlg).value = exp.amount || '';
-  $('#editCurrency', dlg).value = (exp.currency||'USD').toUpperCase();
-  $('#editCategory', dlg).value = exp.category || '';
-  $('#editPlace', dlg).value = exp.placeName || '';
-  if (typeof exp.lat==='number' && typeof exp.lng==='number'){ dlg.dataset.lat = exp.lat; dlg.dataset.lng = exp.lng; }
-
-  // Buttons
-  $('#editPickLocationBtn', dlg).onclick = ()=> startPickLocation('expense-edit');
-  $('#editUseGPSBtn', dlg).onclick = async ()=>{
-    try{
-      const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:6000}));
-      const {latitude, longitude} = pos.coords||{};
-      dlg.dataset.lat = latitude; dlg.dataset.lng = longitude;
-      const city = await reverseGeocodeCity(latitude, longitude);
-      $('#editPlace', dlg).value = city || '';
-      setStatus("המיקום עודכן מה-GPS");
-    }catch(e){ alert("לא ניתן לקבל מיקום מה-GPS"); }
-  };
-
-  dlg.onclose = null;
-  dlg.showModal();
-
-  $('#updateExpenseBtn', dlg).onclick = async (e)=>{
-    e.preventDefault();
-    const update = {
-      desc: $('#editDesc', dlg).value.trim(),
-      amount: parseNumber($('#editAmount', dlg).value),
-      currency: ($('#editCurrency', dlg).value||'USD').toUpperCase(),
-      category: $('#editCategory', dlg).value.trim() || 'אחר',
-      placeName: $('#editPlace', dlg).value.trim() || '—',
-    };
-    const lat = Number(dlg.dataset.lat||""); const lng = Number(dlg.dataset.lng||"");
-    if (!Number.isNaN(lat) && !Number.isNaN(lng)){ update.lat = lat; update.lng = lng; }
-    // Reverse if place missing but have coords
-    if ((!update.placeName || update.placeName==='—') && typeof update.lat==='number' && typeof update.lng==='number'){
-      const city = await reverseGeocodeCity(update.lat, update.lng);
-      if (city) update.placeName = city;
-    }
-    await Store.updateExpense(tripId, expenseId, update);
-    dlg.close();
-    await renderBudget();
-    await renderOverviewExpenses();
-    await renderJournal();
-    setStatus("הוצאה עודכנה");
-  };
-}
-
-
-
-// === delegate edit-expense buttons ===
-
-// Event delegation for edit buttons that render in lists (keep original markup)
-document.addEventListener('click', async (ev)=>{
-  const btn = ev.target.closest('[data-action="edit-expense"]');
-  if (btn){
-    const expenseId = btn.getAttribute('data-id');
-    if (expenseId){ ev.preventDefault(); openEditExpenseDialog(expenseId); }
-  }
-});
-
-
-// === Sort expenses by date/time toggle ===
-let _sortExpensesAsc = false;
-$('#btnSortExpenses').addEventListener('click', ()=>{
-  _sortExpensesAsc = !_sortExpensesAsc;
-  const t = state.current; if(!t) return;
-  const entries = Object.entries(t.expenses||{})
-    .map(([id,e])=>({id, ...e}))
-    .sort((a,b)=> (_sortExpensesAsc?1:-1) * (new Date(a.createdAt||0) - new Date(b.createdAt||0)));
-  // Rebuild table body
-  const body = $('#tblExpenses'); if(!body) return; body.innerHTML='';
-  entries.forEach(e=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${e.id}">...</button></td>
-      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${num(e.amount||0)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
-    const menuBtn = tr.querySelector('.menu-btn');
-    menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
-    body.appendChild(tr);
-  });
-  // Update recent list too
-  $('#tblRecentExpenses').innerHTML = entries.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${num(e.amount||0)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
-});

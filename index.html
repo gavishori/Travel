@@ -9,31 +9,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-  <!-- App styles -->
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- Favicon (Data URI) -->
   <link rel="icon" type="image/png" href="./flymily-logo.png">
 
-  <!-- Day.js -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
 
-  <!-- jsPDF + autotable -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- SheetJS (Excel) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- docx (Word) -->
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
   <div class="app">
     <header>
       <div class="brand" style="display:flex;align-items:center;gap:8px"><img src="./flymily-logo.png" alt="FLYMILY" style="height:28px;vertical-align:middle"> <span class="brand-text">FLYMILY</span></div>
@@ -109,7 +102,8 @@
               <table>
                 <thead><tr><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
                 <tbody id="tblRecentJournal"></tbody>
-              </table>
+  ...
+</table>
             </div>
             <div class="card">
               <h3>מיקומים אחרונים</h3>
@@ -119,28 +113,43 @@
         </section>
 
         <section id="view-meta" class="tabview" hidden>
-          <h2>נתוני נסיעה</h2>
-          <div class="row">
-            <div class="card">
-              <label>יעד<input id="metaDestination" class="input"/></label>
-              <div class="row"><label>תאריך התחלה<input type="date" id="metaStart" class="input"></label><label>תאריך סיום<input type="date" id="metaEnd" class="input"></label></div>
-              <label>משתתפים (מופרדים בפסיק)<input id="metaPeople" class="input"/></label>
-              <label>סוגי טיול (עסקים/פנאי/משפחה...)<input id="metaTypes" class="input"/></label>
-              <div class="row">
-                <button id="btnSaveMeta" class="btn primary">שמור</button>
-                <button id="btnVerifyOnMap" class="btn">אמת במפה</button>
-              </div>
-            </div>
-            <div class="card">
-              <h3>תקציב</h3>
-              <div class="row"><label>USD<input id="bUSD" type="number" step="0.01" class="input"></label><label>EUR<input id="bEUR" type="number" step="0.01" class="input"></label><label>ILS<input id="bILS" type="number" step="0.01" class="input"></label></div>
-              <div class="row"><button id="btnBudgetEdit" class="btn">ערוך תקציב</button><span class="muted">שינוי אחד יעדכן את השאר לפי שערים</span></div>
-              <details style="margin-top:8px"><summary class="muted">שערי המרה (ניתנים לעריכה)</summary>
-                <div class="row"><label>USD→EUR<input id="rateUSDEUR" type="number" step="0.0001" class="input"></label><label>USD→ILS<input id="rateUSDILS" type="number" step="0.0001" class="input"></label></div>
-              </details>
-            </div>
-          </div>
-        </section>
+  <h2>נתוני נסיעה</h2>
+  <div class="card meta-single">
+    <div class="row dest-row">
+      <label class="dest-col">יעד
+        <input id="metaDestination" class="input"/>
+      </label>
+      <button id="btnVerifyOnMap" class="btn map-btn">בדוק במפה</button>
+    </div>
+    <div class="row date-row">
+      <label>תאריך התחלה <input type="date" id="metaStart" class="input"></label>
+      <label>תאריך סיום <input type="date" id="metaEnd" class="input"></label>
+      <label class="people-input">משתתפים (מופרדים בפסיק)<input id="metaPeople" class="input"/></label>
+      <div class="multi-types">
+        <div class="lbl">סוגי טיול</div>
+        <div class="chips">
+          <button class="chip metaType" data-value="עירוני">עירוני</button>
+          <button class="chip metaType" data-value="בטן גב">בטן גב</button>
+          <button class="chip metaType" data-value="סקי">סקי</button>
+          <button class="chip metaType" data-value="טרק">טרק</button>
+          <button class="chip metaType" data-value="אחר">אחר</button>
+        </div>
+      </div>
+    </div>
+    <div class="budget-block">
+      <h3>תקציב</h3>
+      <div class="row budget-row">
+        <label>USD <input id="bUSD" type="text" class="input money"></label>
+        <label>EUR <input id="bEUR" type="text" class="input money"></label>
+        <label>ILS <input id="bILS" type="text" class="input money"></label>
+      </div>
+      <div class="row budget-actions-row">
+        <button id="btnBudgetEdit" class="btn">קבע תקציב</button>
+        <button id="btnSaveMeta" class="btn primary">שמור</button>
+      </div>
+    </div>
+  </div>
+</section>
 
         <section id="view-expenses" class="tabview" hidden>
           <div class="section-title"><h2 style="margin:0">ניהול תקציב</h2></div>
@@ -227,7 +236,6 @@
     </div>
   </div>
 
-  <!-- מודאלים -->
   <dialog id="authModal" class="modal">
     <header style="display:flex;align-items:center;gap:8px"><img src="./flymily-logo.png" alt="FLYMILY" style="height:22px"><strong>התחברות / הרשמה</strong></header>
     <div class="body">
@@ -299,10 +307,20 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Leaflet -->
+  <dialog id="unsavedChangesModal" class="modal">
+    <header><strong>שינויים שלא נשמרו</strong></header>
+    <div class="body">
+        <p>ישנם שינויים שלא נשמרו. האם תרצה לשמור אותם לפני שאתה עוזב את הדף?</p>
+    </div>
+    <div class="footer">
+        <button id="unsavedSave" class="btn primary">שמור שינויים</button>
+        <button id="unsavedDiscard" class="btn danger">התעלם משינויים</button>
+        <button id="unsavedCancel" class="btn">ביטול</button>
+    </div>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-  <!-- Firebase + App scripts -->
   <script type="module" src="./firebase.js"></script>
   <script type="module" src="./script.js"></script>
 </body>

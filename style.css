@@ -1,4 +1,3 @@
-
 :root{
   --bg:#0f1115; --card:#151922; --ink:#e9eef4; --muted:#9fb0c0; --brand:#8bd3ff; --accent:#ffd166; --ok:#06d6a0; --danger:#ef476f;
   --border:#273142; --shadow:0 10px 30px rgba(0,0,0,.25);
@@ -95,32 +94,117 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 /* user badge */
 #userBadge{padding:6px 10px;border:1px solid var(--border);border-radius:999px}
 
-/* === Single-row visual tweaks per Gal === */
-.onecell .oc-amount{ font-weight:600; } /* default */
-.onecell[data-group="budget"] .oc-amount{ font-weight:800; }
-.onecell[data-group="expenses"] .oc-amount{ font-weight:600; }
-.onecell[data-group="balance"] .oc-amount{ font-weight:600; color: var(--danger,#d9363e); }
-.onecurrency-sticky{ position: sticky; top: 8px; z-index: 5; }
 
-/* Single-row widget */
-.onecurrency-row{
-  display:grid; grid-template-columns:auto 1fr 1fr 1fr;
-  align-items:center; gap:12px; padding:10px 14px;
-  border:1px solid var(--border,#e6e9ef); border-radius:12px;
-  background:var(--card,#fff); box-shadow:var(--shadow,0 6px 16px rgba(10,20,30,.04));
-  cursor:pointer; user-select:none;
+/* === Budget Bar === */
+.budget-bar{
+  display:flex; align-items:center; gap:16px;
+  border:1px solid var(--border); border-radius:22px; padding:12px 14px; background:var(--card);
 }
-.oc-curr{ font-weight:800; font-size:13px; padding:6px 10px; border:1px solid var(--border,#e6e9ef); border-radius:999px; background:#f3f6fa; min-width:54px; text-align:center; }
-.onecell{ display:grid; grid-template-rows:auto auto; justify-items:end; padding:2px 6px; }
-.oc-label{ font-size:13px; font-weight:600; opacity:.85; }
-.oc-amount{ font-size:20px; font-weight:600; }
-.onecell.is-budget .oc-amount{ font-weight:800; }      /* רק התקציב בבולד */
-.onecell.is-expenses .oc-amount{ font-weight:600; }    /* הוצאות רגיל */
-.onecell.is-balance .oc-amount{ font-weight:600; color:var(--danger,#d9363e); } /* יתרה אדום */
-.onecurrency-sticky{ position:sticky; top:8px; z-index:5; }
-@media(max-width:900px){
-  .onecurrency-row{ grid-template-columns:auto 1fr; grid-template-rows:auto auto auto auto; }
-  .onecurrency-row .onecell:nth-child(2){ grid-column:2; grid-row:2; }
-  .onecurrency-row .onecell:nth-child(3){ grid-column:2; grid-row:3; }
-  .onecurrency-row .onecell:nth-child(4){ grid-column:2; grid-row:4; }
+.budget-bar .bar-actions{display:flex; gap:10px}
+.budget-bar .btn.subtle{border:1px solid var(--border); background:transparent; border-radius:12px; padding:6px 12px}
+.budget-bar .bar-cols{display:flex; gap:28px; margin-inline-start:auto}
+.budget-bar .col{display:flex; align-items:center; gap:8px; min-width:120px; justify-content:flex-start}
+.budget-bar .lbl{color:var(--muted); font-size:14px}
+.budget-bar .val{font-size:16px}
+.budget-bar .val.bold{font-weight:700}
+.budget-bar .val.neg{color:var(--danger)}
+.budget-bar .badge{border:1px solid var(--border); border-radius:12px; padding:6px 12px; background:var(--card)}
+
+/* Updated "Meta" tab design */
+#view-meta .card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+#view-meta .card .row.dest-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+/* New style for the map button to match the destination input field */
+#view-meta .btn.map-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  height: 44px; /* Matches the height of the input field */
+}
+
+
+/* New layout for date, people, and trip types */
+#view-meta .date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: flex-end;
+}
+#view-meta .date-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#view-meta .date-row label:has(#metaStart), #view-meta .date-row label:has(#metaEnd) {
+    grid-column: span 1;
+    width: 100%;
+}
+#view-meta .date-row .people-input {
+  grid-column: 3 / 4;
+}
+#view-meta .date-row .multi-types {
+  grid-column: 4 / 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#view-meta .date-row .multi-types .lbl {
+  font-size: 1em;
+}
+#view-meta .date-row .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#view-meta .date-row .chips .chip {
+  padding: 6px 10px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+#view-meta .date-row .chips .chip.active {
+  background: var(--brand);
+  color: var(--ink);
+}
+
+/* Budget block */
+#view-meta .budget-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+#view-meta .budget-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+}
+#view-meta .budget-actions-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+}
+#view-meta .rates-line {
+  display: none; /* Hide exchange rates section */
+}
+
+#view-meta .row:has(#btnSaveMeta) {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
 }
