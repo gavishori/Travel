@@ -207,11 +207,12 @@ async function loadTrip(){
   $('#metaStart').value = t.start||'';
   $('#metaEnd').value = t.end||'';
   $('#metaPeople').value = (t.people||[]).join(', ');
-  $('#metaTypes').value = (t.types||[]).join(', ');
+  // sync chips for types (no #metaTypes input)
+  (function(){ const typesArr = Array.isArray(t.types)?t.types:[]; $$('.metaType').forEach(btn=>{ btn.classList.toggle('active', typesArr.includes(btn.dataset.value)); btn.onclick = ()=> btn.classList.toggle('active'); }); })();
   const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
   $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? 'ביטול נעילה' : 'קבע תקציב'; be.classList.toggle('locked', !!t.budgetLocked);}
   if(t.rates){ state.rates = t.rates; }
-  $('#rateUSDEUR').value = state.rates.USDEUR; $('#rateUSDILS').value = state.rates.USDILS;
+  const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS'); if(_r1) _r1.value = state.rates.USDEUR; if(_r2) _r2.value = state.rates.USDILS;
 
   renderExpenses(t);
   renderJournal(t);
@@ -400,7 +401,7 @@ $('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderT
 $('#btnSaveMeta').addEventListener('click', async ()=>{
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const types = $('#metaTypes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const types = $$('.metaType.active').map(b=>b.dataset.value);
   await FB.updateDoc(ref, { destination: $('#metaDestination').value.trim(), start: $('#metaStart').value, end: $('#metaEnd').value, people, types });
   showToast('נשמר'); loadTrip();
 });
