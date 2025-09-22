@@ -249,7 +249,9 @@
       <button id="authReset" class="btn">איפוס סיסמה</button>
       <button id="authCancel" class="btn">ביטול</button>
     </div>
-  </dialog>
+  
+  <datalist id="placesList"></datalist>
+</dialog>
 
   <dialog id="tripModal" class="modal">
     <header><strong>נסיעה חדשה</strong></header>
@@ -261,22 +263,33 @@
       <button id="tripSave" class="btn primary">שמור</button>
       <button id="tripCancel" class="btn">ביטול</button>
     </div>
-  </dialog>
+  
+  <datalist id="placesList"></datalist>
+</dialog>
 
   <dialog id="expenseModal" class="modal">
     <header><strong>הוצאה</strong></header>
     <div class="body">
       <label>תיאור<input id="expDesc" class="input"/></label>
-      <label>קטגוריה<input id="expCat" class="input" placeholder="לינה/תחבורה/אוכל/בידור..."/></label>
+      <label>קטגוריה<select id="expCat" class="input"><option value="טיסה">טיסה</option><option value="לינה">לינה</option><option value="רכב">רכב</option><option value="ביטוח בריאות">ביטוח בריאות</option><option value="תקשורת">תקשורת</option><option value="מזון - סופר / מסעדה">מזון - סופר / מסעדה</option><option value="קניות">קניות</option><option value="אטרקציות">אטרקציות</option><option value="אחר">אחר</option></select></label>
       <div class="row"><label>סכום<input id="expAmount" type="number" step="0.01" class="input"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
-      <div class="row"><label>רוחב<input id="expLat" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label><label>אורך<input id="expLng" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label></div>
+      <div class="row">
+        <label>רוחב<input id="expLat" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label>
+        <label>אורך<input id="expLng" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label>
+      </div>
+      <div class="fields-row">
+        <button id="expGeoBtn" class="btn outlined" type="button">מיקום נוכחי</button>
+        <button id="expPickOnMap" class="btn outlined" type="button">בחר על גבי המפה</button>
+      </div>
     </div>
     <div class="footer">
       <button id="expSave" class="btn primary">שמור</button>
       <button id="expDelete" class="btn danger" style="display:none">מחק</button>
       <button id="expCancel" class="btn">ביטול</button>
     </div>
-  </dialog>
+  
+  <datalist id="placesList"></datalist>
+</dialog>
 
 
 
@@ -288,6 +301,8 @@
     <button id="rowMenuDelete" class="btn danger">מחק</button>
     <button id="rowMenuCancel" class="btn">ביטול</button>
   </div>
+
+  <datalist id="placesList"></datalist>
 </dialog>
 
 
@@ -295,15 +310,24 @@
     <header><strong>רישום יומן</strong></header>
     <div class="body">
       <label>תיאור<textarea id="jrText" class="input"></textarea></label>
-      <label>שם מקום<input id="jrPlace" class="input"/></label>
-      <div class="row"><label>רוחב<input id="jrLat" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label><label>אורך<input id="jrLng" type="number" step="0.000001" class="input" placeholder="אופציונלי"></label></div>
+      <label>שם מקום
+        <input id="jrPlace" class="input" list="placesList">
+      </label>
+      <div class="fields-row">
+        <button id="jrGeoBtn" class="btn outlined" type="button">מיקום נוכחי</button>
+        <button id="jrPickOnMap" class="btn outlined" type="button">בחר על גבי המפה</button>
+      </div>
+      <input id="jrLat" type="hidden">
+      <input id="jrLng" type="hidden">
     </div>
     <div class="footer">
       <button id="jrSave" class="btn primary">שמור</button>
       <button id="jrDelete" class="btn danger" style="display:none">מחק</button>
       <button id="jrCancel" class="btn">ביטול</button>
     </div>
-  </dialog>
+  
+  <datalist id="placesList"></datalist>
+</dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -317,7 +341,9 @@
         <button id="unsavedDiscard" class="btn danger">התעלם משינויים</button>
         <button id="unsavedCancel" class="btn">ביטול</button>
     </div>
-  </dialog>
+  
+  <datalist id="placesList"></datalist>
+</dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 

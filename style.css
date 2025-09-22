@@ -208,3 +208,27 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
   justify-content: flex-start;
   gap: 8px;
 }
+/* Journal modal helper buttons */
+#journalModal .btn.outlined{ background:var(--card); border:1px solid var(--border); color:var(--ink); height:44px; border-radius:10px; padding:10px 12px; }
+#journalModal label{ display:flex; flex-direction:column; gap:6px; }
+#journalModal .body > *:not(.row) {
+  margin-bottom: 12px;
+}
+#journalModal .body .fields-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* Make #jrPlace look like the buttons and align spacing */
+#journalModal #jrPlace.input{ height:44px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+#journalModal .fields-row{ display:flex; gap:10px; }
+
+
+/* Expense modal helper buttons + align */
+#expenseModal .btn.outlined{ background:var(--card); border:1px solid var(--border); color:var(--ink); height:44px; border-radius:10px; padding:10px 12px; }
+#expenseModal .row{ display:flex; gap:10px; }
+#expenseModal .row > * { flex: 1; }
+#expenseModal .body > label:not(:last-of-type), #expenseModal .body > .row:not(:last-of-type){
+  margin-bottom: 12px;
+}
+#expenseModal .fields-row{ display:flex; gap:10px; }

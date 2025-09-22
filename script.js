@@ -1,3 +1,15 @@
+function linkifyToIcon(raw){
+  if(!raw) return '';
+  const parts = String(raw).split(/(https?:\/\/[^\s)]+)|(^\/https?:\/\/[^\s)]+)/g);
+  return parts.filter(Boolean).map(p=>{
+    if(/^(?:\/)?https?:\/\//.test(p)){
+      const u = p.replace(/^\/+/, '').replace(/[),.;!?]+$/, '');
+      const safe = u.replace(/"/g,'&quot;');
+      return `<a href="${safe}" target="_blank" rel="noopener" class="link-icon" aria-label="קישור" title="${safe}">🔗</a>`;
+    }
+    return esc(p);
+  }).join('');
+}
 
 import { auth, db, FB } from './firebase.js';
 
@@ -203,16 +215,22 @@ async function loadTrip(){
     <div>סוגים: ${esc((t.types||[]).join(', '))}</div>
   `;
   // Populate meta form
-  $('#metaDestination').value = t.destination||'';
+  const _md=$('#metaDestination'); if(_md) _md.value = t.destination||'';
   $('#metaStart').value = t.start||'';
   $('#metaEnd').value = t.end||'';
-  $('#metaPeople').value = (t.people||[]).join(', ');
-  // sync chips for types (no #metaTypes input)
-  (function(){ const typesArr = Array.isArray(t.types)?t.types:[]; $$('.metaType').forEach(btn=>{ btn.classList.toggle('active', typesArr.includes(btn.dataset.value)); btn.onclick = ()=> btn.classList.toggle('active'); }); })();
+  const _mp=$('#metaPeople'); if(_mp) _mp.value = (t.people||[]).join(', ');
+  const metaTypes = document.querySelectorAll('.metaType');
+  metaTypes.forEach(btn => {
+    btn.classList.remove('active');
+    if ((t.types || []).includes(btn.dataset.value)) {
+      btn.classList.add('active');
+    }
+  });
+
   const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
   $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? 'ביטול נעילה' : 'קבע תקציב'; be.classList.toggle('locked', !!t.budgetLocked);}
   if(t.rates){ state.rates = t.rates; }
-  const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS'); if(_r1) _r1.value = state.rates.USDEUR; if(_r2) _r2.value = state.rates.USDILS;
+  // Removed exchange rate inputs as per new design
 
   renderExpenses(t);
   renderJournal(t);
@@ -220,40 +238,83 @@ async function loadTrip(){
   renderExpenseSummary(t);
 }
 
+// Add event listener for meta type buttons
+document.querySelectorAll('.metaType').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    btn.classList.toggle('active');
+  });
+});
+
 
 function renderExpenses(t){
-  const body = $('#tblExpenses'); body.innerHTML = '';
-  const arr = Object.entries(t.expenses||{})
-    .map(([id,e])=>({id, ...e}))
-    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  const body = $('#tblExpenses');
+  body.innerHTML = '';
+  const arr = Object.entries(t.expenses || {})
+    .map(([id,e]) => ({ id, ...e }))
+    .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+
   arr.forEach(e=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${e.id}">...</button></td>
-      <td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)}</td><td>${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td>`;
+    tr.innerHTML =
+      `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${esc(e.id)}">...</button></td>`+
+      `<td>${linkifyToIcon(e.desc||'')}</td>`+
+      `<td>${esc(e.category||'')}</td>`+
+      `<td>${Number(e.amount||0).toFixed(2)}</td>`+
+      `<td>${esc(e.currency||'')}</td>`+
+      `<td>${fmtDateTime(e.createdAt)}</td>`;
     const menuBtn = tr.querySelector('.menu-btn');
-    menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
+    if(menuBtn){
+      menuBtn.addEventListener('click', ()=>{ _rowActionExpense = e; $('#rowMenuModal').showModal(); });
+    }
     body.appendChild(tr);
   });
-  // Recent for overview
-  $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${esc(e.desc||'')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
+
+  if ($('#tblRecentExpenses')){
+    $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e =>
+      `<tr>`+
+        `<td>${linkifyToIcon(e.desc||'')}</td>`+
+        `<td>${esc(e.category||'')}</td>`+
+        `<td>${Number(e.amount||0).toFixed(2)} ${esc(e.currency||'')}</td>`+
+        `<td>${fmtDateTime(e.createdAt)}</td>`+
+      `</tr>`
+    ).join('');
+  }
 }
 
 
 
 function renderJournal(t){
-  const body = $('#tblJournal'); body.innerHTML = '';
-  const arr = Object.entries(t.journal||{})
-    .map(([id,j])=>({id, ...j}))
-    .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  const body = $('#tblJournal');
+  if(!body){ return; }
+  body.innerHTML = '';
+  const arr = Object.entries(t.journal || {})
+    .map(([id,j]) => ({ id, ...j }))
+    .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+
   arr.forEach(j=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
-      <td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td>`;
+    tr.innerHTML =
+      `<td class="menu"><button class="menu-btn" aria-label="פעולות" data-id="${esc(j.id)}">...</button></td>`+
+      `<td>${fmtDateTime(j.createdAt)}</td>`+
+      `<td>${esc(j.placeName||'')}</td>`+
+      `<td>${linkifyToIcon(j.text||'')}</td>`;
     const menuBtn = tr.querySelector('.menu-btn');
-    menuBtn.addEventListener('click', ()=>{ _rowActionJournal = j; $('#rowMenuModal').showModal(); });
+    if(menuBtn){
+      menuBtn.addEventListener('click', ()=>{ _rowActionJournal = j; $('#rowMenuModalJournal').showModal(); });
+    }
     body.appendChild(tr);
   });
-  $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${esc(j.text||'')}</td></tr>`).join('');
+
+  if ($('#tblRecentJournal')){
+    $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j =>
+      `<tr>`+
+        `<td>${fmtDateTime(j.createdAt)}</td>`+
+        `<td>${esc(j.placeName||'')}</td>`+
+        `<td>${linkifyToIcon(j.text||'')}</td>`+
+      `</tr>`
+    ).join('');
+  }
 }
 
 
@@ -343,6 +404,23 @@ function initBigMap(){
   const all = [...exps.map(e=>[e.lat,e.lng]), ...jrs.map(j=>[j.lat,j.lng])];
   if(all.length){ try{ state.maps.big.fitBounds(all, { padding:[40,40] }); }catch{} }
   setTimeout(()=> state.maps.big.invalidateSize(), 80);
+
+// enable pick-on-map mode
+if(state.awaitPickFor){
+  const clickOnce = (ev)=>{
+    const {lat, lng} = ev.latlng;
+    L.circleMarker([lat,lng], {radius:8,color:'#2a8'}).addTo(state.maps.big);
+    if(typeof window.setPickedLocation==='function'){
+      window.setPickedLocation(lat, lng);
+    }
+    state.awaitPickFor = null;
+    state.maps.big.off('click', clickOnce);
+    showToast('נקודה נבחרה');
+  };
+  state.maps.big.on('click', clickOnce);
+  showToast('לחץ על המפה כדי לבחור מיקום');
+}
+
 }
 
 $('#btnToggleSpent').addEventListener('click', ()=>{
@@ -352,8 +430,14 @@ $('#btnToggleVisited').addEventListener('click', ()=>{
   const m = state.maps.layers.journal; if(!m) return; if(state.maps.big.hasLayer(m)){ state.maps.big.removeLayer(m); } else { state.maps.big.addLayer(m); }
 });
 
+
 // Auth modal
-$('#btnLogin').addEventListener('click', ()=> { const s=document.getElementById('loginScreen'); if(s) s.style.display='grid'; const c=document.querySelector('.container'); if(c) c.style.display='none'; });
+$('#btnLogin').addEventListener('click', ()=> {
+  const s = document.querySelector('#authModal');
+  if(s && s.showModal) s.showModal();
+  const c = document.querySelector('.container');
+  if(c) c.style.display='none';
+});
 $('#authCancel').addEventListener('click', ()=> $('#authModal').close());
 $('#authSignIn').addEventListener('click', async ()=>{
   try{
@@ -370,7 +454,10 @@ $('#authSignUp').addEventListener('click', async ()=>{
   }catch(e){ $('#authError').textContent = xErr(e); }
 });
 $('#authReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#authError').textContent = xErr(e); }
+  try{
+    await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim());
+    showToast('נשלח מייל לאיפוס');
+  }catch(e){ $('#authError').textContent = xErr(e); }
 });
 $('#btnLogout').addEventListener('click', async ()=>{ await FB.signOut(auth); showToast('התנתקת'); });
 
@@ -401,7 +488,7 @@ $('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderT
 $('#btnSaveMeta').addEventListener('click', async ()=>{
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const types = $$('.metaType.active').map(b=>b.dataset.value);
+  const types = $$('.metaType.active').map(btn => btn.dataset.value);
   await FB.updateDoc(ref, { destination: $('#metaDestination').value.trim(), start: $('#metaStart').value, end: $('#metaEnd').value, people, types });
   showToast('נשמר'); loadTrip();
 });
@@ -418,7 +505,7 @@ function syncBudget(from){
   let ils = parseIntSafe($('#bILS').value);
   if(from==='USD'){ eur = Math.round(usd*state.rates.USDEUR); ils = Math.round(usd*state.rates.USDILS); }
   if(from==='EUR'){ const u = Math.round(eur/state.rates.USDEUR); usd = u; ils = Math.round(u*state.rates.USDILS); }
-  if(from==='ILS'){ const u = Math.round(ils/state.rates.USDILS); usd = u; eur = Math.round(u*state.rates.USDEUR); }
+  if(from==='ILS'){ const u = Math.round(ils/state.rates.USDILS); usd = u; eur = Math.round(u*state.rates.USDILS); }
   $('#bUSD').value = formatInt(usd); $('#bEUR').value = formatInt(eur); $('#bILS').value = formatInt(ils);
 }
 ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).addEventListener('input', ()=> syncBudget(id.replace('b','')) ));
@@ -468,6 +555,7 @@ function openJournalModal(j){
   $('#jrText').value = j?.text||''; $('#jrPlace').value = j?.placeName||''; $('#jrLat').value = j?.lat||''; $('#jrLng').value = j?.lng||'';
   $('#jrDelete').style.display = j? 'inline-block':'none';
   $('#journalModal').showModal();
+  populatePlacesDatalist();
 }
 async function saveJournal(){
   const ref = FB.doc(db,'trips', state.currentTripId); const snap = await FB.getDoc(ref); const t = snap.data();
@@ -526,7 +614,7 @@ async function exportWord(){
     new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
     new Paragraph({ text:`יומן`, heading:HeadingLevel.HEADING_2 }),
     tableFrom([['תאריך','מקום','תיאור']], jr.map(j=>[fmtDateTime(j.createdAt), j.placeName||'', j.text||''])),
-    ...(withExp? [ new Paragraph({ text:`הוצאות`, heading:HeadingLevel.HEADING_2 }), tableFrom([['תיאור','קטגוריה','סכום','מטבע','תאריך']], ex.map(e=>[e.desc||'', e.category||'', String(num(e.amount)), e.currency||'', fmtDateTime(e.createdAt)])) ]: [])
+    ...(withExp? [ new Paragraph({ text:`הוצאות`, heading:HeadingLevel.HEading_2 }), tableFrom([['תיאור','קטגוריה','סכום','מטבע','תאריך']], ex.map(e=>[e.desc||'', e.category||'', String(num(e.amount)), e.currency||'', fmtDateTime(e.createdAt)])) ]: [])
   ]}]});
   function tableFrom(head, rows){
     return new Table({ width:{size:100, type:WidthType.PERCENTAGE}, rows:[ new TableRow({ children: head[0].map(h=> new TableCell({ children:[new Paragraph({ text:h })] })) }), ...rows.map(r=> new TableRow({ children: r.map(c=> new TableCell({ children:[new Paragraph({ text: String(c) })] })) })) ]});
@@ -652,7 +740,7 @@ $('#lsReset').addEventListener('click', async ()=>{
 });
 
 function mark(text, s){
-  if(!s) return esc(text||''); const t = String(text||''); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
+  if(!s) return esc(text||''); const t = String(text); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
   return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+s.length)) + '</mark>' + esc(t.slice(i+s.length));
 }
 function snippet(text, s, len=60){
@@ -697,3 +785,94 @@ let _rowActionJournal = null;
     modal.close(); _rowActionExpense = _rowActionJournal = null;
   });
 })();
+
+// ---- Journal place autocomplete + location helpers ----
+// NEW: Search an external service for places
+async function searchPlaces(query) {
+  if (query.length < 3) return [];
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=10&accept-language=he`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching search results:', error);
+    return [];
+  }
+}
+
+// NEW: Populate the datalist with live search results
+const jrPlaceInput = document.getElementById('jrPlace');
+if (jrPlaceInput) {
+  jrPlaceInput.addEventListener('input', async (e) => {
+    const query = e.target.value;
+    const results = await searchPlaces(query);
+    const datalist = document.getElementById('placesList');
+    datalist.innerHTML = '';
+    results.forEach(result => {
+      const option = document.createElement('option');
+      option.value = result.display_name;
+      // You can store more data here if needed, like lat/lng
+      // option.dataset.lat = result.lat;
+      // option.dataset.lng = result.lon;
+      datalist.appendChild(option);
+    });
+  });
+}
+
+const geoBtn = document.getElementById('jrGeoBtn');
+if (geoBtn) geoBtn.addEventListener('click', ()=>{
+  if(!navigator.geolocation){ showToast('אין גישה למיקום בדפדפן'); return; }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    const {latitude, longitude} = pos.coords;
+    const latEl = document.getElementById('jrLat'); const lngEl = document.getElementById('jrLng');
+    if(latEl) latEl.value = latitude.toFixed(6);
+    if(lngEl) lngEl.value = longitude.toFixed(6);
+    showToast('המיקום מולא מהGPS');
+  }, ()=> showToast('נכשלה קריאת מיקום'));
+});
+
+const pickBtn = document.getElementById('jrPickOnMap');
+if (pickBtn) pickBtn.addEventListener('click', ()=>{
+  state.awaitPickFor = 'journal';
+  const mapTab = document.querySelector('#tabs [data-tab="map"]');
+  if(mapTab){ mapTab.click(); showToast('בחר נקודה על המפה — נשלים אוטומטית ביומן'); }
+  else { showToast('לא נמצאה מפה במערכת'); }
+});
+
+window.setPickedLocation = function(lat,lng,address){
+  const latEl = document.getElementById('jrLat'); const lngEl = document.getElementById('jrLng'); const placeEl = document.getElementById('jrPlace');
+  if(state.awaitPickFor==='journal'){
+    if(placeEl && address) placeEl.value = address;
+    if(latEl) latEl.value = +lat;
+    if(lngEl) lngEl.value = +lng;
+    state.awaitPickFor = null;
+    const jm = document.getElementById('journalModal'); if(jm && !jm.open){ jm.showModal(); }
+    showToast('המיקום נבחר על המפה');
+  } else if(state.awaitPickFor==='expense'){
+    const eLat = document.getElementById('expLat'); const eLng = document.getElementById('expLng');
+    if(eLat) eLat.value = +lat; if(eLng) eLng.value = +lng;
+    state.awaitPickFor = null;
+    showToast('מיקום עודכן בהוצאה');
+  }
+};
+
+// Expense modal: geo/pick hooks
+const expGeoBtn = document.getElementById('expGeoBtn');
+if (expGeoBtn) expGeoBtn.addEventListener('click', ()=>{
+  if(!navigator.geolocation){ showToast('אין גישה למיקום בדפדפן'); return; }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    const {latitude, longitude} = pos.coords;
+    const latEl = document.getElementById('expLat'); const lngEl = document.getElementById('expLng');
+    if(latEl) latEl.value = latitude.toFixed(6);
+    if(lngEl) lngEl.value = longitude.toFixed(6);
+    showToast('המיקום מולא מהGPS');
+  }, ()=> showToast('נכשלה קריאת מיקום'));
+});
+const expPickBtn = document.getElementById('expPickOnMap');
+if (expPickBtn) expPickBtn.addEventListener('click', ()=>{
+  state.awaitPickFor = 'expense';
+  const mapTab = document.querySelector('#tabs [data-tab="map"]');
+  if(mapTab){ mapTab.click(); showToast('בחר נקודה על המפה — נעדכן בהוצאה'); }
+  else { showToast('לא נמצאה מפה במערכת'); }
+});
