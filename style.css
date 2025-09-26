@@ -623,36 +623,49 @@ html.prefers-mobile .hero img, body.mobile-view .hero img, html.prefers-mobile .
 #toggleViewBtn { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:8px 14px; border-radius:20px; border:1px solid #e3e7ef; background:#fff; font-weight:700; }
 
 
-/* === FLYMILY Mobile Redesign v2 — begin (<=768px) === */
-@media (max-width: 768px){
-  html, body { height:auto; overflow:auto; }
-  body { line-height: 1.45; }
-  header { position: sticky; top: 0; padding: 12px 14px; gap: 10px; }
-  header .brand-text { font-size: 1rem; }
-  header .btn, header button { padding: 8px 10px; border-radius: 12px; }
-  .container { grid-template-columns: 1fr; height:auto; }
-  .sidebar { order: 2; height:auto; max-height: none; padding-bottom: 24px; }
-  .content { order: 1; height:auto; padding: 12px; }
-  .container.home-mode #tripList.grid { grid-template-columns: 1fr; gap: 12px; }
-  .trip-card, .trip-row, .card { border-radius: 14px; padding: 12px; }
-  .row { flex-direction: column; gap: 8px; }
-  .input, select, textarea { padding: 12px; font-size: 16px; } /* better tap targets */
-  /* Tabs → horizontal scrollable pills */
-  .tabs { position: sticky; top: 56px; padding: 8px 8px 0; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .tabs::-webkit-scrollbar{ display:none; }
-  .tabs button { flex: 0 0 auto; border-radius: 999px; padding: 10px 14px; }
-  /* Budget bar stacks */
-  .budget-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-  .budget-bar .bar-cols { flex-direction: column; gap: 8px; margin-inline-start: 0; }
-  .budget-bar .col { min-width: 0; justify-content: space-between; }
-  /* Tables: horizontal scroll container */
-  .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table { min-width: 640px; }
-  /* Map heights */
-  .leaflet-container { height: 300px; min-height: 280px; }
-  /* Modal width */
-  dialog.modal { width: 96%; max-width: 480px; }
-  /* Spacing utilities */
-  .mb-8{ margin-bottom: 8px; } .mb-12{ margin-bottom: 12px; } .mb-16{ margin-bottom: 16px; }
+/* === FLYMILY Force Mobile + Mobile Theme === */
+body.force-mobile { overflow-x: hidden; }
+:root{
+  --mbl-primary: #3B82F6;
+  --mbl-primary-2: #22C55E;
+  --mbl-accent: #F59E0B;
+  --mbl-surface: #0b1220;
+  --mbl-card: #101827;
+  --mbl-pill: #0f172a;
 }
-/* === FLYMILY Mobile Redesign v2 — end === */
+
+@media (max-width: 768px), body.force-mobile {
+  html, body { height:auto; overflow-x:hidden; }
+  body { line-height:1.45; background: var(--bg, inherit); }
+  header { position: sticky; top: 0; z-index: 40; padding: 10px 12px; background: linear-gradient(90deg, var(--mbl-primary), var(--mbl-accent)); }
+  header .brand, header .brand-text { color: white !important; }
+  /* toggle button */
+  #toggleMobileView.btn { background: rgba(255,255,255,.16); color:#fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 8px 12px; font-weight:600; }
+  #toggleMobileView.btn:active { transform: scale(.98); }
+  /* layout collapse */
+  .container { display: grid; grid-template-columns: 1fr !important; gap: 12px; height:auto; }
+  .sidebar { order:2; padding: 8px 12px; }
+  .content { order:1; padding: 8px 12px; }
+  /* cards */
+  .card, .trip-card, .trip-row { border-radius:16px; padding:14px; box-shadow: 0 8px 26px rgba(2,6,23,.08); }
+  /* tabs → colorful pills */
+  .tabs { display:flex; gap:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:8px 4px; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tabs button { flex:0 0 auto; border-radius:999px; padding:10px 14px; font-weight:600; background: var(--mbl-pill); color:#e5e7eb; border:1px solid rgba(148,163,184,.25); }
+  .tabs button.active { background: var(--mbl-primary); color:#fff; border-color: transparent; }
+  /* CTA buttons */
+  .btn, button.btn { border-radius:14px; padding:10px 14px; font-weight:700; }
+  .btn.primary { background: var(--mbl-primary); color:#fff; }
+  .btn.success { background: var(--mbl-primary-2); color:#fff; }
+  /* forms */
+  input[type="text"], input[type="date"], select, textarea { width:100%; padding:12px; font-size:16px; border-radius:12px; }
+  .row { flex-direction: column; gap: 8px; }
+  /* tables */
+  .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-wrap table { min-width: 640px; }
+  /* budget bar */
+  .budget-bar { flex-direction: column; gap: 10px; }
+  /* maps */
+  .leaflet-container { height: 320px; min-height: 300px; }
+}
+/* === end FLYMILY Force Mobile + Mobile Theme === */

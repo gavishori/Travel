@@ -1926,3 +1926,40 @@ html.prefers-mobile table.table-cardified td::before, body.mobile-view table.tab
   const mo=new MutationObserver(muts=>{ for(const m of muts){ if(m.type==='childList') label(m.target.nodeType===1?m.target:document);} });
   document.addEventListener('DOMContentLoaded', ()=> mo.observe(document.body,{childList:true,subtree:true}));
 })();
+
+
+// === FLYMILY Force-Mobile Toggle ===
+(function(){
+  const KEY = "flymily.forceMobile";
+  function apply(force){
+    document.body.classList.toggle("force-mobile", !!force);
+  }
+  // apply on load
+  try{ apply(localStorage.getItem(KEY) === "1"); }catch(e){}
+  // wire button
+  function wire(){
+    const btn = document.getElementById("toggleMobileView");
+    if(!btn) return;
+    function syncLabel(){
+      const on = document.body.classList.contains("force-mobile");
+      btn.textContent = on ? "תצוגת דסקטופ" : "תצוגת מובייל";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    syncLabel();
+    btn.onclick = () => {
+      const on = !document.body.classList.contains("force-mobile");
+      apply(on);
+      try{ localStorage.setItem(KEY, on ? "1" : "0"); }catch(e){}
+      syncLabel();
+      // help maps/tabs reflow if exist
+      if(typeof invalidateMap === "function"){ setTimeout(invalidateMap, 150); }
+      window.dispatchEvent(new Event("resize"));
+    };
+  }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", wire);
+  } else {
+    wire();
+  }
+})();
+// === end Force-Mobile Toggle ===
