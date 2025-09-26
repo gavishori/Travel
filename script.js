@@ -1963,3 +1963,91 @@ html.prefers-mobile table.table-cardified td::before, body.mobile-view table.tab
   }
 })();
 // === end Force-Mobile Toggle ===
+
+// === Mobile Pro wiring ===
+(function(){
+  const KEY = "flymily.forceMobile";
+  function apply(force){
+    document.body.classList.toggle("force-mobile", !!force);
+    document.body.classList.toggle("mobile-pro", !!force);
+  }
+  try{ apply(localStorage.getItem(KEY)==="1"); }catch(e){}
+
+  function wireToggle(){
+    const btn = document.getElementById("toggleMobileView");
+    if(!btn) return;
+    function label(){
+      const on = document.body.classList.contains("force-mobile");
+      btn.textContent = on ? "תצוגת דסקטופ" : "תצוגת מובייל";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    label();
+    btn.onclick = ()=>{
+      const on = !document.body.classList.contains("force-mobile");
+      apply(on);
+      try{ localStorage.setItem(KEY, on? "1":"0"); }catch(e){}
+      label();
+      window.dispatchEvent(new Event('resize'));
+      if(typeof invalidateMap === 'function'){ setTimeout(invalidateMap, 150); }
+    };
+  }
+
+  function wireTabs(){
+    const bar = document.getElementById('mblTabs'); if(!bar) return;
+    const underline = bar.querySelector('.mbl-underline');
+    function move(el){
+      const r = el.getBoundingClientRect(), pr = bar.getBoundingClientRect();
+      underline.style.width = r.width + 'px';
+      underline.style.transform = 'translateX('+(r.left - pr.left)+'px)';
+    }
+    const act = bar.querySelector('button.active') || bar.querySelector('button'); if(act) move(act);
+    bar.addEventListener('click',(e)=>{
+      const b = e.target.closest('button'); if(!b) return;
+      bar.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+      move(b);
+      // TODO: show/hide sections by b.dataset.tab
+    });
+    window.addEventListener('resize', ()=>{ const b = bar.querySelector('button.active'); if(b) move(b); });
+  }
+
+  function wireFab(){
+    const fab = document.getElementById('mblFab');
+    const spd = document.getElementById('mblSpeed');
+    if(!fab || !spd) return;
+    fab.addEventListener('click', ()=>{
+      const open = !spd.classList.contains('open');
+      spd.classList.toggle('open', open);
+      fab.setAttribute('aria-expanded', open? 'true':'false');
+    });
+    spd.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const act = btn.dataset.action; // hook here
+      spd.classList.remove('open');
+    });
+  }
+
+  function wireDrawer(){
+    const drawer = document.getElementById('mblDrawer');
+    const dim = document.getElementById('mblDim');
+    if(!drawer || !dim) return;
+    function open(){ drawer.classList.add('open'); dim.classList.add('show'); }
+    function close(){ drawer.classList.remove('open'); dim.classList.remove('show'); }
+    // open drawer from bottomnav 'more' if present
+    document.querySelectorAll('.mbl-bottomnav [data-tab="more"]').forEach(b=>b.addEventListener('click', open));
+    dim.addEventListener('click', close);
+  }
+
+  function wireBottomNav(){
+    const nav = document.querySelector('.mbl-bottomnav'); if(!nav) return;
+    nav.addEventListener('click', (e)=>{
+      const b = e.target.closest('button'); if(!b) return;
+      nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+      // TODO: navigate global sections by b.dataset.tab
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{ wireToggle(); wireTabs(); wireFab(); wireDrawer(); wireBottomNav(); });
+  } else { wireToggle(); wireTabs(); wireFab(); wireDrawer(); wireBottomNav(); }
+})();
+// === end Mobile Pro wiring ===
