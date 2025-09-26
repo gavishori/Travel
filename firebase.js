@@ -1,32 +1,73 @@
-
-// firebase.js — ES module that initializes Firebase and exports handles
+// Unified Firebase wrapper exposing the exact names script.js expects.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, sendPasswordResetEmail, signOut
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, query, where, orderBy, onSnapshot,
-  doc, getDoc, setDoc, updateDoc, deleteField
+  initializeFirestore,
+  setLogLevel,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  addDoc,
+  getDocs,
+  enableNetwork,
+  disableNetwork
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-export const firebaseConfig = {
+// --- CONFIG ---
+const firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
   projectId: "travel-416ff",
   storageBucket: "travel-416ff.appspot.com",
-  messagingSenderId: "1075073511694",
-  appId: "1:1075073511694:web:7876f492d18a702b09e75f",
-  measurementId: "G-FT56H33X5J"
+  messagingSenderId: "1032412697405",
+  appId: "1:1032412697405:web:44c9d7c6c220a3e4a8e3a7"
 };
 
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true });
+setLogLevel("error");
 
-// Re-export helpers for convenience
+// --- AUTH ---
+export const auth = getAuth(app);
+// Convenience named exports (used in a few places)
+export const onAuth = onAuthStateChanged;
+export const signOutUser = () => signOut(auth);
+
+// --- FB namespace matching script.js expectations ---
 export const FB = {
-  onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  sendPasswordResetEmail, signOut, collection, query, where, orderBy,
-  onSnapshot, doc, getDoc, setDoc, updateDoc, deleteField
+  // db & auth handles
+  db, auth,
+
+  // auth API names as expected by script.js
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+
+  // firestore API surface
+  doc, getDoc, setDoc, updateDoc,
+  collection, addDoc, getDocs,
+  onSnapshot, query, where, orderBy, limit, startAfter,
+  serverTimestamp
 };
+
+// Network toggles (optional resilience)
+window.addEventListener("offline", () => disableNetwork(db).catch(()=>{}));
+window.addEventListener("online",  () => enableNetwork(db).catch(()=>{}));
