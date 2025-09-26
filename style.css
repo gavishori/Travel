@@ -623,54 +623,9 @@ html.prefers-mobile .hero img, body.mobile-view .hero img, html.prefers-mobile .
 #toggleViewBtn { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:8px 14px; border-radius:20px; border:1px solid #e3e7ef; background:#fff; font-weight:700; }
 
 
-/* === FLYMILY Force Mobile + Mobile Theme === */
-body.force-mobile { overflow-x: hidden; }
-:root{
-  --mbl-primary: #3B82F6;
-  --mbl-primary-2: #22C55E;
-  --mbl-accent: #F59E0B;
-  --mbl-surface: #0b1220;
-  --mbl-card: #101827;
-  --mbl-pill: #0f172a;
-}
+/* removed mobile-pro block */
 
-@media (max-width: 768px), body.force-mobile {
-  html, body { height:auto; overflow-x:hidden; }
-  body { line-height:1.45; background: var(--bg, inherit); }
-  header { position: sticky; top: 0; z-index: 40; padding: 10px 12px; background: linear-gradient(90deg, var(--mbl-primary), var(--mbl-accent)); }
-  header .brand, header .brand-text { color: white !important; }
-  /* toggle button */
-  #toggleMobileView.btn { background: rgba(255,255,255,.16); color:#fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 8px 12px; font-weight:600; }
-  #toggleMobileView.btn:active { transform: scale(.98); }
-  /* layout collapse */
-  .container { display: grid; grid-template-columns: 1fr !important; gap: 12px; height:auto; }
-  .sidebar { order:2; padding: 8px 12px; }
-  .content { order:1; padding: 8px 12px; }
-  /* cards */
-  .card, .trip-card, .trip-row { border-radius:16px; padding:14px; box-shadow: 0 8px 26px rgba(2,6,23,.08); }
-  /* tabs → colorful pills */
-  .tabs { display:flex; gap:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:8px 4px; scrollbar-width:none; }
-  .tabs::-webkit-scrollbar{ display:none; }
-  .tabs button { flex:0 0 auto; border-radius:999px; padding:10px 14px; font-weight:600; background: var(--mbl-pill); color:#e5e7eb; border:1px solid rgba(148,163,184,.25); }
-  .tabs button.active { background: var(--mbl-primary); color:#fff; border-color: transparent; }
-  /* CTA buttons */
-  .btn, button.btn { border-radius:14px; padding:10px 14px; font-weight:700; }
-  .btn.primary { background: var(--mbl-primary); color:#fff; }
-  .btn.success { background: var(--mbl-primary-2); color:#fff; }
-  /* forms */
-  input[type="text"], input[type="date"], select, textarea { width:100%; padding:12px; font-size:16px; border-radius:12px; }
-  .row { flex-direction: column; gap: 8px; }
-  /* tables */
-  .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .table-wrap table { min-width: 640px; }
-  /* budget bar */
-  .budget-bar { flex-direction: column; gap: 10px; }
-  /* maps */
-  .leaflet-container { height: 320px; min-height: 300px; }
-}
-/* === end FLYMILY Force Mobile + Mobile Theme === */
-
-/* === Mobile Pro Theme (force-mobile.mobile-pro or @media) === */
+/* removed mobile-pro block */
 :root{
   --mbl-primary:#6d9eff; --mbl-secondary:#22c55e; --mbl-accent:#f59e0b;
   --mbl-bg:#0b1220; --mbl-card:#0f172a; --mbl-text:#e5e7eb; --mbl-shadow:0 12px 28px rgba(2,6,23,.22);
@@ -704,4 +659,20 @@ body.force-mobile { overflow-x: hidden; }
   .mbl-dim.show{opacity:1;pointer-events:auto}
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch} .table-wrap table{min-width:640px}
   .leaflet-container{height:320px;min-height:300px}
+}
+
+/* iOS-like accordions (mobile) */
+@media (max-width:768px){
+  html,body{overflow-x:hidden}
+  .container{grid-template-columns:1fr !important; height:auto;}
+  .content,.sidebar{padding:10px 12px;}
+  /* base cards */
+  .card,.trip-card,.trip-row{border-radius:16px; padding:14px;}
+  /* Accordion */
+  details.ios-acc{background:#fff;border-radius:16px;margin:10px 0;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 24px rgba(0,0,0,.06);overflow:hidden}
+  details.ios-acc>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:800;display:flex;align-items:center;gap:10px}
+  details.ios-acc>summary::marker{display:none}
+  details.ios-acc>summary::before{content:"";width:8px;height:8px;border-right:2px solid #9aa0a6;border-bottom:2px solid #9aa0a6;transform:rotate(-45deg);transition:transform .2s}
+  details.ios-acc[open]>summary::before{transform:rotate(45deg)}
+  details.ios-acc .ios-acc-body{padding:12px 16px;border-top:1px solid rgba(0,0,0,.06)}
 }
