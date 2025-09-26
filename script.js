@@ -1,3 +1,43 @@
+
+// ===== FLYMILY RESPONSIVE ENHANCEMENTS (do not remove) =====
+function flyIsMobileMode(){
+  return document.documentElement.classList.contains('prefers-mobile') ||
+         (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+}
+function flyApplyResponsiveGuards(){
+  const mobile = flyIsMobileMode();
+  document.documentElement.toggleAttribute('data-mobile', mobile);
+  // Hide gallery toggle on mobile
+  const gridBtn = document.getElementById('btnViewGrid');
+  if (gridBtn) gridBtn.style.display = mobile ? 'none' : '';
+  // Optional: convert major areas to accordions when in mobile
+  try {
+    if (mobile){
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && !sidebar.closest('details')){
+        const d = document.createElement('details'); d.className='accordion'; d.open = true;
+        const s = document.createElement('summary'); s.textContent = 'הנסיעות שלי';
+        const body = document.createElement('div'); body.className='accordion-body';
+        while (sidebar.firstChild) body.appendChild(sidebar.firstChild);
+        const parent = sidebar.parentNode; parent.replaceChild(d, sidebar);
+        d.appendChild(s); d.appendChild(body);
+      }
+      const main = document.getElementById('main');
+      if (main && !main.closest('details')){
+        const d2 = document.createElement('details'); d2.className='accordion'; d2.open = false;
+        const s2 = document.createElement('summary'); s2.textContent = 'סקירה';
+        const body2 = document.createElement('div'); body2.className='accordion-body';
+        while (main.firstChild) body2.appendChild(main.firstChild);
+        const parent2 = main.parentNode; parent2.replaceChild(d2, main);
+        d2.appendChild(s2); d2.appendChild(body2);
+      }
+    }
+  } catch(e){ /* no-op */ }
+}
+window.addEventListener('resize', flyApplyResponsiveGuards, {passive:true});
+document.addEventListener('DOMContentLoaded', flyApplyResponsiveGuards);
+// ===== END FLYMILY RESPONSIVE ENHANCEMENTS =====
+
 // ---- Lazy loader for heavy export libs with multi-CDN fallback ----
 async function loadExternalScript(urls) {
   for (const url of urls) {
@@ -1926,68 +1966,3 @@ html.prefers-mobile table.table-cardified td::before, body.mobile-view table.tab
   const mo=new MutationObserver(muts=>{ for(const m of muts){ if(m.type==='childList') label(m.target.nodeType===1?m.target:document);} });
   document.addEventListener('DOMContentLoaded', ()=> mo.observe(document.body,{childList:true,subtree:true}));
 })();
-
-
-// removed toggle
-
-// removed mobile pro wiring
-
-
-// === Mobile Auto Accordion (iOS-like) ===
-(function(){
-  const mq = window.matchMedia('(max-width:768px)');
-  let applied = false;
-  let backups = new WeakMap();
-
-  function titleFor(el){
-    let h = el.querySelector('h2, h3, [aria-label]');
-    if(h){ return h.getAttribute('aria-label') || h.textContent.trim(); }
-    return el.getAttribute('data-title') || 'קטגוריה';
-  }
-
-  function wrap(el){
-    const det = document.createElement('details'); det.className = 'ios-acc';
-    const sum = document.createElement('summary'); sum.textContent = titleFor(el);
-    const body = document.createElement('div'); body.className = 'ios-acc-body';
-    // move children
-    while(el.firstChild){ body.appendChild(el.firstChild); }
-    det.appendChild(sum); det.appendChild(body);
-    backups.set(det, el); // original container ref
-    el.replaceWith(det);
-  }
-
-  function unwrap(det){
-    const orig = backups.get(det); if(!orig) return;
-    const body = det.querySelector('.ios-acc-body');
-    while(body && body.firstChild){ orig.appendChild(body.firstChild); }
-    det.replaceWith(orig);
-  }
-
-  function apply(){
-    if(applied) return;
-    const content = document.querySelector('.content'); if(!content) return;
-    const children = Array.from(content.children).filter(n=>n.nodeType===1);
-    children.forEach(wrap);
-    // open first by default
-    const first = document.querySelector('details.ios-acc'); if(first) first.open = true;
-    // map refresh on open
-    content.addEventListener('toggle', (e)=>{
-      if(e.target.tagName==='DETAILS' && e.target.open){
-        if(typeof invalidateMap==='function'){ setTimeout(invalidateMap, 150); }
-        window.dispatchEvent(new Event('resize'));
-      }
-    }, true);
-    applied = true;
-  }
-
-  function revert(){
-    if(!applied) return;
-    document.querySelectorAll('details.ios-acc').forEach(unwrap);
-    applied = false;
-  }
-
-  function onChange(e){ if(e.matches){ apply(); } else { revert(); } }
-  mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
-  onChange(mq);
-})();
-// === end Mobile Auto Accordion ===

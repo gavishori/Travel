@@ -623,56 +623,31 @@ html.prefers-mobile .hero img, body.mobile-view .hero img, html.prefers-mobile .
 #toggleViewBtn { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:8px 14px; border-radius:20px; border:1px solid #e3e7ef; background:#fff; font-weight:700; }
 
 
-/* removed mobile-pro block */
-
-/* removed mobile-pro block */
-:root{
-  --mbl-primary:#6d9eff; --mbl-secondary:#22c55e; --mbl-accent:#f59e0b;
-  --mbl-bg:#0b1220; --mbl-card:#0f172a; --mbl-text:#e5e7eb; --mbl-shadow:0 12px 28px rgba(2,6,23,.22);
+/* ===== FLYMILY RESPONSIVE ENHANCEMENTS (do not remove) ===== */
+.mobile-only{display:none}
+.desktop-only{display:initial}
+/* Force-mobile mode from localStorage => html.prefers-mobile */
+html.prefers-mobile .desktop-only{display:none!important}
+html.prefers-mobile .mobile-only{display:initial!important}
+html.prefers-mobile .container{grid-template-columns:1fr!important}
+html.prefers-mobile .list-actions .btn.active,
+html.prefers-mobile #btnViewGrid{display:none!important}
+html.prefers-mobile body{overflow-x:hidden}
+/* Default accordion look */
+details.accordion{border:1px solid var(--border);border-radius:14px;background:var(--card);margin:8px 0;box-shadow:var(--shadow)}
+details.accordion > summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:700}
+details.accordion[open] > summary{border-bottom:1px solid var(--border)}
+details.accordion .accordion-body{padding:12px 14px}
+/* Buttons scale up on mobile */
+@media (max-width: 900px){
+  .desktop-only{display:none!important}
+  .mobile-only{display:initial!important}
+  .container{grid-template-columns:1fr!important}
+  body{overflow-x:hidden}
+  .btn{padding:14px 16px;font-size:1rem;border-radius:14px}
+  /* Hide gallery toggle on real mobile */
+  #btnViewGrid{display:none!important}
+  /* Make inputs comfortable */
+  .input, select, textarea{min-height:42px;font-size:1rem}
 }
-@media (max-width:768px), body.force-mobile.mobile-pro{
-  html,body{background:var(--mbl-bg); color:var(--mbl-text); overflow-x:hidden;}
-  header{position:sticky;top:0;z-index:50;background:linear-gradient(90deg,var(--mbl-primary),var(--mbl-accent));color:#fff;padding:10px 12px;}
-  #toggleMobileView{border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 12px;font-weight:700}
-  .mbl-search{margin-top:8px}
-  .mbl-search input{width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff}
-  .container{display:grid;grid-template-columns:1fr!important;gap:12px;height:auto}
-  .content,.sidebar{padding:8px 12px}
-  .card,.trip-card,.trip-row{background:var(--mbl-card);border-radius:18px;box-shadow:var(--mbl-shadow);padding:14px}
-  .mbl-tabs{position:relative;display:flex;gap:10px;overflow-x:auto;padding:10px 4px;scrollbar-width:none}
-  .mbl-tabs::-webkit-scrollbar{display:none}
-  .mbl-tabs>button{flex:0 0 auto;border-radius:999px;padding:10px 14px;border:1px solid rgba(148,163,184,.28);background:#0b1220;color:var(--mbl-text);font-weight:700;transition:transform 240ms}
-  .mbl-tabs>button.active{background:var(--mbl-primary);color:#fff;transform:translateY(-2px)}
-  .mbl-tabs>.mbl-underline{position:absolute;bottom:6px;height:3px;background:#fff;border-radius:3px;transition:transform 240ms,width 240ms}
-  .mbl-bottomnav{position:fixed;right:0;left:0;bottom:10px;margin:auto;display:flex;justify-content:space-between;gap:8px;max-width:620px;padding:8px;background:rgba(15,23,42,.78);backdrop-filter:blur(8px);border-radius:18px;border:1px solid rgba(255,255,255,.12);z-index:60}
-  .mbl-bottomnav>button{flex:1;border:none;background:transparent;color:var(--mbl-text);padding:8px 6px;border-radius:12px;font-weight:700}
-  .mbl-bottomnav>button.active{background:linear-gradient(180deg,var(--mbl-primary),var(--mbl-secondary));color:#fff}
-  .mbl-bottomnav>button span{display:block;font-size:12px;margin-top:2px}
-  .mbl-fab{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:70;width:62px;height:62px;border-radius:50%;border:none;color:#fff;background:linear-gradient(45deg,#22c55e,#f59e0b);box-shadow:0 12px 40px rgba(0,0,0,.35);font-size:28px;font-weight:900}
-  .mbl-speed{position:fixed;bottom:142px;left:50%;transform:translateX(-50%) scale(.9);opacity:0;pointer-events:none;display:flex;flex-direction:column;gap:10px;z-index:70}
-  .mbl-speed.open{opacity:1;transform:translateX(-50%) scale(1);pointer-events:auto;transition:all 240ms}
-  .mbl-speed button{border:none;padding:12px 16px;border-radius:14px;background:#111827;color:#fff;box-shadow:var(--mbl-shadow);text-align:center}
-  .mbl-drawer{position:fixed;top:0;bottom:0;right:0;width:84%;max-width:420px;background:#0b1220;padding:16px;border-left:1px solid rgba(255,255,255,.08);transform:translateX(100%);transition:transform 260ms;z-index:80}
-  .mbl-drawer.open{transform:translateX(0)}
-  .mbl-drawer>header{font-weight:800;margin-bottom:12px}
-  .mbl-dim{position:fixed;inset:0;background:rgba(0,0,0,.38);opacity:0;pointer-events:none;transition:opacity 260ms;z-index:75}
-  .mbl-dim.show{opacity:1;pointer-events:auto}
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch} .table-wrap table{min-width:640px}
-  .leaflet-container{height:320px;min-height:300px}
-}
-
-/* iOS-like accordions (mobile) */
-@media (max-width:768px){
-  html,body{overflow-x:hidden}
-  .container{grid-template-columns:1fr !important; height:auto;}
-  .content,.sidebar{padding:10px 12px;}
-  /* base cards */
-  .card,.trip-card,.trip-row{border-radius:16px; padding:14px;}
-  /* Accordion */
-  details.ios-acc{background:#fff;border-radius:16px;margin:10px 0;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 24px rgba(0,0,0,.06);overflow:hidden}
-  details.ios-acc>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:800;display:flex;align-items:center;gap:10px}
-  details.ios-acc>summary::marker{display:none}
-  details.ios-acc>summary::before{content:"";width:8px;height:8px;border-right:2px solid #9aa0a6;border-bottom:2px solid #9aa0a6;transform:rotate(-45deg);transition:transform .2s}
-  details.ios-acc[open]>summary::before{transform:rotate(45deg)}
-  details.ios-acc .ios-acc-body{padding:12px 16px;border-top:1px solid rgba(0,0,0,.06)}
-}
+/* ===== END FLYMILY RESPONSIVE ENHANCEMENTS ===== */
