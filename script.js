@@ -110,7 +110,7 @@ try {
   if (typeof dayjs!=='undefined') {
     if (window.dayjs_plugin_advancedFormat) { try { dayjs.extend(window.dayjs_plugin_advancedFormat); } catch(e){} }
     if (window.dayjs_plugin_utc) { try { dayjs.extend(window.dayjs_plugin_utc); } catch(e){} }
-    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin_timezone); } catch(e){} }
+    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin-timezone); } catch(e){} }
   }
 } catch(e) { /* ignore */ }
 // App State
@@ -123,6 +123,15 @@ const state = {
   maps: { mini: null, big: null, layers: { expenses: null, journal: null }, select: null, selectMarker: null, currentModal: null },
   shared: { enabled: false, token: null, readOnly: false }
 };
+
+// --- Mobile detection ---
+function isMobileMode(){
+  try{
+    const qp = new URL(location.href).searchParams.get('preview');
+    return window.matchMedia('(max-width: 430px)').matches || qp==='mobile';
+  }catch(_) { return false; }
+}
+
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -302,6 +311,8 @@ async function subscribeTrips(){
   });
 }
 function renderTripList(){
+  /* FORCE LIST ON MOBILE */
+  if (isMobileMode()) state.viewMode = 'list';
   const list = $('#tripList');
   const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
@@ -364,20 +375,9 @@ function rowHTML(t, s){
 
 function showView(view){
   try {
-    // Hide all first (no layout jank)
-    $$('.tabview').forEach(v=>{ if (v) v.hidden = true; v && v.classList && v.classList.remove('fade-enter','fade-enter-active'); });
+    $$('.tabview').forEach(v=>{ if (v) v.hidden = true; });
     const el = document.querySelector('#view-' + view);
-    if (el) {
-      el.hidden = false;
-      // micro fade-in to eliminate "flash"
-      el.classList.add('fade-enter');
-      requestAnimationFrame(()=>{
-        el.classList.add('fade-enter-active');
-        setTimeout(()=>{ el.classList.remove('fade-enter','fade-enter-active'); }, 220);
-      });
-    } else {
-      console.warn('View not found:', view);
-    }
+    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
   } catch(e){ console.warn('showView error', e); }
 }
 
@@ -631,7 +631,7 @@ $('#authSignUp').addEventListener('click', async ()=>{
   }catch(e){ $('#authError').textContent = xErr(e); }
 });
 $('#authReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#authError').textContent = xErr(e); }
+  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
 });
 $('#btnLogout').addEventListener('click', async ()=>{ await FB.signOut(auth); showToast('התנתקת'); });
 
@@ -1287,637 +1287,106 @@ document.addEventListener('click', (e) => {
 });
 
 
-// ===== MOBILE UX ENHANCEMENTS V2 (≤430px) =====
-(function(){
+// =======================================================
+// MOBILE AND DESKTOP UI CODE - REVISED FOR STABILITY
+// =======================================================
+
+// A single function to manage the theme button icon and state
+function updateThemeButton() {
+  const btnTheme = document.querySelector('#btnTheme');
+  if (!btnTheme) return;
+
+  const isDark = document.body.dataset.theme === 'dark';
+
+  // Desktop text button
+  const isDesktop = window.matchMedia && window.matchMedia("(min-width: 431px)").matches;
+  if (isDesktop) {
+    btnTheme.textContent = isDark ? 'מצב בהיר' : 'מצב כהה';
+  } else {
+    // Mobile icon button
+    btnTheme.innerHTML = isDark
+      ? '<svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+      : '<svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+  }
+}
+
+// Initial call and observer for theme changes
+document.addEventListener('DOMContentLoaded', updateThemeButton);
+new MutationObserver(updateThemeButton).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+
+// --- Re-attach main header buttons on mobile for a clean layout ---
+(function() {
   const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-
-  // 1) Force LIST view (hide gallery)
-  const ensureListView = () => {
-    const btns = Array.from(document.querySelectorAll('button, .btn'));
-    const listBtn = btns.find(b => /רשימה/.test(b.textContent || ""));
-    const galBtn  = btns.find(b => /גלריה/.test(b.textContent || ""));
-    if (listBtn && !/active/.test(listBtn.className)) listBtn.click();
-    if (galBtn) galBtn.closest?.('.list-actions, .tabs, .chips')?.classList?.add('hide-gallery-toggle');
-    if (galBtn) galBtn.style.display = 'none';
-  };
-  window.addEventListener('load', ensureListView);
-  document.addEventListener('DOMContentLoaded', ensureListView);
-  setTimeout(ensureListView, 800);
-
-  // 2) Create a compact mobile topbar with icons (menu grid, sort, theme, logout)
-  const header = document.querySelector('header') || document.body;
-  const bar = document.createElement('div');
-  bar.className = 'mobile-topbar';
-
-  const svg = {
-    grid:  '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z" fill="currentColor"/></svg>',
-    sort:  '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>',
-    theme: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 8.25-5.25A7 7 0 0 1 12 5a7 7 0 0 1 6.22-3.94A9 9 0 0 0 12 3z" fill="currentColor"/></svg>',
-    logout:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M10 17l1.41-1.41L9.83 14H16v-2H9.83l1.58-1.59L10 9l-4 4 4 4zM20 19H12v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8v2h8v14z" fill="currentColor"/></svg>'
-  };
-
-  function btn(icon, label, onClick){
-    const b = document.createElement('button');
-    b.className = 'icon-btn';
-    b.innerHTML = icon;
-    b.setAttribute('aria-label', label);
-    b.title = label;
-    b.addEventListener('click', onClick);
-    return b;
-  }
-
-  // Action Sheet structure (menu)
-  const backdrop = document.createElement('div'); backdrop.className = 'action-sheet-backdrop';
-  const sheet = document.createElement('div'); sheet.className = 'action-sheet';
-  sheet.innerHTML = `
-    <div class="handle"></div>
-    <div class="menu">
-      <button class="item" data-section="all">הצג הכל</button>
-      <button class="item" data-section="trip">נתוני נסיעה</button>
-      <button class="item" data-section="expense">הוצאות</button>
-      <button class="item" data-section="journal">יומן יומי</button>
-      <button class="item" data-section="map">מפה</button>
-      <button class="item" data-close-sheet>ביטול</button>
-    </div>`;
-  document.body.append(backdrop, sheet);
-
-  const openSheet = () => { sheet.classList.add('open'); backdrop.classList.add('open'); };
-  const closeSheet = () => { sheet.classList.remove('open'); backdrop.classList.remove('open'); };
-
-  backdrop.addEventListener('click', closeSheet);
-  sheet.addEventListener('click', (e)=>{
-    if (e.target.matches('[data-close-sheet]')) closeSheet();
-    const sec = e.target.getAttribute('data-section');
-    if (sec){
-      // Try to find matching tab by text content and click it
-      const map = {
-        all:/הצג הכל|סקירה כללית/,
-        trip:/נתוני נסיעה/,
-        expense:/הוצאות/,
-        journal:/יומן/,
-        map:/מפה/
-      };
-      const r = map[sec];
-      const btn = Array.from(document.querySelectorAll('button,.btn,.tab')).find(b => r.test(b.textContent||""));
-      if (btn) btn.click();
-      closeSheet();
-    }
-  });
-
-  // Build the topbar buttons
-  const menuBtn = btn(svg.grid, 'תפריטים', openSheet);
-  const sortBtn = btn(svg.sort, 'מיין לפי תאריך יציאה', ()=>{
-    document.dispatchEvent(new CustomEvent('mobile-sort-toggle'));
-    // נסה ללחוץ על כפתור מיון אם קיים
-    const sortIcon = Array.from(document.querySelectorAll('button,.btn,[role="button"]')).find(b => /מיין|תאריך יציאה|יציאה/.test(b.textContent||""));
-    if (sortIcon) sortIcon.click();
-  });
-  const themeBtn = btn(svg.theme, 'מצב כהה/בהיר', ()=>{
-    const tgl = Array.from(document.querySelectorAll('button,.btn')).find(b => /מצב כהה|מצב בהיר/.test(b.textContent||""));
-    if (tgl) tgl.click(); else document.documentElement.toggleAttribute('data-theme', 'light');
-  });
-  const logoutBtn = btn(svg.logout, 'התנתקות', ()=>{
-    try{ window.signOutUser && window.signOutUser(); }catch(e){}
-    // fallback: נסה למצוא כפתור התנתקות קיים
-    const out = Array.from(document.querySelectorAll('button,.btn')).find(b => /התנתקות|יציאה/.test(b.textContent||""));
-    if (out) out.click();
-  });
-
-  bar.append(menuBtn, sortBtn, themeBtn, logoutBtn);
-  header.appendChild(bar);
-
-  // 3) Replace textual buttons for theme/logout with icons (save space)
-  const makeIconOnly = () => {
-    Array.from(document.querySelectorAll('button,.btn')).forEach(b => {
-      const txt = (b.textContent||"").trim();
-      if (/התנתקות/.test(txt)){ b.innerHTML = svg.logout; b.classList.add('icon-btn'); b.setAttribute('aria-label','התנתקות') }
-      if (/מצב כהה|מצב בהיר/.test(txt)){ b.innerHTML = svg.theme; b.classList.add('icon-btn'); b.setAttribute('aria-label','מצב כהה/בהיר') }
-    });
-  };
-  setTimeout(makeIconOnly, 300);
-
-})();
-
-
-// ===== Convert textual 'sort by departure' button to icon-only on mobile =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-  function iconizeSortButtons(){
-    const candidates = Array.from(document.querySelectorAll('button,.btn,[role="button"]'))
-      .filter(b => /(מיין|תאריך יציאה|יציאה)/.test((b.textContent||'').trim()));
-    candidates.forEach(b => {
-      if (!b.classList.contains('icon-btn')) {
-        b.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>`;
-        b.classList.add('icon-btn');
-        b.setAttribute('aria-label','מיין לפי תאריך יציאה');
-        b.title = 'מיין לפי תאריך יציאה';
-      }
-    });
-  }
-  window.addEventListener('load', iconizeSortButtons);
-  document.addEventListener('DOMContentLoaded', iconizeSortButtons);
-  setTimeout(iconizeSortButtons, 600);
-})();
-
-
-// ===== MOBILE TOPBAR REFINEMENT (idempotent, ≤430px) =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-
-  // Avoid duplicates if script evaluated twice
-  if (document.querySelector('.mobile-topbar')) return;
-
-  // Force list view + hide gallery toggle
-  (function ensureList(){
-    const listBtn = Array.from(document.querySelectorAll('button,.btn')).find(b => /רשימה/.test(b.textContent||""));
-    const galBtn  = Array.from(document.querySelectorAll('button,.btn')).find(b => /גלריה/.test(b.textContent||""));
-    if (listBtn && !/active/.test(listBtn.className)) listBtn.click();
-    if (galBtn){ galBtn.style.display='none'; galBtn.closest?.('.list-actions,.tabs,.chips')?.classList?.add('hide-gallery-toggle'); }
-  })();
-
-  // Build compact icon bar
-  const svg = {
-    grid:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z" fill="currentColor"/></svg>',
-    sort:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>',
-    theme:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 8.25-5.25A7 7 0 0 1 12 5a7 7 0 0 1 6.22-3.94A9 9 0 0 0 12 3z" fill="currentColor"/></svg>',
-    logout:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 17l1.41-1.41L9.83 14H16v-2H9.83l1.58-1.59L10 9l-4 4 4 4zM20 19H12v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8v2h8v14z" fill="currentColor"/></svg>'
-  };
-  function icon(label, svgStr, onClick){
-    const b = document.createElement('button');
-    b.className='icon-btn';
-    b.setAttribute('aria-label',label);
-    b.title=label;
-    b.innerHTML=svgStr;
-    b.addEventListener('click', onClick);
-    return b;
-  }
-
-  // Action sheet
-  let backdrop = document.querySelector('.action-sheet-backdrop');
-  let sheet = document.querySelector('.action-sheet');
-  if (!backdrop){ backdrop = document.createElement('div'); backdrop.className='action-sheet-backdrop'; document.body.append(backdrop); }
-  if (!sheet){
-    sheet = document.createElement('div');
-    sheet.className='action-sheet';
-    sheet.innerHTML = `
-      <div class="handle"></div>
-      <div class="menu">
-        <button class="item" data-section="all">הצג הכל</button>
-        <button class="item" data-section="trip">נתוני נסיעה</button>
-        <button class="item" data-section="expense">הוצאות</button>
-        <button class="item" data-section="journal">יומן יומי</button>
-        <button class="item" data-section="map">מפה</button>
-        <button class="item" data-close-sheet>סגור</button>
-      </div>`;
-    document.body.append(sheet);
-  }
-  const openSheet = ()=>{ sheet.classList.add('open'); backdrop.classList.add('open'); };
-  const closeSheet = ()=>{ sheet.classList.remove('open'); backdrop.classList.remove('open'); };
-  backdrop.onclick = closeSheet;
-  sheet.addEventListener('click', (e)=>{ if (e.target.matches('[data-close-sheet]')) closeSheet();
-    const sec = e.target.getAttribute('data-section');
-    if (!sec) return;
-    const map = { all:/הצג הכל|סקירה כללית/, trip:/נתוני נסיעה/, expense:/הוצאות/, journal:/יומן/, map:/מפה/ };
-    const btn = Array.from(document.querySelectorAll('button,.btn,.tab')).find(b => map[sec].test(b.textContent||""));
-    if (btn) btn.click();
-    closeSheet();
-  });
-
-  // Click proxies
-  const sortProxy = ()=>{
-    const sort = Array.from(document.querySelectorAll('button,.btn,[role="button"]')).find(b => /(מיין|תאריך יציאה|יציאה)/.test((b.textContent||"")));
-    if (sort) sort.click();
-  };
-  const themeProxy = ()=>{
-    const tgl = Array.from(document.querySelectorAll('button,.btn')).find(b => /מצב כהה|מצב בהיר/.test((b.textContent||"")));
-    if (tgl) tgl.click();
-  };
-  const logoutProxy = ()=>{
-    const out = Array.from(document.querySelectorAll('button,.btn')).find(b => /התנתקות|יציאה/.test((b.textContent||"")));
-    if (out) out.click();
-  };
-
-  // Assemble bar and insert below header
-  const bar = document.createElement('div');
-  bar.className='mobile-topbar';
-  bar.append(
-    icon('תפריטים', svg.grid, openSheet),
-    icon('מיין לפי תאריך יציאה', svg.sort, sortProxy),
-    icon('מצב כהה/בהיר', svg.theme, themeProxy),
-    icon('התנתקות', svg.logout, logoutProxy),
-  );
-
   const header = document.querySelector('header');
-  (header || document.body).after(bar);
+  if (!header || !isMobile) return;
 
-  // Hide verbose originals in mobile to avoid duplication
-  Array.from(document.querySelectorAll('button,.btn')).forEach(b => {
-    const t = (b.textContent||'').trim();
-    if (/התנתקות|מצב כהה|מצב בהיר|גלריה/.test(t)) b.style.display='none';
-  });
+  const btnTheme = document.querySelector('#btnTheme');
+  const btnLogin = document.querySelector('#btnLogin');
+  const btnLogout = document.querySelector('#btnLogout');
+  const userBadge = document.querySelector('#userBadge');
 
-  // Hide decorative vertical email/logo pills if they overflow
-  Array.from(document.querySelectorAll('.vertical-pill,.email-vertical,.brand-vertical')).forEach(el => el.style.display='none');
+  // Create a new container to wrap buttons for better alignment
+  const actionsContainer = document.createElement('div');
+  actionsContainer.id = 'headerActions';
+
+  // Move buttons to the new container and append to header
+  actionsContainer.appendChild(btnLogin);
+  actionsContainer.appendChild(btnLogout);
+  actionsContainer.appendChild(userBadge);
+  actionsContainer.appendChild(btnTheme);
+
+  // Prepend the container to the header's right side
+  header.appendChild(actionsContainer);
+
 })();
 
+// Clear any other injected mobile bars to prevent duplicates
+document.querySelectorAll('.mobile-topbar').forEach(el=>el.remove());
 
-// ===== Build two-row mobile toolbar (email chip + icons), idempotent, ≤430px =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-  if (document.querySelector(".mobile-toolbar")) return;
-
-  // Utilities
-  const qAll = sel => Array.from(document.querySelectorAll(sel));
-  const clickByText = (rx) => qAll("button,.btn,[role='button']").find(b => rx.test((b.textContent||"").trim()))?.click();
-
-  // Email
-  const email = (window.currentUserEmail || qAll(".user-email,.email-chip,.chip").map(n=>n.textContent).find(t=>/@/.test(t||"")) || "").trim() || "התחבר";
-
-  // SVG icons (simple, lightweight)
-  const I = {
-    logout:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 17l1.41-1.41L9.83 14H16v-2H9.83l1.58-1.59L10 9l-4 4 4 4zM20 19H12v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8v2h8v14z" fill="currentColor"/></svg>',
-    theme:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 8.25-5.25A7 7 0 0 1 12 5a7 7 0 0 1 6.22-3.94A9 9 0 0 0 12 3z" fill="currentColor"/></svg>',
-    grid:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z" fill="currentColor"/></svg>',
-    sort:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>'
-  };
-
-  const iconBtn = (svg, label, handler) => {
-    const b = document.createElement("button");
-    b.className = "icon-btn";
-    b.innerHTML = svg;
-    b.setAttribute("aria-label", label);
-    b.title = label;
-    b.addEventListener("click", handler);
-    return b;
-  };
-
-  // Toolbar DOM
-  const toolbar = document.createElement("div");
-  toolbar.className = "mobile-toolbar";
-  toolbar.innerHTML = `
-    <div class="topline">
-      <div class="email-chip" title="החשבון שלך">${email}</div>
-      <div class="actions"></div>
-    </div>
-    <div class="menugrid"></div>
-  `;
-
-  // Attach after header
-  (document.querySelector("header") || document.body).after(toolbar);
-
-  // Actions row
-  const actions = toolbar.querySelector(".actions");
-  actions.append(
-    iconBtn(I.logout, "התנתקות/התחברות", () => clickByText(/התנתקות|התחברות|יציאה/)),
-    iconBtn(I.theme, "מצב כהה/בהיר", () => clickByText(/מצב כהה|מצב בהיר/))
-  );
-
-  // Menu row
-  const menu = toolbar.querySelector(".menugrid");
-  // Menu opens the existing Action Sheet if present; else tries to click any "תפריט/עוד"
-  const openMenu = () => {
-    const backdrop = document.querySelector(".action-sheet-backdrop");
-    const sheet = document.querySelector(".action-sheet");
-    if (sheet && backdrop){ sheet.classList.add("open"); backdrop.classList.add("open"); return; }
-    clickByText(/תפריט|עוד/);
-  };
-  const sortClick = () => clickByText(/מיין|תאריך יציאה|יציאה/);
-  menu.append(
-    iconBtn(I.grid, "תפריטים", openMenu),
-    iconBtn(I.sort, "מיין לפי תאריך יציאה", sortClick)
-  );
-
-  // Mobile: force list, hide gallery toggle
-  const listBtn = qAll("button,.btn").find(b => /רשימה/.test(b.textContent||""));
-  if (listBtn && !/active/.test(listBtn.className)) listBtn.click();
-  const galBtn  = qAll("button,.btn").find(b => /גלריה/.test(b.textContent||""));
-  if (galBtn){ galBtn.style.display = "none"; galBtn.closest?.(".list-actions,.tabs,.chips")?.classList?.add("hide-gallery-toggle"); }
-
-  // Hide verbose originals in mobile to avoid duplication
-  qAll("button,.btn").forEach(b => {
-    const t = (b.textContent||"").trim();
-    if (/התנתקות|מצב כהה|מצב בהיר|גלריה/.test(t)) b.style.display="none";
-  });
-})();
-
-
-// ===== Mobile toolbar: add Search and full-screen overlay (≤430px) =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-
-  // If our two-row toolbar exists, add a Search icon to the actions row
-  const toolbar = document.querySelector('.mobile-toolbar');
-  if (toolbar && !toolbar.querySelector('#btn-search')){
-    const actions = toolbar.querySelector('.actions');
-    const searchBtn = document.createElement('button');
-    searchBtn.className = 'icon-btn';
-    searchBtn.id = 'btn-search';
-    searchBtn.setAttribute('aria-label','חיפוש');
-    searchBtn.title = 'חיפוש';
-    searchBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.79L20 21.5 21.5 20l-6-6zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/></svg>';
-    actions.prepend(searchBtn);
-
-    // Build overlay once
-    if (!document.querySelector('.search-overlay')){
-      const overlay = document.createElement('div'); overlay.className = 'search-overlay';
-      const sheet = document.createElement('div'); sheet.className = 'search-sheet';
-      sheet.innerHTML = `
-        <div class="row">
-          <input class="search-input" type="search" placeholder="חפש נסיעה / מילה" />
-          <button class="icon-btn search-close" aria-label="סגור">
-            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M18.3 5.71L12 12.01 5.7 5.7 4.29 7.11l6.3 6.29-6.3 6.29 1.41 1.41L12 14.83l6.29 6.27 1.41-1.41-6.29-6.29 6.3-6.29z" fill="currentColor"/></svg>
-          </button>
-        </div>
-        <div class="search-results"></div>
-      `;
-      overlay.appendChild(sheet);
-      document.body.appendChild(overlay);
-
-      // Wiring
-      const input = sheet.querySelector('.search-input');
-      const close = sheet.querySelector('.search-close');
-      const results = sheet.querySelector('.search-results');
-      const open = () => {
-        overlay.classList.add('open');
-        setTimeout(()=>input.focus(), 10);
-        // Optionally preload with current list titles
-        results.innerHTML = '';
-        const items = Array.from(document.querySelectorAll('.trip-card .title, .trip .title, .card .title')).map(n=>n.textContent.trim()).filter(Boolean);
-        if (items.length){
-          results.innerHTML = items.slice(0,20).map(t=>`<div class="item" style="padding:10px 8px;border-bottom:1px solid var(--border)">${t}</div>`).join('');
-        }
-      };
-      const closeFn = () => overlay.classList.remove('open');
-      searchBtn.addEventListener('click', () => {
-        // Prefer to focus existing search input if present on page
-        const existing = document.querySelector('input[type="search"], .search input');
-        if (existing && existing.offsetParent !== null){
-          existing.scrollIntoView({behavior:'smooth', block:'center'});
-          existing.focus();
-        } else {
-          open();
-        }
-      });
-      close.addEventListener('click', closeFn);
-      overlay.addEventListener('click', (e)=>{ if (e.target === overlay) closeFn(); });
-      input.addEventListener('input', () => {
-        const q = input.value.trim();
-        if (!q){ results.innerHTML = ''; return; }
-        const matches = Array.from(document.querySelectorAll('.trip-card, .trip, .card'))
-          .map(card => ({card, text:(card.textContent||'').replace(/\s+/g,' ').trim()}))
-          .filter(x => x.text.includes(q));
-        results.innerHTML = matches.slice(0,30).map(x=>`<div class="item" style="padding:10px 8px;border-bottom:1px solid var(--border)">${x.text.substring(0,120)}…</div>`).join('');
-      });
-    }
+// ==== Mobile action sheet for trip ===
+let _sheetTripId = null;
+function qs(id){ return document.getElementById(id); }
+function showMobileTripSheet(tid){
+  _sheetTripId = tid;
+  const b = qs('mobileSheetBackdrop'); const s = qs('mobileActionSheet');
+  if(!b || !s) return openTrip(tid);
+  b.hidden = false; s.hidden = false;
+  requestAnimationFrame(()=>{ b.classList.add('show'); s.classList.add('show'); });
+}
+function hideMobileTripSheet(){
+  const b = qs('mobileSheetBackdrop'); const s = qs('mobileActionSheet');
+  if(!b || !s) return;
+  b.classList.remove('show'); s.classList.remove('show');
+  setTimeout(()=>{ b.hidden = true; s.hidden = true; }, 180);
+}
+// Close handlers
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(t && (t.matches('[data-close-sheet]') || t.id==='mobileSheetBackdrop')){
+    hideMobileTripSheet();
   }
-})();
-
-
-// ===== Mobile light/dark toggle via data-mobile-theme on <html> =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-  const btn = document.querySelector('#btn-theme');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    const html = document.documentElement;
-    html.setAttribute('data-mobile-theme', html.getAttribute('data-mobile-theme') === 'light' ? '' : 'light');
-  }, { capture: true });
-})();
-
-
-// ===== Mobile toolbar: single-instance enforcement & cleanup =====
-(function(){
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  if (!isMobile) return;
-
-  // prevent multiple initializations across older snippets
-  if (window.__flymilyMobileBarInit) {
-    // keep only the first toolbar
-    const bars = document.querySelectorAll('.mobile-topbar');
-    bars.forEach((el, i) => { if (i > 0) el.remove(); });
-    return;
-  }
-  window.__flymilyMobileBarInit = true;
-
-  // remove any older injected bars before we build a clean one
-  document.querySelectorAll('.mobile-topbar').forEach(el => el.remove());
-
-  // hide vertical decorative elements that break width
-  document.querySelectorAll('.vertical-pill,.email-vertical,.brand-vertical').forEach(el => el.style.display='none');
-
-  // --- build two-row toolbar ---
-  const qAll = sel => Array.from(document.querySelectorAll(sel));
-  const clickByText = (rx) => qAll("button,.btn,[role='button']").find(b => rx.test((b.textContent||"").trim()))?.click();
-  const email = (window.currentUserEmail || qAll(".user-email,.email-chip,.chip").map(n=>n.textContent).find(t=>/@/.test(t||"")) || "").trim() || "התחבר";
-
-  const I = {
-    logout:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 17l1.41-1.41L9.83 14H16v-2H9.83l1.58-1.59L10 9l-4 4 4 4zM20 19H12v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8v2h8v14z" fill="currentColor"/></svg>',
-    theme:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 8.25-5.25A7 7 0 0 1 12 5a7 7 0 0 1 6.22-3.94A9 9 0 0 0 12 3z" fill="currentColor"/></svg>',
-    grid:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z" fill="currentColor"/></svg>',
-    sort:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>',
-    search:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.79L20 21.5 21.5 20l-6-6zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/></svg>'
-  };
-
-  const icon = (svg, label, onClick) => {
-    const b = document.createElement('button');
-    b.className = 'icon-btn';
-    b.innerHTML = svg;
-    b.title = label;
-    b.setAttribute('aria-label', label);
-    b.addEventListener('click', onClick);
-    return b;
-  };
-
-  const bar = document.createElement('div');
-  bar.className = 'mobile-topbar';
-  bar.innerHTML = `
-    <div class="topline">
-      <div class="email-chip" title="החשבון שלך">${email}</div>
-      <div class="actions"></div>
-    </div>
-    <div class="menugrid"></div>
-  `;
-  (document.querySelector('header') || document.body).after(bar);
-
-  const actions = bar.querySelector('.actions');
-  actions.append(
-    icon(I.logout,'התנתקות/התחברות', ()=>clickByText(/התנתקות|התחברות|יציאה/)),
-    icon(I.theme,'מצב כהה/בהיר', ()=>clickByText(/מצב כהה|מצב בהיר/)),
-    icon(I.search,'חיפוש', ()=>{
-      const existing = document.querySelector('input[type="search"], .search input');
-      if (existing && existing.offsetParent !== null){ existing.scrollIntoView({behavior:'smooth', block:'center'}); existing.focus(); }
-      else { document.querySelector('#btn-search')?.click(); }
-    })
-  );
-
-  const menu = bar.querySelector('.menugrid');
-  menu.append(
-    icon(I.grid,'תפריטים', ()=>{
-      const backdrop = document.querySelector('.action-sheet-backdrop');
-      const sheet = document.querySelector('.action-sheet');
-      if (sheet && backdrop){ sheet.classList.add('open'); backdrop.classList.add('open'); }
-    }),
-    icon(I.sort,'מיין לפי תאריך יציאה', ()=>clickByText(/מיין|תאריך יציאה|יציאה/))
-  );
-
-  // enforce list view, hide gallery
-  const galBtn  = qAll("button,.btn").find(b => /גלריה/.test(b.textContent||""));
-  if (galBtn){ galBtn.style.display='none'; galBtn.closest?.('.list-actions,.tabs,.chips')?.classList?.add('hide-gallery-toggle'); }
-  const listBtn = qAll("button,.btn").find(b => /רשימה/.test(b.textContent||""));
-  if (listBtn && !/active/.test(listBtn.className)) listBtn.click();
-
-  // hide original verbose controls
-  qAll('button,.btn').forEach(b=>{
-    const t=(b.textContent||'').trim();
-    if(/התנתקות|מצב כהה|מצב בהיר|גלריה/.test(t)) b.style.display='none';
-  });
-})();
-
-
-
-
-// ===== FLYMILY Mobile Toolbar v3 (fixed, single instance, ≤430px) =====
-(function () {
-  const isMobile = matchMedia("(max-width:430px)").matches;
-  if (!isMobile) return;
-
-  if (window.__flymilyMobileBarInit) return;
-  window.__flymilyMobileBarInit = true;
-  document.querySelectorAll(".mobile-toolbar").forEach(el => el.remove());
-
-  // Helpers (define ONCE)
-  const $all = (sel)=>Array.from(document.querySelectorAll(sel));
-  const clickByText = (rx)=>$all("button,.btn,[role='button']").find(b=>rx.test((b.textContent||"").trim()))?.click();
-
-  // Hide vertical decorations that break mobile layout
-  document.querySelectorAll(".vertical-pill,.email-vertical,.brand-vertical").forEach(el => el.style.display="none");
-
-  // Resolve email
-  const email =
-    (window.currentUserEmail ||
-     $all(".user-email,.email-chip,.chip").map(n=>n.textContent).find(t=>/@/.test(t||"")) || ""
-    ).trim() || "התחבר";
-
-  // Icons
-  const I = {
-    logout:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 17l1.41-1.41L9.83 14H16v-2H9.83l1.58-1.59L10 9l-4 4 4 4zM20 19H12v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8v2h8v14z" fill="currentColor"/></svg>',
-    theme:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 0 8.25-5.25A7 7 0 0 1 12 5a7 7 0 0 1 6.22-3.94A9 9 0 0 0 12 3z" fill="currentColor"/></svg>',
-    grid:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 8v-8h8v8h-8z" fill="currentColor"/></svg>',
-    sort:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 6h14v2H7V6zm0 5h10v2H7v-2zm0 5h6v2H7v-2zM3 5v14l4-3.5L3 12l4-3.5L3 5z" fill="currentColor"/></svg>',
-    search:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.79L20 21.5 21.5 20l-6-6zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/></svg>'
-  };
-  const iconBtn = (svg,label,fn)=>{
-    const b=document.createElement("button");
-    b.className="icon-btn"; b.innerHTML=svg; b.title=label; b.setAttribute("aria-label",label);
-    b.addEventListener("click",fn); return b;
-  };
-
-  // Build toolbar
-  const bar = document.createElement("div");
-  bar.className = "mobile-toolbar";
-  bar.innerHTML = `
-    <div class="topline">
-      <div class="email-chip" title="החשבון שלך">${email}</div>
-      <div class="actions"></div>
-    </div>
-    <div class="menugrid"></div>`;
-  (document.querySelector("header")||document.body).after(bar);
-
-  // Top actions
-  const actions = bar.querySelector(".actions");
-  actions.append(
-    iconBtn(I.logout,"התנתקות/התחברות",()=>clickByText(/התנתקות|התחברות|יציאה/)),
-    iconBtn(I.theme,"מצב כהה/בהיר",()=>{
-      if (!clickByText(/מצב כהה|מצב בהיר/)) {
-        const html=document.documentElement;
-        html.setAttribute("data-mobile-theme", html.getAttribute("data-mobile-theme")==="light" ? "" : "light");
-      }
-    }),
-    iconBtn(I.search,"חיפוש",()=>{
-      const existing=document.querySelector('input[type="search"], .search input');
-      if (existing && existing.offsetParent!==null){ existing.scrollIntoView({behavior:"smooth",block:"center"}); existing.focus(); }
-      else document.querySelector(".search-overlay")?.classList.add("open");
-    })
-  );
-
-  // Bottom menu
-  const menu = bar.querySelector(".menugrid");
-  menu.append(
-    iconBtn(I.grid,"תפריטים",()=>{
-      const backdrop=document.querySelector(".action-sheet-backdrop");
-      const sheet=document.querySelector(".action-sheet");
-      if (sheet && backdrop){ sheet.classList.add("open"); backdrop.classList.add("open"); }
-    }),
-    iconBtn(I.sort,"מיין לפי תאריך יציאה",()=>{
-      // Try existing sort button
-      if (clickByText(/מיין|תאריך יציאה|יציאה/)) return;
-      // Fallback DOM sort
-      const cards = $all(".trip-card,[data-depart]");
-      const parse = s => (s||"").match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/) ?
-        new Date(RegExp.$3.length===2?("20"+RegExp.$3):RegExp.$3, RegExp.$2-1, RegExp.$1).getTime() : 0;
-      cards.sort((a,b)=>{
-        const da=+a.dataset.depart || parse(a.textContent);
-        const db=+b.dataset.depart || parse(b.textContent);
-        return db-da;
-      });
-      const list = cards[0]?.parentElement;
-      if (list) cards.forEach(c=>list.appendChild(c));
-    })
-  );
-
-  // List-only on mobile
-  const galBtn = $all("button,.btn").find(b=>/גלריה/.test(b.textContent||""));
-  if (galBtn){ galBtn.style.display="none"; galBtn.closest?.(".list-actions,.tabs,.chips")?.classList?.add("hide-gallery-toggle"); }
-  const listBtn = $all("button,.btn").find(b=>/רשימה/.test(b.textContent||""));
-  if (listBtn && !/active/.test(listBtn.className)) listBtn.click();
-
-  // Hide verbose originals to avoid UI duplication
-  $all("button,.btn").forEach(b=>{
-    const t=(b.textContent||"").trim();
-    if (/התנתקות|מצב כהה|מצב בהיר|גלריה/.test(t)) b.style.display="none";
-  });
-
-  bar.style.zIndex = "999";
-})();
-
-
-// === Collapsible menus (for nested actions) ===
-document.addEventListener('click', (e)=>{
-  const t = e.target.closest('[data-collapse]');
-  if(!t) return;
-  const host = t.closest('.collapsible');
-  if(!host) return;
-  host.classList.toggle('is-open');
-  const content = host.querySelector('.collapsible__content');
-  if (content && host.classList.contains('is-open')){
-    content.style.maxHeight = Math.min(content.scrollHeight, 480) + 'px';
-  } else if (content){
-    content.style.maxHeight = '0px';
+});
+// When user chooses an icon
+document.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('#mobileActionSheet .item:not(.cancel)');
+  if(!btn) return;
+  const tab = btn.dataset.tab;
+  if(!_sheetTripId) return;
+  hideMobileTripSheet();
+  await openTrip(_sheetTripId);
+  if (tab){
+    const el = document.querySelector(`#tabs [data-tab="${tab}"]`);
+    if (el){ el.click(); }
   }
 });
 
-// === Action Sheet (idempotent, no flicker) ===
-document.addEventListener('click', (e) => {
-  const openBtn = e.target.closest('[data-open-sheet]');
-  const closeBtn = e.target.closest('[data-close-sheet]');
-  const backdrop = document.querySelector('.action-sheet-backdrop');
-  const sheet = document.querySelector('.action-sheet');
-  if (!sheet || !backdrop) return;
 
-  if (openBtn){
-    if (!sheet.classList.contains('open')){
-      sheet.classList.add('open');
-      backdrop.classList.add('open');
-    }
+// Disable gallery/list buttons in mobile
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (isMobileMode()) {
+    const g = document.getElementById('btnViewGrid');
+    const l = document.getElementById('btnViewList');
+    if (g) g.style.display = 'none';
+    if (l) l.style.display = 'none';
   }
-  if (closeBtn || e.target === backdrop){
-    sheet.classList.remove('open');
-    backdrop.classList.remove('open');
-  }
-}, { capture:true });
+});

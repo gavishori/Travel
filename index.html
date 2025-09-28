@@ -52,7 +52,7 @@
         <div class="section-title">
           <h2 style="margin:0">הנסיעות שלי</h2>
           <div class="spacer"></div>
-      <span class="user-badge" class="muted" style="display:none"></span>
+      <span id="userBadge" class="muted" style="display:none"></span>
           <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
         </div>
         <div class="list-actions">
@@ -362,5 +362,35 @@
     <button id="confirmDeleteNo" class="btn">ביטול</button>
   </div>
 </dialog>
+
+    <!-- Mobile Action Sheet -->
+    <div id="mobileSheetBackdrop" class="action-sheet-backdrop" hidden></div>
+    <div id="mobileActionSheet" class="action-sheet" hidden aria-modal="true" role="dialog" aria-label="פעולות נסיעה">
+      <div class="handle"></div>
+      <div class="menu icons">
+        <button class="item" data-tab="overview">
+          <span class="ico" aria-hidden="true">🏷️</span><span>הצג הכל</span>
+        </button>
+        <button class="item" data-tab="meta">
+          <span class="ico">🧭</span><span>נתוני נסיעה</span>
+        </button>
+        <button class="item" data-tab="expenses">
+          <span class="ico">💳</span><span>הוצאות</span>
+        </button>
+        <button class="item" data-tab="journal">
+          <span class="ico">📝</span><span>יומן יומי</span>
+        </button>
+        <button class="item" data-tab="map">
+          <span class="ico">🗺️</span><span>מפה</span>
+        </button>
+        <button class="item" data-tab="share">
+          <span class="ico">🔗</span><span>ייבוא / ייצוא / שיתוף</span>
+        </button>
+        <button class="item cancel" data-close-sheet>
+          <span class="ico">✖</span><span>ביטול</span>
+        </button>
+      </div>
+    </div>
+    
 </body>
 </html>

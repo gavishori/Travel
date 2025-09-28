@@ -529,28 +529,18 @@ td a.external-link {
 /* Responsive: on narrow screens place the name field below */
 @media (max-width: 720px){
   #expenseModal .location-row,
-  #journalModal .location-row{ grid-template-columns: 1fr 1fr 1fr; }
+  #journalModal .location-row{ grid-template-columns: 1fr 1fr; }
   #expenseModal .location-row .location-name,
   #journalModal .location-row .location-name{ grid-column: 1 / -1; }
 }
 
-/* Prevent horizontal scrolling in modals */
-dialog, .modal, #expenseModal, #journalModal {
-  max-width: min(720px, 96vw);
-  width: min(720px, 96vw);
-  overflow-x: hidden !important;
-}
-#expenseModal .body, #journalModal .body {
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: min(70vh, 720px);
-}
 
+/* Prevent horizontal scrolling in modals */
+dialog.modal{max-width:min(720px,96vw);width:min(720px,96vw);overflow-x:hidden!important}
+#expenseModal .body,#journalModal .body{overflow-y:auto;overflow-x:hidden;max-height:min(70vh,720px)}
 /* Comfortable textareas */
 #expenseModal .body textarea.input,
 #journalModal .body textarea.input{ width:100%; min-height:96px; resize:vertical; }
-
-
 /* Enforce equal widths and consistent heights */
 #expenseModal .location-row .location-name .input,
 #journalModal  .location-row .location-name .input{
@@ -566,16 +556,18 @@ dialog, .modal, #expenseModal, #journalModal {
   justify-content: center;
   width: 100%;
 }
-
 /* Tight mobile behavior: 2 columns then full width */
 @media (max-width: 720px){
   #expenseModal .location-row,
-  #journalModal  .location-row{ grid-template-columns: 1fr 1fr; }
+  #journalModal  .location-row{
+    grid-template-columns: 1fr 1fr;
+    gap: 8px; /* Adjusted from 12px for tighter layout */
+  }
   #expenseModal .location-row > *:nth-child(3),
-  #journalModal  .location-row > *:nth-child(3){ grid-column: 1 / -1; }
+  #journalModal  .location-row > *:nth-child(3){
+    grid-column: 1 / -1;
+  }
 }
-
-
 /* ===== Location row: 3 columns, one line, equal widths ===== */
 #expenseModal .location-row,
 #journalModal  .location-row{
@@ -613,19 +605,10 @@ dialog, .modal, #expenseModal, #journalModal {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-dialog, .modal, #expenseModal, #journalModal{
-  max-width: min(820px, 96vw);
-  width: min(820px, 96vw);
-  overflow-x: hidden !important;
-}
-#expenseModal .body, #journalModal .body{
-  overflow-x: hidden;
-}
-
-
+dialog.modal{max-width:min(820px,96vw);width:min(820px,96vw);overflow-x:hidden!important}
+#expenseModal .body,#journalModal .body{overflow-x:hidden}
 /* === iPhone-friendly viewport sizing === */
 :root{ --mobile-hpad:16px; }
-
 /* When running preview mode inside an iframe or on device:
    lock the app to the viewport height and allow internal scrolling */
 .preview-mobile .app{
@@ -635,92 +618,70 @@ dialog, .modal, #expenseModal, #journalModal{
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-
 /* Mobile typography & spacing (iPhone widths up to 430px) */
 @media (max-width: 430px){
   html, body{ font-size: 15px; }
   header{ padding:10px var(--mobile-hpad); gap:8px; }
   h1, .h1, .section-title h1{ font-size:28px; line-height:1.15; margin:8px 0 12px; }
-
   /* Buttons */
   .btn, button{ min-height:44px; padding:0 12px; border-radius:14px; }
   .btn.btn-lg{ min-height:50px; padding:0 14px; }
-
   /* Inputs / search */
   input[type="text"], input[type="search"], .search, .input{
     height:44px; min-height:44px;
   }
-
   /* Cards / lists */
   .cards{ gap:8px; }
   .list, .grid, .row, .list-actions, .tabs{ gap:8px; }
   .card, .trip-card{ padding:12px 14px; border-radius:16px; }
-
   /* Trip item text sizing */
   .trip-card .title, .trip .title{ font-size:18px; }
-  .trip-card .dates{ font-size:15px; }
-  .trip-card .tags{ gap:6px; }
-
+  .trip-card .dates{ font-size:14px; }
+  .trip-card .meta, .trip-card .tags{ font-size:13px; }
   /* Horizontal paddings for main content */
   main, .content, .page, .container{ padding-inline: var(--mobile-hpad); }
 }
-
-
 /* =========================
    MOBILE-ONLY DESIGN (≤430px)
    ========================= */
 @media (max-width: 430px){
-
   /* Layout frame */
   .app{ grid-template-rows: auto 1fr; }
   main, .content, .page, .container{ padding-inline:16px; }
   html, body{ overflow-x:hidden }
-
   /* Header compact */
   header{ padding:10px 14px; gap:10px; }
   header .brand{ font-size:16px }
   header .spacer{ display:none } /* חוסך מקום במובייל בלבד */
-
   /* H1 sizing */
   h1, .h1, .section-title h1{ font-size:26px; line-height:1.2; margin:10px 0 12px }
-
   /* Tabs -> one-column chips (no horizontal scroll) */
   .tabs{ flex-direction:column; gap:8px; padding:8px 0; overflow:visible }
   .tabs .btn{ width:100%; justify-content:center }
-
   /* Lists/cards scale */
   .cards{ grid-template-columns: 1fr; gap:10px }
   .card, .trip-card{ border-radius:16px; padding:12px 14px }
-
   /* Trip item text */
   .trip-card .title{ font-size:18px; }
   .trip-card .dates{ font-size:14px; }
   .trip-card .meta, .trip-card .tags{ font-size:13px; }
-
   /* Inputs & buttons accessible sizes */
   input, select, textarea{ font-size:16px } /* מונע zoom ב-iOS */
   input[type="text"], input[type="search"], .input, .search{ height:44px }
   .btn, button{ min-height:44px; border-radius:14px; }
   .btn.btn-lg{ min-height:50px }
-
   /* Section spacing */
   .section{ margin-block:12px }
   .row{ gap:8px; flex-wrap:wrap } /* הכל בטור אחד */
   .row > *{ flex: 1 1 100% }      /* פריט לכל שורה */
-
   /* Sticky bottom actions for forms */
   .modal .footer{ position:sticky; bottom:0; background:var(--card) }
-
   /* Word wrapping (no horizontal scroll) */
   .chip, .btn, .title, .dates, .tags, .cell, p, span{ white-space:normal; overflow-wrap:anywhere }
-
   /* Top chips row -> allow wrapping, but keep one column look by making each 100% */
   .chips, .list-actions{ flex-direction:column; gap:8px }
   .chips .chip, .list-actions .btn{ width:100%; justify-content:center }
-
-  /* Bottom sheet behavior already defined earlier; keep */
 }
-
 /* ==========
    Action Sheet (mobile menus) - works any width, but you can trigger only in mobile UI
    ========== */
@@ -732,8 +693,6 @@ dialog, .modal, #expenseModal, #journalModal{
 .action-sheet .menu{ display:flex; flex-direction:column; padding:8px }
 .action-sheet .menu .item{ padding:14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border) }
 .action-sheet .menu .item:last-child{ border-bottom:none }
-
-
 /* ===== Mobile topbar and icon buttons (≤430px) ===== */
 @media (max-width: 430px){
   .mobile-topbar{
@@ -748,8 +707,6 @@ dialog, .modal, #expenseModal, #journalModal{
   }
   .hide-gallery-toggle{ display:none !important; }
 }
-
-
 /* ===== Mobile Soft Color Palette (<=430px) ===== */
 @media (max-width: 430px){
   :root{
@@ -759,17 +716,14 @@ dialog, .modal, #expenseModal, #journalModal{
     --ink:#e9eef4;
     --muted:#a5b4c6;
     --border:#263242;
-
     /* brand accents (soft) */
     --brand:#7cc5ff;            /* soft sky blue */
     --accent:#ffc98b;           /* warm peach highlight */
     --ok:#84e1b2;               /* mint ok */
     --danger:#ff8ea3;           /* rose danger */
-
     /* shadows feel */
     --shadow: 0 12px 28px rgba(0,0,0,.22);
   }
-
   /* emphasize primary buttons in mobile with brand tint */
   .btn.primary, .btn.cta{
     background: var(--brand);
@@ -778,7 +732,6 @@ dialog, .modal, #expenseModal, #journalModal{
   }
   .btn.primary:active{ transform: translateY(1px) }
   .btn.outline{ border-color: var(--brand); color: var(--brand); background: transparent }
-
   /* chips & tabs look */
   .tabs .btn, .chips .chip{
     background: rgba(124,197,255,.10);
@@ -788,14 +741,11 @@ dialog, .modal, #expenseModal, #journalModal{
     background: rgba(124,197,255,.20);
     border-color: var(--brand);
   }
-
   /* action sheet */
   .action-sheet{ background: var(--card); }
   .action-sheet .menu .item{ background: transparent; }
   .action-sheet .menu .item:active{ background: rgba(255,201,139,.1) }
 }
-
-
 @media (max-width: 430px){
   .icon-btn{
     background: rgba(124,197,255,.12);
@@ -804,8 +754,6 @@ dialog, .modal, #expenseModal, #journalModal{
   }
   .icon-btn:active{ transform: translateY(1px) }
 }
-
-
 /* ===== Mobile two-row toolbar (≤430px) ===== */
 @media (max-width: 430px){
   .mobile-toolbar{
@@ -819,17 +767,14 @@ dialog, .modal, #expenseModal, #journalModal{
     display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
   }
   .mobile-toolbar .email-chip{
-    max-width: 100%;
-    padding: 10px 12px; border-radius: 999px;
+    max-width: 100%; padding: 10px 12px; border-radius: 999px;
     background: rgba(124,197,255,.12);
     border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink);
-    font-size: 14px;
+    color: var(--ink); font-size: 14px;
     text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
   }
   .mobile-toolbar .actions{ display: flex; gap: 8px; }
   .mobile-toolbar .menugrid{ display: flex; gap: 8px; flex-wrap: wrap; }
-
   .icon-btn{
     width: 36px; height: 36px; border-radius: 10px;
     display: grid; place-items: center;
@@ -839,10 +784,8 @@ dialog, .modal, #expenseModal, #journalModal{
   }
   .icon-btn:active{ transform: translateY(1px) }
   /* Hide gallery toggle block if present */
-  .hide-gallery-toggle{ display: none !important; }
+  .hide-gallery-toggle{ display:none !important; }
 }
-
-
 /* ===== Comprehensive Mobile Palette & Components (≤430px) ===== */
 @media (max-width: 430px){
   :root{
@@ -857,27 +800,22 @@ dialog, .modal, #expenseModal, #journalModal{
     --danger:#ff8ea3;     /* Soft rose */
     --shadow: 0 12px 28px rgba(0,0,0,.22);
   }
-
   /* Global background & text */
   html, body{ background: var(--bg); color: var(--ink); }
   .app{ background: linear-gradient(180deg, rgba(21,26,35,.9), rgba(21,26,35,.98)); color: var(--ink); }
-
   /* Header & mobile bars */
   header, .mobile-toolbar{ background: rgba(21,26,35,.96); border-color: var(--border); }
-
   /* Cards / sections */
   .card, .trip-card, .section, .panel, .box{
     background: var(--card); border: 1px solid var(--border);
     border-radius: 16px; box-shadow: var(--shadow);
   }
-
   /* Inputs */
   input, select, textarea, .input, .search{
     background: #111722; color: var(--ink);
     border: 1px solid var(--border); border-radius: 14px;
   }
   input::placeholder{ color: #8c9ab1; }
-
   /* Buttons */
   .btn, button{
     background: rgba(124,197,255,.10);
@@ -891,7 +829,6 @@ dialog, .modal, #expenseModal, #journalModal{
   }
   .btn.ghost{ background: transparent; border-color: var(--border); color: var(--muted); }
   .btn.danger{ background: rgba(255,142,163,.18); border-color: rgba(255,142,163,.5); color: #ffd5dd; }
-
   /* Tabs & chips */
   .tabs .btn, .chips .chip{
     background: rgba(124,197,255,.12);
@@ -902,18 +839,15 @@ dialog, .modal, #expenseModal, #journalModal{
     background: rgba(124,197,255,.22);
     border-color: var(--brand);
   }
-
   /* Tables (if shown) */
   table{ color: var(--ink); }
   table th, table td{ border-color: var(--border); }
-
   /* Modals / bottom sheets / action sheet */
   .modal, .action-sheet{ background: var(--card); color: var(--ink); }
   .modal .footer{ background: rgba(21,26,35,.96); border-top:1px solid var(--border) }
   .action-sheet .menu .item{ background: transparent; color: var(--ink) }
   .action-sheet .menu .item:active{ background: rgba(255,201,139,.10) }
   .action-sheet-backdrop{ background: rgba(0,0,0,.45) }
-
   /* Icon buttons */
   .icon-btn{
     background: rgba(124,197,255,.12);
@@ -921,100 +855,9 @@ dialog, .modal, #expenseModal, #journalModal{
     color: var(--ink);
   }
 }
-
-
-/* ===== Full-screen mobile search overlay ===== */
-@media (max-width: 430px){
-  .search-overlay{ position: fixed; inset: 0; display: none; z-index: 1000; }
-  .search-overlay.open{ display: grid; grid-template-rows: auto 1fr; background: rgba(0,0,0,.45); }
-  .search-sheet{
-    background: var(--card); border-top: 1px solid var(--border);
-    border-radius: 20px 20px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.35);
-    margin-top: auto; padding: 12px; animation: sheet-up .22s cubic-bezier(.2,.8,.2,1);
-  }
-  .search-sheet .row{ display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-  .search-input{ height: 44px; border-radius: 14px; border:1px solid var(--border); background:#111722; color:var(--ink); padding: 0 12px; }
-  .search-close.icon-btn{ width:44px; height:44px; }
-  .search-results{ padding: 8px 4px 6px; max-height: 55vh; overflow:auto; }
-}
-@keyframes sheet-up{from{transform: translateY(16px); opacity:.0 } to{ transform: none; opacity:1}}
-
-
-/* ===== Mobile LIGHT theme (≤430px) — opt-in via html[data-mobile-theme="light"] ===== */
-@media (max-width: 430px){
-  html[data-mobile-theme="light"]{
-    --bg:#F7F8FB;
-    --card:#FFFFFF;
-    --ink:#0E1116;
-    --muted:#415266;
-    --border:#D9E0EA;
-    --brand:#7CC5FF;
-    --accent:#FFCE8B;
-    --ok:#4CCB9A;
-    --danger:#FF778F;
-    --shadow: 0 10px 24px rgba(13, 37, 62, .08);
-  }
-  html[data-mobile-theme="light"] body,
-  html[data-mobile-theme="light"] .app{ background: var(--bg); color: var(--ink); }
-  html[data-mobile-theme="light"] header,
-  html[data-mobile-theme="light"] .mobile-toolbar{ background: #fffffff2; border-color: var(--border); }
-
-  html[data-mobile-theme="light"] .card,
-  html[data-mobile-theme="light"] .trip-card,
-  html[data-mobile-theme="light"] .section,
-  html[data-mobile-theme="light"] .panel,
-  html[data-mobile-theme="light"] .box{
-    background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
-  }
-
-  html[data-mobile-theme="light"] input,
-  html[data-mobile-theme="light"] select,
-  html[data-mobile-theme="light"] textarea,
-  html[data-mobile-theme="light"] .input,
-  html[data-mobile-theme="light"] .search{
-    background: #FFFFFF; color: var(--ink); border:1px solid var(--border);
-  }
-  html[data-mobile-theme="light"] input::placeholder{ color:#7a8aa2; }
-
-  html[data-mobile-theme="light"] .btn,
-  html[data-mobile-theme="light"] button{
-    background: #fff;
-    color: var(--ink);
-    border:1px solid var(--border);
-  }
-  html[data-mobile-theme="light"] .btn.primary,
-  html[data-mobile-theme="light"] .btn.cta{
-    background: var(--brand); color:#0b1220; border-color: transparent;
-  }
-  html[data-mobile-theme="light"] .btn.ghost{ background: transparent; color: var(--muted) }
-
-  html[data-mobile-theme="light"] .tabs .btn,
-  html[data-mobile-theme="light"] .chips .chip{
-    background: #fff; border:1px solid var(--border); color: var(--ink);
-  }
-  html[data-mobile-theme="light"] .tabs .btn.active,
-  html[data-mobile-theme="light"] .chips .chip.active{
-    background: rgba(124,197,255,.20); border-color: var(--brand);
-  }
-
-  html[data-mobile-theme="light"] .icon-btn{
-    background: #fff; border:1px solid var(--border); color: var(--ink);
-  }
-
-  html[data-mobile-theme="light"] .modal,
-  html[data-mobile-theme="light"] .action-sheet{
-    background: #fff; color: var(--ink);
-  }
-  html[data-mobile-theme="light"] .modal .footer{ background:#fff; border-top:1px solid var(--border) }
-  html[data-mobile-theme="light"] .action-sheet-backdrop{ background: rgba(0,0,0,.35) }
-}
-
-
 @media (max-width: 430px){
   .mobile-topbar{ margin-bottom: 8px; }
 }
-
-
 /* ===== Mobile toolbar v3 (≤430px) ===== */
 @media (max-width:430px){
   .mobile-toolbar{
@@ -1041,43 +884,28 @@ dialog, .modal, #expenseModal, #journalModal{
   .icon-btn:active{ transform: translateY(1px) }
   .hide-gallery-toggle{ display:none !important }
 }
-
-/* --- Mobile cleanup: single-column, no duplicates --- */
-@media (max-width: 430px){
-  /* Hide the original header text buttons: we use the mobile icon bar created in JS */
-  header #btnTheme,
-  header #btnLogout,
-  header #btnLogin,
-  header #btnAllTrips { display:none !important; }
-
-  /* Force list-only view: hide any gallery/list toggles */
-  .list-actions #btnViewGrid,
-  .list-actions #btnViewList { display:none !important; }
-
-  /* In Expenses/Journal, keep the internal action bars only */
-  #view-expenses .list-actions { display:none !important; }
-  /* In journal keep actions but compact spacing if needed */
-  #view-journal .list-actions { gap: 8px; }
-
-  /* Single column: avoid accidental horizontal scroll in containers */
-  html, body { overflow-x: hidden; }
+/*
+  The following rules were causing the "disappearing buttons" issue.
+  They are now commented out.
+*/
+/*
+@media (max-width:430px){
+  .mobile-topbar{ display:none !important; }
+  header button, header .btn, #userBadge { display: inline-block !important; }
 }
-
-/* Optional: nicer light theme defaults for mobile (can be toggled to dark in JS) */
-@media (max-width: 430px){
-  html[data-mobile-theme="light"] body{
-    background: #f6f7fb;
+*/
+/* New CSS for header and buttons. */
+@media (max-width: 430px) {
+  /* Hide the old buttons to prevent duplicates.
+     The JavaScript code will create and manage new icon-only buttons. */
+  header #btnAllTrips, header #btnTheme, header #btnLogin, header #btnLogout {
+    display: none !important;
   }
 }
-
-/* === Micro-animations & UX polish (mobile) === */
-.action-sheet{ transform: translateY(40%); opacity:0; transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .22s; }
-.action-sheet.open{ transform: translateY(0); opacity:1; }
-
-/* Collapsible submenus */
-.collapsible__content{ max-height:0; overflow:hidden; transition:max-height .22s ease, opacity .22s ease; opacity:.0; }
-.collapsible.is-open .collapsible__content{ max-height: 320px; opacity:1; }
-
-/* Fade-in when switching views to avoid flicker */
-.tabview.fade-enter{ opacity:0; }
-.tabview.fade-enter-active{ opacity:1; transition: opacity .18s ease-out; }
+/* CSS to handle the moon/sun icon and theme change */
+body[data-theme="dark"] .theme-icon::before {
+    content: '🌙';
+}
+body[data-theme="light"] .theme-icon::before {
+    content: '☀️';
+}
