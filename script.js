@@ -396,13 +396,32 @@ async function openTrip(id){
 
 // Function to map country to currency
 const localCurrencyMap = {
-  "תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD"
-};
+  "תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD", "סין": "CNY"};
 function getLocalCurrency(destination){
   if (!destination) return null;
   const destinations = destination.split(',').map(d=>d.trim());
   const localCurrencies = destinations.map(d=>localCurrencyMap[d]).filter(Boolean);
   return localCurrencies.length ? localCurrencies[0] : null;
+
+
+function ensureExpenseCurrencyOption() {
+  try{
+    const cur = state.current && state.current.localCurrency;
+    if (!cur) return;
+    const sel = document.getElementById('expCurr');
+    if (!sel) return;
+    const exists = Array.from(sel.options).some(o => o.value === cur);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = cur;
+      opt.textContent = cur;
+      sel.appendChild(opt);
+    }
+  }catch(e){ console.warn('ensureExpenseCurrencyOption failed', e); }
+}
+// expose globally for module/hoisting edge cases
+try{ window.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption; }catch(_e){}
+
 }
 
 async function loadTrip(){
@@ -412,6 +431,7 @@ async function loadTrip(){
   const t = { id: snap.id, ...snap.data() };
   state.current = t;
   state.current.localCurrency = getLocalCurrency(t.destination);
+  ensureExpenseCurrencyOption();
 
   // Overview meta
   $('#metaSummary').innerHTML = `
@@ -1951,3 +1971,33 @@ document.addEventListener('click', (ev)=>{
 
 // expose for inline onclick in templates
 window.searchAndNavigate = searchAndNavigate;
+
+
+// === Fallback guard: ensureExpenseCurrencyOption (universal) ===
+(function(){
+  try{
+    var root = (typeof window !== 'undefined') ? window : globalThis;
+    if (typeof root.ensureExpenseCurrencyOption !== 'function') {
+      root.ensureExpenseCurrencyOption = function(localCode){
+        try{
+          var lc = (localCode) 
+            || (root.state && (root.state.localCurrency || (root.state.current && root.state.current.localCurrency))) 
+            || 'USD';
+          if (!lc) return;
+          var selects = Array.prototype.slice.call(document.querySelectorAll('select[id*="curr"], select[name*="curr"], select[id*="Currency"], select[name*="Currency"]'));
+          selects.forEach(function(sel){
+            var exists = Array.prototype.slice.call(sel.options).some(function(o){
+              var t = (o.textContent || o.innerText || '').trim().toUpperCase();
+              return o.value === lc || t === lc || t.indexOf(lc.toUpperCase()) > -1;
+            });
+            if (!exists) {
+              var opt = new Option(lc, lc, false, false);
+              sel.add(opt);
+            }
+          });
+        }catch(e){ /* swallow */ }
+      };
+    }
+  }catch(e){ /* swallow */ }
+})();
+
