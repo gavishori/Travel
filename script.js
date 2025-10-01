@@ -1,3 +1,13 @@
+
+// --- Platform class bootstrap (once, early) ---
+(function(){
+  try{
+    const isMobile = window.matchMedia && matchMedia('(pointer:coarse)').matches;
+    const root = document.documentElement;
+    root.classList.toggle('is-mobile', !!isMobile);
+    root.classList.toggle('is-desktop', !isMobile);
+  }catch(e){ console.debug('platform-class bootstrap fail', e); }
+})();
 // === ensureExpenseCurrencyOption: global-safe ===
 (function () {
   const root = (typeof window !== 'undefined') ? window : globalThis;

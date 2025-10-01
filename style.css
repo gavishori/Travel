@@ -10,7 +10,7 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden;direction:rtl}
 a{color:var(--brand);text-decoration:none}
 .app{display:grid;grid-template-rows:auto 1fr}
-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5;     flex-direction: row; }
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
 header .brand{font-weight:700;letter-spacing:.5px}
 header .spacer{flex:1}
 header button, .btn{background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer}
@@ -670,15 +670,14 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 #miniMap{height:320px;border-radius:16px;}
 
 
-/* === Mobile-only: double header height (added by patch 2025-10-01) === */
+/* === Guarded layout by platform classes === */
+:root.is-desktop header { flex-wrap: nowrap; }
+:root.is-desktop header #userBadge{ display:none !important; order:0; position:static; margin:0; }
+
+:root.is-mobile header #userBadge{ order:-1; cursor:pointer; }
+:root.is-mobile #btnTheme{ order:0; }
+
 @media (max-width: 900px){
-  header{
-    padding-block: 28px;        /* was ~14px – doubled */
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .container{
-    min-height: calc(100vh - 112px); /* was calc(100vh - 56px) */
-    height: auto;
-  }
+  :root.is-mobile header{ padding-block:28px; gap:16px; flex-wrap:wrap; }
+  :root.is-mobile .container{ min-height: calc(100vh - 112px); height:auto; }
 }
