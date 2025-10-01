@@ -697,3 +697,29 @@ th, td { word-break: break-word; }
   /* Leaflet map smaller height so everything fits without horizontal scroll */
   .leaflet-container { height: 320px !important; max-width: 100%; }
 }
+
+
+/* === Mobile stack fix (v4) === */
+@media (max-width: 480px){
+  .container, .app, main { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    width: 100% !important; 
+    max-width: 100vw !important; 
+  }
+  .sidebar, .content {
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+  }
+  /* Tabs row should be visible and not off-canvas */
+  .tabs, #tabs, .tabbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px;
+    overflow-x: visible !important;
+  }
+  .tabs > *, #tabs > *, .tabbar > * {
+    flex: 1 1 auto;
+  }
+}
