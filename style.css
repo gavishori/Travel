@@ -10,7 +10,7 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden;direction:rtl}
 a{color:var(--brand);text-decoration:none}
 .app{display:grid;grid-template-rows:auto 1fr}
-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5}
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
 header .brand{font-weight:700;letter-spacing:.5px}
 header .spacer{flex:1}
 header button, .btn{background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer}
@@ -513,399 +513,158 @@ td a.external-link {
 #btnToggleVisited.active{ background:#1e90ff; color:#fff; border-color:#1e90ff; }
 
 
-/* === Unified location row using CSS Grid (same order, same sizes) === */
-#expenseModal .location-row,
-#journalModal .location-row{
+/* === Added by ChatGPT: Uniform Location Controls (input + 2 buttons) === */
+.location-row{
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr; /* current | map | name */
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
 }
-#expenseModal .location-row .location-btn,
-#journalModal  .location-row .location-btn{ width: 100%; white-space: nowrap; text-align:center; }
-#expenseModal .location-row .location-name .input,
-#journalModal  .location-row .location-name .input{ width: 100%; }
-
-/* Responsive: on narrow screens place the name field below */
-@media (max-width: 720px){
-  #expenseModal .location-row,
-  #journalModal .location-row{ grid-template-columns: 1fr 1fr; }
-  #expenseModal .location-row .location-name,
-  #journalModal .location-row .location-name{ grid-column: 1 / -1; }
-}
-
-
-/* Prevent horizontal scrolling in modals */
-dialog.modal{max-width:min(720px,96vw);width:min(720px,96vw);overflow-x:hidden!important}
-#expenseModal .body,#journalModal .body{overflow-y:auto;overflow-x:hidden;max-height:min(70vh,720px)}
-/* Comfortable textareas */
-#expenseModal .body textarea.input,
-#journalModal .body textarea.input{ width:100%; min-height:96px; resize:vertical; }
-/* Enforce equal widths and consistent heights */
-#expenseModal .location-row .location-name .input,
-#journalModal  .location-row .location-name .input{
-  width: 100%;
-  height: 44px;
-  box-sizing: border-box;
-}
-#expenseModal .location-row .location-btn,
-#journalModal  .location-row .location-btn{
-  height: 44px;
-  display: inline-flex;
+.location-row label{
+  display: flex;
   align-items: center;
   justify-content: center;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+}
+.location-row label .input{
   width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  padding: 0;
+  font-size: 14px;
+  line-height: 44px;
 }
-/* Tight mobile behavior: 2 columns then full width */
-@media (max-width: 720px){
-  #expenseModal .location-row,
-  #journalModal  .location-row{
-    grid-template-columns: 1fr 1fr;
-    gap: 8px; /* Adjusted from 12px for tighter layout */
-  }
-  #expenseModal .location-row > *:nth-child(3),
-  #journalModal  .location-row > *:nth-child(3){
-    grid-column: 1 / -1;
-  }
+.location-row .location-btn{
+  width: 100%;
+  height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
 }
-/* ===== Location row: 3 columns, one line, equal widths ===== */
-#expenseModal .location-row,
-#journalModal  .location-row{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (max-width: 520px){
+  .location-row{ grid-template-columns: 1fr 1fr; }
+  .location-row > *:last-child{ grid-column: 1 / -1; }
+}
+/* === End addition === */
+
+
+
+/* === Share card spacing improvements === */
+#view-share .cards .card:last-child .row{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+}
+#view-share .cards .card:last-child .row + .row{ margin-top:14px; }
+#view-share .cards .card:last-child .btn{ width:100%; }
+#view-share .cards .card:last-child .input{ width:100%; }
+
+
+/* === Spacing fixes for ייבוא/ייצוא/שיתוף panel === */
+#view-share .card .row{
   gap: 12px;
+  margin-bottom: 12px;
   align-items: center;
-  grid-auto-flow: column;
+  flex-wrap: wrap;
 }
-#expenseModal .location-row > *,
-#journalModal  .location-row > *{
-  min-width: 0;
-  box-sizing: border-box;
+#view-share .input,
+#view-share .btn,
+#view-share select.input{
+  height: 44px; /* consistent control height */
 }
-#expenseModal .location-row .location-btn,
-#journalModal  .location-row .location-btn{
-  height: 44px;
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  padding-inline: 14px;
+#view-share .card h3{
+  margin-bottom: 10px;
 }
-#expenseModal .location-row .location-name .input,
-#journalModal  .location-row .location-name .input{
-  height: 44px;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+
+/* extra spacing refinement for import/export cards */
+#view-share .card .row + .row { margin-top: 12px; }
+#view-share input[type="file"].input { padding: 10px 12px; }
+
+
+
+
+/* Any email/user pill element */
+header :is(#userBadge, #userEmail, .user-pill, .email-pill) { order: 20 !important; }
+
+
+
+
+/* === Mobile Preview Presets === */
+#previewRoot{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  height:calc(100vh - 0px);
+  overflow:auto;
+  gap:0;
 }
-@media (max-width: 720px){
-  #expenseModal .location-row,
-  #journalModal  .location-row{
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.mobile-preview-controls{
+  display:flex;
+  gap:.5rem;
+  align-items:center;
 }
-dialog.modal{max-width:min(820px,96vw);width:min(820px,96vw);overflow-x:hidden!important}
-#expenseModal .body,#journalModal .body{overflow-x:hidden}
-/* === iPhone-friendly viewport sizing === */
-:root{ --mobile-hpad:16px; }
-/* When running preview mode inside an iframe or on device:
-   lock the app to the viewport height and allow internal scrolling */
-.preview-mobile .app{
-  width: 100vw;
-  height: 100dvh;
-  min-height: 100dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+.mobile-preview-controls .select{
+  padding:.55rem .8rem;
+  border:1px solid var(--border, #e5e7eb);
+  border-radius:999px;
+  background:var(--bg, #fff);
+  font:inherit;
+  direction:ltr;
 }
-/* Mobile typography & spacing (iPhone widths up to 430px) */
-@media (max-width: 430px){
-  html, body{ font-size: 15px; }
-  header{ padding:10px var(--mobile-hpad); gap:8px; }
-  h1, .h1, .section-title h1{ font-size:28px; line-height:1.15; margin:8px 0 12px; }
-  /* Buttons */
-  .btn, button{ min-height:44px; padding:0 12px; border-radius:14px; }
-  .btn.btn-lg{ min-height:50px; padding:0 14px; }
-  /* Inputs / search */
-  input[type="text"], input[type="search"], .search, .input{
-    height:44px; min-height:44px;
-  }
-  /* Cards / lists */
-  .cards{ gap:8px; }
-  .list, .grid, .row, .list-actions, .tabs{ gap:8px; }
-  .card, .trip-card{ padding:12px 14px; border-radius:16px; }
-  /* Trip item text sizing */
-  .trip-card .title, .trip .title{ font-size:18px; }
-  .trip-card .dates{ font-size:14px; }
-  .trip-card .meta, .trip-card .tags{ font-size:13px; }
-  /* Horizontal paddings for main content */
-  main, .content, .page, .container{ padding-inline: var(--mobile-hpad); }
+body.mobile-preview{
+  overflow:auto;
 }
-/* =========================
-   MOBILE-ONLY DESIGN (≤430px)
-   ========================= */
-@media (max-width: 430px){
-  /* Layout frame */
-  .app{ grid-template-rows: auto 1fr; }
-  main, .content, .page, .container{ padding-inline:16px; }
-  html, body{ overflow-x:hidden }
-  /* Header compact */
-  header{ padding:10px 14px; gap:10px; }
-  header .brand{ font-size:16px }
-  header .spacer{ display:none } /* חוסך מקום במובייל בלבד */
-  /* H1 sizing */
-  h1, .h1, .section-title h1{ font-size:26px; line-height:1.2; margin:10px 0 12px }
-  /* Tabs -> one-column chips (no horizontal scroll) */
-  .tabs{ flex-direction:column; gap:8px; padding:8px 0; overflow:visible }
-  .tabs .btn{ width:100%; justify-content:center }
-  /* Lists/cards scale */
-  .cards{ grid-template-columns: 1fr; gap:10px }
-  .card, .trip-card{ border-radius:16px; padding:12px 14px }
-  /* Trip item text */
-  .trip-card .title{ font-size:18px; }
-  .trip-card .dates{ font-size:14px; }
-  .trip-card .meta, .trip-card .tags{ font-size:13px; }
-  /* Inputs & buttons accessible sizes */
-  input, select, textarea{ font-size:16px } /* מונע zoom ב-iOS */
-  input[type="text"], input[type="search"], .input, .search{ height:44px }
-  .btn, button{ min-height:44px; border-radius:14px; }
-  .btn.btn-lg{ min-height:50px }
-  /* Section spacing */
-  .section{ margin-block:12px }
-  .row{ gap:8px; flex-wrap:wrap } /* הכל בטור אחד */
-  .row > *{ flex: 1 1 100% }      /* פריט לכל שורה */
-  /* Sticky bottom actions for forms */
-  .modal .footer{ position:sticky; bottom:0; background:var(--card) }
-  /* Word wrapping (no horizontal scroll) */
-  .chip, .btn, .title, .dates, .tags, .cell, p, span{ white-space:normal; overflow-wrap:anywhere }
-  /* Top chips row -> allow wrapping, but keep one column look by making each 100% */
-  .chips, .list-actions{ flex-direction:column; gap:8px }
-  .chips .chip, .list-actions .btn{ width:100%; justify-content:center }
+body.mobile-preview .app{
+  width:428px;   /* default iPhone 13 Pro Max */
+  height:926px;
+  border:1px solid var(--border, #e5e7eb);
+  border-radius:28px;
+  box-shadow:0 10px 25px rgba(0,0,0,.12);
+  overflow:auto;
+  background:var(--bg, #fff);
+  margin:0 auto;
 }
-/* ==========
-   Action Sheet (mobile menus) - works any width, but you can trigger only in mobile UI
-   ========== */
-.action-sheet-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .18s }
-.action-sheet{ position:fixed; left:0; right:0; bottom:-40%; background:var(--card); border-radius:20px 20px 0 0; box-shadow:0 -10px 30px rgba(0,0,0,.35); transform:translateY(0); transition:bottom .2s cubic-bezier(.2,.8,.2,1) }
-.action-sheet.open{ bottom:0 }
-.action-sheet-backdrop.open{ opacity:1; pointer-events:auto }
-.action-sheet .handle{ width:36px; height:4px; border-radius:2px; background:var(--border); margin:8px auto }
-.action-sheet .menu{ display:flex; flex-direction:column; padding:8px }
-.action-sheet .menu .item{ padding:14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border) }
-.action-sheet .menu .item:last-child{ border-bottom:none }
-/* ===== Mobile topbar and icon buttons (≤430px) ===== */
-@media (max-width: 430px){
-  .mobile-topbar{
-    display:flex; gap:10px; align-items:center;
-    justify-content:flex-start;
-    padding:8px 16px 0;
-  }
-  .icon-btn{
-    width:40px; height:40px; border-radius:12px;
-    display:grid; place-items:center;
-    background:var(--card); border:1px solid var(--border);
-  }
-  .hide-gallery-toggle{ display:none !important; }
+#btnMobilePreview.active{ outline:2px solid rgba(0,0,0,.15); }
+/* end of Mobile Preview Presets */
+
+
+/* Force-hide mobile preview/device UI (all variants) */
+.mobile-preview-controls,
+#btnMobilePreview,
+.btn-mobile-preview,
+#btnRotate,
+.btn-rotate,
+#devicePreset,
+.device-preset,
+.device-selector,
+.device-size,
+.device-pill,
+button[aria-label*="מובייל"],
+button[title*="מובייל"],
+button[aria-label*="Mobile"],
+button[title*="Mobile"],
+[data-mobile-ui],
+[data-test="device-select"],
+[data-test="mobile-toggle"]{
+  display:none !important;
 }
-/* ===== Mobile Soft Color Palette (<=430px) ===== */
-@media (max-width: 430px){
-  :root{
-    /* neutrals */
-    --bg:#0f1115;               /* dark mode bg stays pleasant */
-    --card:#151a23;             /* slightly softer card */
-    --ink:#e9eef4;
-    --muted:#a5b4c6;
-    --border:#263242;
-    /* brand accents (soft) */
-    --brand:#7cc5ff;            /* soft sky blue */
-    --accent:#ffc98b;           /* warm peach highlight */
-    --ok:#84e1b2;               /* mint ok */
-    --danger:#ff8ea3;           /* rose danger */
-    /* shadows feel */
-    --shadow: 0 12px 28px rgba(0,0,0,.22);
-  }
-  /* emphasize primary buttons in mobile with brand tint */
-  .btn.primary, .btn.cta{
-    background: var(--brand);
-    color:#0b1220;
-    border-color: transparent;
-  }
-  .btn.primary:active{ transform: translateY(1px) }
-  .btn.outline{ border-color: var(--brand); color: var(--brand); background: transparent }
-  /* chips & tabs look */
-  .tabs .btn, .chips .chip{
-    background: rgba(124,197,255,.10);
-    border-color: rgba(124,197,255,.35);
-  }
-  .tabs .btn.active, .chips .chip.active{
-    background: rgba(124,197,255,.20);
-    border-color: var(--brand);
-  }
-  /* action sheet */
-  .action-sheet{ background: var(--card); }
-  .action-sheet .menu .item{ background: transparent; }
-  .action-sheet .menu .item:active{ background: rgba(255,201,139,.1) }
-}
-@media (max-width: 430px){
-  .icon-btn{
-    background: rgba(124,197,255,.12);
-    border-color: rgba(124,197,255,.35);
-    color: var(--ink);
-  }
-  .icon-btn:active{ transform: translateY(1px) }
-}
-/* ===== Mobile two-row toolbar (≤430px) ===== */
-@media (max-width: 430px){
-  .mobile-toolbar{
-    position: sticky; top: 0; z-index: 60;
-    display: grid; gap: 8px;
-    padding: 8px 12px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-  .mobile-toolbar .topline{
-    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
-  }
-  .mobile-toolbar .email-chip{
-    max-width: 100%; padding: 10px 12px; border-radius: 999px;
-    background: rgba(124,197,255,.12);
-    border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink); font-size: 14px;
-    text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
-  }
-  .mobile-toolbar .actions{ display: flex; gap: 8px; }
-  .mobile-toolbar .menugrid{ display: flex; gap: 8px; flex-wrap: wrap; }
-  .icon-btn{
-    width: 36px; height: 36px; border-radius: 10px;
-    display: grid; place-items: center;
-    background: rgba(124,197,255,.12);
-    border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink);
-  }
-  .icon-btn:active{ transform: translateY(1px) }
-  /* Hide gallery toggle block if present */
-  .hide-gallery-toggle{ display:none !important; }
-}
-/* ===== Comprehensive Mobile Palette & Components (≤430px) ===== */
-@media (max-width: 430px){
-  :root{
-    --bg:#0f1115;         /* Dark, soft */
-    --card:#151a23;       /* Card background */
-    --ink:#e9eef4;        /* Primary text */
-    --muted:#a5b4c6;      /* Secondary text */
-    --border:#263242;     /* Borders */
-    --brand:#7cc5ff;      /* Soft sky blue */
-    --accent:#ffc98b;     /* Peach highlight */
-    --ok:#84e1b2;         /* Mint */
-    --danger:#ff8ea3;     /* Soft rose */
-    --shadow: 0 12px 28px rgba(0,0,0,.22);
-  }
-  /* Global background & text */
-  html, body{ background: var(--bg); color: var(--ink); }
-  .app{ background: linear-gradient(180deg, rgba(21,26,35,.9), rgba(21,26,35,.98)); color: var(--ink); }
-  /* Header & mobile bars */
-  header, .mobile-toolbar{ background: rgba(21,26,35,.96); border-color: var(--border); }
-  /* Cards / sections */
-  .card, .trip-card, .section, .panel, .box{
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: var(--shadow);
-  }
-  /* Inputs */
-  input, select, textarea, .input, .search{
-    background: #111722; color: var(--ink);
-    border: 1px solid var(--border); border-radius: 14px;
-  }
-  input::placeholder{ color: #8c9ab1; }
-  /* Buttons */
-  .btn, button{
-    background: rgba(124,197,255,.10);
-    color: var(--ink);
-    border: 1px solid rgba(124,197,255,.35);
-    border-radius: 14px;
-    min-height: 44px;
-  }
-  .btn.primary, .btn.cta{
-    background: var(--brand); color:#0b1220; border-color: transparent;
-  }
-  .btn.ghost{ background: transparent; border-color: var(--border); color: var(--muted); }
-  .btn.danger{ background: rgba(255,142,163,.18); border-color: rgba(255,142,163,.5); color: #ffd5dd; }
-  /* Tabs & chips */
-  .tabs .btn, .chips .chip{
-    background: rgba(124,197,255,.12);
-    border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink);
-  }
-  .tabs .btn.active, .chips .chip.active{
-    background: rgba(124,197,255,.22);
-    border-color: var(--brand);
-  }
-  /* Tables (if shown) */
-  table{ color: var(--ink); }
-  table th, table td{ border-color: var(--border); }
-  /* Modals / bottom sheets / action sheet */
-  .modal, .action-sheet{ background: var(--card); color: var(--ink); }
-  .modal .footer{ background: rgba(21,26,35,.96); border-top:1px solid var(--border) }
-  .action-sheet .menu .item{ background: transparent; color: var(--ink) }
-  .action-sheet .menu .item:active{ background: rgba(255,201,139,.10) }
-  .action-sheet-backdrop{ background: rgba(0,0,0,.45) }
-  /* Icon buttons */
-  .icon-btn{
-    background: rgba(124,197,255,.12);
-    border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink);
-  }
-}
-@media (max-width: 430px){
-  .mobile-topbar{ margin-bottom: 8px; }
-}
-/* ===== Mobile toolbar v3 (≤430px) ===== */
-@media (max-width:430px){
-  .mobile-toolbar{
-    position: sticky; top: 0; z-index: 999;
-    display: grid; gap: 8px; padding: 8px 12px;
-    background: var(--bg); border-bottom: 1px solid var(--border);
-  }
-  .mobile-toolbar .topline{
-    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
-  }
-  .mobile-toolbar .email-chip{
-    max-width: 100%; padding: 10px 12px; border-radius: 999px;
-    background: rgba(124,197,255,.12);
-    border: 1px solid rgba(124,197,255,.35);
-    color: var(--ink); font-size: 14px;
-    text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
-  }
-  .mobile-toolbar .actions{ display:flex; gap:8px }
-  .mobile-toolbar .menugrid{ display:flex; gap:8px; flex-wrap:wrap }
-  .icon-btn{
-    width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
-    background: rgba(124,197,255,.12); border:1px solid rgba(124,197,255,.35); color: var(--ink);
-  }
-  .icon-btn:active{ transform: translateY(1px) }
-  .hide-gallery-toggle{ display:none !important }
-}
-/*
-  The following rules were causing the "disappearing buttons" issue.
-  They are now commented out.
-*/
-/*
-@media (max-width:430px){
-  .mobile-topbar{ display:none !important; }
-  header button, header .btn, #userBadge { display: inline-block !important; }
-}
-*/
-/* New CSS for header and buttons. */
-@media (max-width: 430px) {
-  /* Hide the old buttons to prevent duplicates.
-     The JavaScript code will create and manage new icon-only buttons. */
-  header #btnAllTrips, header #btnTheme, header #btnLogin, header #btnLogout {
-    display: none !important;
-  }
-}
-/* CSS to handle the moon/sun icon and theme change */
-body[data-theme="dark"] .theme-icon::before {
-    content: '🌙';
-}
-body[data-theme="light"] .theme-icon::before {
-    content: '☀️';
-}
+
+
+/* clickable types pill */
+.trip-row .pill{ cursor: pointer; }
+.pill.active{ outline: 2px solid color-mix(in oklab, var(--brand) 40%, transparent); }
+
+/* Kill-switch for dev mobile controls */
+header .mobile-preview-controls{display:none !important}
+#btnMobilePreview,#btnRotate,#devicePreset{display:none !important}
+
+
+/* Hard kill: hide any header button that renders a phone-rect icon */
+header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none !important; }
+
+#miniMap{height:320px;border-radius:16px;}

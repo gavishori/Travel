@@ -87,7 +87,13 @@ async function fetchRatesOnce(){
   return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
 }
 
+var state = state || {};
 // === End helpers ===
+
+function invalidateMap(m){
+  try{ if(m && m.invalidateSize){ m.invalidateSize(); } }catch(e){}
+}
+
 
 
 import { auth, db, FB } from './firebase.js';
@@ -110,28 +116,20 @@ try {
   if (typeof dayjs!=='undefined') {
     if (window.dayjs_plugin_advancedFormat) { try { dayjs.extend(window.dayjs_plugin_advancedFormat); } catch(e){} }
     if (window.dayjs_plugin_utc) { try { dayjs.extend(window.dayjs_plugin_utc); } catch(e){} }
-    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin-timezone); } catch(e){} }
+    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin_timezone); } catch(e){} }
   }
 } catch(e) { /* ignore */ }
 // App State
-const state = {
+state = {
   user: null,
   trips: [],
   currentTripId: null,
   viewMode: 'grid',
   rates: { USDEUR: 0.92, USDILS: 3.7 },
   maps: { mini: null, big: null, layers: { expenses: null, journal: null }, select: null, selectMarker: null, currentModal: null },
-  shared: { enabled: false, token: null, readOnly: false }
+  shared: { enabled: false, token: null, readOnly: false },
+  isDirty: false
 };
-
-// --- Mobile detection ---
-function isMobileMode(){
-  try{
-    const qp = new URL(location.href).searchParams.get('preview');
-    return window.matchMedia('(max-width: 430px)').matches || qp==='mobile';
-  }catch(_) { return false; }
-}
-
 
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -173,14 +171,23 @@ $('#btnTheme').addEventListener('click', () => {
 });
 
 // Tabs logic
-$$('#tabs button').forEach(btn => btn.addEventListener('click', () => {
+$$('#tabs button').forEach(btn => btn.addEventListener('click', (e) => {
+  const currentTab = $('#tabs button.active');
+  const nextTab = btn.dataset.tab;
+  
+  if (currentTab.dataset.tab === 'meta' && state.isDirty) {
+    e.preventDefault();
+    showUnsavedChangesAlert(nextTab);
+    return;
+  }
+
   if (btn.classList.contains('active')) return;
   $$('#tabs button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   $$('.tabview').forEach(v=>v.hidden = true);
   $('#view-'+btn.dataset.tab).hidden = false;
   if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
-  if(btn.dataset.tab==='overview') setTimeout(()=> initMiniMap(state.current||{}), 50);
+  if(btn.dataset.tab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
 
 // Auth UI
@@ -285,12 +292,9 @@ function getActiveCurrencyFromTrip(t){
 function setActiveCurrency(cur){
   localStorage.setItem(`flymily_currency_${state.current.id}`, cur);
 }
+// UPDATED `cycleCurrency` to ensure only USD, EUR, ILS are used
 function cycleCurrency(cur){
   const opts = ['USD', 'EUR', 'ILS'];
-  const localCur = state.current?.localCurrency;
-  if (localCur && !opts.includes(localCur)) {
-    opts.unshift(localCur);
-  }
   const idx = opts.indexOf(cur);
   return opts[(idx + 1) % opts.length];
 }
@@ -311,8 +315,6 @@ async function subscribeTrips(){
   });
 }
 function renderTripList(){
-  /* FORCE LIST ON MOBILE */
-  if (isMobileMode()) state.viewMode = 'list';
   const list = $('#tripList');
   const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
@@ -349,7 +351,7 @@ function cardHTML(t, s){
     </div>
     <div class="muted">${period}</div>
     <div class="trip-footer-grid">
-      <div class="pill">${esc((t.types||'').toString())}</div>
+      <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
       <button class="menu-btn" data-id="${t.id}" aria-label="פעולות">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </button>
@@ -364,7 +366,7 @@ function rowHTML(t, s){
     <div class="row-main-content">
       <strong>${esc(t.destination||'ללא יעד')}</strong>
       <span class="muted">${period}</span>
-      <div class="pill">${esc((t.types||'').toString())}</div>
+      <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
     </div>
     <button class="menu-btn" data-id="${t.id}" aria-label="פעולות">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
@@ -417,6 +419,13 @@ async function loadTrip(){
     <div class="muted">${fmtDate(t.start)} – ${fmtDate(t.end)}</div>
     <div>משתתפים: ${esc((t.people||[]).join(', '))}</div>
     <div>סוגים: ${esc((t.types||[]).join(', '))}</div>
+    ${(() => {
+      const b = t.budget || {};
+      const pairs = Object.entries(b).filter(([k,v]) => Number(v) > 0);
+      if (!pairs.length) return '';
+      const line = pairs.map(([k,v]) => `${k} ${formatInt(v)}`).join(' · ');
+      return `<div>תקציב: ${line}</div>`;
+    })()}
   `;
   // Populate meta form
   $('#metaDestination').value = t.destination||'';
@@ -431,8 +440,11 @@ async function loadTrip(){
 
   renderExpenses(t);
   renderJournal(t);
-  initMiniMap(t);
+  initMiniMap(t); setTimeout(()=> invalidateMap(state.maps?.mini), 80);
   renderExpenseSummary(t);
+  
+  // Reset dirty state on successful load
+  state.isDirty = false;
 }
 
 
@@ -460,7 +472,7 @@ function renderExpenses(t, order){
     body.appendChild(tr);
   });
   // Recent for overview
-  $('#tblRecentExpenses').innerHTML = arr.slice(0,5).map(e=>`<tr><td>${linkifyText(e.desc || '')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
+  $('#tblRecentExpenses').innerHTML = arr.map(e=>`<tr><td>${linkifyText(e.desc || '')}</td><td>${esc(e.category||'')}</td><td>${Number(e.amount||0).toFixed(2)} ${e.currency||''}</td><td>${fmtDateTime(e.createdAt)}</td></tr>`).join('');
 }
 
 
@@ -488,7 +500,7 @@ function renderJournal(t, order){
     });
     body.appendChild(tr);
   });
-  $('#tblRecentJournal').innerHTML = arr.slice(0,5).map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${linkifyText(j.text || '')}</td></tr>`).join('');
+  $('#tblRecentJournal').innerHTML = arr.map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(j.placeName||'')}</td><td>${linkifyText(j.text || '')}</td></tr>`).join('');
 }
 
 
@@ -555,40 +567,83 @@ function renderExpenseSummary(t){
 // Mini map
 
 
-function initMiniMap(t){
+
+function initMiniMap() {
   const container = document.getElementById('miniMap');
-  if(!container) return;
-  if(!state.maps.mini){
-    state.maps.mini = L.map(container);
+  if (!container) return;
+  // Ensure explicit height
+  if (!container.style.height) container.style.height = '320px';
+
+  // Create (or reuse) map
+  if (!state.maps.mini) {
+    state.maps.mini = L.map(container, { zoomControl: true });
   }
   const m = state.maps.mini;
-  if(!state.maps._miniTiles){
-    state.maps._miniTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      {attribution:'© OpenStreetMap contributors'}).addTo(m);
-  }
-  if(!state.maps.layers) state.maps.layers = {};
-  if(!state.maps.layers.mini){ state.maps.layers.mini = L.layerGroup().addTo(m); }
+
+  // Always ensure a view exists before tiles
+  try { if (!m._loaded) m.setView([31.5, 34.8], 5); } catch {}
+
+  // Choose tile source like big map
+  const isIsraelTrip = state.current?.destination?.includes('ישראל');
+  const tileUrl = isIsraelTrip
+    ? 'https://cdn.maptiler.com/maptiler-toner-hi/{z}/{x}/{y}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const attribution = isIsraelTrip
+    ? '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> | <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a>'
+    : '© OpenStreetMap contributors';
+
+  // (Re)add tiles (to be safe)
+  try { if (state.maps._miniTiles) m.removeLayer(state.maps._miniTiles); } catch {}
+  state.maps._miniTiles = L.tileLayer(tileUrl, { attribution });
+  state.maps._miniTiles.addTo(m);
+
+  // Layers for points
+  if (!state.maps.layers.mini) state.maps.layers.mini = L.layerGroup().addTo(m);
   state.maps.layers.mini.clearLayers();
 
-  const journal = Object.values((t && t.journal)||{}).filter(j=>j.lat&&j.lng);
-  const expenses = Object.values((t && t.expenses)||{}).filter(e=>e.lat&&e.lng);
+  const tcur = state.current || {};
+  const exps = Object.values(tcur.expenses || {}).filter(e => e.lat && e.lng);
+  const jrs  = Object.values(tcur.journal  || {}).filter(j => j.lat && j.lng);
 
-  expenses.forEach(e=> L.circleMarker([e.lat,e.lng], {radius:6,color:'#ff8c00'}).addTo(state.maps.layers.mini) );
-  journal.forEach(j=> L.circleMarker([j.lat,j.lng], {radius:6,color:'#1e90ff'}).addTo(state.maps.layers.mini) );
+  exps.forEach(e => L.circleMarker([e.lat, e.lng], { radius: 6, color: '#ff8c00' })
+    .bindPopup(`${esc(e.desc||'')}: ${num(e.amount||0)} ${e.currency||''}`)
+    .addTo(state.maps.layers.mini));
+  jrs.forEach(j => L.circleMarker([j.lat, j.lng], { radius: 6, color: '#1e90ff' })
+    .bindPopup(`${esc(j.placeName||'')}: ${linkifyText(j.text || '')}`)
+    .addTo(state.maps.layers.mini));
 
-  const layer = state.maps.layers.mini;
-  if(layer.getLayers().length){
-    try{ m.fitBounds(layer.getBounds(), { padding:[20,20] }); }catch{}
-  } else {
-    try{ m.setView([31.5,34.8], 4); }catch{}
-  }
-  setTimeout(()=> m.invalidateSize(), 100);
+  const group = state.maps.layers.mini;
+  try {
+    const layers = group && group.getLayers ? group.getLayers() : [];
+    if (layers && layers.length) {
+      m.fitBounds(group.getBounds(), { padding: [20, 20] });
+    } else {
+      m.setView([31.5, 34.8], 5);
+    }
+  } catch {}
+
+  // Invalidate repeatedly after visible
+  setTimeout(() => { try { m.invalidateSize(); } catch {} }, 60);
+  setTimeout(() => { try { m.invalidateSize(); } catch {} }, 250);
+  requestAnimationFrame(()=> { try { m.invalidateSize(); } catch {} });
+  m.whenReady(()=> { try { m.invalidateSize(); } catch {} });
 }
 function initBigMap(){
   if(!state.current) return;
   if(!state.maps.big){
     state.maps.big = L.map('bigMap');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM'}).addTo(state.maps.big);
+    
+    // Use Maptiler for Hebrew in big map
+    const isIsraelTrip = state.current?.destination?.includes('ישראל');
+    const tileUrl = isIsraelTrip
+      ? 'https://cdn.maptiler.com/maptiler-toner-hi/{z}/{x}/{y}.png'
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = isIsraelTrip
+      ? '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
+      : '© OpenStreetMap contributors';
+
+    L.tileLayer(tileUrl, {attribution}).addTo(state.maps.big);
+
     state.maps.layers.expenses = L.layerGroup().addTo(state.maps.big);
     state.maps.layers.journal = L.layerGroup().addTo(state.maps.big);
   } else {
@@ -631,7 +686,7 @@ $('#authSignUp').addEventListener('click', async ()=>{
   }catch(e){ $('#authError').textContent = xErr(e); }
 });
 $('#authReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
+  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#authError').textContent = xErr(e); }
 });
 $('#btnLogout').addEventListener('click', async ()=>{ await FB.signOut(auth); showToast('התנתקת'); });
 
@@ -662,7 +717,7 @@ $('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderT
 $('#btnSaveMeta').addEventListener('click', async ()=>{
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const types = $$('.metaType.active').map(b=>b.dataset.value);
+  const types = $$('.metaType').map(b=>b.dataset.value);
   const destination = $('#metaDestination').value.trim();
   const localCur = getLocalCurrency(destination);
   await FB.updateDoc(ref, { destination, start: $('#metaStart').value, end: $('#metaEnd').value, people, types, localCurrency: localCur });
@@ -681,6 +736,7 @@ function syncBudget(from){
   if(from==='EUR'){ const u = Math.round(eur/state.rates.USDEUR); usd = u; ils = Math.round(u*state.rates.USDILS); }
   if(from==='ILS'){ const u = Math.round(ils/state.rates.USDILS); usd = u; eur = Math.round(u*state.rates.USDEUR); }
   $('#bUSD').value = formatInt(usd); $('#bEUR').value = formatInt(eur); $('#bILS').value = formatInt(ils);
+  state.isDirty = true; // Mark as dirty on any change
 }
 ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).addEventListener('input', ()=> syncBudget(id.replace('b','')) ));
 if($('#rateUSDEUR')) $('#rateUSDEUR').addEventListener('input', e=> state.rates.USDEUR = Number(e.target.value||0.92));
@@ -698,6 +754,7 @@ $('#btnBudgetEdit').addEventListener('click', async ()=>{
   btn.classList.toggle('locked', locking);
   btn.textContent = locking ? 'ביטול נעילה' : 'קבע תקציב';
   showToast(locking ? 'התקציב נקבע' : 'התקציב פתוח לעריכה');
+  state.isDirty = false; // Reset dirty state on save
 });
 // Expenses CRUD
 $('#btnAddExpense').addEventListener('click', ()=> openExpenseModal());
@@ -805,20 +862,20 @@ function searchAndNavigate(tripId, query, type, itemId){
     if(type === 'expense'){
       document.querySelector('#tabs button[data-tab="expenses"]').click();
       setTimeout(()=>{
-        const el = document.querySelector(`#tblExpenses tr[data-id="${itemId}"]`);
-        if(el) highlightAndScroll(el, query);
+        const cont = document.querySelector(`#view-expenses`) || document.querySelector(`#tblExpenses`);
+        if(cont) highlightAllInContainer(cont, query);
       }, 300);
     } else if(type === 'journal'){
       document.querySelector('#tabs button[data-tab="journal"]').click();
       setTimeout(()=>{
-        const el = document.querySelector(`#tblJournal tr[data-id="${itemId}"]`);
-        if(el) highlightAndScroll(el, query);
+        const cont = document.querySelector(`#view-journal`) || document.querySelector(`#tblJournal`);
+        if(cont) highlightAllInContainer(cont, query);
       }, 300);
     } else if (type === 'meta') {
       document.querySelector('#tabs button[data-tab="meta"]').click();
       setTimeout(()=>{
-        const el = document.querySelector('#view-meta .dest-col');
-        if(el) highlightAndScroll(el, query);
+        const cont = document.querySelector('#view-meta') || document.querySelector('#view-meta .dest-col');
+        if(cont) highlightAllInContainer(cont, query);
       }, 300);
     }
   });
@@ -1135,7 +1192,7 @@ $('#btnUseCurrentExp').addEventListener('click', () => {
 $('#expLocationName').addEventListener('input', (e) => {
   const name = e.target.value.trim();
   if (name.length > 2) {
-    const isHebrew = state.current?.destination === 'ישראל';
+    const isHebrew = state.current?.destination?.includes('ישראל');
     searchLocationByName(name, (lat, lng, displayName) => {
       $('#expLat').value = lat;
       $('#expLng').value = lng;
@@ -1198,7 +1255,7 @@ $('#btnUseCurrentJr').addEventListener('click', () => {
 $('#jrLocationName').addEventListener('input', (e) => {
   const name = e.target.value.trim();
   if (name.length > 2) {
-    const isHebrew = state.current?.destination === 'ישראל';
+    const isHebrew = state.current?.destination?.includes('ישראל');
     searchLocationByName(name, (lat, lng, displayName) => {
       $('#jrLat').value = lat;
       $('#jrLng').value = lng;
@@ -1228,7 +1285,95 @@ $('#btnSelectExpLocation').addEventListener('click', () => {
 });
 
 
+// New logic to set dirty state on input change in meta tab
+const metaInputs = [
+  '#metaDestination', '#metaStart', '#metaEnd', '#metaPeople', '#bUSD', '#bEUR', '#bILS'
+];
+metaInputs.forEach(sel => {
+  const el = $(sel);
+  if (el) {
+    el.addEventListener('input', () => {
+      state.isDirty = true;
+    });
+  }
+});
+$$('.metaType').forEach(btn => {
+    btn.addEventListener('click', () => {
+        state.isDirty = true;
+    });
+});
+// Function to show the alert
+function showUnsavedChangesAlert(nextTab) {
+    const modal = $('#unsavedChangesModal');
+    if (modal) {
+        modal.showModal();
+        modal.dataset.nextTab = nextTab;
+    }
+}
+// Unsaved changes modal buttons
+$('#unsavedSave').addEventListener('click', async () => {
+    $('#unsavedChangesModal').close();
+    await saveMetaChanges();
+    const nextTab = $('#unsavedChangesModal').dataset.nextTab;
+    if (nextTab) {
+        const nextBtn = $(`#tabs button[data-tab="${nextTab}"]`);
+        if (nextBtn) {
+            nextBtn.click();
+        }
+    }
+});
+$('#unsavedDiscard').addEventListener('click', async () => {
+    $('#unsavedChangesModal').close();
+    state.isDirty = false; // Discard changes
+    await loadTrip(); // Reload trip data to revert changes
+    const nextTab = $('#unsavedChangesModal').dataset.nextTab;
+    if (nextTab) {
+        const nextBtn = $(`#tabs button[data-tab="${nextTab}"]`);
+        if (nextBtn) {
+            nextBtn.click();
+        }
+    }
+});
+$('#unsavedCancel').addEventListener('click', () => {
+    $('#unsavedChangesModal').close();
+});
+async function saveMetaChanges() {
+    const ref = FB.doc(db, 'trips', state.currentTripId);
+    const people = $('#metaPeople').value.split(',').map(s => s.trim()).filter(Boolean);
+    const types = $$('.metaType.active').map(b => b.dataset.value);
+    const destination = $('#metaDestination').value.trim();
+    const localCur = getLocalCurrency(destination);
+    
+    const budget = {
+        USD: parseIntSafe($('#bUSD').value),
+        EUR: parseIntSafe($('#bEUR').value),
+        ILS: parseIntSafe($('#bILS').value)
+    };
 
+    const live = await fetchRatesOnce();
+    const lockedRates = {
+        USDILS: live.USDILS,
+        USDEUR: live.USDEUR,
+        lockedAt: live.lockedAt
+    };
+    if (live.USDLocal) lockedRates.USDLocal = live.USDLocal;
+
+    await FB.updateDoc(ref, {
+        destination,
+        start: $('#metaStart').value,
+        end: $('#metaEnd').value,
+        people,
+        types,
+        localCurrency: localCur,
+        budget,
+        rates: lockedRates
+    });
+    showToast('נשמר');
+    state.isDirty = false;
+    await loadTrip();
+}
+// Override default save button to use the new function
+$('#btnSaveMeta').addEventListener('click', saveMetaChanges);
 
 function toggleExpenseSort(){
   state.expenseSort = (state.expenseSort === 'asc') ? 'desc' : 'asc';
@@ -1269,124 +1414,540 @@ document.addEventListener('click', (ev) => {
   }
 });
 
+// === SHARE / IMPORT / EXPORT (Last Tab) ===
+
+// helper to get safe current trip or fallback
+function currentTrip(){ return state?.current || {}; }
+function asArray(o){ return Array.isArray(o)? o : (o? Object.values(o): []); }
+
+// Build a minimal HTML block for export (RTL + Hebrew-safe)
+// Load html2canvas for Hebrew-safe PDF (render as image)
+async function ensureHtml2Canvas(){
+  if (typeof window.html2canvas !== 'undefined') return true;
+  return await loadExternalScript([
+    "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js",
+    "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+  ]);
+}
 
 
-// ===== Mobile Action Sheet toggles =====
-document.addEventListener('click', (e) => {
-  const openBtn = e.target.closest('[data-open-sheet]');
-  const closeBtn = e.target.closest('[data-close-sheet]');
-  const backdrop = document.querySelector('.action-sheet-backdrop');
-  const sheet = document.querySelector('.action-sheet');
+/* removed duplicate exportPDF */
 
-  if (openBtn && sheet && backdrop){
-    sheet.classList.add('open'); backdrop.classList.add('open');
-  }
-  if ((closeBtn || (e.target === backdrop)) && sheet && backdrop){
-    sheet.classList.remove('open'); backdrop.classList.remove('open');
-  }
+
+
+/* removed duplicate exportExcel */
+
+
+
+/* removed duplicate exportWord */
+
+
+
+
+function exportGPX(){
+  const t = currentTrip();
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const items = [...asArray(t.journal).map(x=>({...x, _type:'journal'})),
+                 ...asArray(t.expenses).map(x=>({...x, _type:'expense'}))]
+    .filter(p => typeof p.lat === 'number' && typeof p.lng === 'number')
+    .sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+  const wpts = items.map(p => `
+  <wpt lat="${p.lat}" lon="${p.lng}">
+    <name>${esc(p.title||p.place||'נקודה')}</name>
+    <desc>${esc(p.desc||'')}</desc>
+    ${p.date ? `<time>${new Date(p.date).toISOString()}</time>` : ''}
+    <extensions>
+      ${p.cat ? `<category>${esc(p.cat)}</category>` : ''}
+      <source>${p._type}</source>
+    </extensions>
+  </wpt>`).join('');
+
+  // Build a track in chronological order
+  const trksegs = items.length ? `
+  <trk><name>${esc(t.destination||'מסלול נסיעה')}</name>
+    <trkseg>
+      ${items.map(p => `<trkpt lat="${p.lat}" lon="${p.lng}">${p.date ? `<time>${new Date(p.date).toISOString()}</time>`:''}</trkpt>`).join('')}
+    </trkseg>
+  </trk>` : '';
+
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">
+  ${wpts}
+  ${trksegs}
+</gpx>`;
+
+  const blob = new Blob([gpx], {type:'application/gpx+xml'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.gpx`; a.click(); URL.revokeObjectURL(a.href);
+}
+// Import JSON
+$('#btnImport')?.addEventListener('click', async ()=>{
+  const inp = $('#importFile');
+  if(!inp?.files?.length) return toast('בחר קובץ JSON');
+  try{
+    const txt = await inp.files[0].text();
+    const data = JSON.parse(txt);
+    if(!data || typeof data !== 'object') throw new Error('bad file');
+    if(!confirm('ייבוא יחליף את נתוני הנסיעה הנוכחית. להמשיך?')) return;
+    // merge minimally into current trip doc in Firestore
+    const ref = FB.doc(db, 'trips', state.currentTripId);
+    await FB.updateDoc(ref, {
+      destination: data.destination ?? state.current.destination,
+      start: data.start ?? state.current.start,
+      end: data.end ?? state.current.end,
+      people: data.people ?? state.current.people ?? [],
+      types: data.types ?? state.current.types ?? [],
+      budget: data.budget ?? state.current.budget ?? {},
+      rates: data.rates ?? state.current.rates ?? state.rates,
+      expenses: data.expenses ?? state.current.expenses ?? {},
+      journal: data.journal ?? state.current.journal ?? {},
+    });
+    toast('ייבוא הושלם'); await loadTrip();
+  }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
+});
+
+// Export buttons
+$('#btnExportPDF')?.addEventListener('click', exportPDF);
+$('#btnExportExcel')?.addEventListener('click', exportExcel);
+$('#btnExportWord')?.addEventListener('click', exportWord);
+$('#btnExportGPX')?.addEventListener('click', exportGPX);
+
+// Share controls
+$('#btnEnableShare')?.addEventListener('click', async ()=>{
+  if(!state.currentTripId) return toast('פתח נסיעה');
+  const token = crypto.randomUUID().slice(0,8);
+  const ref = FB.doc(db, 'trips', state.currentTripId);
+  const link = `${location.origin}${location.pathname}?share=${state.currentTripId}:${token}`;
+  await FB.updateDoc(ref, { share: { enabled:true, token } });
+  $('#shareLink').value = link;
+  toast('שיתוף הופעל');
+});
+$('#btnDisableShare')?.addEventListener('click', async ()=>{
+  if(!state.currentTripId) return;
+  const ref = FB.doc(db, 'trips', state.currentTripId);
+  await FB.updateDoc(ref, { share: { enabled:false } });
+  $('#shareLink').value = '';
+  toast('שיתוף בוטל');
+});
+$('#btnCopyShare')?.addEventListener('click', ()=>{
+  const val = $('#shareLink')?.value; if(!val) return toast('אין קישור לשיתוף');
+  navigator.clipboard.writeText(val).then(()=> toast('הועתק'));
 });
 
 
-// =======================================================
-// MOBILE AND DESKTOP UI CODE - REVISED FOR STABILITY
-// =======================================================
+// === PATCH: Full export must include all tabs (Meta, Expenses, Journal) ===
 
-// A single function to manage the theme button icon and state
-function updateThemeButton() {
-  const btnTheme = document.querySelector('#btnTheme');
-  if (!btnTheme) return;
-
-  const isDark = document.body.dataset.theme === 'dark';
-
-  // Desktop text button
-  const isDesktop = window.matchMedia && window.matchMedia("(min-width: 431px)").matches;
-  if (isDesktop) {
-    btnTheme.textContent = isDark ? 'מצב בהיר' : 'מצב כהה';
-  } else {
-    // Mobile icon button
-    btnTheme.innerHTML = isDark
-      ? '<svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
-      : '<svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+// Format helpers for meta
+function kvRowsFromMeta(trip){
+  const rows = [];
+  rows.push({ שדה:'יעד', ערך: esc(trip.destination||'') });
+  rows.push({ שדה:'תאריכים', ערך: `${fmtDate(trip.start)} – ${fmtDate(trip.end)}` });
+  if (trip.people && trip.people.length) rows.push({ שדה:'משתתפים', ערך: esc(trip.people.join(', ')) });
+  if (trip.types && trip.types.length) rows.push({ שדה:'סוג טיול', ערך: esc(trip.types.join(', ')) });
+  // Budget (flatten one level)
+  if (trip.budget && typeof trip.budget === 'object'){
+    const pairs = [];
+    if (Number(trip.budget.USD) > 0) pairs.push(`USD: ${formatInt(trip.budget.USD)}`);
+    if (Number(trip.budget.EUR) > 0) pairs.push(`EUR: ${formatInt(trip.budget.EUR)}`);
+    if (Number(trip.budget.ILS) > 0) pairs.push(`ILS: ${formatInt(trip.budget.ILS)}`);
+    if (pairs.length) rows.push({ שדה:'תקציב', ערך: pairs.join(' | ') });
   }
+  // Rates
+  if (trip.rates && typeof trip.rates === 'object'){
+    const parts = [];
+    if (trip.rates.USDILS) parts.push(`USDILS: ${trip.rates.USDILS}`);
+    if (trip.rates.USDEUR) parts.push(`USDEUR: ${trip.rates.USDEUR}`);
+    if (trip.rates.USDLocal) parts.push(`USDLocal: ${trip.rates.USDLocal}`);
+    if (parts.length) rows.push({ שדה:'שערי מטבע', ערך: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
+  }
+  return rows;
 }
 
-// Initial call and observer for theme changes
-document.addEventListener('DOMContentLoaded', updateThemeButton);
-new MutationObserver(updateThemeButton).observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+// override
+function buildExportContainer(trip){
+  const c = document.createElement('div');
+  c.style.width = '794px';
+  c.style.direction = 'rtl';
+  c.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial';
+  c.style.color = '#111';
+  c.style.background = '#fff';
+  c.style.padding = '16px';
+  const metaRows = kvRowsFromMeta(trip).map(r => `<tr><td>${r['שדה']}</td><td>${r['ערך']}</td></tr>`).join('');
+  
+  // Get expenses and journal from the trip object, not the flattened array.
+  const expenses = Object.values(trip.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
+  const journal = Object.values(trip.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
 
-// --- Re-attach main header buttons on mobile for a clean layout ---
-(function() {
-  const isMobile = window.matchMedia && window.matchMedia("(max-width: 430px)").matches;
-  const header = document.querySelector('header');
-  if (!header || !isMobile) return;
+  c.innerHTML = `
+    <h1 style="margin:0 0 8px">הטיול שלי – ${esc(trip.destination||'ללא יעד')}</h1>
+    <div style="opacity:.8;margin-bottom:12px">${fmtDate(trip.start)} – ${fmtDate(trip.end)}</div>
 
-  const btnTheme = document.querySelector('#btnTheme');
-  const btnLogin = document.querySelector('#btnLogin');
-  const btnLogout = document.querySelector('#btnLogout');
-  const userBadge = document.querySelector('#userBadge');
+    <h2 style="margin:12px 0 6px">נתוני נסיעה</h2>
+    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
+      <thead><tr><th>שדה</th><th>ערך</th></tr></thead>
+      <tbody>${metaRows}</tbody>
+    </table>
 
-  // Create a new container to wrap buttons for better alignment
-  const actionsContainer = document.createElement('div');
-  actionsContainer.id = 'headerActions';
+    <h2 style="margin:16px 0 6px">יומן יומי</h2>
+    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
+      <thead><tr>
+        <th>תאריך</th><th>מקום</th><th>תיאור</th>
+      </tr></thead>
+      <tbody>
+        ${journal.map(j => `
+          <tr>
+            <td>${esc(fmtDateTime(j.createdAt))}</td>
+            <td>${esc(j.placeName||'')}</td>
+            <td>${esc(j.text||'')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
 
-  // Move buttons to the new container and append to header
-  actionsContainer.appendChild(btnLogin);
-  actionsContainer.appendChild(btnLogout);
-  actionsContainer.appendChild(userBadge);
-  actionsContainer.appendChild(btnTheme);
+    <h2 style="margin:16px 0 6px">הוצאות</h2>
+    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
+      <thead><tr>
+        <th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תאריך</th>
+      </tr></thead>
+      <tbody>
+        ${expenses.map(e => `
+          <tr>
+            <td>${esc(e.desc||'')}</td>
+            <td>${esc(e.category||'')}</td>
+            <td>${esc(String(e.amount ?? ''))}</td>
+            <td>${esc(e.currency||'')}</td>
+            <td>${esc(fmtDateTime(e.createdAt))}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+  return c;
+}
 
-  // Prepend the container to the header's right side
-  header.appendChild(actionsContainer);
+// override PDF to always include all sections
+async function exportPDF(){
+  const t = currentTrip();
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const ok1 = await ensureJsPDF();
+  const ok2 = await ensureHtml2Canvas();
+  if(!ok1 || !ok2){ toast('בעיה בטעינת ספריות PDF'); return; }
 
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({orientation:'p', unit:'pt', format:'a4'});
+  const container = buildExportContainer(t);
+  document.body.appendChild(container);
+
+  const blocks = Array.from(container.children);
+  let first = true;
+  for (const block of blocks){
+    const canvas = await html2canvas(block, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
+    const w = canvas.width * ratio;
+    const h = canvas.height * ratio;
+    if (!first) doc.addPage();
+    first = false;
+    doc.addImage(imgData, 'PNG', (pageW - w)/2, 24, w, h, undefined, 'FAST');
+  }
+  container.remove();
+  const file = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.pdf`;
+  doc.save(file);
+}
+
+// override Excel
+async function exportExcel(){
+  const t = currentTrip();
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureXLSX(); if(!ok){ toast('בעיה בייצוא Excel'); return; }
+  const wb = XLSX.utils.book_new();
+
+  const meta = kvRowsFromMeta(t);
+  const s0 = XLSX.utils.json_to_sheet(meta);
+  XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
+
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
+  const s1 = XLSX.utils.json_to_sheet(jr);
+  XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
+
+  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:e.amount||'', מטבע:e.currency||'', תאריך:fmtDateTime(e.createdAt)}));
+  const s2 = XLSX.utils.json_to_sheet(ex);
+  XLSX.utils.book_append_sheet(wb, s2, 'הוצאות');
+
+  const fn = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.xlsx`;
+  XLSX.writeFile(wb, fn);
+}
+
+// override Word
+async function exportWord(){
+  const t = currentTrip();
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
+  const { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
+
+  const metaRows = kvRowsFromMeta(t).map(r =>
+    new TableRow({ children:[
+      new TableCell({ children:[new Paragraph(r['שדה'])]}),
+      new TableCell({ children:[new Paragraph(String(r['ערך']))]}),
+    ]})
+  );
+  const metaTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [ new TableRow({ children:[
+      new TableCell({ children:[new Paragraph({text:'שדה', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'ערך', alignment: AlignmentType.CENTER})]}),
+    ]}), ...metaRows ]
+  });
+
+  const journalRows = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j =>
+    new TableRow({
+      children:[
+        new TableCell({ children:[new Paragraph(fmtDateTime(j.createdAt)||'')]}),
+        new TableCell({ children:[new Paragraph(j.placeName||'')]}),
+        new TableCell({ children:[new Paragraph(j.text||'')]}),
+      ]
+    })
+  );
+  const jrTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [ new TableRow({ children:[
+      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'מקום', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
+    ]}), ...journalRows ]
+  });
+
+  const exRows = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e =>
+    new TableRow({ children:[
+      new TableCell({ children:[new Paragraph(e.desc||'')]}),
+      new TableCell({ children:[new Paragraph(e.category||'')]}),
+      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),
+      new TableCell({ children:[new Paragraph(e.currency||'')]}),
+      new TableCell({ children:[new Paragraph(fmtDateTime(e.createdAt)||'')]}),
+    ]})
+  );
+  const exTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [ new TableRow({ children:[
+      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'קטגוריה', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'סכום', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'מטבע', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
+    ]}), ...exRows ]
+  });
+
+  const doc = new Document({
+    sections:[{
+      properties:{},
+      children:[
+        new Paragraph({ text:`הטיול שלי – ${t.destination||''}`, heading: HeadingLevel.TITLE }),
+        new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
+        new Paragraph({ text:'נתוני נסיעה', heading: HeadingLevel.HEADING_2 }),
+        metaTable,
+        new Paragraph({ text:'יומן יומי', heading: HeadingLevel.HEADING_2 }),
+        jrTable,
+        new Paragraph({ text:'הוצאות', heading: HeadingLevel.HEADING_2 }),
+        exTable
+      ]
+    }]
+  });
+  const blob = await Packer.toBlob(doc);
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+  link.download = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.docx`; link.click(); URL.revokeObjectURL(link.href);
+}
+
+
+
+// ===== Auth UI helpers (final) =====
+function mapAuthError(code) {
+  const m = {
+    'auth/user-not-found': 'משתמש לא קיים. נסה הרשמה.',
+    'auth/wrong-password': 'סיסמה שגויה.',
+    'auth/invalid-email': 'אימייל לא תקין.',
+    'auth/missing-email': 'נא להזין אימייל.',
+    'auth/missing-password': 'נא להזין סיסמה.',
+    'auth/too-many-requests': 'יותר מדי נסיונות. נסה מאוחר יותר.',
+    'auth/unauthorized-domain': 'הדומיין לא מורשה באימות.',
+  };
+  return m[code] || (code || 'שגיאת התחברות לא צפויה');
+}
+
+(function wireLogin(){
+  const btn = document.querySelector('#loginBtn, button[data-action="login"], .login-btn');
+  const emailEl = document.querySelector('#email, input[type="email"][name="email"], input[type="email"]');
+  const passEl  = document.querySelector('#password, input[type="password"][name="password"], input[type="password"]');
+  if(!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      btn.disabled = true; const prev = btn.textContent; btn.textContent = 'מתחבר…';
+      const email = (emailEl && emailEl.value ? emailEl.value : '').trim();
+      const pass  = (passEl && passEl.value ? passEl.value : '');
+      if (!email) { alert(mapAuthError('auth/missing-email')); return; }
+      if (!pass)  { alert(mapAuthError('auth/missing-password')); return; }
+      const cred = await FB.signInWithEmailAndPassword(FB.auth, email, pass);
+      console.log('login ok', cred?.user?.uid);
+    } catch(err) {
+      console.warn('login error', err);
+      alert(mapAuthError(err?.code));
+    } finally {
+      btn.disabled = false; btn.textContent = 'כניסה';
+    }
+  });
 })();
 
-// Clear any other injected mobile bars to prevent duplicates
-document.querySelectorAll('.mobile-topbar').forEach(el=>el.remove());
+// Toggle app/login screens on auth state change + start subscriptions
+if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
+  FB.onAuthStateChanged(FB.auth, (user) => {
+    console.log('auth state', !!user, user?.uid);
+    const loginScreen = document.getElementById('loginScreen');
+    const appEl = document.getElementById('app');
+    if (user) {
+      if (loginScreen) loginScreen.style.display = 'none';
+      if (appEl) appEl.style.display = 'block';
+      try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
+    } else {
+      if (appEl) appEl.style.display = 'none';
+      if (loginScreen) loginScreen.style.display = 'grid';
+    }
+  });
+}
+try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){}
 
-// ==== Mobile action sheet for trip ===
-let _sheetTripId = null;
-function qs(id){ return document.getElementById(id); }
-function showMobileTripSheet(tid){
-  _sheetTripId = tid;
-  const b = qs('mobileSheetBackdrop'); const s = qs('mobileActionSheet');
-  if(!b || !s) return openTrip(tid);
-  b.hidden = false; s.hidden = false;
-  requestAnimationFrame(()=>{ b.classList.add('show'); s.classList.add('show'); });
+
+// === Mobile Preview Presets & Rotation ===
+(function(){
+  const mobileBtn = document.getElementById('btnMobilePreview');
+  const rotateBtn = document.getElementById('btnRotate');
+  const presetSel = document.getElementById('devicePreset');
+  const appEl = document.querySelector('.app');
+  if(!appEl) return;
+
+  // Device map (CSS pixels, portrait)
+  const DEVICES = {
+    'iphone-13-pro-max': { w: 428, h: 926 },
+    'iphone-13-14':      { w: 390, h: 844 },
+    'iphone-se-3':       { w: 375, h: 667 },
+    'pixel-7':           { w: 412, h: 915 },
+    'galaxy-s23':        { w: 360, h: 780 },
+  };
+
+  function getState(){
+    return {
+      on: document.body.classList.contains('mobile-preview'),
+      preset: localStorage.getItem('previewMobile.preset') || 'iphone-13-pro-max',
+      landscape: localStorage.getItem('previewMobile.landscape') === '1'
+    };
+  }
+
+  function saveState(s){
+    localStorage.setItem('previewMobile.preset', s.preset);
+    localStorage.setItem('previewMobile.landscape', s.landscape ? '1':'0');
+  }
+
+  function applyDims(){
+    const s = getState();
+    const d = DEVICES[s.preset] || DEVICES['iphone-13-pro-max'];
+    const w = s.landscape ? d.h : d.w;
+    const h = s.landscape ? d.w : d.h;
+    if (document.body.classList.contains('mobile-preview')) {
+      appEl.style.width = w + 'px';
+      appEl.style.height = h + 'px';
+    } else {
+      appEl.style.width = '';
+      appEl.style.height = '';
+    }
+    // Invalidate maps after resize (best-effort)
+    try {
+      setTimeout(() => {
+        if (window.state?.maps?.big) window.invalidateMap(state.maps.big);
+        if (window.state?.maps?.mini) window.invalidateMap(state.maps.mini);
+      }, 120);
+    } catch(_){}
+  }
+
+  // init UI state
+  const preset = localStorage.getItem('previewMobile.preset') || 'iphone-13-pro-max';
+  if (presetSel) presetSel.value = preset;
+  const landscape = localStorage.getItem('previewMobile.landscape') === '1';
+  if (landscape && rotateBtn) rotateBtn.classList.add('active');
+  if (localStorage.getItem('previewMobile') === '1') {
+    document.body.classList.add('mobile-preview');
+    if (mobileBtn) mobileBtn.classList.add('active');
+  }
+  applyDims();
+
+  // handlers
+  mobileBtn && mobileBtn.addEventListener('click', () => {
+    const on = document.body.classList.toggle('mobile-preview');
+    mobileBtn.classList.toggle('active', on);
+    localStorage.setItem('previewMobile', on ? '1':'0');
+    applyDims();
+  });
+
+  presetSel && presetSel.addEventListener('change', (e) => {
+    const s = getState();
+    s.preset = e.target.value;
+    saveState(s);
+    applyDims();
+  });
+
+  rotateBtn && rotateBtn.addEventListener('click', () => {
+    const s = getState();
+    s.landscape = !s.landscape;
+    rotateBtn.classList.toggle('active', s.landscape);
+    saveState(s);
+    applyDims();
+  });
+
+  // Re-apply on window resize or theme toggle
+  window.addEventListener('resize', applyDims);
+})();
+// === end Mobile Preview Presets & Rotation ===
+
+
+// --- Keyword highlighting helpers (all occurrences) ---
+function clearMarks(root){
+  try{
+    root.querySelectorAll('mark').forEach(m=>{
+      const t = document.createTextNode(m.textContent);
+      m.replaceWith(t);
+    });
+  }catch(e){ /* ignore */ }
 }
-function hideMobileTripSheet(){
-  const b = qs('mobileSheetBackdrop'); const s = qs('mobileActionSheet');
-  if(!b || !s) return;
-  b.classList.remove('show'); s.classList.remove('show');
-  setTimeout(()=>{ b.hidden = true; s.hidden = true; }, 180);
+function highlightAllInContainer(container, s){
+  if(!container || !s) return null;
+  clearMarks(container);
+  const rx = new RegExp('(' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  container.innerHTML = container.innerHTML.replace(rx, '<mark>$1</mark>');
+  const first = container.querySelector('mark');
+  if(first){ first.scrollIntoView({behavior:'smooth', block:'center'}); }
+  return first;
 }
-// Close handlers
+// --- end Keyword highlighting helpers ---
+
+
+// --- Make types pill clickable: jump to Meta and highlight all occurrences ---
 document.addEventListener('click', (ev)=>{
-  const t = ev.target;
-  if(t && (t.matches('[data-close-sheet]') || t.id==='mobileSheetBackdrop')){
-    hideMobileTripSheet();
-  }
-});
-// When user chooses an icon
-document.addEventListener('click', async (ev)=>{
-  const btn = ev.target.closest('#mobileActionSheet .item:not(.cancel)');
-  if(!btn) return;
-  const tab = btn.dataset.tab;
-  if(!_sheetTripId) return;
-  hideMobileTripSheet();
-  await openTrip(_sheetTripId);
-  if (tab){
-    const el = document.querySelector(`#tabs [data-tab="${tab}"]`);
-    if (el){ el.click(); }
-  }
-});
+  const pill = ev.target.closest('.types-pill');
+  if(!pill) return;
+  const row = pill.closest('.trip-row');
+  const tripId = row ? row.getAttribute('data-trip') : pill.getAttribute('data-trip');
+  const kw = (pill.getAttribute('data-keyword') || pill.textContent || '').trim();
+  if(!tripId || !kw) return;
+  ev.stopPropagation();
+  openTrip(tripId).then(()=>{
+    const btn = document.querySelector('#tabs button[data-tab="meta"]');
+    if(btn) btn.click();
+    setTimeout(()=>{
+      const cont = document.querySelector('#view-meta') || document;
+      highlightAllInContainer(cont, kw);
+      pill.classList.add('active');
+    }, 250);
+  });
+}, true);
+// --- end types pill click ---
 
-
-// Disable gallery/list buttons in mobile
-document.addEventListener('DOMContentLoaded', ()=>{
-  if (isMobileMode()) {
-    const g = document.getElementById('btnViewGrid');
-    const l = document.getElementById('btnViewList');
-    if (g) g.style.display = 'none';
-    if (l) l.style.display = 'none';
-  }
-});
+// expose for inline onclick in templates
+window.searchAndNavigate = searchAndNavigate;
