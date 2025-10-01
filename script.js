@@ -1,3 +1,27 @@
+// === ensureExpenseCurrencyOption: global-safe ===
+(function () {
+  const root = (typeof window !== 'undefined') ? window : globalThis;
+  function ensureExpenseCurrencyOption(localCode) {
+    try {
+      const lc = localCode ||
+        (root.state && (root.state.localCurrency || (root.state.current && root.state.current.localCurrency))) ||
+        'USD';
+      if (!lc) return;
+      const selects = Array.from(document.querySelectorAll(
+        'select[id*="curr"], select[name*="curr"], select[id*="Currency"], select[name*="Currency"]'
+      ));
+      selects.forEach(sel => {
+        const exists = Array.from(sel.options).some(o => {
+          const t = (o.textContent || o.innerText || '').trim().toUpperCase();
+          return o.value === lc || t === lc || t.includes(lc.toUpperCase());
+        });
+        if (!exists) sel.add(new Option(lc, lc, false, false));
+      });
+    } catch (e) { console.debug('ensureExpenseCurrencyOption guard:', e); }
+  }
+  root.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption;
+})();
+
 // ---- Lazy loader for heavy export libs with multi-CDN fallback ----
 async function loadExternalScript(urls) {
   for (const url of urls) {
@@ -419,8 +443,6 @@ function ensureExpenseCurrencyOption() {
     }
   }catch(e){ console.warn('ensureExpenseCurrencyOption failed', e); }
 }
-// expose globally for module/hoisting edge cases
-try{ window.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption; }catch(_e){}
 
 }
 
@@ -1973,31 +1995,29 @@ document.addEventListener('click', (ev)=>{
 window.searchAndNavigate = searchAndNavigate;
 
 
-// === Fallback guard: ensureExpenseCurrencyOption (universal) ===
+// === ensureExpenseCurrencyOption auto-run on select appear ===
 (function(){
-  try{
-    var root = (typeof window !== 'undefined') ? window : globalThis;
-    if (typeof root.ensureExpenseCurrencyOption !== 'function') {
-      root.ensureExpenseCurrencyOption = function(localCode){
-        try{
-          var lc = (localCode) 
-            || (root.state && (root.state.localCurrency || (root.state.current && root.state.current.localCurrency))) 
-            || 'USD';
-          if (!lc) return;
-          var selects = Array.prototype.slice.call(document.querySelectorAll('select[id*="curr"], select[name*="curr"], select[id*="Currency"], select[name*="Currency"]'));
-          selects.forEach(function(sel){
-            var exists = Array.prototype.slice.call(sel.options).some(function(o){
-              var t = (o.textContent || o.innerText || '').trim().toUpperCase();
-              return o.value === lc || t === lc || t.indexOf(lc.toUpperCase()) > -1;
-            });
-            if (!exists) {
-              var opt = new Option(lc, lc, false, false);
-              sel.add(opt);
-            }
-          });
-        }catch(e){ /* swallow */ }
-      };
+  let armed = false;
+  const run = () => {
+    if (typeof ensureExpenseCurrencyOption === 'function') {
+      requestAnimationFrame(() => ensureExpenseCurrencyOption());
     }
-  }catch(e){ /* swallow */ }
+  };
+  const obs = new MutationObserver(muts => {
+    if (armed) return;
+    for (const m of muts) {
+      if (m.addedNodes && m.addedNodes.length) {
+        if (document.querySelector('select[id*="curr"], select[name*="curr"], select[id*="Currency"], select[name*="Currency"]')) {
+          armed = true;
+          run();
+          setTimeout(() => armed = false, 1500); // allow future loads
+          break;
+        }
+      }
+    }
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
+  // also try once on DOM ready
+  if (document.readyState !== 'loading') run();
+  else document.addEventListener('DOMContentLoaded', run, { once: true });
 })();
-
