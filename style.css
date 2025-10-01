@@ -679,8 +679,6 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 */
 html, body { max-width: 100%; overflow-x: hidden; }
 /* Safer table layout to prevent overflow */
-table { table-layout: fixed; width: 100%; }
-th, td { word-break: break-word; }
 
 @media (max-width: 480px){
   html, body { height: auto; min-height: 100svh; overflow-x: hidden; }
@@ -723,3 +721,68 @@ th, td { word-break: break-word; }
     flex: 1 1 auto;
   }
 }
+
+
+/* === Desktop table compaction (v5) === */
+@media (min-width: 481px){
+  table { table-layout: auto; width: 100%; }
+  th, td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Make non-description columns as narrow as possible so description can breathe.
+     Assumes description is the first column in RTL tables; adjust automatically by giving first column flex width. */
+  tr > th:first-child, tr > td:first-child { white-space: normal; width: auto; max-width: none; }
+  tr > th:nth-child(n+2), tr > td:nth-child(n+2) { width: 1%; }
+}
+/* Keep mobile protections only on small screens */
+@media (max-width: 480px){
+  table { table-layout: fixed; width: 100%; }
+  th, td { word-break: break-word; white-space: normal; }
+}
+
+
+/* === Tables: prioritize description/content & kill horizontal scroll (v6) === */
+/* Desktop+ */
+@media (min-width: 481px){
+  table{ table-layout:auto; width:100%; }
+  th, td{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Give SPACE to description/content whether it's first OR last column */
+  tr > th:first-child, tr > td:first-child,
+  tr > th:last-child,  tr > td:last-child{
+    white-space:normal; overflow:visible; text-overflow:clip; width:auto; max-width:none;
+    word-break:break-word;
+  }
+  /* Utility/action cells (… menus/buttons) stay tiny */
+  td:has(.menu), th:has(.menu), td:has(button), th:has(button){ width:1%; white-space:nowrap; }
+  /* Also squeeze typical numeric/meta columns */
+  td[data-col="date"], th[data-col="date"],
+  td[data-col="amount"], th[data-col="amount"],
+  td[data-col="currency"], th[data-col="currency"],
+  td[data-col="category"], th[data-col="category"]{ width:1%; }
+  /* 5-col tables (e.g., expenses) — squeeze all but last */
+  /* removed col-5 squeeze to preserve natural order/widths */
+}
+/* Mobile */
+@media (max-width:480px){
+  table{ table-layout:fixed; width:100%; }
+  th, td{ white-space:normal; word-break:break-word; }
+}
+/* Global safety: no horizontal scroll from tables */
+.table-wrap, .card, main, body, html{ max-width:100%; overflow-x:hidden; }
+
+
+/* === v7: description priority, zero horizontal scroll, no column order change === */
+@media (min-width:481px){
+  table{table-layout:auto;width:100%}
+  th,td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  tr>th:first-child, tr>td:first-child,
+  tr>th:last-child,  tr>td:last-child{
+    white-space:normal;overflow:visible;text-overflow:clip;width:auto;max-width:none;word-break:break-word
+  }
+  td:has(.menu), th:has(.menu),
+  td:has(button), th:has(button){width:1%;white-space:nowrap}
+  [data-col="date"], [data-col="amount"], [data-col="currency"], [data-col="category"]{width:1%}
+}
+@media (max-width:480px){
+  table{table-layout:fixed;width:100%}
+  th,td{white-space:normal;word-break:break-word}
+}
+html,body,.table-wrap,.card,main{max-width:100%;overflow-x:hidden}
