@@ -2031,3 +2031,25 @@ window.searchAndNavigate = searchAndNavigate;
   if (document.readyState !== 'loading') run();
   else document.addEventListener('DOMContentLoaded', run, { once: true });
 })();
+
+// --- Mobile account dialog handlers ---
+(function(){
+  const dlg = document.getElementById('accountDialog');
+  const badge = document.getElementById('userBadge');
+  function isMobile(){ return document.documentElement.classList.contains('is-mobile'); }
+  if (badge && dlg){
+    badge.style.cursor='pointer';
+    badge.addEventListener('click', ()=>{ if(isMobile()) dlg.showModal(); });
+  }
+  document.getElementById('actClose')?.addEventListener('click', ()=> dlg?.close());
+  document.getElementById('actSignOut')?.addEventListener('click', async ()=>{
+    try{ await FB.signOut(auth); showToast('התנתקת'); }catch(e){ console.error(e); }
+    dlg?.close();
+  });
+  document.getElementById('actSwitch')?.addEventListener('click', async ()=>{
+    try{ await FB.signOut(auth); }catch(e){ console.error(e); }
+    dlg?.close();
+    document.getElementById('btnLogin')?.click();
+    document.getElementById('loginScreen')?.scrollIntoView({behavior:'smooth'});
+  });
+})();
