@@ -1,0 +1,48 @@
+
+/* mobile-header.css — self-contained mobile header */
+/* Mobile-first reset */
+@media (max-width:640px){
+  /* Hide any legacy header on mobile */
+  header { display:none !important; }
+  /* Mount container occupies normal doc flow */
+  #MobileHeaderMount { display:block; }
+
+  /* Header layout */
+  .mheader{
+    display:grid;
+    grid-template-columns: 18% 1fr auto auto auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "logo email email logout theme"
+      "logo search search search sort";
+    column-gap:14px; row-gap:10px;
+    padding:12px;
+    border-bottom:1px solid var(--border, #e6e8eb);
+    background:var(--card, #fff);
+    align-items:center;
+  }
+  .mheader .logo{ grid-area:logo; grid-row:1 / span 2; display:flex; align-items:center; justify-content:center; }
+  .mheader .logo svg{ max-height:72px; width:auto; display:block; }
+
+  .mheader .email{ grid-area:email; }
+  .mheader .logout{ grid-area:logout; }
+  .mheader .theme{ grid-area:theme; }
+  .mheader .search{ grid-area:search; }
+  .mheader .sort{ grid-area:sort; }
+
+  /* Unified visuals */
+  .m-pill, .m-input, .m-btn{
+    height:40px; border:1px solid var(--border, #e6e8eb); border-radius:14px;
+    background:var(--card, #fff); color:var(--ink, #111827);
+    box-shadow:none; font-size:13px;
+  }
+  .m-pill{ display:flex; align-items:center; padding:0 8px; }
+  .m-email{ font-size:16px; line-height:1.2; white-space:normal; overflow-wrap:anywhere; text-overflow:clip; min-height:40px; }
+  .m-input{ width:100%; padding:0 12px; }
+  .m-btn{ display:inline-flex; align-items:center; justify-content:center; padding:0 12px; }
+}
+
+/* Desktop: don't show new header, keep original */
+@media (min-width:641px){
+  #MobileHeaderMount{ display:none; }
+}

@@ -17,6 +17,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  deleteDoc,
   doc,
   getDoc,
   setDoc,
@@ -65,7 +66,8 @@ export const FB = {
   doc, getDoc, setDoc, updateDoc,
   collection, addDoc, getDocs,
   onSnapshot, query, where, orderBy, limit, startAfter,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc
 };
 
 // Network toggles (optional resilience)

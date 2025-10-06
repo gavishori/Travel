@@ -40,17 +40,7 @@
           <button id="btnLogout" class="btn" style="display:none">התנתקות</button>
       <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
       <span id="userBadge" class="muted" style="display:none"></span>
-    \1
-
-<dialog id="accountDialog" class="sheet">
-  <div class="sheet-body">
-    <h3 style="margin:0 0 10px 0">חשבון</h3>
-    <button id="actSwitch" class="btn" style="width:100%">החלף משתמש</button>
-    <button id="actSignOut" class="btn danger" style="width:100%;margin-top:8px">התנתקות</button>
-    <button id="actClose" class="btn" style="width:100%;margin-top:8px">סגור</button>
-  </div>
-</dialog>
-
+    </header>
 
     
 <div id="loginScreen" class="login-screen" style="display:none">
@@ -167,19 +157,18 @@
 
         <section id="view-expenses" class="tabview" hidden>
           <div class="section-title"><h2 style="margin:0">ניהול תקציב</h2></div>
-          <div class="cards">
-            <div class="card" id="expenseSummary"></div>
-          </div>
-          <div class="list-actions">
+<div class="list-actions">
             <button id="btnAddExpense" class="btn primary">הוסף הוצאה</button>
             <button id="btnSortExpenses" class="btn">מיין</button>
-          </div>
-          <div class="card">
-            <table>
-              <thead><tr><th></th><th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תאריך</th></tr></thead>
-              <tbody id="tblExpenses"></tbody>
-            </table>
-          </div>
+            <button id="btnFilterExpenses" class="btn">סנן</button>
+          
+            <div id="expenseSummary" class="budget-bar" aria-live="polite"></div>
+</div>
+<div class="card expenses-table-container">
+  <table class="expenses-table stacked" dir="rtl" aria-label="רשימת הוצאות">
+    <tbody id="tblExpenses"></tbody>
+  </table>
+</div>
         </section>
 
         <section id="view-journal" class="tabview" hidden>
@@ -187,11 +176,8 @@
             <button id="btnAddJournal" class="btn primary">הוסף רישום</button>
             <button id="btnSortJournal" class="btn">מיין</button>
           </div>
-          <div class="card">
-            <table>
-              <thead><tr><th></th><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
-              <tbody id="tblJournal"></tbody>
-            </table>
+          <div class="card expenses-table-container" style="padding:0">
+            <div id="journalList" class="journal-list stacked"></div>
           </div>
         </section>
 
@@ -212,15 +198,14 @@
               <h3>ייבוא JSON</h3>
               <input type="file" id="importFile" accept="application/json" class="input"/>
               <div class="row"><button id="btnImport" class="btn primary">ייבא</button></div>
+              <div class="row">
+                <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml" class="input" style="display:none"/>
+                <button id="btnImportGPX" class="btn">ייבא GPX</button>
+              </div>
             </div>
             <div class="card">
               <h3>ייצוא</h3>
-              <div class="row">
-                <select id="exportWithExpenses" class="input"><option value="yes">עם הוצאות</option><option value="no">בלי הוצאות</option></select>
-              </div>
-              <div class="row">
-                <button id="btnExportPDF" class="btn">PDF</button>
-                <button id="btnExportExcel" class="btn">Excel</button>
+              <div class="row"> <button id="btnExportExcel" class="btn">Excel</button>
                 <button id="btnExportWord" class="btn">Word</button>
                 <button id="btnExportGPX" class="btn">GPX</button>
               </div>
@@ -277,10 +262,11 @@
     </div>
   </dialog>
 
-  <dialog id="expenseModal" class="modal">
+  <dialog
+id="expenseModal" class="modal">
     <header><strong>הוצאה</strong></header>
     <div class="body">
-      <label>תיאור<input id="expDesc" class="input"/></label>
+      <label>תיאור<textarea id="expDesc" class="input auto-resize" rows="4" placeholder="כתוב תיאור ההוצאה..."></textarea></label>
       <label>קטגוריה
         <select id="expCat" class="input">
           <option value="">בחר...</option>
@@ -297,7 +283,7 @@
       </label>
       <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
       <div class="row location-row">
-        <label>מיקום<input id="expLocationName" class="input" placeholder="בחר עפ״י שם"/></label>
+        <label>מיקום<input id="expLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
         <button id="btnUseCurrentExp" class="btn location-btn">בחר מיקום נוכחי</button>
         <input type="hidden" id="expLat" />
@@ -327,9 +313,9 @@
   <dialog id="journalModal" class="modal">
     <header><strong>רישום יומן</strong></header>
     <div class="body">
-      <label>תיאור<textarea id="jrText" class="input"></textarea></label>
+      <label>תיאור<textarea id="jrText" class="input auto-resize"></textarea></label>
       <div class="row location-row">
-        <label>מיקום<input id="jrLocationName" class="input" placeholder="בחר עפ״י שם"/></label>
+        <label>מיקום<input id="jrLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectJrLocation" class="btn location-btn">בחר ע"ג מפה</button>
         <button id="btnUseCurrentJr" class="btn location-btn">בחר מיקום נוכחי</button>
         <input type="hidden" id="jrLat" />
@@ -379,6 +365,18 @@
   <div class="footer">
     <button id="confirmDeleteYes" class="btn danger">מחק</button>
     <button id="confirmDeleteNo" class="btn">ביטול</button>
+  </div>
+</dialog>
+<dialog id="filterModal" class="modal">
+  <header><strong>סינון הוצאות</strong></header>
+  <div class="body">
+    <label>קטגוריית הוצאה
+      <select id="filterCat" class="input"></select>
+    </label>
+  </div>
+  <div class="footer">
+    <button id="filterApply" class="btn primary">סנן</button>
+    <button id="filterClear" class="btn danger">נקה סינון</button>
   </div>
 </dialog>
 </body>
