@@ -1,4 +1,3 @@
-
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -228,14 +227,38 @@ function switchToTab(tab){
       btn.click();
       return;
     }
-    if(!btn.classList.contains('active')) {
+    if (btn.dataset.tab !== 'all') { // If switching to a single view, hide others
       document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       document.querySelectorAll('.tabview').forEach(v=> v.hidden = true);
       const v = document.querySelector('#view-'+tab);
       if(v) v.hidden = false;
-      if(tab==='map') setTimeout(initBigMap,50);
     }
+    if(tab==='map') setTimeout(initBigMap,50);
+/* patched switchToTab */
+try{
+  const views = document.querySelectorAll('.tabview');
+  views.forEach(v=>{ v.removeAttribute('data-active'); v.hidden = true; });
+  const cur = document.getElementById('view-'+tab);
+  if(!cur){ console.warn('View not found:', tab); }
+  else { cur.setAttribute('data-active','1'); cur.hidden = false; }
+}catch(e){ console.error(e); }
+/* end patched switchToTab */
+
+    try{
+      document.querySelectorAll('.tabview').forEach(v=>v.removeAttribute('data-active'));
+      const v = document.querySelector('#view-'+tab);
+      if(v){ v.setAttribute('data-active','1'); }
+    }catch(e){}
+
+    // toggle no-scroll when entering/leaving share tab
+    try{
+      const rootEls=[document.documentElement, document.body];
+      if(tab==='share'){ rootEls.forEach(el=>el.classList.add('share-open')); }
+      else { rootEls.forEach(el=>el.classList.remove('share-open')); }
+    }catch(_e){}
+
+    if(tab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
   }catch(e){}
 }
 
@@ -412,7 +435,9 @@ function initMiniMap(t){
 }
 
 // Initialize big map (map tab) and reuse same data set when switching
-function initBigMap(){
+function initBigMap() {
+  const emailSpan = document.getElementById('currentUserEmail');
+
   try{
     if(!state.maps.big){
       state.maps.big = L.map('bigMap');
@@ -454,6 +479,9 @@ function initBigMap(){
         const b = L.latLngBounds(pts);
         state.maps.big.fitBounds(b.pad(0.2));
       } else {
+      if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
+      if(btnLogin) btnLogin.style.display='inline-block';
+      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
         state.maps.big.setView([32.0853,34.7818], 6);
       }
     }
@@ -462,6 +490,28 @@ function initBigMap(){
     state.maps.big.addLayer(journalLG);
     document.getElementById('btnToggleSpent')?.classList.add('active');
     document.getElementById('btnToggleVisited')?.classList.add('active');
+    // --- Map toolbar: toggle visibility of layers + button state ---
+    const btnSpent   = document.getElementById('btnToggleSpent');
+    const btnVisited = document.getElementById('btnToggleVisited');
+
+    function applyMapToolbarVisibility(){
+      if(btnSpent && btnSpent.classList.contains('active')){
+        if(!state.maps.big.hasLayer(expensesLG)) state.maps.big.addLayer(expensesLG);
+      } else {
+        if(state.maps.big.hasLayer(expensesLG)) state.maps.big.removeLayer(expensesLG);
+      }
+      if(btnVisited && btnVisited.classList.contains('active')){
+        if(!state.maps.big.hasLayer(journalLG)) state.maps.big.addLayer(journalLG);
+      } else {
+        if(state.maps.big.hasLayer(journalLG)) state.maps.big.removeLayer(journalLG);
+      }
+      invalidateMap(state.maps.big);
+    }
+    btnSpent?.addEventListener('click', ()=>{ btnSpent.classList.toggle('active'); applyMapToolbarVisibility(); });
+    btnVisited?.addEventListener('click', ()=>{ btnVisited.classList.toggle('active'); applyMapToolbarVisibility(); });
+    // ensure initial visibility matches default state
+    applyMapToolbarVisibility();
+    
 
     invalidateMap(state.maps.big);
   }catch(e){ console.error('initBigMap error', e); }
@@ -623,44 +673,12 @@ $$('#tabs button').forEach(btn => btn.addEventListener('click', (e) => {
   if (btn.classList.contains('active')) return;
   $$('#tabs button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  $$('.tabview').forEach(v=>v.hidden = true);
-  $('#view-'+btn.dataset.tab).hidden = false;
+  showView(btn.dataset.tab);
   if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
   if(btn.dataset.tab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
 
-// Auth UI
-FB.onAuthStateChanged(auth, async (user) => {
-  state.user = user;
-  const container = document.querySelector('.container');
-  const login = document.getElementById('loginScreen');
-  const btnLogin = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const badge = $('#userBadge');
-
-  if(user && !state.shared.readOnly){
-    // Header
-    if (btnLogin) btnLogin.style.display = 'none';
-    if (btnLogout) btnLogout.style.display = 'inline-block';
-    if (badge) { badge.style.display = 'inline-block'; badge.textContent = user.email || user.displayName || 'משתמש'; }
-    // Screens
-    if (login) login.style.display = 'none';
-    if (container) container.style.display = 'grid';
-    subscribeTrips();
-    enterHomeMode();
-  } else if(!user && !state.shared.readOnly){
-    // Header
-    if (btnLogin) btnLogin.style.display = 'inline-block';
-    if (btnLogout) btnLogout.style.display = 'none';
-    if (badge) { badge.style.display = 'none'; badge.textContent=''; }
-    // Screens
-    if (container) container.style.display = 'none';
-    if (login) login.style.display = 'grid';
-    $('#tripList').innerHTML = '';
-    $('#tabs').style.display = 'none';
-    showView('welcome');
-  }
-});
+// (old Auth UI block removed – using unified handler below)
 
 // Handle share link mode (read-only)
 const url = new URL(location.href);
@@ -816,9 +834,24 @@ function rowHTML(t, s){
 
 function showView(view){
   try {
-    $$('.tabview').forEach(v=>{ if (v) v.hidden = true; });
+    // alias old/new names
+    if(view==='overview' && !document.querySelector('#view-overview') && document.querySelector('#view-welcome')){
+      view = 'welcome';
+    }
+    // deactivate all
+    document.querySelectorAll('.tabview').forEach(v=>{
+      if(!v) return;
+      v.removeAttribute('data-active');
+      v.setAttribute('hidden','');
+    });
+    // activate target
     const el = document.querySelector('#view-' + view);
-    if (el) { el.hidden = false; } else { console.warn('View not found:', view); }
+    if (el) {
+      el.setAttribute('data-active','1');
+      el.removeAttribute('hidden');
+    } else {
+      console.warn('View not found:', view);
+    }
   } catch(e){ console.warn('showView error', e); }
 }
 
@@ -976,10 +1009,6 @@ arr.forEach(e=>{
       </td>
     `;
     
-    const tr3 = document.createElement('tr');
-    tr3.className = 'exp-item';
-    tr3.innerHTML = `<td class="cell header location" colspan="6"><span class="lbl">מקום: </span> ${locStr||''}</td>`;
-
     const tr4 = document.createElement('tr');
     tr4.className = 'exp-item';
     tr4.innerHTML = `<td class="cell notes" colspan="6">${desc||''}</td>`;
@@ -995,7 +1024,6 @@ arr.forEach(e=>{
     }
 
     body.appendChild(tr1);
-    body.appendChild(tr3);
     body.appendChild(tr4);
 
     const menuBtn = tr1.querySelector('.menu-btn');
@@ -1005,73 +1033,77 @@ arr.forEach(e=>{
   });
 }
 
+
+
 function renderJournal(t, order){
-  order = (order || state.journalSort || 'desc');
-  const dir = (order === 'asc') ? 1 : -1;
-  const list = document.getElementById('journalList');
-  if (list) list.innerHTML = '';
-  const arr = Object.entries(t.journal||{})
-    .map(([id,j])=>({id, ...j}))
-    .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
-  // Apply category filter if exists
   try{
-    const cat = (state.filters && state.filters.expenseCat) || '';
-    if(cat) arr = arr.filter(e=> (e.category||'')===cat);
-  }catch(_){}
-  
-  arr.forEach(j=>{
-    const card = document.createElement('div');
-    card.className = 'journal-card';
-    card.dataset.id = j.id;
-    const displayLabel = formatPlace(j.placeName)||"";
-    const linkedText = linkifyText(j.text || "", displayLabel);
-    const metaDate = fmtDateTime(j.createdAt);
-    const placeHtml = placeLinkHtml({ locationName: j.placeName, lat: j.lat, lng: j.lng });
-    card.innerHTML = `
-      <div class="meta"><span>${metaDate}</span>${placeHtml ? `<span>· ${placeHtml}</span>` : ''}</div>
-      <button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button>
-      <div class="text">${linkedText}</div>
-    `;
-    const menuBtn = card.querySelector('.menu-btn');
-    if (menuBtn) {
-      menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); _rowActionJournal = j; const m = document.getElementById('rowMenuModal'); if(m) m.showModal && m.showModal(); });
-    }
-    if (list) list.appendChild(card);
-  });
-  // Keep the mini list in Overview tab
-  const recent = document.getElementById('tblRecentJournal');
-  if (recent) {
-    recent.innerHTML = arr.map(j=>`<tr><td>${fmtDateTime(j.createdAt)}</td><td>${esc(formatPlace(j.placeName)||'')}</td><td>${linkifyText(j.text || '')}</td></tr>`).join('');
+    order = (order || state.journalSort || 'desc');
+    const dir = (order === 'asc') ? 1 : -1;
+    const body = document.querySelector('#tblJournal');
+    if (body) body.innerHTML = '';
+    // /* JR_SELECT_PATCH */
+    const selectionOn = !!state.journalSelectionMode;
+    const selectedSet = state.journalSelectedIds || new Set();
+
+    let arr = Object.entries(t?.journal || {}).map(([id,j])=>({id, ...j}))
+      .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
+
+    arr.forEach(j=>{
+      const d = dayjs(j.createdAt);
+      const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
+      const timeStr = d.isValid()? d.format('HH:mm') : '';
+      const cat = j.category || '';
+      const place = j.placeName || j.city || j.country || '';
+      const locStr = place ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(place)}" target="_blank">${place}</a>` : '';
+      const text = linkifyText(j.text || '');
+
+      const tr1 = document.createElement('tr');
+      tr1.className = 'exp-item'; tr1.dataset.id = j.id;
+      const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" ${ (selectedSet.has(j.id)? "checked": "") }></td>` : "";
+            tr1.innerHTML = `
+        ${selectCell}
+        <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
+        <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
+        <td class="cell header location" colspan="2"><span class="lbl">מקום:</span> ${locStr||''}</td>
+        <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
+      `;
+      const tr4 = document.createElement('tr');
+      tr4.className = 'exp-item';
+      tr4.innerHTML = `<td class="cell notes" colspan="6">${text}</td>`;
+
+      if (body){ body.appendChild(tr1); body.appendChild(tr4); }
+
+      if(selectionOn){
+        const cb = tr1.querySelector('input.jr-select');
+        if(cb){
+          cb.addEventListener('click', (ev)=> ev.stopPropagation());
+          cb.addEventListener('change', ()=>{
+            if(cb.checked) selectedSet.add(j.id); else selectedSet.delete(j.id);
+            state.journalSelectedIds = selectedSet;
+            const db = document.getElementById('btnDeleteSelectedJournal');
+            if(db) db.textContent = `מחק (${selectedSet.size||0})`;
+            const cancelBtn = document.getElementById('btnCancelSelectionJournal');
+            if(cancelBtn) cancelBtn.style.display = 'inline-flex';
+          });
+        }
+      }
+
+      const menuBtn = tr1.querySelector('.menu-btn');
+      if (menuBtn) {
+        menuBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          _rowActionJournal = j;
+          const m = document.getElementById('rowMenuModal');
+          if (m && m.showModal) m.showModal();
+        });
+      }
+    });
+  }catch(e){
+    console.error('renderJournal failed', e);
   }
 }
 
-$('#btnToggleSpent').addEventListener('click', ()=>{ const m=state.maps.layers?.expenses; if(!m) return; const btn=$('#btnToggleSpent'); if(state.maps.big.hasLayer(m)){ state.maps.big.removeLayer(m); btn.classList.remove('active'); } else { state.maps.big.addLayer(m); btn.classList.add('active'); } invalidateMap(state.maps.big); });
-$('#btnToggleVisited').addEventListener('click', ()=>{ const m=state.maps.layers?.journal; if(!m) return; const btn=$('#btnToggleVisited'); if(state.maps.big.hasLayer(m)){ state.maps.big.removeLayer(m); btn.classList.remove('active'); } else { state.maps.big.addLayer(m); btn.classList.add('active'); } invalidateMap(state.maps.big); });
 
-// Auth UI
-$('#btnLogin').addEventListener('click', ()=> { const s=document.getElementById('loginScreen'); if(s) s.style.display='grid'; const c=document.querySelector('.container'); if(c) c.style.display='none'; });
-$('#authCancel').addEventListener('click', ()=> $('#authModal').close());
-$('#authSignIn').addEventListener('click', async ()=>{
-  try{
-    const email = $('#authEmail').value.trim(); const pass = $('#authPass').value;
-    await FB.signInWithEmailAndPassword(auth, email, pass);
-    $('#authModal').close(); showToast('מחובר ✅');
-  }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#authSignUp').addEventListener('click', async ()=>{
-  try{
-    const email = $('#authEmail').value.trim(); const pass = $('#authPass').value;
-    await FB.createUserWithEmailAndPassword(auth, email, pass);
-    $('#authModal').close(); showToast('נרשם והתחבר ✅');
-  }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#authReset').addEventListener('click', async ()=>{
-  try{ await FB.sendPasswordResetEmail(auth, $('#authEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#authError').textContent = xErr(e); }
-});
-$('#btnLogout').addEventListener('click', async ()=>{ await FB.signOut(auth); showToast('התנתקת'); });
-
-// New trip modal
-$('#btnNewTrip').addEventListener('click', ()=>{ $('#tripModal').showModal(); });
 $('#tripCancel').addEventListener('click', ()=> $('#tripModal').close());
 $('#tripSave').addEventListener('click', async ()=>{
   const dest = $('#tripDest').value.trim(); const start = $('#tripStart').value; const end = $('#tripEnd').value;
@@ -1209,6 +1241,58 @@ $('#lsReset').addEventListener('click', async ()=>{
 
   try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
 });
+// ---- Missing sign-in button wiring (added) ----
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  const doLogin = async (emailSel, passSel, errSel)=>{
+    const email = $(emailSel)?.value?.trim();
+    const pass  = $(passSel)?.value;
+    if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
+    try{
+      await FB.signInWithEmailAndPassword(auth, email, pass);
+      if($(errSel)) $(errSel).textContent = '';
+    }catch(e){
+      if($(errSel)) $(errSel).textContent = xErr(e);
+      console.error('login failed', e);
+    }
+  };
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn1 = $('#loginBtn');
+    if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
+    const btn2 = $('#authSignIn');
+    if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
+  });
+})();
+
+// ---- login wiring (clean) ----
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  async function doLogin(emailSel, passSel, errSel){
+    try{
+      const auth = FB.getAuth();
+      const email = $(emailSel)?.value?.trim();
+      const pass  = $(passSel)?.value;
+      if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
+      try{
+        await FB.signInWithEmailAndPassword(auth, email, pass);
+        if($(errSel)) $(errSel).textContent = '';
+      }catch(e){
+        const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
+        if($(errSel)) $(errSel).textContent = xErr(e);
+        console.error('login failed', e);
+      }
+    }catch(e){ console.error('auth not ready', e); }
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn1 = document.getElementById('loginBtn');
+    if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
+    const btn2 = document.getElementById('authSignIn');
+    if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
+  });
+})();
+// ---- end wiring ----
+// ---- end wiring ----
+
 
 function mark(text, s){
   if(!s) return esc(text||''); const t = String(text); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
@@ -1582,6 +1666,9 @@ async function searchLocationByName(name, callback, isHebrew) {
     if (data.length > 0) {
       callback(Number(data[0].lat), Number(data[0].lon), data[0].display_name);
     } else {
+      if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
+      if(btnLogin) btnLogin.style.display='inline-block';
+      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       showToast('לא נמצא מיקום עבור השם הזה.');
     }
   } catch (e) {
@@ -1607,6 +1694,9 @@ function openMapSelectModal(lat, lng) {
     if (state.maps.selectMarker) {
       state.maps.selectMarker.setLatLng(e.latlng);
     } else {
+      if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
+      if(btnLogin) btnLogin.style.display='inline-block';
+      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       state.maps.selectMarker = L.marker(e.latlng).addTo(state.maps.select);
     }
   });
@@ -1622,7 +1712,7 @@ $('#selectMapSave').addEventListener('click', async () => {
       try{
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
         const data = await res.json();
-        const displayName = data.address.country === 'ישראל' ? data.display_name : data.display_name_en || data.display_name;
+        const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
         $('#expLocationName').value = displayName;
       }catch(e){
         $('#expLocationName').value = '';
@@ -1633,7 +1723,7 @@ $('#selectMapSave').addEventListener('click', async () => {
       try{
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
         const data = await res.json();
-        const displayName = data.address.country === 'ישראל' ? data.display_name : data.display_name_en || data.display_name;
+        const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
         $('#jrLocationName').value = displayName;
       }catch(e){
         $('#jrLocationName').value = '';
@@ -1697,7 +1787,7 @@ async function saveJournal() {
   t.journal[id] = {
     text: $('#jrText').value.trim(),
     placeName: formatPlace($('#jrLocationName').value.trim()),
-    placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : ''; })(),
+    placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
     createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
@@ -1889,114 +1979,6 @@ async function ensureHtml2Canvas(){
   ]);
 }
 
-
-/* removed duplicate exportPDF */
-
-
-
-/* removed duplicate exportExcel */
-
-
-
-/* removed duplicate exportWord */
-
-
-
-
-function exportGPX(){
-  const t = currentTrip();
-  if(!t.id){ toast('פתח נסיעה'); return; }
-  const items = [...asArray(t.journal).map(x=>({...x, _type:'journal'})),
-                 ...asArray(t.expenses).map(x=>({...x, _type:'expense'}))]
-    .filter(p => typeof p.lat === 'number' && typeof p.lng === 'number')
-    .sort((a,b)=> (a.date||'').localeCompare(b.date||''));
-
-  const wpts = items.map(p => `
-  <wpt lat="${p.lat}" lon="${p.lng}">
-    <name>${esc(p.title||p.place||'נקודה')}</name>
-    <desc>${esc(p.desc||'')}</desc>
-    ${p.date ? `<time>${new Date(p.date).toISOString()}</time>` : ''}
-    <extensions>
-      ${p.cat ? `<category>${esc(p.cat)}</category>` : ''}
-      <source>${p._type}</source>
-    </extensions>
-  </wpt>`).join('');
-
-  // Build a track in chronological order
-  const trksegs = items.length ? `
-  <trk><name>${esc(t.destination||'מסלול נסיעה')}</name>
-    <trkseg>
-      ${items.map(p => `<trkpt lat="${p.lat}" lon="${p.lng}">${p.date ? `<time>${new Date(p.date).toISOString()}</time>`:''}</trkpt>`).join('')}
-    </trkseg>
-  </trk>` : '';
-
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">
-  ${wpts}
-  ${trksegs}
-</gpx>`;
-
-  const blob = new Blob([gpx], {type:'application/gpx+xml'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.gpx`; a.click(); URL.revokeObjectURL(a.href);
-}
-// Import JSON
-$('#btnImport')?.addEventListener('click', async ()=>{
-  const inp = $('#importFile');
-  if(!inp?.files?.length) return toast('בחר קובץ JSON');
-  try{
-    const txt = await inp.files[0].text();
-    const data = JSON.parse(txt);
-    if(!data || typeof data !== 'object') throw new Error('bad file');
-    if(!confirm('ייבוא יחליף את נתוני הנסיעה הנוכחית. להמשיך?')) return;
-    // merge minimally into current trip doc in Firestore
-    const ref = FB.doc(db, 'trips', state.currentTripId);
-    await FB.updateDoc(ref, {
-      destination: data.destination ?? state.current.destination,
-      start: data.start ?? state.current.start,
-      end: data.end ?? state.current.end,
-      people: data.people ?? state.current.people ?? [],
-      types: data.types ?? state.current.types ?? [],
-      budget: data.budget ?? state.current.budget ?? {},
-      rates: data.rates ?? state.current.rates ?? state.rates,
-      expenses: data.expenses ?? state.current.expenses ?? {},
-      journal: data.journal ?? state.current.journal ?? {},
-    });
-    toast('ייבוא הושלם'); await loadTrip();
-  }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
-});
-
-// Export buttons
-$('#btnExportPDF')?.addEventListener('click', exportPDF);
-$('#btnExportExcel')?.addEventListener('click', exportExcel);
-$('#btnExportWord')?.addEventListener('click', exportWord);
-$('#btnExportGPX')?.addEventListener('click', exportGPX);
-
-// Share controls
-$('#btnEnableShare')?.addEventListener('click', async ()=>{
-  if(!state.currentTripId) return toast('פתח נסיעה');
-  const token = crypto.randomUUID().slice(0,8);
-  const ref = FB.doc(db, 'trips', state.currentTripId);
-  const link = `${location.origin}${location.pathname}?share=${state.currentTripId}:${token}`;
-  await FB.updateDoc(ref, { share: { enabled:true, token } });
-  $('#shareLink').value = link;
-  toast('שיתוף הופעל');
-});
-$('#btnDisableShare')?.addEventListener('click', async ()=>{
-  if(!state.currentTripId) return;
-  const ref = FB.doc(db, 'trips', state.currentTripId);
-  await FB.updateDoc(ref, { share: { enabled:false } });
-  $('#shareLink').value = '';
-  toast('שיתוף בוטל');
-});
-$('#btnCopyShare')?.addEventListener('click', ()=>{
-  const val = $('#shareLink')?.value; if(!val) return toast('אין קישור לשיתוף');
-  navigator.clipboard.writeText(val).then(()=> toast('הועתק'));
-});
-
-
-// === PATCH: Full export must include all tabs (Meta, Expenses, Journal) ===
-
 // Format helpers for meta
 function kvRowsFromMeta(trip){
   const rows = [];
@@ -2021,66 +2003,6 @@ function kvRowsFromMeta(trip){
     if (parts.length) rows.push({ שדה:'שערי מטבע', ערך: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
   }
   return rows;
-}
-
-// override
-function buildExportContainer(trip){
-  const c = document.createElement('div');
-  c.style.width = '794px';
-  c.style.direction = 'rtl';
-  c.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial';
-  c.style.color = '#111';
-  c.style.background = '#fff';
-  c.style.padding = '16px';
-  const metaRows = kvRowsFromMeta(trip).map(r => `<tr><td>${r['שדה']}</td><td>${r['ערך']}</td></tr>`).join('');
-  
-  // Get expenses and journal from the trip object, not the flattened array.
-  const expenses = Object.values(trip.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
-  const journal = Object.values(trip.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''));
-
-  c.innerHTML = `
-    <h1 style="margin:0 0 8px">הטיול שלי – ${esc(trip.destination||'ללא יעד')}</h1>
-    <div style="opacity:.8;margin-bottom:12px">${fmtDate(trip.start)} – ${fmtDate(trip.end)}</div>
-
-    <h2 style="margin:12px 0 6px">נתוני נסיעה</h2>
-    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
-      <thead><tr><th>שדה</th><th>ערך</th></tr></thead>
-      <tbody>${metaRows}</tbody>
-    </table>
-
-    <h2 style="margin:16px 0 6px">יומן יומי</h2>
-    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
-      <thead><tr>
-        <th>תאריך</th><th>מקום</th><th>תיאור</th>
-      </tr></thead>
-      <tbody>
-        ${journal.map(j => `
-          <tr>
-            <td>${esc(fmtDateTime(j.createdAt))}</td>
-            <td>${esc(formatPlace(j.placeName)||'')}</td>
-            <td>${esc(j.text||'')}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>
-
-    <h2 style="margin:16px 0 6px">הוצאות</h2>
-    <table style="width:100%;border-collapse:collapse" border="1" cellspacing="0" cellpadding="6">
-      <thead><tr>
-        <th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תאריך</th>
-      </tr></thead>
-      <tbody>
-        ${expenses.map(e => `
-          <tr>
-            <td>${esc(e.desc||'')}</td>
-            <td>${esc(e.category||'')}</td>
-            <td>${esc(String(e.amount ?? ''))}</td>
-            <td>${esc(e.currency||'')}</td>
-            <td>${esc(fmtDateTime(e.createdAt))}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>
-  `;
-  return c;
 }
 
 // override PDF to always include all sections
@@ -2220,55 +2142,37 @@ async function exportWord(){
 
 
 // ===== Auth UI helpers (final) =====
-function mapAuthError(code) {
-  const m = {
-    'auth/user-not-found': 'משתמש לא קיים. נסה הרשמה.',
-    'auth/wrong-password': 'סיסמה שגויה.',
-    'auth/invalid-email': 'אימייל לא תקין.',
-    'auth/missing-email': 'נא להזין אימייל.',
-    'auth/missing-password': 'נא להזין סיסמה.',
-    'auth/too-many-requests': 'יותר מדי נסיונות. נסה מאוחר יותר.',
-    'auth/unauthorized-domain': 'הדומיין לא מורשה באימות.',
-  };
-  return m[code] || (code || 'שגיאת התחברות לא צפויה');
-}
-
-(function wireLogin(){
-  const btn = document.querySelector('#loginBtn, button[data-action="login"], .login-btn');
-  const emailEl = document.querySelector('#lsEmail, input[type="email"][name="email"], input[type="email"]');
-  const passEl  = document.querySelector('#lsPass, input[type="password"][name="password"], input[type="password"]');
-  if(!btn) return;
-  btn.addEventListener('click', async () => {
-    try {
-      btn.disabled = true; const prev = btn.textContent; btn.textContent = 'מתחבר…';
-      const email = (emailEl && emailEl.value ? emailEl.value : '').trim();
-      const pass  = (passEl && passEl.value ? passEl.value : '');
-      if (!email) { alert(mapAuthError('auth/missing-email')); return; }
-      if (!pass)  { alert(mapAuthError('auth/missing-password')); return; }
-      const cred = await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-      console.log('login ok', cred?.user?.uid);
-    } catch(err) {
-      console.warn('login error', err);
-      alert(mapAuthError(err?.code));
-    } finally {
-      btn.disabled = false; btn.textContent = 'כניסה';
-    }
-  });
-})();
-
 // Toggle app/login screens on auth state change + start subscriptions
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
   FB.onAuthStateChanged(FB.auth, (user) => {
     console.log('auth state', !!user, user?.uid);
+    const emailSpan = document.getElementById('currentUserEmail');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
     const loginScreen = document.getElementById('loginScreen');
-    const appEl = document.querySelector('.app');
+    const appContainer = document.querySelector('.container'); // Select the actual content wrapper
+    const appEl = document.querySelector('.app'); // Main app wrapper (should usually stay visible)
+
+    // Ensure .app is visible, unless in share/readOnly mode logic handles it
+    if (appEl) appEl.style.display = 'grid'; // Restore the display setting if it was hidden globally
+
     if (user) {
+      if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
+      if(btnLogin) btnLogin.style.display='none';
+      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
+      // User is logged in: Hide login, show app content
       if (loginScreen) loginScreen.style.display = 'none';
-      if (appEl) appEl.style.display = 'grid'; // ensure app is visible on login
+      if (appContainer) appContainer.style.display = 'grid'; // Show the main app content
+      state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
     } else {
-      if (appEl) appEl.style.display = 'none';
-      if (loginScreen) loginScreen.style.display = 'grid';
+      if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
+      if(btnLogin) btnLogin.style.display='inline-block';
+      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
+      // User is logged out: Show login, hide app content
+      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
+      if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
+      state.user = null;
     }
   });
 }
@@ -2304,7 +2208,7 @@ try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catc
     localStorage.setItem('previewMobile.preset', s.preset);
     localStorage.setItem('previewMobile.landscape', s.landscape ? '1':'0');
   }
-
+  const emailSpan = document.getElementById('currentUserEmail');
   function applyDims(){
     const s = getState();
     const d = DEVICES[s.preset] || DEVICES['iphone-13-pro-max'];
@@ -2791,3 +2695,555 @@ document.addEventListener('click', (e)=>{
   }
 });
 // --- end blank-click cancel ---
+
+
+// ALL TAB wiring
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btnAll = document.querySelector('#tabs button[data-tab="all"]');
+  if(!btnAll) return;
+  btnAll.addEventListener('click', ()=>{
+    try{
+      // set active state
+      document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+      btnAll.classList.add('active');
+      // show the four sections
+      const ids = ['view-overview','view-expenses','view-journal','view-map'];
+      document.querySelectorAll('.tabview').forEach(v=> v.hidden = true);
+      ids.forEach(id=>{ const el = document.getElementById(id); if(el) el.hidden = false; });
+      // render their content
+      const trip = (window.state && (state._lastTripObj || state.current)) || null;
+      try{ if(trip && typeof renderExpenses==='function') renderExpenses(trip, state.expenseSort); }catch(_){}
+      try{ if(trip && typeof renderJournal==='function') renderJournal(trip, state.journalSort); }catch(_){}
+      try{ if(trip && typeof renderExpenseSummary==='function') renderExpenseSummary(trip); }catch(_){}
+      setTimeout(()=>{ try{ if(typeof initBigMap==='function') initBigMap(); }catch(e){} }, 60);
+    }catch(e){}
+  });
+});
+
+// === JSON Import UI unify (three-button cluster) ===
+document.addEventListener('DOMContentLoaded', () => {
+  const jsonBtn = document.getElementById('btnImportJSON');
+  const legacyFile = document.getElementById('importFile'); // legacy hidden input the app already uses
+  const legacyBtn = document.getElementById('btnImport');   // legacy hidden button that performs the import
+
+  if (jsonBtn && legacyFile) {
+    jsonBtn.addEventListener('click', () => legacyFile.click());
+    legacyFile.addEventListener('change', () => {
+      // If the legacy flow relies on clicking the old button, simulate it.
+      if (legacyBtn) legacyBtn.click();
+    });
+  }
+});
+
+
+// Share duration dropdown wiring
+document.addEventListener('DOMContentLoaded', ()=>{
+  const start = document.getElementById('btnShareStart');
+  const stop  = document.getElementById('btnShareStop');
+  const sel   = document.getElementById('shareDuration');
+  if(start && sel){
+    start.addEventListener('click', ()=>{
+      state.shareDuration = sel.value; // e.g., '1d' | '1w' | '1m'
+      if(typeof startShare === 'function') startShare(sel.value);
+    });
+  }
+  if(stop && typeof stopShare === 'function'){
+    stop.addEventListener('click', ()=> stopShare());
+  }
+});
+
+// === Logout wiring ===
+document.addEventListener('DOMContentLoaded', ()=>{
+  const out = document.getElementById('btnLogout');
+  if(out && !out.dataset.wired){
+    out.dataset.wired='1';
+    out.addEventListener('click', async ()=>{
+      try{ if(typeof FB?.signOut==='function') await FB.signOut(FB.auth); }catch(e){ console.error(e); }
+    });
+  }
+});
+
+// === Export GPX from journal points ===
+function exportGPX(){
+  try{
+    const t = state.current || {};
+    const journal = t.journal || {};
+    const points = Object.values(journal).filter(x=>Number.isFinite(x?.lat) && Number.isFinite(x?.lng));
+    const name = (t.destination||'Trip');
+    const gpxPts = points.map(p=>`  <wpt lat="${p.lat}" lon="${p.lng}">
+    <name>${(p.placeName||'').replace(/[<&>]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</name>
+    <desc>${(p.text||'').replace(/[<&>]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</desc>
+  </wpt>`).join('\n');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>${name}</name></metadata>\n${gpxPts}\n</gpx>`;
+    const blob = new Blob([xml], {type:'application/gpx+xml'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `FLYMILY_${name.replace(/\s+/g,'_')}.gpx`;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    if(typeof toast==='function') toast('ייצוא GPX הושלם');
+  }catch(e){ console.error(e); if(typeof toast==='function') toast('שגיאה ביצוא GPX'); }
+}
+
+// === Wire Import/Export/Share buttons in Share tab ===
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Import JSON (legacy)
+  const jsonBtn = document.getElementById('btnImportJSON');
+  const legacyFile = document.getElementById('importFile');
+  const legacyBtn = document.getElementById('btnImport');
+  if(jsonBtn && legacyFile){
+    jsonBtn.addEventListener('click', ()=> legacyFile.click());
+    legacyFile.addEventListener('change', ()=> { if(legacyBtn) legacyBtn.click(); });
+  }
+
+  // Import GPX
+  const gpxBtn = document.getElementById('btnImportGPX');
+  const gpxFile = document.getElementById('importGPXFile');
+  if(gpxBtn && gpxFile){
+    gpxBtn.addEventListener('click', ()=> gpxFile.click());
+    gpxFile.addEventListener('change', ()=>{ const f=gpxFile.files?.[0]; if(f) importGPXFromFile(f); gpxFile.value=''; });
+  }
+
+  // Import KML
+  const kmlBtn = document.getElementById('btnImportKML');
+  const kmlFile = document.getElementById('importKMLFile');
+  if(kmlBtn && kmlFile){
+    kmlBtn.addEventListener('click', ()=> kmlFile.click());
+    kmlFile.addEventListener('change', ()=>{ const f=kmlFile.files?.[0]; if(f) importKMLFromFile(f); kmlFile.value=''; });
+  }
+
+  // Export
+  const exl = document.getElementById('btnExportExcel');
+  if(exl && typeof exportExcel==='function') exl.addEventListener('click', ()=> exportExcel());
+  const wrd = document.getElementById('btnExportWord');
+  if(wrd && typeof exportWord==='function') wrd.addEventListener('click', ()=> exportWord());
+  const gpxOut = document.getElementById('btnExportGPX');
+  if(gpxOut) gpxOut.addEventListener('click', ()=> exportGPX());
+
+  // Share controls
+  const start = document.getElementById('btnShareStart');
+  const stop  = document.getElementById('btnShareStop');
+  const sel   = document.getElementById('shareDuration');
+  if(start){
+    start.addEventListener('click', ()=>{
+      const val = sel?.value || '1w';
+      state.shareDuration = val;
+      if(typeof startShare==='function') startShare(val);
+      else if(typeof toast==='function') toast('שיתוף הופעל: ' + val);
+    });
+  }
+  if(stop){
+    stop.addEventListener('click', ()=>{
+      if(typeof stopShare==='function') stopShare();
+      else if(typeof toast==='function') toast('שיתוף בוטל');
+    });
+  }
+});
+
+window.getEmailSpan = function(){ return document.getElementById('currentUserEmail'); };
+
+
+// === Logout wiring (robust) ===
+document.addEventListener('DOMContentLoaded', ()=>{
+  const out = document.getElementById('btnLogout');
+  if(out && !out.dataset.wired){
+    out.dataset.wired='1';
+    out.addEventListener('click', async (e)=>{
+      try{
+        e.preventDefault();
+        if (typeof FB !== 'undefined' && FB?.signOut) { await FB.signOut(FB.auth); }
+        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
+      }catch(err){ console.error('logout failed', err); }
+    });
+  }
+});
+
+function safeHide(el){ if(el){ el.hidden = true; } }
+function safeShow(el){ if(el){ el.hidden = false; } }
+
+
+// === SAFE OVERRIDES: maps (placed at end to override corrupted earlier versions) ===
+window.initMiniMap = function(t){
+  try{
+    if(!state.maps) state.maps = {};
+    if(!state.maps.mini){
+      state.maps.mini = L.map('miniMap', { zoomControl:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
+        .addTo(state.maps.mini);
+    }
+    // clear old
+    if(state.maps.layers?.miniGroup){
+      state.maps.mini.removeLayer(state.maps.layers.miniGroup);
+    }
+    const group = L.layerGroup().addTo(state.maps.mini);
+    state.maps.layers = state.maps.layers || {};
+    state.maps.layers.miniGroup = group;
+
+    const pts = [];
+    (Object.entries(t.expenses||{})).forEach(([id,e])=>{
+      if(typeof e.lat==='number' && typeof e.lng==='number'){
+        pts.push([e.lat,e.lng]);
+        L.circleMarker([e.lat,e.lng], { radius:4 }).addTo(group);
+      }
+    });
+    (Object.entries(t.journal||{})).forEach(([id,j])=>{
+      if(typeof j.lat==='number' && typeof j.lng==='number'){
+        pts.push([j.lat,j.lng]);
+        L.circleMarker([j.lat,j.lng], { radius:4 }).addTo(group);
+      }
+    });
+    if(pts.length){
+      state.maps.mini.fitBounds(L.latLngBounds(pts).pad(0.2));
+    }else{
+      state.maps.mini.setView([32.0853,34.7818], 6);
+    }
+  }catch(e){ console.error('initMiniMap (safe) error', e); }
+};
+
+window.initBigMap = function(){
+  try{
+    if(!state.maps) state.maps = {};
+    if(!state.maps.big){
+      state.maps.big = L.map('bigMap');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
+        .addTo(state.maps.big);
+    }
+    // clear old layers
+    state.maps.layers = state.maps.layers || {};
+    if(state.maps.layers.expenses) state.maps.big.removeLayer(state.maps.layers.expenses);
+    if(state.maps.layers.journal)  state.maps.big.removeLayer(state.maps.layers.journal);
+
+    const expensesLG = L.layerGroup().addTo(state.maps.big);
+    const journalLG  = L.layerGroup().addTo(state.maps.big);
+    state.maps.layers.expenses = expensesLG;
+    state.maps.layers.journal  = journalLG;
+
+    const t = state._lastTripObj || {};
+    const pts = [];
+
+    Object.entries(t.expenses||{}).forEach(([id,e])=>{
+      if(typeof e.lat==='number' && typeof e.lng==='number'){
+        pts.push([e.lat,e.lng]);
+        L.circleMarker([e.lat,e.lng], { radius:5 }).addTo(expensesLG);
+      }
+    });
+    Object.entries(t.journal||{}).forEach(([id,j])=>{
+      if(typeof j.lat==='number' && typeof j.lng==='number'){
+        pts.push([j.lat,j.lng]);
+        L.circleMarker([j.lat,j.lng], { radius:5 }).addTo(journalLG);
+      }
+    });
+
+    if(pts.length){
+      state.maps.big.fitBounds(L.latLngBounds(pts).pad(0.2));
+    }else{
+      state.maps.big.setView([32.0853,34.7818], 6);
+    }
+  }catch(e){ console.error('initBigMap (safe) error', e); }
+};
+
+
+// === KML Import (to Journal) ===
+async function importKMLFromFile(file){
+  try{
+    if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
+    const tid = state.currentTripId;
+    if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
+
+    const xmlText = await file.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(xmlText, 'application/xml');
+
+    // KML coordinates are "lon,lat[,alt]"
+    function parseCoord(txt){
+      if(!txt) return null;
+      const parts = txt.trim().split(/[\s,]+/);
+      if(parts.length < 2) return null;
+      const lon = Number(parts[0]);
+      const lat = Number(parts[1]);
+      if(Number.isFinite(lat) && Number.isFinite(lon)) return {lat, lng: lon};
+      return null;
+    }
+    function getText(el, tag){
+      const t = el.getElementsByTagName(tag)[0];
+      return t ? (t.textContent || '').trim() : '';
+    }
+
+    const placemarks = Array.from(xml.getElementsByTagName('Placemark'));
+    const points = [];
+
+    placemarks.forEach(pm=>{
+      const name = getText(pm, 'name') || 'נקודה';
+      const desc = getText(pm, 'description');
+      // Point
+      const point = pm.getElementsByTagName('Point')[0];
+      if(point){
+        const coordsTxt = getText(point, 'coordinates');
+        const c = parseCoord(coordsTxt);
+        if(c) points.push({lat:c.lat, lng:c.lng, _name:name, _desc:desc});
+      }
+      // LineString/coordinates -> sample each coordinate as a journal point
+      const line = pm.getElementsByTagName('LineString')[0];
+      if(line){
+        const coordsTxt = getText(line, 'coordinates');
+        const chunks = (coordsTxt||'').trim().split(/\s+/);
+        chunks.forEach(ch=>{
+          const c = parseCoord(ch);
+          if(c) points.push({lat:c.lat, lng:c.lng, _name:name, _desc:desc});
+        });
+      }
+    });
+
+    if(!points.length){ if(typeof toast==='function') toast('לא נמצאו נקודות KML'); return; }
+
+    const ref = FB.doc(db, 'trips', state.currentTripId);
+    const snap = await FB.getDoc(ref);
+    const t = snap.exists() ? (snap.data() || {}) : {};
+    t.journal = t.journal || {};
+
+    let added = 0;
+    points.forEach(p=>{
+      const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+      t.journal[id] = {
+        text: p._desc || '',
+        placeName: p._name || '',
+        placeUrl: '',
+        lat: p.lat, lng: p.lng,
+        createdAt: new Date().toISOString()
+      };
+      added++;
+    });
+
+    await FB.updateDoc(ref, { journal: t.journal });
+    if(typeof toast==='function') toast(`ייבוא KML הושלם — נוספו ${added} נקודות ליומן`);
+    await loadTrip();
+    switchToTab('map');
+  }catch(e){
+    console.error('KML import failed', e);
+    if(typeof toast==='function') toast('שגיאה בייבוא KML');
+  }
+}
+
+
+/* === Shift-Select for Journal checkboxes ===
+   Allows selecting a continuous range using Shift+Click in the Journal tab.
+   Works with any checkbox inside #view-journal (delegated handler, survives re-render).
+*/
+(function(){
+  let lastIndex = null;
+
+  function getJournalCheckboxes(){
+    const view = document.getElementById('view-journal');
+    if(!view) return [];
+    return Array.from(view.querySelectorAll('input[type="checkbox"]')).filter(cb=>!cb.disabled);
+  }
+
+  // Use capture on 'click' so we can see e.shiftKey reliably
+  document.addEventListener('click', function(e){
+    const target = e.target;
+    if(!(target instanceof HTMLElement)) return;
+    if(target.matches('#view-journal input[type="checkbox"]')){
+      const boxes = getJournalCheckboxes();
+      const idx = boxes.indexOf(target);
+      if(idx === -1) return;
+
+      if(e.shiftKey && lastIndex !== null && lastIndex !== idx){
+        const [start, end] = idx > lastIndex ? [lastIndex, idx] : [idx, lastIndex];
+        const shouldCheck = target.checked; // mirror the state of the clicked box
+        for(let i=start; i<=end; i++){
+          const cb = boxes[i];
+          if(cb && !cb.disabled){
+            cb.checked = shouldCheck;
+            cb.dispatchEvent(new Event('change', { bubbles:true })); // notify any listeners
+          }
+        }
+        // Prevent native text selection while shift-click dragging
+        e.preventDefault();
+      }else{
+        // Single click – still let any selection-mode listeners know
+        target.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+      lastIndex = idx;
+    }
+  }, true);
+
+  // Reset lastIndex when leaving the tab to avoid cross-view ranges
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') lastIndex = null;
+  });
+  window.addEventListener('hashchange', ()=>{ lastIndex = null; });
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) lastIndex = null; });
+})();
+// === End Shift-Select ===
+
+function renderCategoryBreakdownNode(targetId){
+  const el = document.getElementById(targetId); if(!el) return;
+  const local = 'ILS';
+  const expenses = (state && state.current && (Array.isArray(state.current.expenses) ? state.current.expenses : Object.values(state.current.expenses||{}))) || [];
+  const breakdown = {}; let total = 0;
+  expenses.forEach(e=>{
+    const cat = e?.category || 'אחר';
+    const amt = Number(e?.amount||0);
+    const from = e?.currency || 'ILS';
+    const normalized = (typeof convertAmount==='function') ? convertAmount(amt, from, local, state?.rates) : amt;
+    breakdown[cat] = (breakdown[cat]||0) + (isFinite(normalized)?normalized:0);
+    total += (isFinite(normalized)?normalized:0);
+  });
+  const cats = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]);
+  const fmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
+  let html = `<table class="breakdown-table"><thead><tr><th>קטגוריה</th><th>סכום (ILS)</th><th>אחוז</th></tr></thead><tbody>`;
+  cats.forEach(([cat,sum])=>{
+    const pct = total? (sum/total*100):0;
+    html += `<tr><td>${cat}</td><td>${fmt(sum)}</td><td style="min-width:180px"><div class="breakdown-row-bar"><span style="width:${pct.toFixed(1)}%"></span></div><div class="muted">${pct.toFixed(1)}%</div></td></tr>`;
+  });
+  html += `<tr><td class="breakdown-total">סה"כ</td><td class="breakdown-total">${fmt(total)}</td><td></td></tr>`;
+  html += `</tbody></table>`;
+  el.innerHTML = html;
+}
+
+
+// === Bind "סיכום פילוח" button reliably ===
+(function(){
+  function openBreakdown(){
+    const dlg = document.getElementById('breakdownDialog');
+    if(!dlg) return;
+    if (typeof renderCategoryBreakdownNode === 'function'){
+      renderCategoryBreakdownNode('categoryBreakdownDialog');
+    }
+    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+  }
+  function closeBreakdown(){ document.getElementById('breakdownDialog')?.close(); }
+
+  function bindOnce(){
+    const btn = document.getElementById('openBreakdownBtn');
+    if(btn && !btn.dataset.bound){
+      btn.type = btn.type || 'button';
+      btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openBreakdown(); });
+      btn.dataset.bound = '1';
+    }
+    const closeBtn = document.getElementById('closeBreakdownDlg');
+    const dlg = document.getElementById('breakdownDialog');
+    if(closeBtn && !closeBtn.dataset.bound){
+      closeBtn.addEventListener('click', (e)=>{ e.preventDefault(); closeBreakdown(); });
+      closeBtn.dataset.bound = '1';
+    }
+    // Close on Esc/outside
+    if(dlg && !dlg.dataset.bound){
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && dlg.open) closeBreakdown(); });
+      document.addEventListener('click', (e)=>{
+        if(!dlg.open) return;
+        const r = dlg.getBoundingClientRect();
+        const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
+        if(!inside) closeBreakdown();
+      });
+      dlg.dataset.bound = '1';
+    }
+  }
+
+  // Bind now + keep trying (handles dynamic DOM)
+  document.addEventListener('DOMContentLoaded', ()=>{
+    bindOnce();
+    let tries = 0;
+    const iv = setInterval(()=>{
+      tries++;
+      bindOnce();
+      if(tries>20) clearInterval(iv); // try ~20 times (~20s)
+    }, 1000);
+  });
+})();
+
+
+// === Auth Modal Tabs & Controls ===
+document.addEventListener('DOMContentLoaded', () => {
+  const authModal = document.getElementById('authModal');
+  const btnLogin = document.getElementById('btnLogin');
+  const userBadge = document.getElementById('userBadge');
+  const userMenu = document.getElementById('userMenuList');
+  const btnLogout = document.getElementById('btnLogout');
+  const primary = document.getElementById('authPrimary');
+  const secondary = document.getElementById('authSecondary');
+  const tabBtns = Array.from(document.querySelectorAll('.tabs .tab-btn'));
+  const panels = {
+    loginTab: document.getElementById('loginTab'),
+    signupTab: document.getElementById('signupTab'),
+    resetTab: document.getElementById('resetTab'),
+  };
+  const els = {
+    login: { email: document.getElementById('authEmail'), pass: document.getElementById('authPass'), err: document.getElementById('authError') },
+    signup:{ email: document.getElementById('suEmail'),   pass: document.getElementById('suPass'),   err: document.getElementById('suError') },
+    reset: { email: document.getElementById('rsEmail'),   info: document.getElementById('rsInfo') }
+  };
+  let active = 'loginTab';
+  function setTab(id){
+    active = id;
+    tabBtns.forEach(b=> b.classList.toggle('active', b.dataset.tab===id));
+    Object.entries(panels).forEach(([k,el])=> el.hidden = (k!==id));
+    primary.textContent = (id==='loginTab') ? 'כניסה' : (id==='signupTab' ? 'הרשמה' : 'שלח קישור');
+  }
+  tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
+
+  // Open modal
+  btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
+
+  // User badge menu
+  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
+  document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
+
+  // Primary action per tab
+  primary?.addEventListener('click', async ()=> {
+    try {
+      if(active==='loginTab'){
+        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
+      } else if(active==='signupTab'){
+        await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
+      } else {
+        await FB.sendPasswordResetEmail(FB.auth, els.reset.email.value);
+        els.reset.info.textContent = 'נשלח מייל לאיפוס אם הכתובת קיימת.';
+      }
+      authModal?.close();
+    } catch(e){
+      const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
+      if(target) target.textContent = e?.message || 'שגיאה';
+    }
+  });
+  // Secondary = cancel
+  secondary?.addEventListener('click', ()=> authModal?.close());
+
+  // Logout
+  btnLogout?.addEventListener('click', async ()=> {
+    try { await FB.signOut(FB.auth); } catch(e){}
+    userMenu?.classList.remove('open');
+  });
+});
+
+
+
+
+
+// Share link helpers (non-breaking if elements missing)
+(function(){
+  const startBtn = document.getElementById('btnShareStart');
+  const stopBtn  = document.getElementById('btnShareStop');
+  const linkEl   = document.getElementById('shareLinkDisplay');
+  const openBtn  = document.getElementById('btnShareOpen');
+  const copyBtn  = document.getElementById('btnShareCopy');
+
+  let active = false;
+  let url = '';
+
+  const ensure = ()=>{
+    if(!active){ url=''; if(linkEl) linkEl.value=''; }
+  };
+
+  startBtn && startBtn.addEventListener('click', ()=>{
+    active = true;
+    url = location.origin + '/share/' + Math.random().toString(36).slice(2,10);
+    if(linkEl) linkEl.value = url;
+  });
+  stopBtn && stopBtn.addEventListener('click', ()=>{ active=false; ensure(); });
+
+  openBtn && openBtn.addEventListener('click', ()=>{ if(active && url) window.open(url,'_blank'); });
+  copyBtn && copyBtn.addEventListener('click', async ()=>{
+    if(!active || !url) return;
+    try{ await navigator.clipboard.writeText(url); }catch(e){}
+  });
+})();

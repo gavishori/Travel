@@ -73,3 +73,12 @@ export const FB = {
 // Network toggles (optional resilience)
 window.addEventListener("offline", () => disableNetwork(db).catch(()=>{}));
 window.addEventListener("online",  () => enableNetwork(db).catch(()=>{}));
+
+/* ---- Global attach for legacy scripts that expect a global FB ---- */
+try {
+  window.FB = FB;
+  window.auth = auth;
+  window.db = db;
+} catch (e) {
+  // Ignore if window not available (SSR)
+}
