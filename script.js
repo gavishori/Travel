@@ -1285,10 +1285,49 @@ $('#lsReset').addEventListener('click', async ()=>{
     }catch(e){ console.error('auth not ready', e); }
   }
 
-  function wireAuth(){
+  
+function wireAuth(){
+  try{
     const btn1 = document.getElementById('loginBtn');
-    if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
-    const btn2 = document.getElementById('authSignIn');
+    if(btn1 && !btn1.dataset.wired){
+      btn1.dataset.wired='1';
+      btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError'));
+    }
+    // Modal primary button
+    const authPrimary = document.getElementById('authPrimary');
+    if(authPrimary && !authPrimary.dataset.wired){
+      authPrimary.dataset.wired='1';
+      authPrimary.addEventListener('click', async ()=>{
+        const active = document.querySelector('#authModal .tab-btn.active')?.dataset?.tab || 'loginTab';
+        try{
+          if(active==='loginTab'){
+            await doLogin('#authEmail','#authPass','#authError');
+          } else if(active==='signupTab'){
+            await FB.createUserWithEmailAndPassword(FB.getAuth(), document.querySelector('#suEmail')?.value?.trim(), document.querySelector('#suPass')?.value);
+            const el=document.getElementById('suError'); if(el) el.textContent='';
+          } else {
+            await FB.sendPasswordResetEmail(FB.getAuth(), document.querySelector('#rsEmail')?.value?.trim());
+            const info=document.getElementById('rsInfo'); if(info) info.textContent='נשלח מייל לאיפוס אם הכתובת קיימת.';
+          }
+          document.getElementById('authModal')?.close();
+        }catch(e){
+          const target = (active==='loginTab') ? document.getElementById('authError') : (active==='signupTab' ? document.getElementById('suError') : document.getElementById('rsInfo'));
+          if(target) target.textContent = e?.message || 'שגיאה';
+          console.error('authPrimary error', e);
+        }
+      });
+    }
+    // Enter key on login screen
+    ['#lsEmail','#lsPass','#authEmail','#authPass','#suEmail','#suPass','#rsEmail'].forEach(sel=>{
+      const el = document.querySelector(sel);
+      if(el && !el.dataset.wiredKey){
+        el.dataset.wiredKey='1';
+        el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); (document.getElementById('loginBtn')||document.getElementById('authPrimary'))?.click(); } });
+      }
+    });
+  }catch(e){ console.error('wireAuth error', e); }
+}
+const btn2 = document.getElementById('authSignIn');
     if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
     // Enter key submit
     ['#lsEmail','#lsPass','#authEmail','#authPass'].forEach(sel=>{
