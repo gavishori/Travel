@@ -1,5 +1,21 @@
 
-try{ localStorage.removeItem('flymily_guest'); }catch(e){}
+// === View helpers ===
+function _showLogin(){
+  const login = document.getElementById('loginScreen');
+  const cont  = document.querySelector('.container');
+  const app   = document.querySelector('.app');
+  if(login) login.style.display='grid';
+  if(cont)  cont.style.display='none';
+  if(app)   app.style.display='grid';
+}
+function _showApp(){
+  const login = document.getElementById('loginScreen');
+  const cont  = document.querySelector('.container');
+  const app   = document.querySelector('.app');
+  if(login) login.style.display='none';
+  if(cont)  cont.style.display='grid';
+  if(app)   app.style.display='grid';
+}
 
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
@@ -1267,8 +1283,7 @@ $('#lsReset').addEventListener('click', async ()=>{
   });
 })();
 
-
-// ---- login wiring (robust ready handler) ----
+// ---- login wiring (clean) ----
 (function(){
   const $ = (sel)=>document.querySelector(sel);
   async function doLogin(emailSel, passSel, errSel){
@@ -1280,76 +1295,23 @@ $('#lsReset').addEventListener('click', async ()=>{
       try{
         await FB.signInWithEmailAndPassword(auth, email, pass);
         if($(errSel)) $(errSel).textContent = '';
+        try{ _showApp(); if(typeof loadTrip==='function') loadTrip(); }catch(e){}
       }catch(e){
-        const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
+        const xErr = (e)=> ((e?.code? e.code+': ' : '') + (e?.message||'שגיאת התחברות'));
         if($(errSel)) $(errSel).textContent = xErr(e);
         console.error('login failed', e);
       }
     }catch(e){ console.error('auth not ready', e); }
   }
-
-  
-function wireAuth(){
-  try{
+  document.addEventListener('DOMContentLoaded', ()=>{
     const btn1 = document.getElementById('loginBtn');
-    if(btn1 && !btn1.dataset.wired){
-      btn1.dataset.wired='1';
-      btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError'));
-    }
-    // Modal primary button
-    const authPrimary = document.getElementById('authPrimary');
-    if(authPrimary && !authPrimary.dataset.wired){
-      authPrimary.dataset.wired='1';
-      authPrimary.addEventListener('click', async ()=>{
-        const active = document.querySelector('#authModal .tab-btn.active')?.dataset?.tab || 'loginTab';
-        try{
-          if(active==='loginTab'){
-            await doLogin('#authEmail','#authPass','#authError');
-          } else if(active==='signupTab'){
-            await FB.createUserWithEmailAndPassword(FB.getAuth(), document.querySelector('#suEmail')?.value?.trim(), document.querySelector('#suPass')?.value);
-            const el=document.getElementById('suError'); if(el) el.textContent='';
-          } else {
-            await FB.sendPasswordResetEmail(FB.getAuth(), document.querySelector('#rsEmail')?.value?.trim());
-            const info=document.getElementById('rsInfo'); if(info) info.textContent='נשלח מייל לאיפוס אם הכתובת קיימת.';
-          }
-          document.getElementById('authModal')?.close();
-        }catch(e){
-          const target = (active==='loginTab') ? document.getElementById('authError') : (active==='signupTab' ? document.getElementById('suError') : document.getElementById('rsInfo'));
-          if(target) target.textContent = e?.message || 'שגיאה';
-          console.error('authPrimary error', e);
-        }
-      });
-    }
-    // Enter key on login screen
-    ['#lsEmail','#lsPass','#authEmail','#authPass','#suEmail','#suPass','#rsEmail'].forEach(sel=>{
-      const el = document.querySelector(sel);
-      if(el && !el.dataset.wiredKey){
-        el.dataset.wiredKey='1';
-        el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); (document.getElementById('loginBtn')||document.getElementById('authPrimary'))?.click(); } });
-      }
-    });
-  }catch(e){ console.error('wireAuth error', e); }
-}
-const btn2 = document.getElementById('authSignIn');
+    if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
+    const btn2 = document.getElementById('authSignIn');
     if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
-    // Enter key submit
-    ['#lsEmail','#lsPass','#authEmail','#authPass'].forEach(sel=>{
-      const el = document.querySelector(sel);
-      if(el && !el.dataset.wiredKey){
-        el.dataset.wiredKey='1';
-        el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); (btn1||btn2)?.click(); } });
-      }
-    });
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', wireAuth, { once: true });
-  } else {
-    wireAuth();
-  }
+  });
 })();
 // ---- end wiring ----
-
+// ---- end wiring ----
 
 
 function mark(text, s){
@@ -2219,7 +2181,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='none';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
       // User is logged in: Hide login, show app content
-      if (loginScreen) loginScreen.style.display = "grid";
+      if (loginScreen) loginScreen.style.display = 'none';
       if (appContainer) appContainer.style.display = 'grid'; // Show the main app content
       state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
@@ -2228,7 +2190,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='inline-block';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       // User is logged out: Show login, hide app content
-      try { if (authModal?.open) authModal.close(); } catch(e){} if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen
+      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
       state.user = null;
     }
@@ -3240,7 +3202,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
   // Open modal
-  btnLogin?.addEventListener('click', ()=> { try { authModal?.showModal?.(); } catch(e){} setTab('loginTab'); });
+  btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
@@ -3306,138 +3268,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 
-
-// === Mobile visibility watchdog & iOS fixes ===
 (function(){
-  function showLogin(){ 
-    const loginScreen = document.getElementById('loginScreen');
-    const appContainer = document.querySelector('.container');
-    const appEl = document.querySelector('.app');
-    if (loginScreen){ loginScreen.style.display = 'grid'; }
-    if (appContainer){ appContainer.style.display = 'none'; }
-    if (appEl){ appEl.style.display = 'grid'; }
-    const d = document.getElementById('authModal');
-    try { if (d?.open) d.close(); } catch(e){}
-  }
-
-  // Watchdog: if after a brief delay nothing visible -> force login
-  function watchdog(){
-    const loginScreen = document.getElementById('loginScreen');
-    const container = document.querySelector('.container');
-    const visibleLogin = loginScreen && getComputedStyle(loginScreen).display !== 'none';
-    const visibleApp   = container && getComputedStyle(container).display !== 'none';
-    if (!visibleLogin && !visibleApp){ showLogin(); }
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    setTimeout(watchdog, 100);
-    setTimeout(watchdog, 350);
-    // iOS viewport resize safe map reflow
-    function reflowMap(){
-      try{
-        if (window.L && document.querySelector('.leaflet-container')){
-          const mapEls = document.querySelectorAll('.leaflet-container');
-          // Many Leaflet maps need invalidateSize; if 'map' global exists, try it
-          if (window.map && typeof window.map.invalidateSize === 'function'){
-            window.map.invalidateSize();
-          }
-          mapEls.forEach(el=>{ el.style.width = '100%'; });
-        }
-      }catch(e){}
-    }
-    window.addEventListener('resize', reflowMap);
-    window.addEventListener('orientationchange', reflowMap);
-    reflowMap();
-  });
-
-  // Patch onAuthStateChanged if present to guarantee visibility
-  if (typeof FB !== 'undefined' && FB?.onAuthStateChanged){
-    try {
-      const _old = FB.onAuthStateChanged.bind(FB);
-      // We cannot override Firebase itself; but we can add a listener to auth state again for safety
-      FB.onAuthStateChanged(FB.auth, (user)=>{
-        if (!user){ showLogin(); }
-      });
-    } catch(e){}
-  }
-})();
-
-
-// === Mobile Guest Rescue ===
-(function(){
-  const $ = (s)=>document.querySelector(s);
-  function showLogin(){
-    const login = $('#loginScreen'); const cont = document.querySelector('.container'); const app = document.querySelector('.app');
-    if(login) login.style.display='grid';
-    if(cont) cont.style.display='none';
-    if(app) app.style.display='grid';
-  }
-  function showApp(){
-    const login = $('#loginScreen'); const cont = document.querySelector('.container'); const app = document.querySelector('.app');
-    if(login) login.style.display='none';
-    if(cont) cont.style.display='grid';
-    if(app) app.style.display='grid';
-  }
-  // Guest click = bypass auth to allow UI usage; you can limit features if needed
-  ;
-          state.user = { uid:'guest', email:'guest@local' };
-          }catch(e){}
-        showApp();
-      });
-    }
-  }
-  // Header Login opens inline login screen on mobile
-  function wireHeaderLogin(){
-    const btnHdr = document.getElementById('btnLogin');
-    if(btnHdr && !btnHdr.dataset.wiredInline){
-      btnHdr.dataset.wiredInline='1';
-      btnHdr.addEventListener('click', (e)=>{
-        e.preventDefault();
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        if(isMobile){
-          showLogin();
-          document.getElementById('lsEmail')?.focus();
-        }else{
-          // desktop can use modal if desired
-          try{ document.getElementById('authModal')?.showModal?.(); }catch(e){ showLogin(); }
-        }
-      });
-    }
-  }
-  function wireLogin(){
-    const btn = document.getElementById('loginBtn');
-    if(btn && !btn.dataset.wired){
-      btn.dataset.wired='1';
-      btn.addEventListener('click', async ()=>{
-        const email = document.getElementById('lsEmail')?.value?.trim();
-        const pass  = document.getElementById('lsPass')?.value;
-        const err   = document.getElementById('lsError');
-        if(!email || !pass){ if(err) err.textContent='אנא מלא אימייל וסיסמה'; return; }
-        try{
-          const auth = FB.getAuth();
-          await FB.signInWithEmailAndPassword(auth, email, pass);
-          if(err) err.textContent='';
-        }catch(e){
-          if(err) err.textContent = e?.message || 'שגיאת התחברות';
-          console.error('login error', e);
-        }
-      });
-    }
-    ['lsEmail','lsPass'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el && !el.dataset.wiredKey){
-        el.dataset.wiredKey='1';
-        el.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); document.getElementById('loginBtn')?.click(); } });
-      }
+  const btnHdr = document.getElementById('btnLogin');
+  if(btnHdr && !btnHdr.dataset.wiredInline){
+    btnHdr.dataset.wiredInline='1';
+    btnHdr.addEventListener('click', (e)=>{
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if(isMobile){ e.preventDefault(); _showLogin(); document.getElementById('lsEmail')?.focus(); }
     });
   }
-
-  function init(){
-    wireHeaderLogin();
-    wireLogin();
-    // If guest flag set, auto-enter
-    }
-
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init, {once:true}); }
-  else { init(); }
 })();
