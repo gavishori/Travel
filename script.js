@@ -2170,7 +2170,8 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='inline-block';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       // User is logged out: Show login, hide app content
-      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen (fix)
+      try { if (authModal?.open) authModal.close(); } catch(e){}
+if (authModal?.open) { try { authModal.close(); } catch(e){} } if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen (fix)
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
       if (appEl) appEl.style.display = 'grid'; // Keep app wrapper mounted for layout
       state.user = null;
@@ -3183,7 +3184,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
   // Open modal
-  btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
+  btnLogin?.addEventListener('click', ()=> { if (authModal?.open) { try { authModal.close(); } catch(e){} } setTab('loginTab'); });
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
