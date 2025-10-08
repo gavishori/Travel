@@ -2170,8 +2170,9 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='inline-block';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       // User is logged out: Show login, hide app content
-      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
+      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen (fix)
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
+      if (appEl) appEl.style.display = 'grid'; // Keep app wrapper mounted for layout
       state.user = null;
     }
   });
