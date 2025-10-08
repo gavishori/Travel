@@ -1264,7 +1264,8 @@ $('#lsReset').addEventListener('click', async ()=>{
   });
 })();
 
-// ---- login wiring (clean) ----
+
+// ---- login wiring (robust ready handler) ----
 (function(){
   const $ = (sel)=>document.querySelector(sel);
   async function doLogin(emailSel, passSel, errSel){
@@ -1283,15 +1284,30 @@ $('#lsReset').addEventListener('click', async ()=>{
       }
     }catch(e){ console.error('auth not ready', e); }
   }
-  document.addEventListener('DOMContentLoaded', ()=>{
+
+  function wireAuth(){
     const btn1 = document.getElementById('loginBtn');
     if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
     const btn2 = document.getElementById('authSignIn');
     if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
-  });
+    // Enter key submit
+    ['#lsEmail','#lsPass','#authEmail','#authPass'].forEach(sel=>{
+      const el = document.querySelector(sel);
+      if(el && !el.dataset.wiredKey){
+        el.dataset.wiredKey='1';
+        el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); (btn1||btn2)?.click(); } });
+      }
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', wireAuth, { once: true });
+  } else {
+    wireAuth();
+  }
 })();
 // ---- end wiring ----
-// ---- end wiring ----
+
 
 
 function mark(text, s){
@@ -3182,7 +3198,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
   // Open modal
-  btnLogin?.addEventListener('click', ()=> { try { if (authModal?.open) authModal.close(); } catch(e){} setTab('loginTab'); });
+  btnLogin?.addEventListener('click', ()=> { try { authModal?.showModal?.(); } catch(e){} setTab('loginTab'); });
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
