@@ -10,7 +10,7 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden;direction:rtl}
 a{color:var(--brand);text-decoration:none}
 .app{display:grid;grid-template-rows:auto 1fr}
-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5;  flex-direction: row; }
 header .brand{font-weight:700;letter-spacing:.5px}
 header .spacer{flex:1}
 header button, .btn{background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer}
@@ -1299,3 +1299,27 @@ html.dark .cards.share-grid .btn.btn-danger{
 /* tighten card max-width to look like mock on wide screens */
 .cards.share-grid .card .row{ gap:18px !important; flex-wrap:wrap; }
 .cards.share-grid .btn{ min-width:160px !important; }
+
+
+/* === Mobile Hardening Pack === */
+html, body { max-width:100vw; overflow-x:hidden; overscroll-behavior-x: none; }
+.app, .container { max-width: 100vw; touch-action: pan-y; }
+.container { width: min(920px, 100%); margin-inline:auto; padding-inline:16px; }
+@media (max-width: 430px){ .container{ padding-inline:12px; } }
+.card, .panel, .trip-card, .list, .grid, .cards { width: 100%; }
+.swipe, .carousel, .tabs { touch-action: pan-y; overscroll-behavior-x: contain; }
+@media (max-width: 768px){
+  dialog, .modal, .sheet, .drawer {
+    position: fixed !important;
+    inset: env(safe-area-inset-top) 12px 12px 12px !important;
+    width: auto !important; max-width: 100% !important; height: calc(100svh - 24px - env(safe-area-inset-top)) !important;
+    margin: 0 !important; border-radius: 14px !important; overflow: auto !important;
+  }
+  .modal .body, dialog .body { overflow:auto; -webkit-overflow-scrolling:touch; }
+}
+.form-page, .edit-screen, .expense-form, .journal-form {
+  height: calc(100svh - 120px); overflow:auto;
+}
+button, select { font-size: 16px; }
+h1, h2, h3, .title { margin-inline: 0; word-break: break-word; }
+*[style*="transform:"] { transform: none !important; }

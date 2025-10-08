@@ -3278,3 +3278,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 })();
+
+// === Logout wiring ===
+(function(){
+  const btn = document.getElementById('btnLogout');
+  if(btn && !btn.dataset.wired){
+    btn.dataset.wired='1';
+    btn.addEventListener('click', async ()=>{
+      try{ await FB.signOut(FB.getAuth()); }catch(e){ console.error('logout error', e); }
+    });
+  }
+})();
+
+// Defensive: lock horizontal scroll
+document.addEventListener('touchmove', function(e){
+  try{
+    const t=e.touches[0]; const prevX=window._lx||t.clientX; const prevY=window._ly||t.clientY;
+    const dx=Math.abs(t.clientX-prevX), dy=Math.abs(t.clientY-prevY);
+    window._lx=t.clientX; window._ly=t.clientY;
+    if(dx>dy){ e.preventDefault(); }
+  }catch(_){}
+}, { passive:false });
