@@ -2161,7 +2161,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='none';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
       // User is logged in: Hide login, show app content
-      if (loginScreen) loginScreen.style.display = 'none';
+      if (loginScreen) loginScreen.style.display = "grid";
       if (appContainer) appContainer.style.display = 'grid'; // Show the main app content
       state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
@@ -2170,10 +2170,8 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if(btnLogin) btnLogin.style.display='inline-block';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       // User is logged out: Show login, hide app content
-      try { if (authModal?.open) authModal.close(); } catch(e){}
-if (authModal?.open) { try { authModal.close(); } catch(e){} } if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen (fix)
+      try { if (authModal?.open) authModal.close(); } catch(e){} if(loginScreen) loginScreen.style.display = "grid"; // Show the login screen
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
-      if (appEl) appEl.style.display = 'grid'; // Keep app wrapper mounted for layout
       state.user = null;
     }
   });
@@ -3184,7 +3182,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
   // Open modal
-  btnLogin?.addEventListener('click', ()=> { if (authModal?.open) { try { authModal.close(); } catch(e){} } setTab('loginTab'); });
+  btnLogin?.addEventListener('click', ()=> { try { if (authModal?.open) authModal.close(); } catch(e){} setTab('loginTab'); });
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
@@ -3248,4 +3246,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!active || !url) return;
     try{ await navigator.clipboard.writeText(url); }catch(e){}
   });
+})();
+
+
+// === Mobile visibility watchdog & iOS fixes ===
+(function(){
+  function showLogin(){ 
+    const loginScreen = document.getElementById('loginScreen');
+    const appContainer = document.querySelector('.container');
+    const appEl = document.querySelector('.app');
+    if (loginScreen){ loginScreen.style.display = 'grid'; }
+    if (appContainer){ appContainer.style.display = 'none'; }
+    if (appEl){ appEl.style.display = 'grid'; }
+    const d = document.getElementById('authModal');
+    try { if (d?.open) d.close(); } catch(e){}
+  }
+
+  // Watchdog: if after a brief delay nothing visible -> force login
+  function watchdog(){
+    const loginScreen = document.getElementById('loginScreen');
+    const container = document.querySelector('.container');
+    const visibleLogin = loginScreen && getComputedStyle(loginScreen).display !== 'none';
+    const visibleApp   = container && getComputedStyle(container).display !== 'none';
+    if (!visibleLogin && !visibleApp){ showLogin(); }
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(watchdog, 100);
+    setTimeout(watchdog, 350);
+    // iOS viewport resize safe map reflow
+    function reflowMap(){
+      try{
+        if (window.L && document.querySelector('.leaflet-container')){
+          const mapEls = document.querySelectorAll('.leaflet-container');
+          // Many Leaflet maps need invalidateSize; if 'map' global exists, try it
+          if (window.map && typeof window.map.invalidateSize === 'function'){
+            window.map.invalidateSize();
+          }
+          mapEls.forEach(el=>{ el.style.width = '100%'; });
+        }
+      }catch(e){}
+    }
+    window.addEventListener('resize', reflowMap);
+    window.addEventListener('orientationchange', reflowMap);
+    reflowMap();
+  });
+
+  // Patch onAuthStateChanged if present to guarantee visibility
+  if (typeof FB !== 'undefined' && FB?.onAuthStateChanged){
+    try {
+      const _old = FB.onAuthStateChanged.bind(FB);
+      // We cannot override Firebase itself; but we can add a listener to auth state again for safety
+      FB.onAuthStateChanged(FB.auth, (user)=>{
+        if (!user){ showLogin(); }
+      });
+    } catch(e){}
+  }
 })();
