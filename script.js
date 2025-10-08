@@ -1,3 +1,6 @@
+
+try{ localStorage.removeItem('flymily_guest'); }catch(e){}
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -3357,4 +3360,84 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } catch(e){}
   }
+})();
+
+
+// === Mobile Guest Rescue ===
+(function(){
+  const $ = (s)=>document.querySelector(s);
+  function showLogin(){
+    const login = $('#loginScreen'); const cont = document.querySelector('.container'); const app = document.querySelector('.app');
+    if(login) login.style.display='grid';
+    if(cont) cont.style.display='none';
+    if(app) app.style.display='grid';
+  }
+  function showApp(){
+    const login = $('#loginScreen'); const cont = document.querySelector('.container'); const app = document.querySelector('.app');
+    if(login) login.style.display='none';
+    if(cont) cont.style.display='grid';
+    if(app) app.style.display='grid';
+  }
+  // Guest click = bypass auth to allow UI usage; you can limit features if needed
+  ;
+          state.user = { uid:'guest', email:'guest@local' };
+          }catch(e){}
+        showApp();
+      });
+    }
+  }
+  // Header Login opens inline login screen on mobile
+  function wireHeaderLogin(){
+    const btnHdr = document.getElementById('btnLogin');
+    if(btnHdr && !btnHdr.dataset.wiredInline){
+      btnHdr.dataset.wiredInline='1';
+      btnHdr.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        if(isMobile){
+          showLogin();
+          document.getElementById('lsEmail')?.focus();
+        }else{
+          // desktop can use modal if desired
+          try{ document.getElementById('authModal')?.showModal?.(); }catch(e){ showLogin(); }
+        }
+      });
+    }
+  }
+  function wireLogin(){
+    const btn = document.getElementById('loginBtn');
+    if(btn && !btn.dataset.wired){
+      btn.dataset.wired='1';
+      btn.addEventListener('click', async ()=>{
+        const email = document.getElementById('lsEmail')?.value?.trim();
+        const pass  = document.getElementById('lsPass')?.value;
+        const err   = document.getElementById('lsError');
+        if(!email || !pass){ if(err) err.textContent='אנא מלא אימייל וסיסמה'; return; }
+        try{
+          const auth = FB.getAuth();
+          await FB.signInWithEmailAndPassword(auth, email, pass);
+          if(err) err.textContent='';
+        }catch(e){
+          if(err) err.textContent = e?.message || 'שגיאת התחברות';
+          console.error('login error', e);
+        }
+      });
+    }
+    ['lsEmail','lsPass'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el && !el.dataset.wiredKey){
+        el.dataset.wiredKey='1';
+        el.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); document.getElementById('loginBtn')?.click(); } });
+      }
+    });
+  }
+
+  function init(){
+    wireHeaderLogin();
+    wireLogin();
+    // If guest flag set, auto-enter
+    }
+
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init, {once:true}); }
+  else { init(); }
 })();
