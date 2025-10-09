@@ -1,22 +1,3 @@
-
-// === View helpers ===
-function _showLogin(){
-  const login = document.getElementById('loginScreen');
-  const cont  = document.querySelector('.container');
-  const app   = document.querySelector('.app');
-  if(login) login.style.display='grid';
-  if(cont)  cont.style.display='none';
-  if(app)   app.style.display='grid';
-}
-function _showApp(){
-  const login = document.getElementById('loginScreen');
-  const cont  = document.querySelector('.container');
-  const app   = document.querySelector('.app');
-  if(login) login.style.display='none';
-  if(cont)  cont.style.display='grid';
-  if(app)   app.style.display='grid';
-}
-
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -286,18 +267,25 @@ function focusItemInTab(type, id){
   switchToTab(tab);
   // allow render to complete
   setTimeout(()=>{
-    let el = null;
     if(type==='expense'){
-      el = document.querySelector(`.exp-item[data-id="${id}"]`);
-    }else{
-      el = document.querySelector(`.journal-card[data-id="${id}"]`);
+      const el = document.querySelector(`.exp-item[data-id="${id}"]`);
+      if(el){
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+        el.classList.add('flash-green');
+        setTimeout(()=> el.classList.remove('flash-green'), 5000);
+      }
+      return;
     }
-    if(el){
-      el.scrollIntoView({behavior:'smooth', block:'center'});
-      el.classList.add('pulse');
-      setTimeout(()=> el.classList.remove('pulse'), 1600);
+    // Journal: highlight the whole record block (header + notes row)
+    const head = document.querySelector(`#tblJournal .exp-item[data-id="${id}"]`);
+    const notes = head ? head.nextElementSibling : null;
+    const list = [head, notes].filter(Boolean);
+    if(list.length){
+      (head || list[0]).scrollIntoView({behavior:'smooth', block:'center'});
+      list.forEach(n => n.classList.add('flash-green'));
+      setTimeout(()=> list.forEach(n => n.classList.remove('flash-green')), 5000);
     }
-  }, 120);
+  }, 150);
 }
 
 function attachMapPopup(marker, type, id, dataObj){
@@ -1295,9 +1283,8 @@ $('#lsReset').addEventListener('click', async ()=>{
       try{
         await FB.signInWithEmailAndPassword(auth, email, pass);
         if($(errSel)) $(errSel).textContent = '';
-        try{ _showApp(); if(typeof loadTrip==='function') loadTrip(); }catch(e){}
       }catch(e){
-        const xErr = (e)=> ((e?.code? e.code+': ' : '') + (e?.message||'שגיאת התחברות'));
+        const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
         if($(errSel)) $(errSel).textContent = xErr(e);
         console.error('login failed', e);
       }
@@ -3237,65 +3224,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
-// Share link helpers (non-breaking if elements missing)
+// === Mobile modal scroll lock ===
 (function(){
-  const startBtn = document.getElementById('btnShareStart');
-  const stopBtn  = document.getElementById('btnShareStop');
-  const linkEl   = document.getElementById('shareLinkDisplay');
-  const openBtn  = document.getElementById('btnShareOpen');
-  const copyBtn  = document.getElementById('btnShareCopy');
-
-  let active = false;
-  let url = '';
-
-  const ensure = ()=>{
-    if(!active){ url=''; if(linkEl) linkEl.value=''; }
-  };
-
-  startBtn && startBtn.addEventListener('click', ()=>{
-    active = true;
-    url = location.origin + '/share/' + Math.random().toString(36).slice(2,10);
-    if(linkEl) linkEl.value = url;
-  });
-  stopBtn && stopBtn.addEventListener('click', ()=>{ active=false; ensure(); });
-
-  openBtn && openBtn.addEventListener('click', ()=>{ if(active && url) window.open(url,'_blank'); });
-  copyBtn && copyBtn.addEventListener('click', async ()=>{
-    if(!active || !url) return;
-    try{ await navigator.clipboard.writeText(url); }catch(e){}
+  function lockScroll(lock){
+    const b = document.body;
+    if(!b) return;
+    if(lock){ b.style.overflow = 'hidden'; b.style.position='fixed'; b.style.width='100%'; }
+    else{ b.style.overflow = ''; b.style.position=''; b.style.width=''; }
+  }
+  ['expenseModal','journalModal'].forEach(id=>{
+    const d = document.getElementById(id);
+    if(!d) return;
+    d.addEventListener('close', ()=>lockScroll(false));
+    d.addEventListener('cancel', ()=>lockScroll(false));
+    d.addEventListener('toggle', ()=>{ if(d.open) lockScroll(true); });
+    // If .showModal() used via script, patch open method
+    const show = d.showModal?.bind(d);
+    if(show){
+      d.showModal = function(){ lockScroll(true); return show(); }
+    }
   });
 })();
-
-(function(){
-  const btnHdr = document.getElementById('btnLogin');
-  if(btnHdr && !btnHdr.dataset.wiredInline){
-    btnHdr.dataset.wiredInline='1';
-    btnHdr.addEventListener('click', (e)=>{
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if(isMobile){ e.preventDefault(); _showLogin(); document.getElementById('lsEmail')?.focus(); }
-    });
-  }
-})();
-
-// === Logout wiring ===
-(function(){
-  const btn = document.getElementById('btnLogout');
-  if(btn && !btn.dataset.wired){
-    btn.dataset.wired='1';
-    btn.addEventListener('click', async ()=>{
-      try{ await FB.signOut(FB.getAuth()); }catch(e){ console.error('logout error', e); }
-    });
-  }
-})();
-
-// Defensive: lock horizontal scroll
-document.addEventListener('touchmove', function(e){
-  try{
-    const t=e.touches[0]; const prevX=window._lx||t.clientX; const prevY=window._ly||t.clientY;
-    const dx=Math.abs(t.clientX-prevX), dy=Math.abs(t.clientY-prevY);
-    window._lx=t.clientX; window._ly=t.clientY;
-    if(dx>dy){ e.preventDefault(); }
-  }catch(_){}
-}, { passive:false });

@@ -201,21 +201,21 @@
     <div class="row" style="gap:12px;flex-wrap:wrap">
       <input type="file" id="importFile" accept=".json,application/json" style="display:none"/>
       <button id="btnImport" class="btn" style="display:none">ייבא</button>
-      <button id="btnImportJSON" class="btn">JSON</button>
+      <button id="btnImportJSON" class="btn">ייבא JSON</button>
 
       <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none"/>
-      <button id="btnImportGPX" class="btn">GPX</button>
+      <button id="btnImportGPX" class="btn">ייבא GPX</button>
 
       <input type="file" id="importKMLFile" accept=".kml,application/vnd.google-earth.kml+xml,application/xml" style="display:none"/>
-      <button id="btnImportKML" class="btn">KML</button>
+      <button id="btnImportKML" class="btn">ייבא KML</button>
     </div>
   </div>
 
   <div class="card" id="card-export">
     <h3>ייצוא</h3>
     <div class="row" style="gap:12px;flex-wrap:wrap">
-      <button id="btnExportExcel" class="btn">EXCELL</button>
-      <button id="btnExportWord" class="btn">WORD</button>
+      <button id="btnExportExcel" class="btn">Excel</button>
+      <button id="btnExportWord" class="btn">Word</button>
       <button id="btnExportGPX" class="btn">GPX</button>
     </div>
   </div>
@@ -231,11 +231,6 @@
         <option value="1w">שבוע</option>
         <option value="1m">חודש</option>
       </select>
-      <div class="row" style="gap:12px;flex-wrap:wrap;margin-top:10px">
-        <input id="shareLinkDisplay" class="input" style="max-width:360px" readonly placeholder="קישור לשיתוף יופיע כאן"/>
-        <button id="btnShareOpen" class="btn btn-outline">קישור</button>
-        <button id="btnShareCopy" class="btn btn-outline">העתק קישור</button>
-      </div>
     </div>
   </div>
 </div>
@@ -423,6 +418,7 @@ id="expenseModal" class="modal">
     <div id="categoryBreakdownDialog"></div>
   </div>
 </dialog>
+
 </body>
 </html>
 <!-- Injected three-button import cluster -->
