@@ -208,7 +208,38 @@ async function fetchRatesOnce(){
   return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
 }
 
-var state = state || {};
+var state = state || {}
+
+// === Mobile modal stability & no-scroll helper ===
+(function(){
+  const rootEls = [document.documentElement, document.body];
+  function lockScroll(lock){
+    rootEls.forEach(el=>{
+      if(lock){ el.style.overflow='hidden'; el.style.maxWidth='100%'; }
+      else { el.style.overflow=''; el.style.maxWidth=''; }
+    });
+  }
+  function patchModal(id, onOpen){
+    const m = document.getElementById(id);
+    if(!m) return;
+    const show = m.showModal?.bind(m);
+    if(show){
+      m.showModal = function(...args){
+        lockScroll(true);
+        show(...args);
+        if(typeof window._bindTextareasForModals==='function'){ window._bindTextareasForModals(); }
+        if(onOpen) try{ onOpen(m); }catch(_){}
+      }
+    }
+    m.addEventListener('close', ()=>lockScroll(false));
+    m.addEventListener('cancel', ()=>{ lockScroll(false); });
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    patchModal('expenseModal');
+    patchModal('journalModal');
+  });
+})();
+;
 // === End helpers ===
 
 function invalidateMap(m){
