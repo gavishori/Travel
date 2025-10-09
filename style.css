@@ -1151,62 +1151,72 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* === Mobile Hardening: No Horizontal Scroll & Touch-safe === */
-html, body { max-width: 100%; overflow-x: hidden; }
-img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
-*[style*="width:"] { max-width: 100%; }
-:root { --touch-min-font: 16px; } /* to avoid iOS zoom on inputs */
-input, select, textarea { font-size: var(--touch-min-font); }
-
-
-
-/* === Phone layout (≤ 480px) — tuned for iPhone 13 Pro Max (428px logical) === */
+/* === Mobile v2 Fixes (Cards table, tabs wrap, map height, form stack) === */
 @media (max-width: 480px) {
-  .container { grid-template-columns: 1fr !important; height: auto !important; min-height: 100dvh; }
-  .sidebar { order: 2; height: auto; max-height: none; overflow: visible; padding-bottom: 80px; }
-  .content { order: 1; height: auto; overflow: visible; }
-  header { position: sticky; top: 0; }
-  .tabs { position: sticky; top: 56px; }
-  .leaflet-container { height: 280px; } /* smaller map to fit viewport */
-  .map-toolbar { right: 12px; left: auto; top: 12px; }
-  table { display: block; width: 100%; overflow-x: auto; border-spacing: 0; } /* safe tables without page scroll */
-  .grid, .cards { grid-template-columns: 1fr !important; }
-  .row { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .budget-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-  .budget-bar .bar-cols { flex-direction: column; gap: 8px; margin-inline-start: 0; }
-}
-
-
-
-/* === Fullscreen Modals on Mobile === */
-@media (max-width: 480px) {
-  dialog.modal {
-    max-width: none !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  /* Tabs: wrap to lines, no horizontal scroll */
+  .tabs, .tabs-container, .nav-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    overflow: visible !important;
   }
-  dialog.modal header { position: sticky; top: 0; background: var(--card); z-index: 2; }
-  dialog.modal .body { height: calc(100dvh - 140px); overflow: auto; padding: 16px; }
-  dialog.modal .footer { position: sticky; bottom: 0; background: var(--card); z-index: 2; }
+  .tabs > *,
+  .nav-tabs > * {
+    flex: 1 1 auto;
+    min-width: calc(50% - 8px); /* 2 per row; will wrap as needed */
+  }
+
+  /* Travel Data form: stack fields */
+  form, .form, .form-grid, .trip-form, .travel-form, .filters, .controls, .inputs {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .chip-group, .chips, .btn-group, .filters-row, .inline {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  input[type="text"], input[type="email"], input[type="number"], input[type="date"], input[type="time"],
+  select, textarea, .btn, button {
+    width: 100% !important;
+  }
+
+  /* Expenses table -> mobile cards (no horizontal scroll at all) */
+  .table, table.expenses, table.budget, .responsive-table, table {
+    border-collapse: collapse;
+  }
+  table.expenses thead, .table thead, table thead { display: none !important; }
+  table.expenses, .table, table {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  table.expenses tr, .table tr, table tr {
+    display: block !important;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: var(--card, #fff);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    padding: 10px;
+  }
+  table.expenses td, .table td, table td {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0 !important;
+    border: 0 !important;
+    word-break: break-word;
+  }
+  table.expenses td::before, .table td::before, table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-inline-end: 10px;
+  }
+
+  /* Map height: bigger and stable */
+  .leaflet-container { height: 60dvh !important; width: 100% !important; }
+  .map, #map, .map-wrapper { height: 60dvh !important; width: 100% !important; }
+
+  /* Prevent any sneaky overflow from cards/containers */
+  .card, .panel, .section, .widget, .box { max-width: 100%; overflow-x: hidden; }
 }
-
-
-
-/* === Views visibility lock (no floating/sliding) === */
-.tabview { display: none; }
-.tabview[data-active="1"] { display: block; }
-
-
-
-/* === Defensive widths === */
-.container, .sidebar, .content, .card, .trip-card, .trip-row { max-width: 100%; }
-
-
-
-/* === iOS polish === */
-:root { --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
-body { -webkit-overflow-scrolling: touch; padding-top: var(--safe-top, 0); padding-bottom: var(--safe-bottom, 0); }
 

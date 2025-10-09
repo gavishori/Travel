@@ -3224,24 +3224,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// === Mobile modal scroll lock ===
-(function(){
-  function lockScroll(lock){
-    const b = document.body;
-    if(!b) return;
-    if(lock){ b.style.overflow = 'hidden'; b.style.position='fixed'; b.style.width='100%'; }
-    else{ b.style.overflow = ''; b.style.position=''; b.style.width=''; }
-  }
-  ['expenseModal','journalModal'].forEach(id=>{
-    const d = document.getElementById(id);
-    if(!d) return;
-    d.addEventListener('close', ()=>lockScroll(false));
-    d.addEventListener('cancel', ()=>lockScroll(false));
-    d.addEventListener('toggle', ()=>{ if(d.open) lockScroll(true); });
-    // If .showModal() used via script, patch open method
-    const show = d.showModal?.bind(d);
-    if(show){
-      d.showModal = function(){ lockScroll(true); return show(); }
+// === Mobile v2 helpers ===
+
+// Add data-label attributes to td based on their column headers (for card-style tables).
+function applyResponsiveTables(scope=document){
+  try{
+    const tables = Array.from(scope.querySelectorAll('table'));
+    tables.forEach(tbl=>{
+      const heads = Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+      if(!heads.length) return; // headerless table – skip
+      tbl.querySelectorAll('tbody tr').forEach(tr=>{
+        Array.from(tr.children).forEach((td,i)=>{
+          if(td && !td.getAttribute('data-label') && heads[i]){
+            td.setAttribute('data-label', heads[i]);
+          }
+        });
+      });
+    });
+  }catch(e){ console.warn('applyResponsiveTables:', e); }
+}
+
+// Call once on load and on mutations
+document.addEventListener('DOMContentLoaded', ()=>applyResponsiveTables());
+new MutationObserver(muts=>{
+  for(const m of muts){
+    if(m.addedNodes && m.addedNodes.length){
+      applyResponsiveTables(document);
+      break;
     }
-  });
-})();
+  }
+}).observe(document.documentElement, {childList:true, subtree:true});
+
+// Leaflet map: keep size correct after tab changes / orientation / resize
+function invalidateLeaflet(){
+  try{ window.map?.invalidateSize?.(); }catch(e){}
+}
+window.addEventListener('resize', invalidateLeaflet);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) invalidateLeaflet(); });
+
+// If you switch tabs via buttons, hook into those to invalidate map.
+document.addEventListener('click', (e)=>{
+  const t = e.target.closest('[data-tab], .tab, [role="tab"]');
+  if(t){ setTimeout(invalidateLeaflet, 100); }
+});
+
