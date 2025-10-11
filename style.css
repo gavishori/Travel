@@ -1151,58 +1151,65 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* Modal truly hidden when aria-hidden=true */
-.modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
-body.modal-open { overflow: hidden; }
-
-
-/* ===== MOBILE: hard clamp layout to viewport (no sideways drifting) ===== */
+/* ===== HARD CLAMP: prevent ANY horizontal drifting on mobile ===== */
 @media (max-width: 480px){
-  /* Never allow horizontal scrolling */
   html, body {
-    width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none;
+    position: relative;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Clamp top-level shells/wrappers */
+  #root, #app, .app, .app-shell, main, .content, .view, .container, .page, .layout, .wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
     overflow-x: hidden !important;
     position: relative;
   }
-  /* Prevent intrinsic min-width from children */
-  * , *::before, *::after { box-sizing: border-box; }
-
-  /* Common wrappers */
-  #app, .app, .app-shell, main, .content, .view, section, .container, .row, .grid {
-    width: 100%;
-    max-width: 100%;
-    margin-inline: 0;
+  /* Any rows/grids should not push wider than viewport */
+  .row, .grid, .flex-row, .flex, .stack {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    overflow-x: hidden !important;
+    flex-wrap: wrap !important;
   }
-
-  /* Cards / blocks */
-  .card, .panel, .box, .sheet, .section { max-width: 100%; overflow-x: hidden; }
-
-  /* Tabs / chips should wrap instead of pushing layout wider */
-  .tabs, .tab-bar, .chip-row, .chips, .pill-group, .filters-row { 
-    display: flex; flex-wrap: wrap; gap: .5rem;
-    max-width: 100%;
+  /* Tabs/chips/filters wrap instead of causing width expansion */
+  .tabs, .tab-bar, .tabs-row, .chip-row, .chips, .pill-group, .filters, .filters-row {
+    display: flex;
+    flex-wrap: wrap !important;
+    gap: .5rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
   }
-  .chip, .pill, .tag, .badge { max-width: 100%; white-space: normal; }
+  .tab, .chip, .pill, .tag, .badge { white-space: normal !important; max-width: 100% !important; }
 
-  /* Tables should not enforce extra width */
-  table { table-layout: fixed; width: 100%; }
+  /* Cards/blocks */
+  .card, .panel, .box, .sheet, .section, .block { max-width: 100% !important; overflow-x: hidden !important; }
+
+  /* Tables */
+  table { table-layout: fixed !important; width: 100% !important; }
   th, td { word-break: break-word; overflow-wrap: anywhere; }
 
-  /* Images, maps, canvases stick to the viewport */
-  img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
-  /* Leaflet map */
+  /* Media & map */
+  img, svg, video, canvas { display: block; max-width: 100% !important; height: auto !important; }
   .leaflet-container { width: 100% !important; max-width: 100% !important; }
 
-  /* Expenses / Journal tables must not overflow */
-  #view-expenses .expenses-table, 
-  #view-journal .expenses-table { width: 100%; }
+  /* Kill common overflow culprits */
+  [style*="width: 100vw"] { width: 100% !important; }         /* iOS scrollbar makes 100vw > viewport */
+  [style*="min-width"]    { min-width: 0 !important; }
+  .nowrap, .no-wrap       { white-space: normal !important; }
 
-  /* Kill rogue min-widths from utilities/components */
-  [style*="min-width"] { min-width: 0 !important; }
-  .nowrap, .no-wrap { white-space: normal !important; }
+  /* App-specific views to clamp */
+  #view-expenses, #view-journal, #view-meta, #view-map, #view-overview {
+    width: 100% !important; max-width: 100% !important; overflow-x: hidden !important;
+  }
+  #view-expenses .expenses-table, #view-journal .expenses-table { width: 100% !important; }
 
-  /* iOS safe area padding avoids accidental horizontal nudge */
-  body { padding-left: max(0px, env(safe-area-inset-left));
-         padding-right: max(0px, env(safe-area-inset-right)); }
+  /* Prevent sliding containers from using translateX to escape viewport */
+  .tabs-row[style*="translateX"], .tab-bar[style*="translateX"] { transform: none !important; }
+  .carousel, .slider, [class*="swiper"] { overflow: hidden !important; }
 }
