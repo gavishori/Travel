@@ -17,6 +17,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"></script>
+
+<style id="antiZoom">@media (max-width:480px){input,select,textarea{font-size:16px} html{-webkit-text-size-adjust:100%}}</style>
 </head>
 <body data-theme="light">
   <div id="previewRoot">
@@ -273,7 +275,7 @@
     </section>
   </div>
   <div class="footer">
-    <button id="authPrimary" class="btn primary">כניסה</button>
+    <button id="authPrimary" class="btn primary" onclick="return window.__loginNow()" onclick="return window.__loginNow()">כניסה</button>
     <button id="authSecondary" class="btn">ביטול</button>
   </div>
 </dialog>
