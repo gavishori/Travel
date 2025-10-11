@@ -84,12 +84,10 @@ try {
 }
 
 
-/* === Shim: ensure FB.getAuth() exists for consumers that expect it === */
+/* SHIM: FB.getAuth fallback */
 try{
-  if (typeof window !== 'undefined') {
-    window.FB = window.FB || {};
-    if (typeof window.FB.getAuth !== 'function') {
-      window.FB.getAuth = function(){ return (typeof auth !== 'undefined' ? auth : (window.auth||null)); };
-    }
+  window.FB = window.FB || {};
+  if (typeof window.FB.getAuth !== 'function') {
+    window.FB.getAuth = function(){ try { return auth; } catch(e){ return null; } };
   }
 }catch(e){}

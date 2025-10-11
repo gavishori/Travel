@@ -1,14 +1,3 @@
-
-// === Safety shim for FB.getAuth on mobile Chrome ===
-(function(){
-  if (typeof window !== 'undefined') {
-    window.FB = window.FB || {};
-    if (typeof window.FB.getAuth !== 'function') {
-      window.FB.getAuth = function(){ try { return window.auth || null; } catch(e){ return null; } };
-    }
-  }
-})();
-
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -3233,3 +3222,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+
+// ======== GLOBAL HARD-WIRED LOGIN (mobile-safe) ========
+window.__loginNow = async function(){
+  try{
+    const emailEl = document.querySelector('#authEmail') || document.querySelector('#lsEmail');
+    const passEl  = document.querySelector('#authPass')  || document.querySelector('#lsPass');
+    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
+    const email = (emailEl && emailEl.value || '').trim();
+    const pass  = (passEl && passEl.value || '');
+    if(!email || !pass){
+      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
+      alert('אנא מלא אימייל וסיסמה');
+      return false;
+    }
+    // Get auth instance safely
+    let auth = (window.FB && typeof window.FB.getAuth === 'function' && window.FB.getAuth())
+            || (window.auth || null);
+    if(!auth){
+      if(errEl) errEl.textContent = 'Auth לא מאותחל (FB.getAuth)';
+      alert('Auth לא מאותחל (FB.getAuth)');
+      return false;
+    }
+    const fn = (window.FB && window.FB.signInWithEmailAndPassword) || null;
+    if(!fn){
+      if(errEl) errEl.textContent = 'signInWithEmailAndPassword לא קיים';
+      alert('signInWithEmailAndPassword לא קיים');
+      return false;
+    }
+    await fn(auth, email, pass);
+    if(errEl) errEl.textContent = '';
+    return true;
+  }catch(e){
+    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
+    const msg = e && (e.code || e.message) || 'שגיאת התחברות';
+    console.error('LOGIN ERROR', e);
+    if(errEl) errEl.textContent = msg;
+    alert('שגיאת התחברות: ' + msg);
+    return false;
+  }
+};
