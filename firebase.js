@@ -50,45 +50,17 @@ setLogLevel("error");
 
 // --- AUTH ---
 
-// Prefer persistence that doesn't rely on 3p cookies (works on Chrome mobile)
+// Prefer persistence that doesn't rely on 3rd-party cookies (Chrome iOS/Android safe)
 let _auth;
-try{
+try {
   _auth = initializeAuth(app, {
     persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence]
   });
-}catch(e){
-  // Fallback for environments where initializeAuth was called already
+} catch (e) {
+  // Fallback if already initialized elsewhere
   _auth = getAuth(app);
 }
 export const auth = _auth;
-
-// Lightweight runtime detection to surface which persistence is effectively available (debug only)
-(async function(){
-  try{
-    const ua = (typeof navigator!=="undefined" && navigator.userAgent) ? navigator.userAgent : "unknown";
-    // test IndexedDB
-    let mode = "memory";
-    try{
-      if (typeof indexedDB !== "undefined") {
-        const req = indexedDB.open("flymily_test_db");
-        await new Promise((res, rej)=>{ req.onerror=()=>rej(); req.onsuccess=()=>res(); req.onupgradeneeded=()=>res(); });
-        mode = "indexedDB";
-        try{ req.result.close(); }catch(_){}
-        try{ indexedDB.deleteDatabase("flymily_test_db"); }catch(_){}
-      }
-    }catch(_){}
-    // test localStorage only if not already indexedDB
-    if(mode!=="indexedDB"){
-      try{
-        if (typeof localStorage!=="undefined") {
-          const k="__flymily_test__"; localStorage.setItem(k,"1"); localStorage.removeItem(k);
-          mode = "localStorage";
-        }
-      }catch(_){}
-    }
-    try{ window.__AUTH_PERSISTENCE = mode; window.__UA = ua; }catch(_){}
-  }catch(_){}
-})();
 
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
