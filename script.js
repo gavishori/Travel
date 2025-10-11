@@ -3263,3 +3263,26 @@ window.__loginNow = async function(){
     return false;
   }
 };
+
+
+// === Modal close utility (robust) ===
+function closeAuthModal(){
+  try{
+    const modal = document.getElementById('authDialog')
+      || document.querySelector('dialog[open], dialog#authDialog')
+      || document.querySelector('.modal.is-open, .modal.open, .modal.show, [data-modal="auth"].open')
+      || document.querySelector('[role="dialog"].open, [role="dialog"].is-open');
+    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){} }
+    if (modal) {
+      modal.classList.remove('is-open','open','show');
+      modal.setAttribute('aria-hidden','true');
+      if (modal.style) modal.style.display = 'none';
+    }
+    const scrim = document.querySelector('.modal-backdrop, .overlay, .scrim');
+    if (scrim) scrim.remove();
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  } catch(e){ /* noop */ }
+}

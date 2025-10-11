@@ -1149,3 +1149,8 @@ html.share-open [style*="overflow:scroll"]{
 
 /* ensure block highlight paints all cells in the row */
 .flash-green > * { background: #e6ffe9 !important; }
+
+
+/* Modal truly hidden when aria-hidden=true */
+.modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
+body.modal-open { overflow: hidden; }
