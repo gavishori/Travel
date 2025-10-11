@@ -1060,13 +1060,8 @@ function renderJournal(t, order){
       const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
       const timeStr = d.isValid()? d.format('HH:mm') : '';
       const cat = j.category || '';
-            // Build compact place display: "Name, City, Country"
-      const parts = [j.placeName, j.city, j.country].filter(Boolean);
-      const placeCompact = parts.join(', ');
-      const locStr = placeCompact
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
-        : '';
-
+      const place = j.placeName || j.city || j.country || '';
+      const locStr = place ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(place)}" target="_blank">${place}</a>` : '';
       const text = linkifyText(j.text || '');
 
       const tr1 = document.createElement('tr');
