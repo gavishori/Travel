@@ -1203,3 +1203,25 @@ html.share-open [style*="overflow:scroll"]{
   [style*="min-width"]{ min-width: 0 !important; }
   .nowrap, .no-wrap{ white-space: normal !important; }
 }
+
+
+/* ============ MOBILE JOURNAL LAYOUT: date+time on row 1, place on row 2 ============ */
+@media (max-width: 480px){
+  /* Target the Daily Journal view table rows */
+  #view-journal table tbody tr{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+    align-items: start;
+    gap: 6px 10px;
+  }
+  #view-journal table tbody td{display:block; width:100%;}
+  /* Most installs: first two logical cells are date & time */
+  #view-journal table tbody td:nth-child(1){grid-column: 1;}
+  #view-journal table tbody td:nth-child(2){grid-column: 2;}
+  /* Make "place" span the full width (whether it's the 3rd or 4th cell if there's a leading actions cell) */
+  #view-journal table tbody td:nth-child(3){grid-column: 1 / -1;}
+  #view-journal table tbody td:nth-child(4){grid-column: 1 / -1;}
+  /* Anything after place falls to the next line, also full width */
+  #view-journal table tbody td:nth-child(n+5){grid-column: 1 / -1;}
+}
