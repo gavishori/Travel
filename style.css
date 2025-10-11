@@ -1151,19 +1151,8 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* === EMERGENCY ROLLBACK (MOBILE) — remove background overlays and any pseudo blocks === */
+/* --- iOS Chrome anti-zoom: ensure 16px minimum on inputs --- */
 @media (max-width: 480px){
-  /* kill pseudo unified blocks that could overlay the page */
-  #view-journal .expenses-table tr.exp-item::before,
-  #view-expenses .expenses-table.stacked tr.exp-item::before{
-    content: none !important;
-    display: none !important;
-  }
-  /* restore header cells to transparent (we'll redo styling later safely) */
-  #view-journal .expenses-table tr.exp-item td.header,
-  #view-expenses .expenses-table.stacked tr.exp-item td.header{
-    background: transparent !important;
-  }
-  /* ensure no horizontal scroll */
-  html, body{ overflow-x:hidden !important; max-width:100% !important; }
+  input, select, textarea { font-size: 16px; }
+  html { -webkit-text-size-adjust: 100%; }
 }

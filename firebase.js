@@ -46,14 +46,6 @@ setLogLevel("error");
 
 // --- AUTH ---
 export const auth = getAuth(app);
-
-import { setPersistence, browserLocalPersistence, indexedDBLocalPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-(async ()=>{
-  try{ await setPersistence(auth, indexedDBLocalPersistence); }
-  catch(e1){ try{ await setPersistence(auth, browserLocalPersistence); }
-    catch(e2){ await setPersistence(auth, inMemoryPersistence); } }
-})();
-
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
