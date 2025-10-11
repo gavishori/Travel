@@ -1174,3 +1174,57 @@ html.share-open [style*="overflow:scroll"]{
   #view-journal .expenses-table tr.exp-item td.header.time{ border-top-left-radius: 12px; }
   #view-journal .expenses-table tr.exp-item td.header.location{ border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; }
 }
+
+
+/* ===== MOBILE FIX: unified header background without breaking layout ===== */
+@media (max-width: 480px){
+  /* guard against horizontal scroll regressions */
+  html, body { overflow-x: hidden; }
+
+  /* JOURNAL: keep the grid but paint one background behind the header cells */
+  #view-journal .expenses-table tr.exp-item{
+    position: relative;
+    gap: 0 !important;           /* no gaps between header cells */
+    padding: .25rem .25rem .25rem .25rem;
+  }
+  #view-journal .expenses-table tr.exp-item td.header{ 
+    background: transparent !important;   /* header cells themselves transparent */
+  }
+  #view-journal .expenses-table tr.exp-item td.menu-cell{ z-index: 2; } /* keep menu above bg */
+  #view-journal .expenses-table tr.exp-item::before{
+    content:"";
+    position:absolute;
+    inset-block: 0;
+    inset-inline-start: .25rem;
+    /* leave room for the menu cell on the inline-end (left in RTL) */
+    inset-inline-end: 64px;   /* menu ~56px + padding */
+    background: color-mix(in oklab, var(--ink) 8%, transparent);
+    border-radius: 12px;
+    z-index: 1;
+  }
+
+  /* EXPENSES: same approach */
+  #view-expenses .expenses-table.stacked tr.exp-item{
+    position: relative;
+    gap: 0 !important;
+    padding: .25rem .25rem .25rem .25rem;
+  }
+  #view-expenses .expenses-table.stacked tr.exp-item td.header{
+    background: transparent !important;
+  }
+  #view-expenses .expenses-table.stacked tr.exp-item td.menu-cell{ z-index: 2; }
+  #view-expenses .expenses-table.stacked tr.exp-item::before{
+    content:"";
+    position:absolute;
+    inset-block: 0;
+    inset-inline-start: .25rem;
+    inset-inline-end: 64px;
+    background: color-mix(in oklab, var(--ink) 8%, transparent);
+    border-radius: 12px;
+    z-index: 1;
+  }
+
+  /* keep header label emphasis */
+  #view-journal .expenses-table td.header .lbl,
+  #view-expenses .expenses-table td.header .lbl{ font-weight:700; opacity:.9; }
+}
