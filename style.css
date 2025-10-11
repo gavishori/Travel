@@ -1213,3 +1213,50 @@ html.share-open [style*="overflow:scroll"]{
   .tabs-row[style*="translateX"], .tab-bar[style*="translateX"] { transform: none !important; }
   .carousel, .slider, [class*="swiper"] { overflow: hidden !important; }
 }
+
+
+/* ===== MOBILE GUTTERS: symmetric padding so nothing looks cut off ===== */
+@media (max-width: 480px){
+  :root{ --mobile-gutter: 14px; } /* tweak if you want wider/narrower margins */
+
+  html, body { overflow-x: hidden !important; max-width: 100%; }
+
+  /* give equal gutters on both sides (RTL/LTR safe) */
+  body{
+    padding-inline-start: max(var(--mobile-gutter), env(safe-area-inset-left));
+    padding-inline-end:   max(var(--mobile-gutter), env(safe-area-inset-right));
+  }
+
+  /* prevent double padding on inner wrappers */
+  #app, main, .content, .view, .page, .layout, .wrapper { padding-inline: 0 !important; }
+
+  /* views themselves get box-sizing so width calc includes padding */
+  #view-expenses, #view-journal, #view-overview, #view-map, #view-meta {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* tabs row should align with the gutters */
+  .tabs, .tab-bar, .tabs-row {
+    box-sizing: border-box;
+    margin-inline: calc(-1 * var(--mobile-gutter));
+    padding-inline: var(--mobile-gutter);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* tables & cells must wrap instead of overflowing */
+  table { table-layout: fixed !important; width: 100% !important; }
+  th, td { word-break: break-word; overflow-wrap: anywhere; }
+
+  /* common cards should not clip on edges */
+  .card, .panel, .box, .sheet, .section, .block {
+    max-width: 100%;
+    margin-inline: 0;
+    overflow: visible;
+  }
+
+  /* kill rogue 100vw full-bleed that causes one-sided margin */
+  [style*="width:100vw"], [style*="width: 100vw"], .w-100vw, .full-bleed { width: 100% !important; }
+}
