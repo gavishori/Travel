@@ -1,3 +1,14 @@
+
+// === Safety shim for FB.getAuth on mobile Chrome ===
+(function(){
+  if (typeof window !== 'undefined') {
+    window.FB = window.FB || {};
+    if (typeof window.FB.getAuth !== 'function') {
+      window.FB.getAuth = function(){ try { return window.auth || null; } catch(e){ return null; } };
+    }
+  }
+})();
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -3222,34 +3233,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-
-// --- mobile fix: wire modal primary button to login ---
-(function(){
-  const $ = (s)=>document.querySelector(s);
-  function wire(){
-    const btn = $('#authPrimary');
-    const wired = btn && btn.dataset.wired;
-    if(btn && !wired){
-      btn.dataset.wired = '1';
-      btn.addEventListener('click', (ev)=>{
-        ev.preventDefault();
-        const email = $('#authEmail')?.value?.trim();
-        const pass  = $('#authPass')?.value;
-        const errEl = $('#authError');
-        if(!email || !pass){ if(errEl) errEl.textContent='אנא מלא אימייל וסיסמה'; return; }
-        try{
-          const auth = FB.getAuth();
-          FB.signInWithEmailAndPassword(auth, email, pass)
-            .then(()=>{ if(errEl) errEl.textContent=''; })
-            .catch(e=>{ if(errEl) errEl.textContent=(e?.code||e?.message||'שגיאת התחברות'); });
-        }catch(e){
-          if(errEl) errEl.textContent=(e?.code||e?.message||'שגיאת התחברות');
-        }
-      });
-    }
-  }
-  document.addEventListener('DOMContentLoaded', wire);
-  // also in case dialog built later
-  setTimeout(wire, 300);
-})();

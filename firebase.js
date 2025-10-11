@@ -82,3 +82,14 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
+
+
+/* === Shim: ensure FB.getAuth() exists for consumers that expect it === */
+try{
+  if (typeof window !== 'undefined') {
+    window.FB = window.FB || {};
+    if (typeof window.FB.getAuth !== 'function') {
+      window.FB.getAuth = function(){ return (typeof auth !== 'undefined' ? auth : (window.auth||null)); };
+    }
+  }
+}catch(e){}
