@@ -2,6 +2,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
@@ -45,7 +49,13 @@ export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, e
 setLogLevel("error");
 
 // --- AUTH ---
-export const auth = getAuth(app);
+let _auth;
+try {
+  _auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] });
+} catch (e) {
+  _auth = getAuth(app);
+}
+export const auth = _auth;
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
