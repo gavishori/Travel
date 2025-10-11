@@ -1151,77 +1151,59 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* ===== MOBILE GUTTERS V4: symmetric margins & no clipping ===== */
+/* ===== ROLLBACK / SAFETY for MOBILE (do not touch desktop) ===== */
 @media (max-width: 480px){
-  :root{ --mobile-gutter: 16px; }
+  /* Keep only the no-horizontal-scroll rule */
+  html, body { overflow-x: hidden !important; max-width: 100%; }
 
-  html, body { overflow-x: hidden !important; max-width: 100%; -webkit-text-size-adjust:100%; }
-  *, *::before, *::after { box-sizing: border-box; }
+  /* Restore table semantics for journal (undo grid/inline-block attempts) */
+  #view-journal table tbody tr { display: table-row !important; }
+  #view-journal table tbody td { display: table-cell !important; width: auto !important; }
 
-  /* Do NOT pad body itself to avoid asymmetry; keep all padding on inner containers */
-  body { padding-inline: 0 !important; }
-
-  /* Primary wrappers get equal gutters */
-  #app, .app, main, .content, .view, .page, .layout, .container, .wrapper {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
-    padding-inline: var(--mobile-gutter) !important;
-  }
-
-  /* Cards/sections have external margins so you SEE the gutters on both sides */
-  .card, .panel, .sheet, .section, .block, .box {
-    max-width: 100% !important;
-    margin-inline: var(--mobile-gutter) !important;
-    padding-inline: calc(var(--mobile-gutter) * 0.75) !important;
-  }
-
-  /* Common view roots (expenses / journal / overview) */
-  #view-expenses, #view-journal, #view-overview, #view-meta, #view-map {
-    width: 100% !important; max-width: 100% !important; padding-inline: 0 !important;
-  }
-
-  /* Tabs/filters align with gutters; avoid full-bleed bars */
+  /* Neutralize aggressive padding/margins set previously so gutters come from the original CSS */
+  #app, .app, main, .content, .view, .page, .layout, .container, .wrapper,
+  .card, .panel, .sheet, .section, .block, .box,
   .tabs, .tab-bar, .tabs-row, .filters, .filters-row, .toolbar, .header-bar {
-    width: 100% !important; max-width: 100% !important;
-    margin-inline: 0 !important;
-    padding-inline: var(--mobile-gutter) !important;
+    padding-inline: initial !important;
+    margin-inline: initial !important;
+    max-width: initial !important;
+    width: auto !important;
   }
 
-  /* Tables never overflow; long text wraps */
-  table{ table-layout: fixed !important; width: 100% !important; }
-  th, td { word-break: break-word; overflow-wrap: anywhere; }
-
-  /* Media & maps */
-  img, svg, video, canvas, .leaflet-container { display:block; max-width: 100% !important; height:auto !important; }
-
-  /* Nuke width:100vw culprits (both inline and stylesheet) */
-  [style*="100vw"] { width: 100% !important; }
-  .w-100vw, .full-bleed, .vw-100, .vw100 { width: 100% !important; }
-
-  /* Rogue min-widths */
-  [style*="min-width"]{ min-width: 0 !important; }
-  .nowrap, .no-wrap{ white-space: normal !important; }
+  /* Do not clamp Leaflet/maps */
+  .leaflet-container { width: 100% !important; max-width: 100% !important; }
 }
 
 
-/* ============ MOBILE JOURNAL LAYOUT: date+time on row 1, place on row 2 ============ */
+/* === MOBILE JOURNAL STACK (safe & scoped) === */
 @media (max-width: 480px){
-  /* Target the Daily Journal view table rows */
+  #view-journal{ max-width: 100%; overflow-x: hidden; }
+  #view-journal table{ width: 100%; table-layout: fixed; }
+
   #view-journal table tbody tr{
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: auto;
+    gap: 6px 12px;
     align-items: start;
-    gap: 6px 10px;
   }
-  #view-journal table tbody td{display:block; width:100%;}
-  /* Most installs: first two logical cells are date & time */
-  #view-journal table tbody td:nth-child(1){grid-column: 1;}
-  #view-journal table tbody td:nth-child(2){grid-column: 2;}
-  /* Make "place" span the full width (whether it's the 3rd or 4th cell if there's a leading actions cell) */
-  #view-journal table tbody td:nth-child(3){grid-column: 1 / -1;}
-  #view-journal table tbody td:nth-child(4){grid-column: 1 / -1;}
-  /* Anything after place falls to the next line, also full width */
-  #view-journal table tbody td:nth-child(n+5){grid-column: 1 / -1;}
+  #view-journal table tbody td{
+    display: block;
+    width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  /* Case A: [actions], date, time, place, ... */
+  #view-journal table tbody td:nth-child(2){ grid-column: 1; } /* date */
+  #view-journal table tbody td:nth-child(3){ grid-column: 2; } /* time */
+  #view-journal table tbody td:nth-child(4){ grid-column: 1 / -1; } /* place */
+
+  /* Case B: date, time, place, ... */
+  #view-journal table tbody td:nth-child(1){ grid-column: 1; } /* date */
+  #view-journal table tbody td:nth-child(2){ grid-column: 2; } /* time */
+  #view-journal table tbody td:nth-child(3){ grid-column: 1 / -1; } /* place */
+
+  /* Rest */
+  #view-journal table tbody td:nth-child(n+5){ grid-column: 1 / -1; }
 }
