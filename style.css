@@ -1174,3 +1174,27 @@ html.share-open [style*="overflow:scroll"]{
 }
 
 /* END MOBILE FIXES */
+
+/* === Mobile hardening (iPhone 13 Pro Max friendly) === */
+html, body { overflow-x: hidden !important; overscroll-behavior-x: none; }
+body { touch-action: pan-y; }
+#app, .app, .container, .tabview, .content, .sidebar { max-width: 100vw; overflow-x: hidden; }
+
+/* Clamp any rogue element widths on mobile */
+@media (max-width: 900px){
+  :root{ --page-pad: 16px; }
+  body{ padding-inline: var(--page-pad); }
+  header{ padding-inline: var(--page-pad); top: env(safe-area-inset-top, 0); }
+  .container{ grid-template-columns: 1fr; width: 100%; }
+  .content, .sidebar{ padding-inline: 0; margin: 0; }
+  .cards, .grid, .list, .trip-card, .card, .trip-row, .budget-bar { margin-inline: 0; }
+  * { max-width: 100% !important; }
+  img, canvas, video, svg { max-width: 100%; height: auto; }
+  table{ display: block; width: 100%; overflow-x: hidden; }
+  th, td{ white-space: normal; }
+  .leaflet-container{ width: 100% !important; height: 360px; }
+  dialog.modal{ width: min(560px, calc(100vw - (var(--page-pad) * 2))); max-width: 100%; margin: 0 auto; }
+}
+
+/* Prevent map/toolbars or absolutely positioned elements from pushing layout */
+.map-toolbar{ inset-inline-start: 16px; inset-block-start: 12px; max-width: calc(100vw - 32px); }
