@@ -719,63 +719,19 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 }
 
 /* --- Link / Mail icon badges inside journal/expenses text --- */
-
-
-
-
-/* --- Blue link/mail chips --- */
-:root{ --link-blue:#1a73e8; }
-
-
-
-
-
-
-/* === Override: link/mail display as blue icons only === */
-
-
-
-
-
-
-:root { --link-blue: #1a73e8; }
-
-
-
-
-
-
-/* === Link/Mail icons: emoji-only, blue (requested) === */
-:root{ --link-blue: #1a73e8; }
-
-
-
-
-/* === Single source of truth: link/mail icons === */
 :root{ --link-blue: #1a73e8; }
 .link-icon, .mail-icon{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:26px; height:26px; /* bigger icon */
-  margin: 0 6px;
-  text-decoration:none;
-  background: transparent;
-  border:none;
-  box-shadow:none;
-  color: var(--link-blue);
+  vertical-align: middle;
+  line-height: 1;
+  position: relative;
+  top: -1px;
 }
-
 .mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
-
-/* Force link icon as blue SVG (not emoji) */
 .link-icon{
   color:#1a73e8 !important;
-}
-
-
-/* Force blue link icon and 50% larger size */
-.link-icon{
   width:30px !important;
   height:30px !important;
 }
@@ -783,24 +739,10 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   content:'';
   display:inline-block;
   width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
   background-repeat:no-repeat;
   background-position:center;
   background-size:30px 30px;
-}
-
-/* --- Align link/mail icons with text baseline --- */
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  vertical-align: middle;   /* center on line box */
-  line-height: 1;           /* avoid extra ascent */
-  position: relative;
-  top: -1px;                 /* nudge down a touch for optical alignment */
-}
-.link-icon::before, .mail-icon::before{
-  display:block;            /* no inline extra baseline */
 }
 
 /* Make yellow mark clickable */
@@ -868,6 +810,12 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 
 /* === Responsive: stack actions & budget on small screens === */
 @media (max-width: 720px){
+  .container { grid-template-columns: 1fr; }
+  .sidebar { order: 2; height: 40vh; }
+  .content { order: 1; height: auto; }
+  body { overflow: auto; }
+  .tabs { padding-inline: 16px; margin-inline: -16px; } /* Apply padding/margin to tabs */
+
   #view-expenses .list-actions{
     flex-wrap: wrap;
     gap: 10px;
@@ -1151,179 +1099,78 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* ===== HARD CLAMP: prevent ANY horizontal drifting on mobile ===== */
-@media (max-width: 480px){
+/* ===== HARD CLAMP: prevent ANY horizontal drifting on mobile (iPhone 13 Pro Max focus) ===== */
+@media (max-width: 900px){
+  /* Use a fixed, max-width with horizontal centering for the full app container.
+     iPhone 13 Pro Max width is 428px (in CSS pixels). */
+  .app, #previewRoot > .app {
+    width: 428px !important;
+    max-width: 428px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+    /* Simulate narrow phone screen */
+    border: 1px solid var(--border, #e5e7eb) !important;
+    border-radius: 28px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,.12) !important;
+  }
+  
   html, body {
-    max-width: 100%;
-    overflow-x: hidden !important;
-    overscroll-behavior-x: none;
-    position: relative;
-    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden !important; /* Block body scroll */
+    min-width: 428px; /* Ensure content window is not smaller than device */
+    width: 100%;
   }
-  /* Clamp top-level shells/wrappers */
-  #root, #app, .app, .app-shell, main, .content, .view, .container, .page, .layout, .wrapper {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
-    overflow-x: hidden !important;
-    position: relative;
-  }
-  /* Any rows/grids should not push wider than viewport */
-  .row, .grid, .flex-row, .flex, .stack {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
-    overflow-x: hidden !important;
-    flex-wrap: wrap !important;
-  }
-  /* Tabs/chips/filters wrap instead of causing width expansion */
-  .tabs, .tab-bar, .tabs-row, .chip-row, .chips, .pill-group, .filters, .filters-row {
-    display: flex;
-    flex-wrap: wrap !important;
-    gap: .5rem;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-  }
-  .tab, .chip, .pill, .tag, .badge { white-space: normal !important; max-width: 100% !important; }
 
-  /* Cards/blocks */
-  .card, .panel, .box, .sheet, .section, .block { max-width: 100% !important; overflow-x: hidden !important; }
+  /* Reset other mobile layout rules that interfere with fixed width */
+  .container{ grid-template-columns: 1fr !important; }
+  .sidebar{ width: 100% !important; max-width: none !important; margin: 0 !important; }
+  .content{ width: 100% !important; max-width: none !important; }
+  .container.home-mode .sidebar{ display: block !important; }
 
-  /* Tables */
+  /* Ensure content respects the container's bounds */
+  .content { overflow-x: hidden !important; }
+  .sidebar { overflow-x: hidden !important; }
+  
+  /* Apply consistent padding/gutters only once to the main container's children */
+  .app .container .sidebar, .app .container .content {
+    padding-inline: 16px !important;
+  }
+  
+  /* Tabs should be full width of the app container */
+  .tabs{
+    margin-inline: -16px !important; /* Counteract padding from .content/.sidebar */
+    width: calc(100% + 32px) !important;
+    max-width: calc(100% + 32px) !important;
+  }
+  
+  /* Prevent any element from overriding overflow-x: hidden */
+  .row, .grid, .flex-row, .flex, .stack, .list-actions, table, .expenses-table-container {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+  }
+  
+  /* Force tables to wrap content, not scroll */
   table { table-layout: fixed !important; width: 100% !important; }
   th, td { word-break: break-word; overflow-wrap: anywhere; }
-
-  /* Media & map */
-  img, svg, video, canvas { display: block; max-width: 100% !important; height: auto !important; }
-  .leaflet-container { width: 100% !important; max-width: 100% !important; }
-
-  /* Kill common overflow culprits */
-  [style*="width: 100vw"] { width: 100% !important; }         /* iOS scrollbar makes 100vw > viewport */
-  [style*="min-width"]    { min-width: 0 !important; }
-  .nowrap, .no-wrap       { white-space: normal !important; }
-
-  /* App-specific views to clamp */
-  #view-expenses, #view-journal, #view-meta, #view-map, #view-overview {
-    width: 100% !important; max-width: 100% !important; overflow-x: hidden !important;
-  }
-  #view-expenses .expenses-table, #view-journal .expenses-table { width: 100% !important; }
-
-  /* Prevent sliding containers from using translateX to escape viewport */
-  .tabs-row[style*="translateX"], .tab-bar[style*="translateX"] { transform: none !important; }
-  .carousel, .slider, [class*="swiper"] { overflow: hidden !important; }
+  .expenses-table-container { overflow-x: auto !important; } /* allow table horizontal scroll if needed */
 }
 
-
-/* ===== MOBILE GUTTERS: symmetric padding so nothing looks cut off ===== */
-@media (max-width: 480px){
-  :root{ --mobile-gutter: 14px; } /* tweak if you want wider/narrower margins */
-
-  html, body { overflow-x: hidden !important; max-width: 100%; }
-
-  /* give equal gutters on both sides (RTL/LTR safe) */
-  body{
-    padding-inline-start: max(var(--mobile-gutter), env(safe-area-inset-left));
-    padding-inline-end:   max(var(--mobile-gutter), env(safe-area-inset-right));
-  }
-
-  /* prevent double padding on inner wrappers */
-  #app, main, .content, .view, .page, .layout, .wrapper { padding-inline: 0 !important; }
-
-  /* views themselves get box-sizing so width calc includes padding */
-  #view-expenses, #view-journal, #view-overview, #view-map, #view-meta {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  /* tabs row should align with the gutters */
-  .tabs, .tab-bar, .tabs-row {
-    box-sizing: border-box;
-    margin-inline: calc(-1 * var(--mobile-gutter));
-    padding-inline: var(--mobile-gutter);
-    width: 100%;
-    max-width: 100%;
-  }
-
-  /* tables & cells must wrap instead of overflowing */
-  table { table-layout: fixed !important; width: 100% !important; }
-  th, td { word-break: break-word; overflow-wrap: anywhere; }
-
-  /* common cards should not clip on edges */
-  .card, .panel, .box, .sheet, .section, .block {
-    max-width: 100%;
-    margin-inline: 0;
-    overflow: visible;
-  }
-
-  /* kill rogue 100vw full-bleed that causes one-sided margin */
-  [style*="width:100vw"], [style*="width: 100vw"], .w-100vw, .full-bleed { width: 100% !important; }
-}
-
-
-/* ===== MOBILE LAYOUT V3: symmetric gutters + no clipping ===== */
-@media (max-width: 480px){
-  :root{ --gutter: 16px; }
-
-  html, body{
-    max-width: 100%;
-    overflow-x: hidden !important;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  /* canonical container centered with logical gutters */
-  .app, #app, main, .page, .content, .view, .container, .wrapper {
-    width: min(100%, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right)));
-    margin-inline: auto;
-    padding-inline: var(--gutter);
-    box-sizing: border-box;
-  }
-
-  /* make sure no child forces bleed */
-  .row, .grid, .flex, .stack { 
-    max-width: 100% !important; 
-    flex-wrap: wrap !important; 
-    overflow-x: hidden !important;
-  }
-
-  /* headers / tab-strips respect gutters (avoid full-bleed) */
-  .tabs, .tab-bar, .tabs-row, .filters, .filters-row {
-    width: 100%;
-    margin-inline: 0;
-    padding-inline: 0;
-  }
-
-  /* cards/sections never exceed and keep internal padding */
-  .card, .panel, .box, .sheet, .section, .block{
-    max-width: 100%;
-    margin-inline: 0;
-    padding-inline: var(--gutter);
-    box-sizing: border-box;
-    overflow: visible;
-  }
-
-  /* tables: fixed layout and wrapping to avoid cut text */
-  table{ table-layout: fixed !important; width: 100% !important; }
-  th, td{ word-break: break-word; overflow-wrap: anywhere; }
-
-  /* kill classic overflow culprits */
-  [style*="width:100vw"], [style*="width: 100vw"], .w-100vw, .full-bleed{ width: 100% !important; }
-  [style*="min-width"]{ min-width: 0 !important; }
-  .nowrap, .no-wrap{ white-space: normal !important; }
-
-  /* app specific views */
-  #view-expenses, #view-journal, #view-overview, #view-map, #view-meta{
+/* Fallback for smaller mobile views (just clamping) */
+@media (max-width: 480px) and not (max-width: 900px){
+  html, body { overflow-x: hidden !important; }
+  .app, #previewRoot > .app {
     width: 100% !important;
     max-width: 100% !important;
-    padding-inline: 0; /* already padded by container */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: hidden !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
-
-  /* ensure sticky bars/budgets do not extend beyond container */
-  .summary, .budget, .toolbar, .sticky, .header-bar{
-    width: 100%; max-width: 100%; margin-inline: 0; padding-inline: 0;
-  }
-
-  /* leaflets/maps/images */
-  .leaflet-container, img, svg, video, canvas{ max-width: 100% !important; height: auto !important; display:block; }
+  .container { padding-inline: 0 !important; }
+  .sidebar, .content { padding-inline: 16px !important; }
 }
+
+/* END MOBILE FIXES */
