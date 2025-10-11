@@ -1154,3 +1154,55 @@ html.share-open [style*="overflow:scroll"]{
 /* Modal truly hidden when aria-hidden=true */
 .modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
 body.modal-open { overflow: hidden; }
+
+
+/* ===== MOBILE: hard clamp layout to viewport (no sideways drifting) ===== */
+@media (max-width: 480px){
+  /* Never allow horizontal scrolling */
+  html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden !important;
+    position: relative;
+  }
+  /* Prevent intrinsic min-width from children */
+  * , *::before, *::after { box-sizing: border-box; }
+
+  /* Common wrappers */
+  #app, .app, .app-shell, main, .content, .view, section, .container, .row, .grid {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  /* Cards / blocks */
+  .card, .panel, .box, .sheet, .section { max-width: 100%; overflow-x: hidden; }
+
+  /* Tabs / chips should wrap instead of pushing layout wider */
+  .tabs, .tab-bar, .chip-row, .chips, .pill-group, .filters-row { 
+    display: flex; flex-wrap: wrap; gap: .5rem;
+    max-width: 100%;
+  }
+  .chip, .pill, .tag, .badge { max-width: 100%; white-space: normal; }
+
+  /* Tables should not enforce extra width */
+  table { table-layout: fixed; width: 100%; }
+  th, td { word-break: break-word; overflow-wrap: anywhere; }
+
+  /* Images, maps, canvases stick to the viewport */
+  img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
+  /* Leaflet map */
+  .leaflet-container { width: 100% !important; max-width: 100% !important; }
+
+  /* Expenses / Journal tables must not overflow */
+  #view-expenses .expenses-table, 
+  #view-journal .expenses-table { width: 100%; }
+
+  /* Kill rogue min-widths from utilities/components */
+  [style*="min-width"] { min-width: 0 !important; }
+  .nowrap, .no-wrap { white-space: normal !important; }
+
+  /* iOS safe area padding avoids accidental horizontal nudge */
+  body { padding-left: max(0px, env(safe-area-inset-left));
+         padding-right: max(0px, env(safe-area-inset-right)); }
+}
