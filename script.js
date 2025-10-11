@@ -208,38 +208,7 @@ async function fetchRatesOnce(){
   return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
 }
 
-var state = state || {}
-
-// === Mobile modal stability & no-scroll helper ===
-(function(){
-  const rootEls = [document.documentElement, document.body];
-  function lockScroll(lock){
-    rootEls.forEach(el=>{
-      if(lock){ el.style.overflow='hidden'; el.style.maxWidth='100%'; }
-      else { el.style.overflow=''; el.style.maxWidth=''; }
-    });
-  }
-  function patchModal(id, onOpen){
-    const m = document.getElementById(id);
-    if(!m) return;
-    const show = m.showModal?.bind(m);
-    if(show){
-      m.showModal = function(...args){
-        lockScroll(true);
-        show(...args);
-        if(typeof window._bindTextareasForModals==='function'){ window._bindTextareasForModals(); }
-        if(onOpen) try{ onOpen(m); }catch(_){}
-      }
-    }
-    m.addEventListener('close', ()=>lockScroll(false));
-    m.addEventListener('cancel', ()=>{ lockScroll(false); });
-  }
-  document.addEventListener('DOMContentLoaded', ()=>{
-    patchModal('expenseModal');
-    patchModal('journalModal');
-  });
-})();
-;
+var state = state || {};
 // === End helpers ===
 
 function invalidateMap(m){
@@ -3251,51 +3220,5 @@ document.addEventListener('DOMContentLoaded', () => {
     try { await FB.signOut(FB.auth); } catch(e){}
     userMenu?.classList.remove('open');
   });
-});
-
-
-
-// === Mobile v2 helpers ===
-
-// Add data-label attributes to td based on their column headers (for card-style tables).
-function applyResponsiveTables(scope=document){
-  try{
-    const tables = Array.from(scope.querySelectorAll('table'));
-    tables.forEach(tbl=>{
-      const heads = Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-      if(!heads.length) return; // headerless table – skip
-      tbl.querySelectorAll('tbody tr').forEach(tr=>{
-        Array.from(tr.children).forEach((td,i)=>{
-          if(td && !td.getAttribute('data-label') && heads[i]){
-            td.setAttribute('data-label', heads[i]);
-          }
-        });
-      });
-    });
-  }catch(e){ console.warn('applyResponsiveTables:', e); }
-}
-
-// Call once on load and on mutations
-document.addEventListener('DOMContentLoaded', ()=>applyResponsiveTables());
-new MutationObserver(muts=>{
-  for(const m of muts){
-    if(m.addedNodes && m.addedNodes.length){
-      applyResponsiveTables(document);
-      break;
-    }
-  }
-}).observe(document.documentElement, {childList:true, subtree:true});
-
-// Leaflet map: keep size correct after tab changes / orientation / resize
-function invalidateLeaflet(){
-  try{ window.map?.invalidateSize?.(); }catch(e){}
-}
-window.addEventListener('resize', invalidateLeaflet);
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) invalidateLeaflet(); });
-
-// If you switch tabs via buttons, hook into those to invalidate map.
-document.addEventListener('click', (e)=>{
-  const t = e.target.closest('[data-tab], .tab, [role="tab"]');
-  if(t){ setTimeout(invalidateLeaflet, 100); }
 });
 
