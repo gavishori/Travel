@@ -1237,3 +1237,19 @@ html, body { overflow-x:hidden; }
   #view-meta .budget-row label{ width:100%; }
 
 }
+
+
+/* === Mobile Journal header background === */
+@media (max-width: 480px){
+  #view-journal .expenses-table td.header{
+    background: color-mix(in oklab, var(--ink) 7%, transparent);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  #view-journal .expenses-table td.header .lbl{
+    font-weight: 700;
+    opacity: .9;
+  }
+  /* keep the menu cell transparent so the button stands out */
+  #view-journal .expenses-table td.menu-cell{ background: transparent; }
+}
