@@ -51,7 +51,9 @@ setLogLevel("error");
 // --- AUTH ---
 let _auth;
 try {
-  _auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] });
+  _auth = initializeAuth(app, {
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence]
+  });
 } catch (e) {
   _auth = getAuth(app);
 }
