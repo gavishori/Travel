@@ -3222,3 +3222,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+
+// ---- mobile-safe form submit wiring ----
+document.addEventListener('DOMContentLoaded', ()=>{
+  const $ = (sel)=>document.querySelector(sel);
+  function xErr(e){ return (e?.code || e?.message || 'שגיאת התחברות'); }
+  async function doLogin(emailSel, passSel, errSel){
+    try{
+      const auth = FB.getAuth();
+      const email = $(emailSel)?.value?.trim();
+      const pass  = $(passSel)?.value;
+      if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
+      await FB.signInWithEmailAndPassword(auth, email, pass);
+      if($(errSel)) $(errSel).textContent = '';
+    }catch(e){
+      console.error('login failed (submit wiring)', e);
+      if($(errSel)) $(errSel).textContent = xErr(e);
+      alert('שגיאת התחברות: ' + xErr(e)); // זמני – כדי שלא תפספס במובייל
+    }
+  }
+  // מניעת reload בטעות בטפסים
+  ['authForm','loginForm'].forEach(id=>{
+    const f = document.getElementById(id);
+    if(f && !f.dataset.wired){
+      f.dataset.wired='1';
+      f.addEventListener('submit', (ev)=>{
+        ev.preventDefault();
+        if(id==='authForm') doLogin('#authEmail','#authPass','#authError');
+        else doLogin('#lsEmail','#lsPass','#lsError');
+      });
+    }
+  });
+});
