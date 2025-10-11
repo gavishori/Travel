@@ -1154,3 +1154,26 @@ html.share-open [style*="overflow:scroll"]{
 /* Modal truly hidden when aria-hidden=true */
 .modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
 body.modal-open { overflow: hidden; }
+
+/* Debug banner (mobile only) */
+@media (max-width: 900px){
+  #debug-banner{
+    position: fixed;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 9999;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.3;
+    background: rgba(20,20,20,.92);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    max-height: 35vh;
+    overflow: auto;
+    direction: ltr;
+  }
+  #debug-banner strong{ font-weight: 700; }
+  #debug-banner .rtl{ direction: rtl; }
+}

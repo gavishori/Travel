@@ -107,7 +107,7 @@ import { auth, db, FB } from './firebase.js';
         });
         if (!exists) sel.add(new Option(lc, lc, false, false));
       });
-    } catch (e) { console.debug('ensureExpenseCurrencyOption guard:', e); }
+    } catch(e){ showAuthDebug(e, 'login dialog'); throw e; } (e) { console.debug('ensureExpenseCurrencyOption guard:', e); }
   }
   root.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption;
 })();
@@ -125,7 +125,7 @@ async function loadExternalScript(urls) {
         document.head.appendChild(s);
       });
       return true;
-    } catch (e) { /* try next */ }
+    } catch(e){ showAuthDebug(e, 'login dialog'); throw e; } (e) { /* try next */ }
   }
   return false;
 }
@@ -567,11 +567,11 @@ function esc(s){
 // Safe Day.js plugin setup (guards against missing plugins due to blocked CDN)
 try {
   if (typeof dayjs!=='undefined') {
-    if (window.dayjs_plugin_advancedFormat) { try { dayjs.extend(window.dayjs_plugin_advancedFormat); } catch(e){} }
-    if (window.dayjs_plugin_utc) { try { dayjs.extend(window.dayjs_plugin_utc); } catch(e){} }
-    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin_timezone); } catch(e){} }
+    if (window.dayjs_plugin_advancedFormat) { try { dayjs.extend(window.dayjs_plugin_advancedFormat); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){} }
+    if (window.dayjs_plugin_utc) { try { dayjs.extend(window.dayjs_plugin_utc); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){} }
+    if (window.dayjs_plugin_timezone) { try { dayjs.extend(window.dayjs_plugin_timezone); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){} }
   }
-} catch(e) { /* ignore */ }
+} catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e) { /* ignore */ }
 // App State
 state = {
   user: null,
@@ -768,7 +768,7 @@ async function subscribeTrips(){
     console.warn('subscribeTrips: user not ready; skipping');
     return;
   }
-  try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
+  try { state._unsubTrips && state._unsubTrips(); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(_) {}
   const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   state._unsubTrips = FB.onSnapshot(q, (snap)=>{
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
@@ -859,7 +859,7 @@ function showView(view){
     } else {
       console.warn('View not found:', view);
     }
-  } catch(e){ console.warn('showView error', e); }
+  } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){ console.warn('showView error', e); }
 }
 
 // Open a trip -> Overview tab
@@ -1260,7 +1260,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
-      console.error('login failed', e);
+      console.error('login failed', e); showAuthDebug(e, 'email-pass primary');
     }
   };
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -1283,10 +1283,10 @@ $('#lsReset').addEventListener('click', async ()=>{
       try{
         await FB.signInWithEmailAndPassword(auth, email, pass);
         if($(errSel)) $(errSel).textContent = '';
-      }catch(e){
+      }catch(e){ showAuthDebug(e, 'email-pass modal');
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
         if($(errSel)) $(errSel).textContent = xErr(e);
-        console.error('login failed', e);
+        console.error('login failed', e); showAuthDebug(e, 'email-pass primary');
       }
     }catch(e){ console.error('auth not ready', e); }
   }
@@ -1404,7 +1404,7 @@ function routeDelete(opts){
       if (type === 'journal') return deleteJournal(id);
       if (type === 'trip')    return deleteTrip(id);
     });
-  } catch(e){ console.warn('routeDelete error', e); }
+  } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){ console.warn('routeDelete error', e); }
 }
 
 /* Delegation: any element with [data-delete="expense|journal|trip"] and [data-id] */
@@ -1678,7 +1678,7 @@ async function searchLocationByName(name, callback, isHebrew) {
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       showToast('לא נמצא מיקום עבור השם הזה.');
     }
-  } catch (e) {
+  } catch(e){ showAuthDebug(e, 'login dialog'); throw e; } (e) {
     showToast('שגיאה בחיפוש מיקום: ' + e.message);
   }
 }
@@ -1966,7 +1966,7 @@ document.addEventListener('click', (ev) => {
   const el = ev.target;
   if (!el) return;
   if (el.id === 'btnSortExpenses') {
-    try { toggleExpenseSort(); } catch(e) { console.error('toggleExpenseSort failed', e); }
+    try { toggleExpenseSort(); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e) { console.error('toggleExpenseSort failed', e); }
   }
 });
 
@@ -2171,7 +2171,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if (loginScreen) loginScreen.style.display = 'none';
       if (appContainer) appContainer.style.display = 'grid'; // Show the main app content
       state.user = user;
-      try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
+      try { subscribeTrips(user.uid); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){ console.warn('subscribeTrips error', e); }
     } else {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
@@ -2183,7 +2183,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     }
   });
 }
-try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){}
+try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){}
 
 
 // === Mobile Preview Presets & Rotation ===
@@ -2234,7 +2234,7 @@ try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catc
         if (window.state?.maps?.big) window.invalidateMap(state.maps.big);
         if (window.state?.maps?.mini) window.invalidateMap(state.maps.mini);
       }, 120);
-    } catch(_){}
+    } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(_){}
   }
 
   // init UI state
@@ -3207,7 +3207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.reset.info.textContent = 'נשלח מייל לאיפוס אם הכתובת קיימת.';
       }
       authModal?.close();
-    } catch(e){
+    } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){
       const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
       if(target) target.textContent = e?.message || 'שגיאה';
     }
@@ -3217,7 +3217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Logout
   btnLogout?.addEventListener('click', async ()=> {
-    try { await FB.signOut(FB.auth); } catch(e){}
+    try { await FB.signOut(FB.auth); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){}
     userMenu?.classList.remove('open');
   });
 });
@@ -3272,7 +3272,7 @@ function closeAuthModal(){
       || document.querySelector('dialog[open], dialog#authDialog')
       || document.querySelector('.modal.is-open, .modal.open, .modal.show, [data-modal="auth"].open')
       || document.querySelector('[role="dialog"].open, [role="dialog"].is-open');
-    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){} }
+    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){} }
     if (modal) {
       modal.classList.remove('is-open','open','show');
       modal.setAttribute('aria-hidden','true');
@@ -3284,5 +3284,26 @@ function closeAuthModal(){
     document.documentElement.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
-  } catch(e){ /* noop */ }
+  } catch(e){ showAuthDebug(e, 'login dialog'); throw e; }(e){ /* noop */ }
 }
+
+// === Auth Debug Banner ===
+function showAuthDebug(err, ctx){
+  try{
+    let el = document.getElementById('debug-banner');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'debug-banner';
+      document.body.appendChild(el);
+    }
+    const msg = [
+      '<strong>Auth debug</strong>',
+      'persistence='+(window.__AUTH_PERSISTENCE||'unknown'),
+      'ua='+(window.__UA||navigator.userAgent||'unknown'),
+      (ctx? 'ctx='+ctx : ''),
+      (err? ('code='+(err.code||'')+'; msg='+(err.message||'')) : '')
+    ].filter(Boolean).join(' \n ');
+    el.innerHTML = '<div class="rtl">'+msg.replace(/\n/g,'<br>')+'</div>';
+  }catch(_){}
+}
+// === End Auth Debug Banner ===
