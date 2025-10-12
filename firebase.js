@@ -2,10 +2,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
-  initializeAuth,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
-  inMemoryPersistence,
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
@@ -49,19 +45,7 @@ export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, e
 setLogLevel("error");
 
 // --- AUTH ---
-
-// Prefer persistence that doesn't rely on 3rd-party cookies (Chrome iOS/Android safe)
-let _auth;
-try {
-  _auth = initializeAuth(app, {
-    persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence]
-  });
-} catch (e) {
-  // Fallback if already initialized elsewhere
-  _auth = getAuth(app);
-}
-export const auth = _auth;
-
+export const auth = getAuth(app);
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
@@ -98,12 +82,3 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
-
-
-/* SHIM: FB.getAuth fallback */
-try{
-  window.FB = window.FB || {};
-  if (typeof window.FB.getAuth !== 'function') {
-    window.FB.getAuth = function(){ try { return auth; } catch(e){ return null; } };
-  }
-}catch(e){}

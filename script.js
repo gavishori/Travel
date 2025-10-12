@@ -1,29 +1,5 @@
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
-// === Auth Debug Banner (mobile) ===
-function showAuthDebug(err, ctx){
-  try{
-    let el = document.getElementById('debug-banner');
-    if(!el){
-      el = document.createElement('div');
-      el.id = 'debug-banner';
-      document.body.appendChild(el);
-    }
-    const ua = (typeof navigator!=='undefined' && navigator.userAgent) ? navigator.userAgent : 'unknown';
-    const persistence = (window.__AUTH_PERSISTENCE || 'unknown');
-    const lines = [
-      '<strong>Auth debug</strong>',
-      'ctx='+(ctx||'n/a'),
-      'persistence='+persistence,
-      'ua='+ua,
-      err && ('code='+(err.code||'')),
-      err && ('msg='+(err.message||''))
-    ].filter(Boolean);
-    el.innerHTML = '<div class="rtl">'+lines.join('<br>')+'</div>';
-  }catch(_){}
-}
-// === End Auth Debug Banner ===
-
   document.addEventListener('DOMContentLoaded', ()=>{
     const view = document.getElementById('view-journal');
     if(!view) return;
@@ -131,7 +107,7 @@ import { auth, db, FB } from './firebase.js';
         });
         if (!exists) sel.add(new Option(lc, lc, false, false));
       });
-    } catch (e) { showAuthDebug(e, 'login dialog'); console.debug('ensureExpenseCurrencyOption guard:', e); }
+    } catch (e) { console.debug('ensureExpenseCurrencyOption guard:', e); }
   }
   root.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption;
 })();
@@ -149,7 +125,7 @@ async function loadExternalScript(urls) {
         document.head.appendChild(s);
       });
       return true;
-    } catch (e) { showAuthDebug(e, 'login dialog'); /* try next */ }
+    } catch (e) { /* try next */ }
   }
   return false;
 }
@@ -1084,8 +1060,13 @@ function renderJournal(t, order){
       const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
       const timeStr = d.isValid()? d.format('HH:mm') : '';
       const cat = j.category || '';
-      const place = j.placeName || j.city || j.country || '';
-      const locStr = place ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(place)}" target="_blank">${place}</a>` : '';
+            // Build compact place display: "Name, City, Country"
+      const parts = [j.placeName, j.city, j.country].filter(Boolean);
+      const placeCompact = parts.join(', ');
+      const locStr = placeCompact
+        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
+        : '';
+
       const text = linkifyText(j.text || '');
 
       const tr1 = document.createElement('tr');
@@ -1284,7 +1265,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
-      console.error('login failed', e); showAuthDebug(e, 'email-pass primary');
+      console.error('login failed', e);
     }
   };
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -1310,7 +1291,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       }catch(e){
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
         if($(errSel)) $(errSel).textContent = xErr(e);
-        console.error('login failed', e); showAuthDebug(e, 'email-pass primary');
+        console.error('login failed', e);
       }
     }catch(e){ console.error('auth not ready', e); }
   }
@@ -1702,7 +1683,7 @@ async function searchLocationByName(name, callback, isHebrew) {
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       showToast('לא נמצא מיקום עבור השם הזה.');
     }
-  } catch (e) { showAuthDebug(e, 'login dialog');
+  } catch (e) {
     showToast('שגיאה בחיפוש מיקום: ' + e.message);
   }
 }
@@ -3246,83 +3227,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-
-// ======== GLOBAL HARD-WIRED LOGIN (mobile-safe) ========
-window.__loginNow = async function(){
-  try{
-    const emailEl = document.querySelector('#authEmail') || document.querySelector('#lsEmail');
-    const passEl  = document.querySelector('#authPass')  || document.querySelector('#lsPass');
-    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
-    const email = (emailEl && emailEl.value || '').trim();
-    const pass  = (passEl && passEl.value || '');
-    if(!email || !pass){
-      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
-      alert('אנא מלא אימייל וסיסמה');
-      return false;
-    }
-    // Get auth instance safely
-    let auth = (window.FB && typeof window.FB.getAuth === 'function' && window.FB.getAuth())
-            || (window.auth || null);
-    if(!auth){
-      if(errEl) errEl.textContent = 'Auth לא מאותחל (FB.getAuth)';
-      alert('Auth לא מאותחל (FB.getAuth)');
-      return false;
-    }
-    const fn = (window.FB && window.FB.signInWithEmailAndPassword) || null;
-    if(!fn){
-      if(errEl) errEl.textContent = 'signInWithEmailAndPassword לא קיים';
-      alert('signInWithEmailAndPassword לא קיים');
-      return false;
-    }
-    await fn(auth, email, pass);
-    if(errEl) errEl.textContent = '';
-    return true;
-  }catch(e){
-    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
-    const msg = e && (e.code || e.message) || 'שגיאת התחברות';
-    console.error('LOGIN ERROR', e);
-    if(errEl) errEl.textContent = msg;
-    alert('שגיאת התחברות: ' + msg);
-    return false;
-  }
-};
-
-
-// === Modal close utility (robust) ===
-function closeAuthModal(){
-  try{
-    const modal = document.getElementById('authDialog')
-      || document.querySelector('dialog[open], dialog#authDialog')
-      || document.querySelector('.modal.is-open, .modal.open, .modal.show, [data-modal="auth"].open')
-      || document.querySelector('[role="dialog"].open, [role="dialog"].is-open');
-    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){} }
-    if (modal) {
-      modal.classList.remove('is-open','open','show');
-      modal.setAttribute('aria-hidden','true');
-      if (modal.style) modal.style.display = 'none';
-    }
-    const scrim = document.querySelector('.modal-backdrop, .overlay, .scrim');
-    if (scrim) scrim.remove();
-    document.body.classList.remove('modal-open');
-    document.documentElement.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
-  } catch(e){ /* noop */ }
-}
-
-// === Numeric keypad for money inputs on mobile, prevent iOS zoom ===
-function setupMobileMoneyInputs(){
-  try{
-    const moneys = document.querySelectorAll('input.money, .money input, input[type="text"].money');
-    moneys.forEach(inp=>{
-      try{
-        inp.setAttribute('inputmode','decimal');
-        inp.setAttribute('pattern','[0-9]*[.,]?[0-9]*');
-        if(inp.type !== 'tel') try{ inp.type = 'tel'; }catch(e){}
-        inp.style.fontSize = '16px';
-      }catch(e){ console.warn(e); }
-    });
-  }catch(e){ console.error(e); }
-}
-document.addEventListener('DOMContentLoaded', setupMobileMoneyInputs);

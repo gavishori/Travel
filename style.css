@@ -507,10 +507,13 @@ td a.external-link {
   font-weight: 500;
   box-shadow: 0 2px 10px rgba(0,0,0,.10);
 }
-/* ORIGINAL:  */
+/* ORIGINAL: #btnToggleSpent{ border-color:#ff8c00; color:#ff8c00; }
+#btnToggleSpent.active{ background:#ff8c00; color:#111; border-color:#ff8c00; } */
 /* UPDATED to red (#e53935) to match map markers */
-
-
+#btnToggleSpent{ border-color:#e53935; color:#e53935; }
+#btnToggleSpent.active{ background:#e53935; color:#fff; border-color:#e53935; }
+#btnToggleVisited{ border-color:#1e90ff; color:#1e90ff; }
+#btnToggleVisited.active{ background:#1e90ff; color:#fff; border-color:#1e90ff; }
 
 
 /* === Added by ChatGPT: Uniform Location Controls (input + 2 buttons) === */
@@ -968,581 +971,269 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   .journal-card{ grid-template-columns: 1fr auto; }
 }
 
-/* --- Link / Mail icon badges inside journal/expenses text --- */
+/* explicit text link used when a journal line is a single URL */
+.text-link{ text-decoration: underline; color: var(--primary); font-weight: 500; }
+\n
+/* journal text anchors always look like links */
+#view-journal .journal-list .text a.text-link{ text-decoration: underline; color: var(--primary); font-weight: 500; }
+#view-journal .journal-list .text a{text-underline-offset: 2px;}
 
 
+/* Numbered pins for map */
+.leaflet-div-icon { background: transparent; border: none; }
+.num-pin{ position: relative; width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.num-pin.red{ background:#e53935; color:#fff; border:2px solid #b71c1c; }
+.num-pin.green{ background:#34a853; color:#fff; border:2px solid #1b5e20; }
+.num-pin::after{ content:""; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%) rotate(45deg); width:10px; height:10px; background:inherit; border-bottom:inherit; border-right:inherit; }
 
 
-/* --- Blue link/mail chips --- */
-:root{ --link-blue:#1a73e8; }
+/* highlight on 'הצג' focus */
+.pulse { outline: 2px solid #ff9800; box-shadow: 0 0 0 4px rgba(255,152,0,.3); transition: box-shadow .3s; }
+.map-popup .btn.small { font-size:.85rem; padding:.25rem .5rem; }
 
 
+/* Auto-resize helper for textareas */
+.auto-resize{min-height:84px;overflow:hidden;resize:vertical}
 
+}
+/* Share tab stacking override (high specificity) */
+body #view-share .cards{display:flex !important; flex-direction:column !important; gap:16px !important; grid-template-columns:none !important}
+body #view-share .cards .card{width:100% !important; max-width:100% !important}
 
+/* map-toolbar-visited */
+.map-toolbar #btnToggleVisited { border:2px solid #34a853; color:#34a853; background:transparent; }
+.map-toolbar #btnToggleVisited.active { background:#34a853; color:#fff; border-color:#1b5e20; }
 
+/* Selection UI */
+.journal-card{ position:relative; }
+.journal-card.select-mode{ padding-inline-start:42px; }
+.jr-select-box{ position:absolute; left:12px; top:12px; display:flex; align-items:center; z-index:5; pointer-events:auto; }
+.jr-select-box input[type="checkbox"]{ width:18px; height:18px; accent-color:#e53935; }
 
-/* === Override: link/mail display as blue icons only === */
+#btnCancelSelectionJournal{ margin-inline-start: 8px; }
 
-
-
-
-
-
-:root { --link-blue: #1a73e8; }
-
-
-
-
-
-
-/* === Link/Mail icons: emoji-only, blue (requested) === */
-:root{ --link-blue: #1a73e8; }
-
-
-
-
-/* === Single source of truth: link/mail icons === */
-:root{ --link-blue: #1a73e8; }
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:26px; height:26px; /* bigger icon */
-  margin: 0 6px;
-  text-decoration:none;
-  background: transparent;
-  border:none;
-  box-shadow:none;
-  color: var(--link-blue);
+/* Desktop-only full-width mode */
+@media (min-width: 1024px){
+  body{ overflow-x:hidden; }
+  .container{ grid-template-columns: 320px 1fr; }
+  .container.home-mode{ grid-template-columns: 1fr; }
+  .container.home-mode .sidebar{ width:100%; max-width:none; margin:0; }
+  #tripList.grid{ width:100%; }
+  .cards{ grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
 }
 
-.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
+/* Desktop: app spans full width */
+#previewRoot{ justify-content: flex-start; }
+#previewRoot > .app{ width:100%; max-width:none; margin:0; }
 
-/* Force link icon as blue SVG (not emoji) */
-.link-icon{
-  color:#1a73e8 !important;
+
+/* Journal header row (date, time, place) same look as Expenses headers */
+#view-journal .expenses-table td.header{
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
 }
-
-
-/* Force blue link icon and 50% larger size */
-.link-icon{
-  width:30px !important;
-  height:30px !important;
-}
-.link-icon::before{
-  content:'';
-  display:inline-block;
-  width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:30px 30px;
-}
-
-/* --- Align link/mail icons with text baseline --- */
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  vertical-align: middle;   /* center on line box */
-  line-height: 1;           /* avoid extra ascent */
-  position: relative;
-  top: -1px;                 /* nudge down a touch for optical alignment */
-}
-.link-icon::before, .mail-icon::before{
-  display:block;            /* no inline extra baseline */
-}
-
-/* Make yellow mark clickable */
-.hl-pill, .hl-pill mark{ cursor: pointer; }
-
-
-/* === Expenses table (custom) === */
-#view-expenses .expenses-table-container{ overflow-x:auto; }
-#view-expenses .expenses-table{ width:100%; border-collapse:separate; border-spacing:0; direction:rtl; }
-#view-expenses .expenses-table th, #view-expenses .expenses-table td{ border-bottom:1px solid var(--border); padding:10px; text-align:right; }
-#view-expenses .expenses-table th{ background:var(--card); position:sticky; top:0; z-index:1; }
-#view-expenses .expenses-table th.narrow{ width:56px; }
-
-
-/* === Stacked expenses layout === */
-#view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
-#view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
-#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
-#view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
-#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
-#view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
-#view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
-
-#view-expenses .expenses-table.stacked td.menu-cell{
+#view-journal .expenses-table td.menu-cell{
   width:56px; text-align:center;
   background: color-mix(in oklab, var(--ink) 6%, transparent);
 }
-#view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
-  inline-size: 36px; block-size: 32px; border-radius: 10px;
+
+
+/* Emphasize labels in Journal header row */
+#view-journal .expenses-table td.header .lbl{
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: 0.2px;
 }
 
-/* Balance widths when using 6 columns on first row */
-#view-expenses .expenses-table.stacked td.header.date,
-#view-expenses .expenses-table.stacked td.header.time,
-#view-expenses .expenses-table.stacked td.header.category,
-#view-expenses .expenses-table.stacked td.header.amount,
-#view-expenses .expenses-table.stacked td.header.currency { min-inline-size: 10ch; }
-#view-expenses .expenses-table.stacked td.menu-cell{ width:56px; text-align:center; }
-
-/* Dual amount display */
-#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
-#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:600; margin-inline-start:.3ch; opacity:.9; }
-#view-expenses .expenses-table.stacked .amount .amt-ils{ font-size:.9em; margin-top:.2rem; }
-
-/* Amount + ILS split */
-#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
-#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:700; margin-inline-end:.3ch; }
-#view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:600; }
+.app.show{display:block;}
 
 
-/* === One-line actions + budget bar === */
-#view-expenses .list-actions{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  justify-content:space-between;
-  flex-wrap:nowrap;
-}
-#view-expenses .list-actions #expenseSummary{
-  margin-inline-start:auto;
-}
-#view-expenses .budget-bar{ flex-wrap:nowrap; }
-#view-expenses .budget-progress{ min-width:160px; }
+/* Import card button layout */
+#view-share .card .row.buttons-3 { gap:12px; flex-wrap:wrap }
+#view-share .btn { min-width: 140px; }
 
-
-/* === Responsive: stack actions & budget on small screens === */
-@media (max-width: 720px){
-  #view-expenses .list-actions{
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  #view-expenses .list-actions #expenseSummary{
-    order: 3;            /* push summary below buttons */
-    width: 100%;
-  }
-  #view-expenses .budget-bar{
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  #view-expenses .budget-bar .kpi{
-    flex: 1 1 calc(33% - 10px);
-    min-width: 120px;
-  }
-  #view-expenses .budget-progress{
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-}
-@media (max-width: 480px){
-  #view-expenses .budget-bar .kpi{
-    flex: 1 1 calc(50% - 10px); /* two per row if very narrow */
-    min-width: 140px;
-  }
-}
-
-
-/* rate-line styling to match heading weight */
-.rate-line{display:flex;align-items:baseline;gap:.35rem;font-weight:800;color:#0B1320}
-.rate-line .rate-code{letter-spacing:.5px}
-.rate-line{direction:ltr;unicode-bidi:plaintext}
-
-.cell.header.amount .amt-sub{display:block!important}
-
-
-/* Amount sub-line: small, non-bold ILS rate under main amount */
-#view-expenses .expenses-table.stacked .amount .amt-sub{
-  margin-top: .25rem;
-  font-size: .85em;
-  font-weight: 400;
-  color: var(--muted);
-}
-
-
-
-/* Left cell now shows converted ILS total */
-#view-expenses .expenses-table .converted-ils{
-  font-weight: 500;
-}
-
-
-#view-expenses .expenses-table .currency .ils-total{font-weight:600;}
-
-
-/* --- Journal adopts the stacked expenses visual --- */
-.journal-list{
+/* ==== Share Tab: three-card full fit, no scrollbars ==== */
+html.share-open, body.share-open { overflow: hidden !important; }
+#view-share {
   display:flex;
   flex-direction:column;
-  gap:12px;
-  width:100%;
+  height: calc(100vh - 120px);
+  overflow: hidden;
 }
-.journal-card{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: var(--shadow);
-  display: grid;
-  grid-template-columns: 1fr auto; /* text + menu */
-  gap: 8px;
-  overflow-wrap: anywhere;       /* long words/links won't cause horizontal scroll */
-  word-break: break-word;
+#view-share .cards.share-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  flex:1;
+  align-items:stretch;
+  overflow: hidden;
 }
-.journal-card .meta{
-  display:flex;
-  flex-wrap: wrap;
-  gap:8px;
-  color: var(--muted);
-  font-size: .95rem;
+#view-share .card{ display:flex; flex-direction:column; gap:12px; overflow:hidden; }
+#view-share .card .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+#view-share .btn{ min-width:140px; }
+@media (max-width: 1100px){
+  #view-share{ height: calc(100vh - 140px); }
+  #view-share .cards.share-grid{ grid-template-columns: repeat(2,1fr); }
 }
-.journal-card .title{
-  font-weight: 600;
-}
-.journal-card .text{
-  grid-column: 1 / -1;
-  line-height: 1.5;
-}
-.journal-card .menu-btn{
-  justify-self: end;
-  border: 1px solid var(--border);
-  background: transparent;
-  border-radius: 10px;
-  padding: 6px 10px;
-}
-.content{ overflow-x: hidden; } /* never horizontal scroll */
-/* Mobile: keep same stacking */
 @media (max-width: 720px){
-  .journal-card{ grid-template-columns: 1fr auto; }
-}
-
-/* --- Link / Mail icon badges inside journal/expenses text --- */
-
-
-
-
-/* --- Blue link/mail chips --- */
-:root{ --link-blue:#1a73e8; }
-
-
-
-
-
-
-/* === Override: link/mail display as blue icons only === */
-
-
-
-
-
-
-:root { --link-blue: #1a73e8; }
-
-
-
-
-
-
-/* === Link/Mail icons: emoji-only, blue (requested) === */
-:root{ --link-blue: #1a73e8; }
-
-
-
-
-/* === Single source of truth: link/mail icons === */
-:root{ --link-blue: #1a73e8; }
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:26px; height:26px; /* bigger icon */
-  margin: 0 6px;
-  text-decoration:none;
-  background: transparent;
-  border:none;
-  box-shadow:none;
-  color: var(--link-blue);
-}
-
-.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
-
-/* Force link icon as blue SVG (not emoji) */
-.link-icon{
-  color:#1a73e8 !important;
+  html.share-open, body.share-open { overflow:auto !important; } /* allow mobile scroll if needed */
+  #view-share .cards.share-grid{ grid-template-columns: 1fr; }
 }
 
 
-/* Force blue link icon and 50% larger size */
-.link-icon{
-  width:30px !important;
-  height:30px !important;
+/* === ABSOLUTE NO-SCROLL mode for Share tab === */
+html.share-open, body.share-open { overflow: hidden !important; height:100%; }
+html.share-open * { scrollbar-width: none !important; }
+html.share-open *::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
+/* Ensure common containers don't reintroduce scroll */
+html.share-open #app,
+html.share-open .app,
+html.share-open .layout,
+html.share-open .container,
+html.share-open .content,
+html.share-open .sidebar,
+html.share-open .main,
+html.share-open [class*="scroll"],
+html.share-open [style*="overflow: auto"],
+html.share-open [style*="overflow:auto"],
+html.share-open [style*="overflow: scroll"],
+html.share-open [style*="overflow:scroll"]{
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+  max-height: 100vh !important;
 }
-.link-icon::before{
-  content:'';
-  display:inline-block;
-  width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:30px 30px;
-}
-
-/* --- Align link/mail icons with text baseline --- */
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  vertical-align: middle;   /* center on line box */
-  line-height: 1;           /* avoid extra ascent */
-  position: relative;
-  top: -1px;                 /* nudge down a touch for optical alignment */
-}
-.link-icon::before, .mail-icon::before{
-  display:block;            /* no inline extra baseline */
+/* Share view itself fills viewport and clips overflow */
+#view-share{
+  height: calc(100vh - 120px);
+  overflow: clip !important;
 }
 
-/* Make yellow mark clickable */
-.hl-pill, .hl-pill mark{ cursor: pointer; }
+#currentUserEmail{font-size:14px; opacity:.8;}
+
+/* Robust tab visibility */
+.tabview{ display:none !important; }
+.tabview[data-active="1"]{ display:block !important; }
+
+/* map-toolbar-spent */
+.map-toolbar #btnToggleSpent { border:2px solid #e53935; color:#e53935; background:transparent; }
+.map-toolbar #btnToggleSpent.active { background:#e53935; color:#fff; border-color:#b71c1c; }
+
+/* journal selection checkbox cell */
+.expenses-table .cell.select-cell { width:42px; text-align:center; }
+.expenses-table .cell.select-cell input { transform: scale(1.2); }
+.btn.danger.outline{ background:transparent; border:2px solid #e53935; color:#e53935; }
+.btn.ghost{ background:transparent; border:0; color:#666; }
+
+.chip-btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:9999px;border:1px solid var(--border);background:var(--panel,#fff);color:var(--text,#111);font-weight:500;line-height:1;cursor:pointer}
+.chip-btn:hover{background:color-mix(in oklab,var(--panel,#fff) 92%,var(--brand,#4B7) 8%)}
+.chip-btn.ghost{background:transparent}
+
+.modal{border:none;border-radius:20px;padding:0;width:min(720px,94vw)}
+.modal .header{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--panel,#fff);border-top-left-radius:20px;border-top-right-radius:20px}
+.modal .body{padding:16px;max-height:min(70vh,760px);overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.35)}
+
+.breakdown-table{width:100%;border-collapse:separate;border-spacing:0}
+.breakdown-table th,.breakdown-table td{padding:10px;border-bottom:1px solid var(--border);text-align:right}
+.breakdown-row-bar{height:10px;background:color-mix(in oklab,var(--brand) 25%,transparent);border-radius:9999px;overflow:hidden}
+.breakdown-row-bar>span{display:block;height:100%;background:var(--brand);width:0}
+.breakdown-total{font-weight:700}
 
 
-/* === Expenses table (custom) === */
-#view-expenses .expenses-table-container{ overflow-x:auto; }
-#view-expenses .expenses-table{ width:100%; border-collapse:separate; border-spacing:0; direction:rtl; }
-#view-expenses .expenses-table th, #view-expenses .expenses-table td{ border-bottom:1px solid var(--border); padding:10px; text-align:right; }
-#view-expenses .expenses-table th{ background:var(--card); position:sticky; top:0; z-index:1; }
-#view-expenses .expenses-table th.narrow{ width:56px; }
-
-
-/* === Stacked expenses layout === */
-#view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
-#view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
-#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
-#view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
-#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
-#view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
-#view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
-
-#view-expenses .expenses-table.stacked td.menu-cell{
-  width:56px; text-align:center;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+/* highlight target row when navigated from map popup */
+.flash-green { 
+  background: #e6ffe9 !important; 
+  transition: background 0.6s ease;
+  box-shadow: inset 0 0 0 2px #3bb273;
 }
-#view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
-  inline-size: 36px; block-size: 32px; border-radius: 10px;
-}
-
-/* Balance widths when using 6 columns on first row */
-#view-expenses .expenses-table.stacked td.header.date,
-#view-expenses .expenses-table.stacked td.header.time,
-#view-expenses .expenses-table.stacked td.header.category,
-#view-expenses .expenses-table.stacked td.header.amount,
-#view-expenses .expenses-table.stacked td.header.currency { min-inline-size: 10ch; }
-#view-expenses .expenses-table.stacked td.menu-cell{ width:56px; text-align:center; }
-
-/* Dual amount display */
-#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
-#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:600; margin-inline-start:.3ch; opacity:.9; }
-#view-expenses .expenses-table.stacked .amount .amt-ils{ font-size:.9em; margin-top:.2rem; }
-
-/* Amount + ILS split */
-#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
-#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:700; margin-inline-end:.3ch; }
-#view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:600; }
 
 
-/* === One-line actions + budget bar === */
-#view-expenses .list-actions{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  justify-content:space-between;
-  flex-wrap:nowrap;
-}
-#view-expenses .list-actions #expenseSummary{
-  margin-inline-start:auto;
-}
-#view-expenses .budget-bar{ flex-wrap:nowrap; }
-#view-expenses .budget-progress{ min-width:160px; }
+/* ensure block highlight paints all cells in the row */
+.flash-green > * { background: #e6ffe9 !important; }
 
 
-/* === Responsive: stack actions & budget on small screens === */
-@media (max-width: 720px){
-  #view-expenses .list-actions{
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  #view-expenses .list-actions #expenseSummary{
-    order: 3;            /* push summary below buttons */
-    width: 100%;
-  }
-  #view-expenses .budget-bar{
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  #view-expenses .budget-bar .kpi{
-    flex: 1 1 calc(33% - 10px);
-    min-width: 120px;
-  }
-  #view-expenses .budget-progress{
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-}
+/* === Mobile rigid layout fixes (iPhone 13 Pro Max) === */
 @media (max-width: 480px){
-  #view-expenses .budget-bar .kpi{
-    flex: 1 1 calc(50% - 10px); /* two per row if very narrow */
-    min-width: 140px;
+  html, body { width:100%; max-width:100%; overflow-x:hidden; overscroll-behavior-x: none; }
+  body { overflow-y:auto; touch-action: manipulation; }
+  .app, .container, .content, .sidebar, .section, .card, .panel, .sheet, .modal, .tabs, header, nav { max-width:100%; min-width:0; }
+  .row, .flex, header, nav, .tabs, .toolbar { display:flex; flex-wrap:wrap; min-width:0; }
+  * { box-sizing: border-box; }
+  img, svg, video, canvas, iframe { max-width:100%; height:auto; }
+  .leaflet-container, #map, .map, .map-container { width:100% !important; max-width:100% !important; }
+  .leaflet-container { height: 60vh !important; }
+  table { width:100%; table-layout: fixed; border-collapse: collapse; }
+  th, td { word-break: break-word; min-width:0; }
+  input, select, textarea, button { max-width:100%; }
+  /* prevent accidental fixed widths from causing horizontal scroll */
+  [style*="width:"] { max-width:100%; }
+}
+
+/* Global overflow guard */
+html, body { overflow-x:hidden; }
+
+
+/* ======== Mobile-only compact headers for Expenses & Journal ======== */
+@media (max-width: 480px){
+
+  /* Shared */
+  #view-expenses .expenses-table, 
+  #view-journal .expenses-table { border-spacing:0; width:100%; }
+  #view-expenses .expenses-table tr.exp-item,
+  #view-journal .expenses-table tr.exp-item { display:grid; gap:.5rem .75rem; align-items:center; }
+
+  /* --- Expenses: two-line header layout ---
+     Row 1: date | time | menu
+     Row 2: amount | currency | menu
+     Notes row remains full width.
+  */
+  #view-expenses .expenses-table.stacked tr.exp-item { 
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "amount currency menu";
   }
+  #view-expenses .expenses-table.stacked td.cell{ border:none; padding:0; background:transparent; }
+  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; }
+  #view-expenses .expenses-table.stacked td.header.category{ display:none; } /* חוסך מקום במובייל */
+  #view-expenses .expenses-table.stacked td.notes{ grid-column: 1 / -1; padding:.25rem 0 .75rem 0; }
+
+  /* טיפוגרפיה */
+  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+
+  /* --- Journal: מקום בשורה משל עצמו ---
+     Row 1: date | time | menu
+     Row 2: location | location | menu
+  */
+  #view-journal .expenses-table tr.exp-item{ 
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "location location menu";
+  }
+  #view-journal .expenses-table td.cell{ border:none; padding:0; background:transparent; }
+  #view-journal .expenses-table td.header.date{ grid-area:date; }
+  #view-journal .expenses-table td.header.time{ grid-area:time; }
+  #view-journal .expenses-table td.header.location{ grid-area:location; }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; }
+  #view-journal .expenses-table + * td.notes,
+  #view-journal .expenses-table tr.exp-item + tr.exp-item td.notes{ grid-column:1 / -1; }
+
+  /* הסתרת תאי בחירה במובייל ברירת מחדל (כשאין מצב בחירה) */
+  #view-journal .expenses-table td.select-cell,
+  #view-expenses .expenses-table td.select-cell{ display:none; }
+
+  /* --- Trip meta (נתוני נסיעה): קריא ונוח --- */
+  #view-meta .section .row,
+  #view-meta .budget-row,
+  #view-meta .budget-actions-row{ display:grid; grid-template-columns: 1fr; gap:.6rem; }
+  #view-meta .chips, #view-meta .pill-group, #view-meta .tag-row{ display:flex; flex-wrap:wrap; gap:.4rem; }
+  #view-meta input, #view-meta select, #view-meta textarea{ width:100%; }
+  #view-meta .budget-block{ padding:1rem; }
+  #view-meta .budget-row{ grid-template-columns: repeat(2, 1fr); }
+  #view-meta .budget-row label{ width:100%; }
+
 }
-
-
-/* rate-line styling to match heading weight */
-.rate-line{display:flex;align-items:baseline;gap:.35rem;font-weight:800;color:#0B1320}
-.rate-line .rate-code{letter-spacing:.5px}
-.rate-line{direction:ltr;unicode-bidi:plaintext}
-
-.cell.header.amount .amt-sub{display:block!important}
-
-
-/* Amount sub-line: small, non-bold ILS rate under main amount */
-#view-expenses .expenses-table.stacked .amount .amt-sub{
-  margin-top: .25rem;
-  font-size: .85em;
-  font-weight: 400;
-  color: var(--muted);
-}
-
-
-
-/* Left cell now shows converted ILS total */
-#view-expenses .expenses-table .converted-ils{
-  font-weight: 500;
-}
-
-
-#view-expenses .expenses-table .currency .ils-total{font-weight:600;}
-
-
-/* --- Journal adopts the stacked expenses visual --- */
-.journal-list{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  width:100%;
-}
-.journal-card{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: var(--shadow);
-  display: grid;
-  grid-template-columns: 1fr auto; /* text + menu */
-  gap: 8px;
-  overflow-wrap: anywhere;       /* long words/links won't cause horizontal scroll */
-  word-break: break-word;
-}
-.journal-card .meta{
-  display:flex;
-  flex-wrap: wrap;
-  gap:8px;
-  color: var(--muted);
-  font-size: .95rem;
-}
-.journal-card .title{
-  font-weight: 600;
-}
-.journal-card .text{
-  grid-column: 1 / -1;
-  line-height: 1.5;
-}
-.journal-card .menu-btn{
-  justify-self: end;
-  border: 1px solid var(--border);
-  background: transparent;
-  border-radius: 10px;
-  padding: 6px 10px;
-}
-.content{ overflow-x: hidden; } /* never horizontal scroll */
-/* Mobile: keep same stacking */
-@media (max-width: 720px){
-  .journal-card{ grid-template-columns: 1fr auto; }
-}
-
-/* --- Link / Mail icon badges inside journal/expenses text --- */
-
-
-
-
-/* --- Blue link/mail chips --- */
-:root{ --link-blue:#1a73e8; }
-
-
-
-
-
-
-/* === Override: link/mail display as blue icons only === */
-
-
-
-
-
-
-:root { --link-blue: #1a73e8; }
-
-
-
-
-
-
-/* === Link/Mail icons: emoji-only, blue (requested) === */
-:root{ --link-blue: #1a73e8; }
-
-
-
-
-/* === Single source of truth: link/mail icons === */
-:root{ --link-blue: #1a73e8; }
-.link-icon, .mail-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:26px; height:26px; /* bigger icon */
-  margin: 0 6px;
-  text-decoration:none;
-  background: transparent;
-  border:none;
-  box-shadow:none;
-  color: var(--link-blue);
-}
-
-.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
-
-/* Force link icon as blue SVG (not emoji) */
-.link-icon{
-  color:#1a73e8 !important;
-}
-
-
-/* Force blue link icon and 50% larger size */
-.link-icon{
-  width:30px !important;
-  height:30px !important;
-}
-.link-icon::before{
-  content:'';
-  display:inline-block;
-  width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1
-/* === MAP TOGGLE COLORS — FINAL === */
-/* אדום = בזבזתי (Spent), ירוק = טיילתי (Visited) */
-#btnToggleSpent{ border-color: var(--danger) !important; color: var(--danger) !important; }
-#btnToggleSpent.active{ background: var(--danger) !important; color:#fff !important; border-color: var(--danger) !important; }
-#btnToggleVisited{ border-color: var(--ok) !important; color: var(--ok) !important; }
-#btnToggleVisited.active{ background: var(--ok) !important; color:#111 !important; border-color: var(--ok) !important; }
