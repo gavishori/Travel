@@ -1,6 +1,13 @@
 // Unified Firebase wrapper exposing the exact names script.js expects.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, setPersistence, signInWithEmailAndPassword, signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
   setLogLevel,
@@ -38,14 +45,7 @@ export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, e
 setLogLevel("error");
 
 // --- AUTH ---
-export \1
-// ---- Persistence (mobile-safe) ----
-try{
-  await setPersistence(auth, browserLocalPersistence);
-}catch(e){
-  try{ await setPersistence(auth, browserSessionPersistence); }catch(_){}
-}
-
+export const auth = getAuth(app);
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);

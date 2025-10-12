@@ -3227,29 +3227,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-// --- Hard Sign Out utility: clears Firebase caches on mobile ---
-async function hardSignOut(){
-  try{
-    if (window.FB && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-    else if (window.auth && auth.signOut){ await auth.signOut(); }
-  }catch(e){ console.warn('signOut error', e); }
-  try{ localStorage.clear(); }catch(_){}
-  try{ sessionStorage.clear(); }catch(_){}
-  const dbs = ['firebaseLocalStorageDb','firebase-heartbeat-database','firebase-installations-database'];
-  try{
-    if (indexedDB && typeof indexedDB.deleteDatabase === 'function'){
-      if (indexedDB.databases){
-        const list = await indexedDB.databases();
-        for (const d of list){
-          if (d && d.name && (dbs.includes(d.name) || d.name.startsWith('firebase'))){
-            try{ indexedDB.deleteDatabase(d.name); }catch(_){}
-          }
-        }
-      }else{
-        dbs.forEach(n=>{ try{ indexedDB.deleteDatabase(n); }catch(_){} });
-      }
-    }
-  }catch(_){}
-  setTimeout(()=>location.replace(location.pathname), 250);
-}
