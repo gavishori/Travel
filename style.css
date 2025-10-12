@@ -1181,10 +1181,24 @@ body.modal-open { overflow: hidden; }
 /* === MOBILE POLISH: Expenses + Journal (final) === */
 @media (max-width: 900px){
   /* 0) Global no-horizontal-scroll + gutters */
-  html, body{ width:100vw !important; max-width:100vw !important; overflow-x:hidden !important; }
+  html, body{ 
+    width:100vw !important; 
+    max-width:100vw !important; 
+    overflow-x:hidden !important; /* זה התיקון המוחלט*/
+  }
   *, *::before, *::after{ box-sizing:border-box; }
-  #app, .app, .container, .page, .view, .wrapper, .content{ width:100% !important; max-width:100vw !important; margin-inline:auto !important; }
+  /* הוספת הכללים האלה לכפיית רוחב 100% על כל הקונטיינרים הראשיים */
+  #app, .app, .container, .page, .view, .wrapper, .content, header { 
+    width:100% !important; 
+    max-width:100vw !important; 
+    margin-inline:auto !important; 
+    padding-inline: 0 !important; /* לוודא שהפדינג של ה-content לא יוצר רוחב מיותר */
+    overflow-x: hidden !important; /* כיבוי גלילה נוספת על קונטיינרים אלה */
+  }
+
   /* Consistent side gutters */
+  /* מחזירים את הפאדינג לרכיבי התוכן עצמם */
+  .content, .sidebar{ padding-inline:16px !important; }
   .expenses-table-container, #view-journal .expenses-table-container{ padding-inline:12px !important; }
 
   /* 1) EXPENSES: kill sideways drifting */
