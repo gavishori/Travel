@@ -2859,7 +2859,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const out = document.getElementById('btnLogout');
   if(out && !out.dataset.wired){
     out.dataset.wired='1';
-    out.addEventListener('click', async (e)=>{ e.stopPropagation();
+    out.addEventListener('click', async (e)=>{
       try{
         e.preventDefault();
         if (typeof FB !== 'undefined' && FB?.signOut) { await FB.signOut(FB.auth); }
@@ -2872,6 +2872,48 @@ document.addEventListener('DOMContentLoaded', ()=>{
 function safeHide(el){ if(el){ el.hidden = true; } }
 function safeShow(el){ if(el){ el.hidden = false; } }
 
+
+
+// --- Harden logout on mobile (delegated + touch + long-press fallback) ---
+(function(){
+  const runLogout = async (ev)=>{
+    try{
+      if(ev){ try{ ev.preventDefault(); ev.stopPropagation(); }catch(_e){} }
+      if (typeof FB !== 'undefined' && typeof FB.signOut === 'function' && FB.auth){
+        await FB.signOut(FB.auth);
+      } else if (typeof signOutUser === 'function'){ 
+        await signOutUser();
+      } else if (typeof FB?.auth?.signOut === 'function'){
+        await FB.auth.signOut();
+      }
+    }catch(err){ console.error('logout failed (hardened)', err); }
+    try{ document.getElementById('userMenuList')?.classList.remove('open'); }catch(_e){}
+  };
+
+  // Delegate: any click/touch on #btnLogout
+  document.addEventListener('click', (e)=>{
+    const t = e.target;
+    if(t && (t.id === 'btnLogout' || t.closest?.('#btnLogout'))){ runLogout(e); }
+  }, true);
+  document.addEventListener('touchend', (e)=>{
+    const t = e.target;
+    if(t && (t.id === 'btnLogout' || t.closest?.('#btnLogout'))){ runLogout(e); }
+  }, {passive:false, capture:true});
+
+  // Long-press on the user badge = logout (2s)
+  let lpTimer = null;
+  const badge = document.getElementById('userBadge') || document.getElementById('currentUserEmail');
+  if(badge){
+    const start = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_e){} lpTimer = setTimeout(()=> runLogout(e), 2000); };
+    const cancel = ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+    badge.addEventListener('pointerdown', start);
+    badge.addEventListener('pointerup', cancel);
+    badge.addEventListener('pointerleave', cancel);
+    badge.addEventListener('touchstart', start, {passive:false});
+    badge.addEventListener('touchend', cancel);
+  }
+})();
+// --- end harden logout ---
 
 // === SAFE OVERRIDES: maps (placed at end to override corrupted earlier versions) ===
 window.initMiniMap = function(t){
@@ -3197,10 +3239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
 
   // User badge menu
-  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); userMenu?.setAttribute('aria-hidden', String(!userMenu?.classList.contains('open'))); });
-  // Ensure taps inside the menu don't close it immediately on mobile
-  userMenu?.addEventListener('click', (e)=> e.stopPropagation());
-  userBadge?.addEventListener('pointerdown', (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_e){} userMenu?.classList.toggle('open'); userMenu?.setAttribute('aria-hidden', String(!userMenu?.classList.contains('open'))); });
+  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
 
 // -- Mobile support: open user menu on touch as well
 try{
@@ -3211,11 +3250,11 @@ try{
     const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       if(__um){ __um.classList.toggle('open'); }
     };
-    __ub.addEventListener('touchend', (e)=>{ window.__lastUserBadgeTouch = Date.now(); openMenu(e); }, {passive:false});
+    __ub.addEventListener('touchend', openMenu, {passive:false});
   }
 }catch(_){}
 
-  document.addEventListener('click', (ev)=>{ if(window.__lastUserBadgeTouch && Date.now() - window.__lastUserBadgeTouch < 400){ ev.stopPropagation(); ev.preventDefault(); return; } userMenu?.classList.remove('open'); userMenu?.setAttribute('aria-hidden','true'); });
+  document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
   primary?.addEventListener('click', async ()=> {
