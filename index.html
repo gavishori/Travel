@@ -38,7 +38,9 @@
 
       <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
       <span id="userBadge" class="muted" style="display:none"></span>
-    </header>
+    
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
 
     
 <div id="loginScreen" class="login-screen">
@@ -255,7 +257,9 @@
       <button class="tab-btn" data-tab="signupTab">הרשמה</button>
       <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
     </nav>
-  </header>
+  
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
   <div class="body">
     <section id="loginTab" class="tab-panel">
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
@@ -280,7 +284,9 @@
 
 
   <dialog id="tripModal" class="modal">
-    <header><strong>נסיעה חדשה</strong></header>
+    <header><strong>נסיעה חדשה</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
     <div class="body">
       <label>יעד<input id="tripDest" class="input"/></label>
       <div class="row"><label>תאריך התחלה<input type="date" id="tripStart" class="input"></label><label>תאריך סיום<input type="date" id="tripEnd" class="input"></label></div>
@@ -293,7 +299,9 @@
 
   <dialog
 id="expenseModal" class="modal">
-    <header><strong>הוצאה</strong></header>
+    <header><strong>הוצאה</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
     <div class="body">
       <label>תיאור<textarea id="expDesc" class="input auto-resize" rows="4" placeholder="כתוב תיאור ההוצאה..."></textarea></label>
       <label>קטגוריה
@@ -329,7 +337,9 @@ id="expenseModal" class="modal">
 
 
 <dialog id="rowMenuModal" class="modal">
-  <header><strong>פעולות</strong></header>
+  <header><strong>פעולות</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
   <div class="body"><p class="muted">בחר פעולה עבור הפריט.</p></div>
   <div class="footer">
     <button id="rowMenuEdit" class="btn">ערוך</button>
@@ -340,7 +350,9 @@ id="expenseModal" class="modal">
 
 
   <dialog id="journalModal" class="modal">
-    <header><strong>רישום יומן</strong></header>
+    <header><strong>רישום יומן</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
     <div class="body">
       <label>תיאור<textarea id="jrText" class="input auto-resize"></textarea></label>
       <div class="row location-row">
@@ -361,7 +373,9 @@ id="expenseModal" class="modal">
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <dialog id="unsavedChangesModal" class="modal">
-    <header><strong>שינויים שלא נשמרו</strong></header>
+    <header><strong>שינויים שלא נשמרו</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
     <div class="body">
         <p>ישנם שינויים שלא נשמרו. האם תרצה לשמור אותם לפני שאתה עוזב את הדף?</p>
     </div>
@@ -373,7 +387,9 @@ id="expenseModal" class="modal">
   </dialog>
   
   <dialog id="mapSelectModal" class="modal">
-    <header><strong>בחר מיקום על המפה</strong></header>
+    <header><strong>בחר מיקום על המפה</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
     <div class="body">
       <div id="selectMap" class="leaflet-container" style="height:350px"></div>
     </div>
@@ -389,7 +405,9 @@ id="expenseModal" class="modal">
   <script type="module" src="./script.js"></script>
 
 <dialog id="confirmDeleteModal" class="modal">
-  <header><strong>לאשר מחיקה?</strong></header>
+  <header><strong>לאשר מחיקה?</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
   <div class="body"><p>האם אתה בטוח שברצונך למחוק? הפעולה אינה ניתנת לביטול.</p></div>
   <div class="footer">
     <button id="confirmDeleteYes" class="btn danger">מחק</button>
@@ -397,7 +415,9 @@ id="expenseModal" class="modal">
   </div>
 </dialog>
 <dialog id="filterModal" class="modal">
-  <header><strong>סינון הוצאות</strong></header>
+  <header><strong>סינון הוצאות</strong>
+<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
+</header>
   <div class="body">
     <label>קטגוריית הוצאה
       <select id="filterCat" class="input"></select>

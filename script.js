@@ -2873,48 +2873,6 @@ function safeHide(el){ if(el){ el.hidden = true; } }
 function safeShow(el){ if(el){ el.hidden = false; } }
 
 
-
-// --- Harden logout on mobile (delegated + touch + long-press fallback) ---
-(function(){
-  const runLogout = async (ev)=>{
-    try{
-      if(ev){ try{ ev.preventDefault(); ev.stopPropagation(); }catch(_e){} }
-      if (typeof FB !== 'undefined' && typeof FB.signOut === 'function' && FB.auth){
-        await FB.signOut(FB.auth);
-      } else if (typeof signOutUser === 'function'){ 
-        await signOutUser();
-      } else if (typeof FB?.auth?.signOut === 'function'){
-        await FB.auth.signOut();
-      }
-    }catch(err){ console.error('logout failed (hardened)', err); }
-    try{ document.getElementById('userMenuList')?.classList.remove('open'); }catch(_e){}
-  };
-
-  // Delegate: any click/touch on #btnLogout
-  document.addEventListener('click', (e)=>{
-    const t = e.target;
-    if(t && (((t.id === 'btnLogout' || t.closest?.('#btnLogout') || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')) || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')))){ runLogout(e); }
-  }, true);
-  document.addEventListener('touchend', (e)=>{
-    const t = e.target;
-    if(t && (((t.id === 'btnLogout' || t.closest?.('#btnLogout') || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')) || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')))){ runLogout(e); }
-  }, {passive:false, capture:true});
-
-  // Long-press on the user badge = logout (2s)
-  let lpTimer = null;
-  const badge = document.getElementById('userBadge') || document.getElementById('currentUserEmail');
-  if(badge){
-    const start = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_e){} lpTimer = setTimeout(()=> runLogout(e), 2000); };
-    const cancel = ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
-    badge.addEventListener('pointerdown', start);
-    badge.addEventListener('pointerup', cancel);
-    badge.addEventListener('pointerleave', cancel);
-    badge.addEventListener('touchstart', start, {passive:false});
-    badge.addEventListener('touchend', cancel);
-  }
-})();
-// --- end harden logout ---
-
 // === SAFE OVERRIDES: maps (placed at end to override corrupted earlier versions) ===
 window.initMiniMap = function(t){
   try{
@@ -3284,13 +3242,23 @@ try{
 });
 
 
+// Mobile logout button hookup
 document.addEventListener('DOMContentLoaded', ()=>{
-  try{ document.getElementById('btnLogoutMobile').style.display = 'none'; }catch(e){}
+  const mob = document.getElementById('btnLogoutMobile');
+  const setVis = (user)=>{ if(mob){ mob.style.display = user ? 'inline-flex' : 'none'; } };
   try{
     if(typeof FB!=='undefined' && FB.onAuthStateChanged){
-      FB.onAuthStateChanged(FB.auth, (user)=>{
-        try{ document.getElementById('btnLogoutMobile').style.display = user ? 'inline-flex' : 'none'; }catch(_e){}
-      });
+      FB.onAuthStateChanged(FB.auth, (user)=> setVis(user));
     }
   }catch(e){}
+  const runLogout = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('logout mobile failed', err); }
+  };
+  mob?.addEventListener('click', runLogout, {passive:false});
+  mob?.addEventListener('touchend', runLogout, {passive:false});
 });
