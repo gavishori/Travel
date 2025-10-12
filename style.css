@@ -1237,3 +1237,9 @@ html, body { overflow-x:hidden; }
   #view-meta .budget-row label{ width:100%; }
 
 }
+
+/* Mobile-only logout button */
+.btn-logout-mobile{ display:none; }
+@media (max-width: 768px){
+  .btn-logout-mobile{ display:inline-flex; align-items:center; gap:.4rem; padding:.55rem .8rem; font-weight:600; z-index:9999; }
+}

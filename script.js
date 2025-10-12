@@ -2893,11 +2893,11 @@ function safeShow(el){ if(el){ el.hidden = false; } }
   // Delegate: any click/touch on #btnLogout
   document.addEventListener('click', (e)=>{
     const t = e.target;
-    if(t && (t.id === 'btnLogout' || t.closest?.('#btnLogout'))){ runLogout(e); }
+    if(t && (((t.id === 'btnLogout' || t.closest?.('#btnLogout') || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')) || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')))){ runLogout(e); }
   }, true);
   document.addEventListener('touchend', (e)=>{
     const t = e.target;
-    if(t && (t.id === 'btnLogout' || t.closest?.('#btnLogout'))){ runLogout(e); }
+    if(t && (((t.id === 'btnLogout' || t.closest?.('#btnLogout') || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')) || t.id === 'btnLogoutMobile' || t.closest?.('#btnLogoutMobile')))){ runLogout(e); }
   }, {passive:false, capture:true});
 
   // Long-press on the user badge = logout (2s)
@@ -3283,3 +3283,14 @@ try{
   });
 });
 
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  try{ document.getElementById('btnLogoutMobile').style.display = 'none'; }catch(e){}
+  try{
+    if(typeof FB!=='undefined' && FB.onAuthStateChanged){
+      FB.onAuthStateChanged(FB.auth, (user)=>{
+        try{ document.getElementById('btnLogoutMobile').style.display = user ? 'inline-flex' : 'none'; }catch(_e){}
+      });
+    }
+  }catch(e){}
+});
