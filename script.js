@@ -3198,6 +3198,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
+
+// -- Mobile support: open user menu on touch as well
+try{
+  const __ub = document.getElementById('userBadge');
+  const __um = document.getElementById('userMenuList');
+  if(__ub && !__ub.dataset.touchFix){
+    __ub.dataset.touchFix = '1';
+    const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      if(__um){ __um.classList.toggle('open'); }
+    };
+    __ub.addEventListener('touchend', openMenu, {passive:false});
+  }
+}catch(_){}
+
   document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
@@ -3227,30 +3241,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-// === Mobile Logout Fix: force hardSignOut on #btnLogout (click + touch) ===
-document.addEventListener('DOMContentLoaded', ()=>{
-  const out = document.getElementById('btnLogout');
-  if (out && !out.dataset.mobileFix){
-    out.dataset.mobileFix = '1';
-    const doLogout = async (e)=>{
-      if (e) { try{ e.preventDefault(); e.stopPropagation(); }catch(_){}}      
-      try{
-        if (typeof hardSignOut === 'function'){
-          await hardSignOut();
-          return;
-        }
-      }catch(_){}
-      // Fallback if hardSignOut not present
-      try{
-        if (window.FB && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-        else if (window.auth && auth.signOut){ await auth.signOut(); }
-      }catch(_){}
-      try{ localStorage.clear(); }catch(_){}
-      try{ sessionStorage.clear(); }catch(_){}
-      try{ if (indexedDB && indexedDB.deleteDatabase){ indexedDB.deleteDatabase('firebaseLocalStorageDb'); } }catch(_){}
-      setTimeout(()=>location.reload(), 200);
-    };
-    ['click','touchend'].forEach(ev=> out.addEventListener(ev, doLogout, {passive:false}));
-  }
-});
