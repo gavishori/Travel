@@ -3227,3 +3227,37 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+// --- Delete Account wiring ---
+(function(){
+  const del = document.getElementById('btnDeleteAccount');
+  if (del && !del.dataset.wired){
+    del.dataset.wired = '1';
+    del.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      if (!confirm('למחוק לצמיתות את המשתמש הנוכחי? פעולה זו בלתי הפיכה.')) return;
+      try{
+        const user = (window.FB && FB.auth && FB.auth.currentUser) ? FB.auth.currentUser : (window.auth && auth.currentUser);
+        if (!user) throw new Error('אין משתמש מחובר');
+        if (window.FB && typeof FB.deleteUser === 'function'){
+          await FB.deleteUser(user);
+        }else if (window.firebase && firebase.auth && firebase.auth().currentUser){
+          await firebase.auth().currentUser.delete();
+        }else{
+          throw new Error('API למחיקת משתמש לא זמין בדפדפן זה');
+        }
+        alert('המשתמש נמחק. ניתן להתחבר למשתמש אחר.');
+        // after delete, reload to show login screen
+        location.reload();
+      }catch(err){
+        const code = err && (err.code || err.message || String(err));
+        if (String(code).includes('requires-recent-login')){
+          alert('כדי למחוק חשבון צריך להתחבר מחדש: התנתק/י, התחבר/י שוב ואז מחק/י.');
+        }else{
+          alert('מחיקה נכשלה: ' + (err && (err.message || String(err))));
+          console.error(err);
+        }
+      }
+    });
+  }
+})();
