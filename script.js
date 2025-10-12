@@ -2859,7 +2859,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const out = document.getElementById('btnLogout');
   if(out && !out.dataset.wired){
     out.dataset.wired='1';
-    out.addEventListener('click', async (e)=>{
+    out.addEventListener('click', async (e)=>{ e.stopPropagation();
       try{
         e.preventDefault();
         if (typeof FB !== 'undefined' && FB?.signOut) { await FB.signOut(FB.auth); }
@@ -3197,7 +3197,10 @@ document.addEventListener('DOMContentLoaded', () => {
   btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
 
   // User badge menu
-  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
+  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); userMenu?.setAttribute('aria-hidden', String(!userMenu?.classList.contains('open'))); });
+  // Ensure taps inside the menu don't close it immediately on mobile
+  userMenu?.addEventListener('click', (e)=> e.stopPropagation());
+  userBadge?.addEventListener('pointerdown', (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_e){} userMenu?.classList.toggle('open'); userMenu?.setAttribute('aria-hidden', String(!userMenu?.classList.contains('open'))); });
 
 // -- Mobile support: open user menu on touch as well
 try{
@@ -3208,11 +3211,11 @@ try{
     const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       if(__um){ __um.classList.toggle('open'); }
     };
-    __ub.addEventListener('touchend', openMenu, {passive:false});
+    __ub.addEventListener('touchend', (e)=>{ window.__lastUserBadgeTouch = Date.now(); openMenu(e); }, {passive:false});
   }
 }catch(_){}
 
-  document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
+  document.addEventListener('click', (ev)=>{ if(window.__lastUserBadgeTouch && Date.now() - window.__lastUserBadgeTouch < 400){ ev.stopPropagation(); ev.preventDefault(); return; } userMenu?.classList.remove('open'); userMenu?.setAttribute('aria-hidden','true'); });
 
   // Primary action per tab
   primary?.addEventListener('click', async ()=> {
