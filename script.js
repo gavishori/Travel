@@ -3261,3 +3261,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 })();
+
+
+// === Mobile Switch User FAB ===
+(function(){
+  const btn = document.getElementById('btnSwitchUser');
+  function isMobile(){ return window.matchMedia && window.matchMedia('(max-width: 768px)').matches; }
+  async function doSignOut(){
+    try{
+      if (window.FB && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if (window.auth && auth.signOut){ await auth.signOut(); }
+      // clear any local app state that may block UI
+      try{ localStorage.clear(); sessionStorage.clear(); }catch(_){}
+      // Small delay to ensure Firebase state settles
+      setTimeout(()=>location.reload(), 200);
+    }catch(e){
+      alert('לא הצלחתי להתנתק.')
+      console.error(e);
+    }
+  }
+  if (btn){
+    // click handler
+    if (!btn.dataset.wired){
+      btn.dataset.wired='1';
+      btn.addEventListener('click', doSignOut);
+    }
+    // observe auth state to toggle
+    const attach = ()=>{
+      try{
+        // If FB exposes onAuthStateChanged, use it
+        if (window.FB && FB.onAuthStateChanged){
+          FB.onAuthStateChanged(FB.auth, (u)=>{
+            btn.style.display = (u && isMobile()) ? 'block' : 'none';
+          });
+        }else if (window.firebase && firebase.auth){
+          firebase.auth().onAuthStateChanged((u)=>{
+            btn.style.display = (u && isMobile()) ? 'block' : 'none';
+          });
+        }else{
+          // Fallback: show if mobile
+          btn.style.display = isMobile() ? 'block' : 'none';
+        }
+      }catch(e){
+        console.warn('Auth observer failed', e);
+      }
+    };
+    attach();
+    // also re-evaluate on resize/orientation
+    window.addEventListener('resize', ()=>{
+      const isShown = btn.style.display !== 'none';
+      if (isShown && !isMobile()) btn.style.display='none';
+    });
+  }
+})();
