@@ -3228,89 +3228,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- Delete Account wiring ---
-(function(){
-  const del = document.getElementById('btnDeleteAccount');
-  if (del && !del.dataset.wired){
-    del.dataset.wired = '1';
-    del.addEventListener('click', async (e)=>{
-      e.preventDefault();
-      if (!confirm('למחוק לצמיתות את המשתמש הנוכחי? פעולה זו בלתי הפיכה.')) return;
-      try{
-        const user = (window.FB && FB.auth && FB.auth.currentUser) ? FB.auth.currentUser : (window.auth && auth.currentUser);
-        if (!user) throw new Error('אין משתמש מחובר');
-        if (window.FB && typeof FB.deleteUser === 'function'){
-          await FB.deleteUser(user);
-        }else if (window.firebase && firebase.auth && firebase.auth().currentUser){
-          await firebase.auth().currentUser.delete();
-        }else{
-          throw new Error('API למחיקת משתמש לא זמין בדפדפן זה');
+// --- Hard Sign Out utility: clears Firebase caches on mobile ---
+async function hardSignOut(){
+  try{
+    if (window.FB && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+    else if (window.auth && auth.signOut){ await auth.signOut(); }
+  }catch(e){ console.warn('signOut error', e); }
+  try{ localStorage.clear(); }catch(_){}
+  try{ sessionStorage.clear(); }catch(_){}
+  const dbs = ['firebaseLocalStorageDb','firebase-heartbeat-database','firebase-installations-database'];
+  try{
+    if (indexedDB && typeof indexedDB.deleteDatabase === 'function'){
+      if (indexedDB.databases){
+        const list = await indexedDB.databases();
+        for (const d of list){
+          if (d && d.name && (dbs.includes(d.name) || d.name.startsWith('firebase'))){
+            try{ indexedDB.deleteDatabase(d.name); }catch(_){}
+          }
         }
-        alert('המשתמש נמחק. ניתן להתחבר למשתמש אחר.');
-        // after delete, reload to show login screen
-        location.reload();
-      }catch(err){
-        const code = err && (err.code || err.message || String(err));
-        if (String(code).includes('requires-recent-login')){
-          alert('כדי למחוק חשבון צריך להתחבר מחדש: התנתק/י, התחבר/י שוב ואז מחק/י.');
-        }else{
-          alert('מחיקה נכשלה: ' + (err && (err.message || String(err))));
-          console.error(err);
-        }
+      }else{
+        dbs.forEach(n=>{ try{ indexedDB.deleteDatabase(n); }catch(_){} });
       }
-    });
-  }
-})();
-
-
-// === Mobile Switch User FAB ===
-(function(){
-  const btn = document.getElementById('btnSwitchUser');
-  function isMobile(){ return window.matchMedia && window.matchMedia('(max-width: 768px)').matches; }
-  async function doSignOut(){
-    try{
-      if (window.FB && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if (window.auth && auth.signOut){ await auth.signOut(); }
-      // clear any local app state that may block UI
-      try{ localStorage.clear(); sessionStorage.clear(); }catch(_){}
-      // Small delay to ensure Firebase state settles
-      setTimeout(()=>location.reload(), 200);
-    }catch(e){
-      alert('לא הצלחתי להתנתק.')
-      console.error(e);
     }
-  }
-  if (btn){
-    // click handler
-    if (!btn.dataset.wired){
-      btn.dataset.wired='1';
-      btn.addEventListener('click', doSignOut);
-    }
-    // observe auth state to toggle
-    const attach = ()=>{
-      try{
-        // If FB exposes onAuthStateChanged, use it
-        if (window.FB && FB.onAuthStateChanged){
-          FB.onAuthStateChanged(FB.auth, (u)=>{
-            btn.style.display = (u && isMobile()) ? 'block' : 'none';
-          });
-        }else if (window.firebase && firebase.auth){
-          firebase.auth().onAuthStateChanged((u)=>{
-            btn.style.display = (u && isMobile()) ? 'block' : 'none';
-          });
-        }else{
-          // Fallback: show if mobile
-          btn.style.display = isMobile() ? 'block' : 'none';
-        }
-      }catch(e){
-        console.warn('Auth observer failed', e);
-      }
-    };
-    attach();
-    // also re-evaluate on resize/orientation
-    window.addEventListener('resize', ()=>{
-      const isShown = btn.style.display !== 'none';
-      if (isShown && !isMobile()) btn.style.display='none';
-    });
-  }
-})();
+  }catch(_){}
+  setTimeout(()=>location.replace(location.pathname), 250);
+}
