@@ -258,7 +258,7 @@ function switchToTab(tab){
       const v = document.querySelector('#view-'+tab);
       if(v) v.hidden = false;
     }
-    if(tab==='map') setTimeout(initBigMap,50);
+    if(tab==='map'){ setTimeout(()=>{ try{ initBigMap(); if(window.bigMap){ window.bigMap.invalidateSize?.(); } }catch(e){} }, 50);}
 /* patched switchToTab */
 try{
   const views = document.querySelectorAll('.tabview');
@@ -3216,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
 
   // User badge menu
-  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
+  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); if(userMenu){ userMenu.classList.toggle('open'); userMenu.style.display = userMenu.classList.contains('open') ? 'block' : 'none'; }});
   document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
