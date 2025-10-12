@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>FLYMILY — מנהל נסיעות</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -312,7 +312,7 @@ id="expenseModal" class="modal">
           <option>אחר</option>
         </select>
       </label>
-      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
+      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" type="tel" step="0.01" style="font-size:16px"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
       <div class="row location-row">
         <label>מיקום<input id="expLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
