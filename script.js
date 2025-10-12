@@ -1,3 +1,38 @@
+
+// === Auth Button Toggle (Login <-> Logout) ===
+function wireAuthPrimaryButton(){
+  const btn = document.getElementById('btnLogin'); // header primary button
+  if(!btn) return;
+  if(btn.dataset.authWired==='1') return;
+  btn.dataset.authWired='1';
+  const doLogout = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('primary logout failed', err); }
+  };
+  // Swap handlers on auth changes
+  window.__authPrimarySwap = (loggedIn)=>{
+    const old = document.getElementById('btnLogin');
+    if(!old) return;
+    const clone = old.cloneNode(true);
+    old.parentNode.replaceChild(clone, old);
+    const target = document.getElementById('btnLogin');
+    if(!target) return;
+    if(loggedIn){
+      target.textContent = 'ניתוק';
+      target.classList.add('danger');
+      target.addEventListener('click', doLogout, {passive:false});
+    } else {
+      target.textContent = 'התחברות';
+      target.classList.remove('danger');
+    }
+  };
+}
+document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
