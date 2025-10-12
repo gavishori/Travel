@@ -971,4 +971,575 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   .journal-card{ grid-template-columns: 1fr auto; }
 }
 
-/* explicit text link used when a journal
+/* --- Link / Mail icon badges inside journal/expenses text --- */
+
+
+
+
+/* --- Blue link/mail chips --- */
+:root{ --link-blue:#1a73e8; }
+
+
+
+
+
+
+/* === Override: link/mail display as blue icons only === */
+
+
+
+
+
+
+:root { --link-blue: #1a73e8; }
+
+
+
+
+
+
+/* === Link/Mail icons: emoji-only, blue (requested) === */
+:root{ --link-blue: #1a73e8; }
+
+
+
+
+/* === Single source of truth: link/mail icons === */
+:root{ --link-blue: #1a73e8; }
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px; height:26px; /* bigger icon */
+  margin: 0 6px;
+  text-decoration:none;
+  background: transparent;
+  border:none;
+  box-shadow:none;
+  color: var(--link-blue);
+}
+
+.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
+
+/* Force link icon as blue SVG (not emoji) */
+.link-icon{
+  color:#1a73e8 !important;
+}
+
+
+/* Force blue link icon and 50% larger size */
+.link-icon{
+  width:30px !important;
+  height:30px !important;
+}
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+/* --- Align link/mail icons with text baseline --- */
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align: middle;   /* center on line box */
+  line-height: 1;           /* avoid extra ascent */
+  position: relative;
+  top: -1px;                 /* nudge down a touch for optical alignment */
+}
+.link-icon::before, .mail-icon::before{
+  display:block;            /* no inline extra baseline */
+}
+
+/* Make yellow mark clickable */
+.hl-pill, .hl-pill mark{ cursor: pointer; }
+
+
+/* === Expenses table (custom) === */
+#view-expenses .expenses-table-container{ overflow-x:auto; }
+#view-expenses .expenses-table{ width:100%; border-collapse:separate; border-spacing:0; direction:rtl; }
+#view-expenses .expenses-table th, #view-expenses .expenses-table td{ border-bottom:1px solid var(--border); padding:10px; text-align:right; }
+#view-expenses .expenses-table th{ background:var(--card); position:sticky; top:0; z-index:1; }
+#view-expenses .expenses-table th.narrow{ width:56px; }
+
+
+/* === Stacked expenses layout === */
+#view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
+#view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
+#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
+#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
+#view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
+
+#view-expenses .expenses-table.stacked td.menu-cell{
+  width:56px; text-align:center;
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+#view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
+  inline-size: 36px; block-size: 32px; border-radius: 10px;
+}
+
+/* Balance widths when using 6 columns on first row */
+#view-expenses .expenses-table.stacked td.header.date,
+#view-expenses .expenses-table.stacked td.header.time,
+#view-expenses .expenses-table.stacked td.header.category,
+#view-expenses .expenses-table.stacked td.header.amount,
+#view-expenses .expenses-table.stacked td.header.currency { min-inline-size: 10ch; }
+#view-expenses .expenses-table.stacked td.menu-cell{ width:56px; text-align:center; }
+
+/* Dual amount display */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:600; margin-inline-start:.3ch; opacity:.9; }
+#view-expenses .expenses-table.stacked .amount .amt-ils{ font-size:.9em; margin-top:.2rem; }
+
+/* Amount + ILS split */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:700; margin-inline-end:.3ch; }
+#view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:600; }
+
+
+/* === One-line actions + budget bar === */
+#view-expenses .list-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  justify-content:space-between;
+  flex-wrap:nowrap;
+}
+#view-expenses .list-actions #expenseSummary{
+  margin-inline-start:auto;
+}
+#view-expenses .budget-bar{ flex-wrap:nowrap; }
+#view-expenses .budget-progress{ min-width:160px; }
+
+
+/* === Responsive: stack actions & budget on small screens === */
+@media (max-width: 720px){
+  #view-expenses .list-actions{
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .list-actions #expenseSummary{
+    order: 3;            /* push summary below buttons */
+    width: 100%;
+  }
+  #view-expenses .budget-bar{
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(33% - 10px);
+    min-width: 120px;
+  }
+  #view-expenses .budget-progress{
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+@media (max-width: 480px){
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(50% - 10px); /* two per row if very narrow */
+    min-width: 140px;
+  }
+}
+
+
+/* rate-line styling to match heading weight */
+.rate-line{display:flex;align-items:baseline;gap:.35rem;font-weight:800;color:#0B1320}
+.rate-line .rate-code{letter-spacing:.5px}
+.rate-line{direction:ltr;unicode-bidi:plaintext}
+
+.cell.header.amount .amt-sub{display:block!important}
+
+
+/* Amount sub-line: small, non-bold ILS rate under main amount */
+#view-expenses .expenses-table.stacked .amount .amt-sub{
+  margin-top: .25rem;
+  font-size: .85em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+
+
+/* Left cell now shows converted ILS total */
+#view-expenses .expenses-table .converted-ils{
+  font-weight: 500;
+}
+
+
+#view-expenses .expenses-table .currency .ils-total{font-weight:600;}
+
+
+/* --- Journal adopts the stacked expenses visual --- */
+.journal-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  width:100%;
+}
+.journal-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1fr auto; /* text + menu */
+  gap: 8px;
+  overflow-wrap: anywhere;       /* long words/links won't cause horizontal scroll */
+  word-break: break-word;
+}
+.journal-card .meta{
+  display:flex;
+  flex-wrap: wrap;
+  gap:8px;
+  color: var(--muted);
+  font-size: .95rem;
+}
+.journal-card .title{
+  font-weight: 600;
+}
+.journal-card .text{
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+.journal-card .menu-btn{
+  justify-self: end;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.content{ overflow-x: hidden; } /* never horizontal scroll */
+/* Mobile: keep same stacking */
+@media (max-width: 720px){
+  .journal-card{ grid-template-columns: 1fr auto; }
+}
+
+/* --- Link / Mail icon badges inside journal/expenses text --- */
+
+
+
+
+/* --- Blue link/mail chips --- */
+:root{ --link-blue:#1a73e8; }
+
+
+
+
+
+
+/* === Override: link/mail display as blue icons only === */
+
+
+
+
+
+
+:root { --link-blue: #1a73e8; }
+
+
+
+
+
+
+/* === Link/Mail icons: emoji-only, blue (requested) === */
+:root{ --link-blue: #1a73e8; }
+
+
+
+
+/* === Single source of truth: link/mail icons === */
+:root{ --link-blue: #1a73e8; }
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px; height:26px; /* bigger icon */
+  margin: 0 6px;
+  text-decoration:none;
+  background: transparent;
+  border:none;
+  box-shadow:none;
+  color: var(--link-blue);
+}
+
+.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
+
+/* Force link icon as blue SVG (not emoji) */
+.link-icon{
+  color:#1a73e8 !important;
+}
+
+
+/* Force blue link icon and 50% larger size */
+.link-icon{
+  width:30px !important;
+  height:30px !important;
+}
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+/* --- Align link/mail icons with text baseline --- */
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align: middle;   /* center on line box */
+  line-height: 1;           /* avoid extra ascent */
+  position: relative;
+  top: -1px;                 /* nudge down a touch for optical alignment */
+}
+.link-icon::before, .mail-icon::before{
+  display:block;            /* no inline extra baseline */
+}
+
+/* Make yellow mark clickable */
+.hl-pill, .hl-pill mark{ cursor: pointer; }
+
+
+/* === Expenses table (custom) === */
+#view-expenses .expenses-table-container{ overflow-x:auto; }
+#view-expenses .expenses-table{ width:100%; border-collapse:separate; border-spacing:0; direction:rtl; }
+#view-expenses .expenses-table th, #view-expenses .expenses-table td{ border-bottom:1px solid var(--border); padding:10px; text-align:right; }
+#view-expenses .expenses-table th{ background:var(--card); position:sticky; top:0; z-index:1; }
+#view-expenses .expenses-table th.narrow{ width:56px; }
+
+
+/* === Stacked expenses layout === */
+#view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
+#view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
+#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
+#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
+#view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
+
+#view-expenses .expenses-table.stacked td.menu-cell{
+  width:56px; text-align:center;
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+#view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
+  inline-size: 36px; block-size: 32px; border-radius: 10px;
+}
+
+/* Balance widths when using 6 columns on first row */
+#view-expenses .expenses-table.stacked td.header.date,
+#view-expenses .expenses-table.stacked td.header.time,
+#view-expenses .expenses-table.stacked td.header.category,
+#view-expenses .expenses-table.stacked td.header.amount,
+#view-expenses .expenses-table.stacked td.header.currency { min-inline-size: 10ch; }
+#view-expenses .expenses-table.stacked td.menu-cell{ width:56px; text-align:center; }
+
+/* Dual amount display */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:600; margin-inline-start:.3ch; opacity:.9; }
+#view-expenses .expenses-table.stacked .amount .amt-ils{ font-size:.9em; margin-top:.2rem; }
+
+/* Amount + ILS split */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:700; margin-inline-end:.3ch; }
+#view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:600; }
+
+
+/* === One-line actions + budget bar === */
+#view-expenses .list-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  justify-content:space-between;
+  flex-wrap:nowrap;
+}
+#view-expenses .list-actions #expenseSummary{
+  margin-inline-start:auto;
+}
+#view-expenses .budget-bar{ flex-wrap:nowrap; }
+#view-expenses .budget-progress{ min-width:160px; }
+
+
+/* === Responsive: stack actions & budget on small screens === */
+@media (max-width: 720px){
+  #view-expenses .list-actions{
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .list-actions #expenseSummary{
+    order: 3;            /* push summary below buttons */
+    width: 100%;
+  }
+  #view-expenses .budget-bar{
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(33% - 10px);
+    min-width: 120px;
+  }
+  #view-expenses .budget-progress{
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+@media (max-width: 480px){
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(50% - 10px); /* two per row if very narrow */
+    min-width: 140px;
+  }
+}
+
+
+/* rate-line styling to match heading weight */
+.rate-line{display:flex;align-items:baseline;gap:.35rem;font-weight:800;color:#0B1320}
+.rate-line .rate-code{letter-spacing:.5px}
+.rate-line{direction:ltr;unicode-bidi:plaintext}
+
+.cell.header.amount .amt-sub{display:block!important}
+
+
+/* Amount sub-line: small, non-bold ILS rate under main amount */
+#view-expenses .expenses-table.stacked .amount .amt-sub{
+  margin-top: .25rem;
+  font-size: .85em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+
+
+/* Left cell now shows converted ILS total */
+#view-expenses .expenses-table .converted-ils{
+  font-weight: 500;
+}
+
+
+#view-expenses .expenses-table .currency .ils-total{font-weight:600;}
+
+
+/* --- Journal adopts the stacked expenses visual --- */
+.journal-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  width:100%;
+}
+.journal-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1fr auto; /* text + menu */
+  gap: 8px;
+  overflow-wrap: anywhere;       /* long words/links won't cause horizontal scroll */
+  word-break: break-word;
+}
+.journal-card .meta{
+  display:flex;
+  flex-wrap: wrap;
+  gap:8px;
+  color: var(--muted);
+  font-size: .95rem;
+}
+.journal-card .title{
+  font-weight: 600;
+}
+.journal-card .text{
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+.journal-card .menu-btn{
+  justify-self: end;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.content{ overflow-x: hidden; } /* never horizontal scroll */
+/* Mobile: keep same stacking */
+@media (max-width: 720px){
+  .journal-card{ grid-template-columns: 1fr auto; }
+}
+
+/* --- Link / Mail icon badges inside journal/expenses text --- */
+
+
+
+
+/* --- Blue link/mail chips --- */
+:root{ --link-blue:#1a73e8; }
+
+
+
+
+
+
+/* === Override: link/mail display as blue icons only === */
+
+
+
+
+
+
+:root { --link-blue: #1a73e8; }
+
+
+
+
+
+
+/* === Link/Mail icons: emoji-only, blue (requested) === */
+:root{ --link-blue: #1a73e8; }
+
+
+
+
+/* === Single source of truth: link/mail icons === */
+:root{ --link-blue: #1a73e8; }
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px; height:26px; /* bigger icon */
+  margin: 0 6px;
+  text-decoration:none;
+  background: transparent;
+  border:none;
+  box-shadow:none;
+  color: var(--link-blue);
+}
+
+.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
+
+/* Force link icon as blue SVG (not emoji) */
+.link-icon{
+  color:#1a73e8 !important;
+}
+
+
+/* Force blue link icon and 50% larger size */
+.link-icon{
+  width:30px !important;
+  height:30px !important;
+}
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1
