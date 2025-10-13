@@ -523,7 +523,6 @@ function initBigMap() {
       } else {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){ }
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
         state.maps.big.setView([32.0853,34.7818], 6);
       }
@@ -1716,7 +1715,6 @@ async function searchLocationByName(name, callback, isHebrew) {
     } else {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){ }
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       showToast('לא נמצא מיקום עבור השם הזה.');
     }
@@ -1745,7 +1743,6 @@ function openMapSelectModal(lat, lng) {
     } else {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){ }
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       state.maps.selectMarker = L.marker(e.latlng).addTo(state.maps.select);
     }
@@ -2209,7 +2206,6 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     if (user) {
       if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
       if(btnLogin) btnLogin.style.display='none';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){ }
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
       // User is logged in: Hide login, show app content
       if (loginScreen) loginScreen.style.display = 'none';
@@ -2219,12 +2215,9 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     } else {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){ }
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
       // User is logged out: Show login, hide app content
-      if (authModal && typeof authModal.showModal==='function') { try{ authModal.showModal(); }catch(e){ /* Safari fallback below */ } }
-      // Fallback for Safari/iOS: always show inline login screen on logout
-      if(loginScreen) loginScreen.style.display='grid'; // Show the login screen
+      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
       state.user = null;
     }
@@ -3278,7 +3271,7 @@ try{
 
   // Logout
   btnLogout?.addEventListener('click', async ()=> {
-    try { await FB.signOut(FB.auth); try{ (authModal && authModal.open) && authModal.close(); }catch(_){} try{ document.getElementById('loginScreen').style.display='grid'; }catch(_){} } catch(e){}
+    try { await FB.signOut(FB.auth); } catch(e){}
     userMenu?.classList.remove('open');
   });
 });
@@ -3286,7 +3279,7 @@ try{
 
 // Mobile logout button hookup
 document.addEventListener('DOMContentLoaded', ()=>{
-  const mob = document.getElementById('btnLogoutMobileHeader');
+  const mob = document.getElementById('btnLogoutMobile');
   const setVis = (user)=>{ if(mob){ mob.style.display = user ? 'inline-flex' : 'none'; } };
   try{
     if(typeof FB!=='undefined' && FB.onAuthStateChanged){
