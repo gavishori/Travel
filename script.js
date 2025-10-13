@@ -3251,7 +3251,8 @@ try{
 
   // Primary action per tab
   if(primary){ try{ primary.setAttribute('type','button'); }catch(_){} }
-  const __authAction = async (e)=>{ try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){} ;
+  const __authAction = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
     try {
       if(active==='loginTab'){
         await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
@@ -3266,7 +3267,7 @@ try{
       const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
       if(target) target.textContent = e?.message || 'שגיאה';
     }
-  });
+  };
   // Secondary = cancel
   primary?.addEventListener('click', __authAction, {passive:false});
   primary?.addEventListener('touchend', __authAction, {passive:false});
@@ -3321,66 +3322,3 @@ try{
     }
   });
 }catch(_){}
-
-
-// ===== Mobile‑safe Auth Harness (QA hardening) =====
-(function(){
-  const q = (s)=> document.querySelector(s);
-  const byId = (id)=> document.getElementById(id);
-
-  function pickEmail(){
-    return (byId('emailLogin')?.value?.trim())
-        || (byId('lsEmail')?.value?.trim())
-        || (q('input[type="email"]')?.value?.trim())
-        || '';
-  }
-  function pickPass(){
-    return (byId('passwordLogin')?.value)
-        || (byId('lsPass')?.value)
-        || (q('input[type="password"]')?.value)
-        || '';
-  }
-
-  async function doLogin(e){
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try{
-      const email = pickEmail();
-      const pass  = pickPass();
-      if(!email || !pass){ (byId('lsError')||byId('authError')||{}).textContent = 'חסר אימייל/סיסמה'; return; }
-      await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-      try{ byId('authModal')?.close(); }catch(_){}
-      const c = byId('container'), ls = byId('loginScreen');
-      if(c) c.style.display = ''; if(ls) ls.style.display = 'none';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){}
-    }catch(err){
-      const msg = (err && (err.message || err.code)) || 'שגיאת התחברות';
-      (byId('lsError')||byId('authError')||{}).textContent = msg;
-    }
-  }
-
-  function wire(el){
-    if(!el || el.dataset.wired==='1') return;
-    el.dataset.wired='1';
-    el.setAttribute('type','button');
-    el.addEventListener('click', doLogin, {passive:false});
-    el.addEventListener('touchend', doLogin, {passive:false});
-    el.addEventListener('pointerup', doLogin, {passive:false});
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ['authLoginSubmit','authLoginInline'].forEach(id=> wire(byId(id)));
-    document.querySelectorAll('[data-role=\"auth-login\"]').forEach(wire);
-    if(!document.querySelector('[data-auth-wired=\"1\"]')){
-      document.querySelectorAll('button').forEach((b)=>{
-        if(/כניסה|Login/i.test(b.textContent||'')) wire(b);
-      });
-    }
-    try{
-      FB.onAuthStateChanged(FB.auth, (user)=>{
-        const c = byId('container'), ls = byId('loginScreen');
-        if(user){ if(c) c.style.display=''; if(ls) ls.style.display='none'; }
-        else    { if(c) c.style.display='none'; if(ls) ls.style.display='grid'; }
-      });
-    }catch(_){}
-  });
-})();
