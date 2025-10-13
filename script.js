@@ -620,6 +620,17 @@ state = {
 };
 
 const $ = sel => document.querySelector(sel);
+
+// Build ISO string from date+time inputs; returns null if incomplete/invalid.
+function isoFrom(dateSel, timeSel){
+  const dEl = document.querySelector(dateSel);
+  const tEl = document.querySelector(timeSel);
+  const d = dEl && dEl.value;
+  const t = tEl && tEl.value;
+  if(!d || !t) return null;
+  const iso = new Date(`${d}T${t}:00`);
+  return isNaN(iso.getTime()) ? null : iso.toISOString();
+}
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 
 // --- Numeric helpers for budget display (thousands separator, integers only) ---
@@ -1288,7 +1299,7 @@ async function saveExpense(){
     locationName: formatPlace(($('#expLocationName') ? $('#expLocationName').value.trim() : '')),
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
-    createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
+    createdAt: (function(){ const manual=isoFrom("#expDate","#expTime"); const existing=(t.expenses[id]&&t.expenses[id].createdAt)?t.expenses[id].createdAt:null; return manual||existing||new Date().toISOString(); })(),
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -1879,7 +1890,7 @@ async function saveJournal() {
     placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
+    createdAt: (function(){ const manual=isoFrom("#jrDate","#jrTime"); const existing=(t.journal[id]&&t.journal[id].createdAt)?t.journal[id].createdAt:null; return manual||existing||new Date().toISOString(); })()
   };
 
   await FB.updateDoc(ref, { journal: t.journal });
