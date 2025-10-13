@@ -40,7 +40,7 @@ async function __doFullLogout(e){
     try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     try{ state._unsubCurrent && state._unsubCurrent(); }catch(_){}
     // Clear volatile state
-    state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){ } try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     state.currentTripId = null;
     state.trips = [];
     // Clear local UI selections / caches (scoped keys)
@@ -2306,7 +2306,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       // User is logged out: Show login, hide app content
       if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
-      state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+      state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){ } try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     }
   });
 }
