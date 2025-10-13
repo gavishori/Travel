@@ -1,16 +1,16 @@
 
-// --- Mobile-safe: close auth dialog consistently on iOS/WebKit ---
-window.__closeAuthModal = function() {
+// --- Global sign-out helper (minimal; no UI changes) ---
+window.__signOutNow = async function() {
   try {
-    const dlg = document.getElementById('authModal') || document.querySelector('dialog[open]');
-    if (!dlg) return;
-    if (typeof dlg.close === 'function') {
-      try { dlg.close(); } catch (_) {}
-    }
-    dlg.removeAttribute('open');
-    // Also remove any inert/backdrop classes if used
-    document.body.classList.remove('modal-open');
-  } catch (e) { /* no-op */ }
+    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
+    if (!a || !window.signOut) return;
+    await signOut(a);
+  } catch (e) {
+    // swallow
+  } finally {
+    try { localStorage.clear(); sessionStorage.clear(); } catch(_) {}
+    try { location.reload(); } catch(_) {}
+  }
 };
 
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
@@ -1271,8 +1271,7 @@ $('#lsReset').addEventListener('click', async ()=>{
     const pass  = $(passSel)?.value;
     if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
     try{
-      await FB.signInWithEmailAndPassword(auth, email, pass).then(()=>window.__closeAuthModal()).catch(()=>{});
-
+      await FB.signInWithEmailAndPassword(auth, email, pass);
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
@@ -1297,8 +1296,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       const pass  = $(passSel)?.value;
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
       try{
-        await FB.signInWithEmailAndPassword(auth, email, pass).then(()=>window.__closeAuthModal()).catch(()=>{});
-
+        await FB.signInWithEmailAndPassword(auth, email, pass);
         if($(errSel)) $(errSel).textContent = '';
       }catch(e){
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
@@ -3216,8 +3214,7 @@ document.addEventListener('DOMContentLoaded', () => {
   primary?.addEventListener('click', async ()=> {
     try {
       if(active==='loginTab'){
-        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value).then(()=>window.__closeAuthModal()).catch(()=>{});
-
+        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
       } else if(active==='signupTab'){
         await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
       } else {
@@ -3306,11 +3303,80 @@ function closeAuthModal(){
 }
 
 
-// Fallback auto-close in case other listeners override:
-(function __AuthModalAutoClose__(){
+// --- Wire click on visible user email / avatar to sign-out (no DOM changes) ---
+(function __wireEmailClickForSignOut(){
   try {
-    const auth = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
-    if (!auth || !window.onAuthStateChanged) return;
-    onAuthStateChanged(auth, (user) => { if (user) { window.__closeAuthModal(); } });
+    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
+    if (!a || !window.onAuthStateChanged) return;
+    onAuthStateChanged(a, (user) => {
+      // Attach once when logged in
+      if (!user) return;
+      const selectorList = [
+        '[data-user-email]', '#userEmail', '.user-email',
+        '#accountMenu', '[data-action="account"]',
+        '.avatar', 'img[alt*="avatar"]', 'img[alt*="profile"]'
+      ];
+      function handler(ev){
+        // Ask once to prevent accidental tap
+        try {
+          const yes = window.confirm('להתנתק מהחשבון?');
+          if (yes) return window.__signOutNow();
+        } catch(_) { return window.__signOutNow(); }
+      }
+      selectorList.forEach(sel => {
+        try {
+          document.querySelectorAll(sel).forEach(el => {
+            if (!el.__logoutBound) {
+              el.addEventListener('click', handler, { passive: true });
+              el.__logoutBound = true;
+            }
+          });
+        } catch(_) {}
+      });
+      // Global fallback: tap on email text node
+      document.addEventListener('click', function(ev){
+        try {
+          const t = ev.target;
+          if (!t || t.__logoutBound) return;
+          const email = user && user.email ? String(user.email).toLowerCase().trim() : null;
+          if (!email) return;
+          const str = (t.innerText || t.textContent || '').toLowerCase().trim();
+          if (str === email) {
+            t.__logoutBound = true;
+            const yes = window.confirm('להתנתק מהחשבון?');
+            if (yes) window.__signOutNow();
+          }
+        } catch(_) {}
+      }, { passive: true, once: true });
+    });
   } catch (e) {}
+})();
+
+
+// --- If there's a "login" button in header, repurpose it to sign-out when logged in (element optional) ---
+(function(){
+  try {
+    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
+    if (!a || !window.onAuthStateChanged) return;
+    const candidates = ['#authPrimary', '#openAuth', '#authBtn', '[data-open-auth]'];
+    function setLogoutUI(btn){
+      try {
+        btn.dataset._origText = btn.dataset._origText || btn.textContent;
+        btn.textContent = 'התנתקות';
+        btn.onclick = function(){ return window.__signOutNow(); };
+      } catch(_) {}
+    }
+    function setLoginUI(btn){
+      try {
+        if (btn.dataset._origText) btn.textContent = btn.dataset._origText;
+      } catch(_) {}
+    }
+    onAuthStateChanged(a, (user) => {
+      candidates.forEach(sel => {
+        document.querySelectorAll(sel).forEach(btn => {
+          if (user) { setLogoutUI(btn); } else { setLoginUI(btn); }
+        });
+      });
+    });
+  } catch(e) {}
 })();
