@@ -814,7 +814,7 @@ function cycleCurrency(cur){
   return opts[(idx + 1) % opts.length];
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-async let __subTripsTimer=null;
+let __subTripsTimer=null;
 function subscribeTrips(){
   if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
