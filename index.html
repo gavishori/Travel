@@ -1,93 +1,66 @@
-<dialog id="authModal" class="modal">
-  <header><link rel="icon" type="image/png" href="./flymily-logo.png">
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>FLYMILY — מנהל נסיעות</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <img src="./flymily-logo.png" alt="FLYMILY" style="height:28px;vertical-align:middle"/>
+    <span id="currentUserEmail" class="muted" style="margin-inline:8px;display:none"></span>
+    <button id="btnLogin" class="btn" style="margin-inline-start:auto">התחברו</button>
+    <span id="userBadge" style="display:none;margin-inline-start:8px">מחובר</span>
+  </header>
 
-    <nav class="tabs">
-      <button class="tab-btn active" data-tab="loginTab">כניסה</button>
-      <button class="tab-btn" data-tab="signupTab">הרשמה</button>
-      <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
-    </nav>
-  
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
-  <div class="body">
-    <section id="loginTab" class="tab-panel">
-      <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
-      <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
-      <p id="authError" class="muted" style="color:var(--danger);"></p>
-    </section>
-    <section id="signupTab" class="tab-panel" hidden>
-      <label>אימייל<input id="suEmail" type="email" class="input" placeholder="name@example.com"/></label>
-      <label>סיסמה<input id="suPass" type="password" class="input" placeholder="מינימום 6 תווים"/></label>
-      <p id="suError" class="muted" style="color:var(--danger);"></p>
-    </section>
-    <section id="resetTab" class="tab-panel" hidden>
-      <label>אימייל<input id="rsEmail" type="email" class="input" placeholder="name@example.com"/></label>
-      <p id="rsInfo" class="muted"></p>
-    </section>
+  <!-- App container (hidden until login) -->
+  <div class="container" style="display:none">
+    <div class="app">
+      <div class="muted" style="padding:2rem">נטען…</div>
+    </div>
   </div>
-  <div class="footer">
-    <button id="authPrimary" class="btn primary">כניסה</button>
-    <button id="authSecondary" class="btn">ביטול</button>
+
+  <!-- Simple login screen for logged-out state -->
+  <div id="loginScreen" style="padding:2rem">
+    <p>כדי להמשיך, התחברו לחשבון.</p>
+    <button class="btn primary" onclick="document.getElementById('authModal').showModal()">כניסה</button>
   </div>
-</dialog>
 
-
-  <dialog id="tripModal" class="modal">
-    <header><strong>נסיעה חדשה</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+  <!-- AUTH MODAL -->
+  <dialog id="authModal" class="modal">
+    <header>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="loginTab">כניסה</button>
+        <button class="tab-btn" data-tab="signupTab">הרשמה</button>
+        <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
+      </nav>
+    </header>
     <div class="body">
-      <label>יעד<input id="tripDest" class="input"/></label>
-      <div class="row"><label>תאריך התחלה<input type="date" id="tripStart" class="input"></label><label>תאריך סיום<input type="date" id="tripEnd" class="input"></label></div>
+      <section id="loginTab" class="tab-panel">
+        <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
+        <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
+        <p id="authError" class="muted" style="color:var(--danger);"></p>
+      </section>
+      <section id="signupTab" class="tab-panel" hidden>
+        <label>אימייל<input id="suEmail" type="email" class="input" placeholder="name@example.com"/></label>
+        <label>סיסמה<input id="suPass" type="password" class="input" placeholder="מינימום 6 תווים"/></label>
+        <p id="suError" class="muted" style="color:var(--danger);"></p>
+      </section>
+      <section id="resetTab" class="tab-panel" hidden>
+        <label>אימייל<input id="rsEmail" type="email" class="input" placeholder="name@example.com"/></label>
+        <p id="rsInfo" class="muted"></p>
+      </section>
     </div>
     <div class="footer">
-      <button id="tripSave" class="btn primary">שמור</button>
-      <button id="tripCancel" class="btn">ביטול</button>
+      <button id="authPrimary" class="btn primary">כניסה</button>
+      <button id="authSecondary" class="btn">ביטול</button>
     </div>
   </dialog>
 
-  <dialog
-id="expenseModal" class="modal">
-    <header><strong>הוצאה</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
-    <div class="body">
-      <label>תיאור<textarea id="expDesc" class="input auto-resize" rows="4" placeholder="כתוב תיאור ההוצאה..."></textarea></label>
-      <label>קטגוריה
-        <select id="expCat" class="input">
-          <option value="">בחר...</option>
-          <option>טיסה</option>
-          <option>לינה</option>
-          <option>תקשורת</option>
-          <option>רכב</option>
-          <option>ביטוח בריאות</option>
-          <option>מזון - מסעדות / סופר</option>
-          <option>קניות</option>
-          <option>אטרקציות</option>
-          <option>אחר</option>
-        </select>
-      </label>
-      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
-      <div
-      <div class="row">
-        <label>תאריך
-          <input type="date" id="expDate" class="input">
-        </label>
-        <label>שעה
-          <input type="time" id="expTime" class="input">
-        </label>
-      </div>
-class="row location-row">
-        <label>מיקום<input id="expLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
-        <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
-        <button id="btnUseCurrentExp" class="btn location-btn">בחר מיקום נוכחי</button>
-        <input type="hidden" id="expLat" />
-        <input type="hidden" id="expLng" />
-      </div>
-    </div>
-    <div class="footer">
-      <button id="expSave" class="btn primary">שמור</button>
-      <button id="expDelete" class="btn danger" style="display:none">מחק</button>
-      <button id="expCancel" class="btn">ביטול</button>
-    </div>
-  </dialog>
+  <!-- Scripts -->
+  <script type="module" src="./firebase.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
