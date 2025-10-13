@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Flymily – Mobile Auth Self‑Test</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background:#f3f4f6; padding:16px; }
+  .card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.12); margin:12px 0; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { padding:8px 12px; border-radius:999px; border:1px solid #e5e7eb; }
+  #state { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap; background:#111; color:#0f0; padding:12px; border-radius:8px; }
+</style>
+</head>
+<body>
+  <header class="card">
+    <img src="flymily-logo.png" alt="logo" style="height:44px; vertical-align:middle">
+    <button id="btnLogin" style="float:left">התחברות</button>
+    <button id="btnLogoutMobileHeader" style="float:left; display:none;">התנתקות</button>
+    <span id="userBadge" style="display:none"></span>
+  </header>
+
+  <main id="container" class="card">
+    <h2>אפליקציה</h2>
+    <p>תוכן אפליקציה לדוגמה</p>
+  </main>
+
+  <dialog id="authModal" style="border:none; border-radius:16px; max-width:560px; width:92vw;">
+    <form method="dialog">
+      <h3>כניסה</h3>
+      <input id="emailLogin" placeholder="אימייל" value="demo@fly.mi">
+      <input id="passwordLogin" placeholder="סיסמה" value="123456">
+      <menu>
+        <button value="cancel">ביטול</button>
+        <button id="authLoginSubmit" value="default">כניסה</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <section id="loginScreen" class="card" style="display:none">
+    <h3>מסך התחברות</h3>
+    <div class="row">
+      <input id="emailLoginInline" placeholder="אימייל" value="demo@fly.mi">
+      <input id="passwordLoginInline" placeholder="סיסמה" value="123456">
+      <button id="authLoginInline">כניסה</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>בדיקות</h3>
+    <div class="row">
+      <button onclick="window.__TEST.login()">Login</button>
+      <button onclick="window.__TEST.logout()">Logout</button>
+      <button onclick="window.__TEST.refresh()">Refresh (simulate)</button>
+      <button onclick="window.__TEST.privateMode()">Private Mode</button>
+      <button onclick="window.__TEST.desktop()">Desktop</button>
+      <button onclick="window.__TEST.mobile()">Mobile</button>
+    </div>
+    <pre id="state"></pre>
+  </section>
+
+  <script type="module" src="./script.js"></script>
+  <script>
+    // lightweight test helpers
+    const s = document.getElementById('state');
+    const log = (...args)=> s.textContent += args.join(' ') + "\n";
+    function setUA(mobile){
+      try { Object.defineProperty(navigator, 'userAgent', { value: mobile ? 'iPhone' : 'Chrome', configurable:true }); } catch(e){}
+    }
+    window.__TEST = {
+      login(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('container').style.display='block'; log('→ login state UI'); },
+      logout(){ document.getElementById('container').style.display='none'; document.getElementById('loginScreen').style.display='grid'; log('→ logout state UI'); },
+      refresh(){ log('→ simulate refresh: state persists by UI'); },
+      privateMode(){ log('→ emulate private mode (manual check): should still show login screen when logged out'); },
+      desktop(){ setUA(false); log('UA=Desktop'); },
+      mobile(){ setUA(true); log('UA=Mobile'); }
+    };
+  </script>
+</body>
+</html>

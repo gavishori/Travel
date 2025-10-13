@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} , setPersistence, browserLocalPersistence, browserSessionPersistence from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
   setLogLevel,
@@ -46,6 +46,8 @@ setLogLevel("error");
 
 // --- AUTH ---
 export const auth = getAuth(app);
+// Persistence: prefer local, fallback to session (iOS/Safari private)
+try { await setPersistence(auth, browserLocalPersistence); } catch(e) { try { await setPersistence(auth, browserSessionPersistence); } catch(_) {} }
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
