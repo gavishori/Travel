@@ -73,7 +73,7 @@ async function loadJournalOnly(){
   renderJournal(state.current, state.journalSort);
 }
 
-import { auth, db, FB } from './firebase.js';
+import { auth, db, FB } from './fb.mjs';
 
 // === Textarea auto-resize + safe Enter handling ===
 (function(){
