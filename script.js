@@ -798,7 +798,9 @@ function cycleCurrency(cur){
   return opts[(idx + 1) % opts.length];
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-async function subscribeTrips(){
+async let __subTripsTimer=null;
+function subscribeTrips(){
+  if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
     console.warn('subscribeTrips: user not ready; skipping');
     return;
@@ -809,6 +811,13 @@ async function subscribeTrips(){
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
   }, (err)=>{
+    try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    // If permissions missing, wait a bit and retry once auth is stable
+    if(String(err).includes('Missing or insufficient permissions')){
+      console.warn('subscribeTrips PERM error – will retry shortly');
+      __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
+      return;
+    }
     console.warn('subscribeTrips error', err);
     showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
   });
@@ -2230,11 +2239,42 @@ async function exportWord(){
 
 
 
+
+// ---- Explicit login flow only (no auto-submit) ----
+let __loginInFlight = false;
+async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
+  if(__loginInFlight) return;
+  __loginInFlight = true;
+  try{
+    const email = document.querySelector(emailSel)?.value?.trim();
+    const pass  = document.querySelector(passSel)?.value;
+    if(!email || !pass){
+      const e = document.querySelector(errSel);
+      if(e) e.textContent = 'אנא מלא אימייל וסיסמה';
+      return;
+    }
+    await FB.signInWithEmailAndPassword(FB.auth, email, pass);
+    const e = document.querySelector(errSel); if(e) e.textContent = '';
+  }catch(err){
+    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
+    console.error('login failed', err);
+  }finally{
+    __loginInFlight = false;
+  }
+}
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(!t) return;
+  if(t.matches('#authPrimary')){ loginWithCredentials(); }
+});
 // ===== Auth UI helpers (final) =====
 // Toggle app/login screens on auth state change + start subscriptions
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
+  let __lastAuthUid = null;
   FB.onAuthStateChanged(FB.auth, (user) => {
     console.log('auth state', !!user, user?.uid);
+    if((user?.uid||null)===__lastAuthUid){ return; }
+    __lastAuthUid = user?.uid||null;
     const emailSpan = document.getElementById('currentUserEmail');
     const btnLogin = document.getElementById('btnLogin');
     const btnLogout = document.getElementById('btnLogout');
