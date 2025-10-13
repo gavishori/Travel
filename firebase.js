@@ -1,8 +1,36 @@
-// Minimal Firebase wrapper (no trailing commas, ES2015-safe)
+// Unified Firebase wrapper exposing the exact names script.js expects.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeFirestore, setLogLevel, query, where, orderBy, limit, startAfter, serverTimestamp, deleteDoc, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, getDocs, enableNetwork, disableNetwork } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  initializeFirestore,
+  setLogLevel,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  serverTimestamp,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  addDoc,
+  getDocs,
+  enableNetwork,
+  disableNetwork
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// --- CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
@@ -13,35 +41,44 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = initializeFirestore(app, { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true });
+export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true });
 setLogLevel("error");
-try { setPersistence(auth, browserLocalPersistence).catch(function(){ return setPersistence(auth, browserSessionPersistence); }); } catch(e) {}
 
+// --- AUTH ---
+export const auth = getAuth(app);
+// Convenience named exports (used in a few places)
+export const onAuth = onAuthStateChanged;
+export const signOutUser = () => signOut(auth);
+
+// --- FB namespace matching script.js expectations ---
 export const FB = {
-  app: app,
-  auth: auth,
-  db: db,
-  onAuthStateChanged: onAuthStateChanged,
-  signInWithEmailAndPassword: signInWithEmailAndPassword,
-  createUserWithEmailAndPassword: createUserWithEmailAndPassword,
-  sendPasswordResetEmail: sendPasswordResetEmail,
-  signOut: signOut,
-  doc: doc,
-  getDoc: getDoc,
-  setDoc: setDoc,
-  updateDoc: updateDoc,
-  collection: collection,
-  addDoc: addDoc,
-  getDocs: getDocs,
-  onSnapshot: onSnapshot,
-  query: query,
-  where: where,
-  orderBy: orderBy,
-  limit: limit,
-  startAfter: startAfter,
-  serverTimestamp: serverTimestamp,
-  deleteDoc: deleteDoc
+  // db & auth handles
+  db, auth,
+
+  // auth API names as expected by script.js
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+
+  // firestore API surface
+  doc, getDoc, setDoc, updateDoc,
+  collection, addDoc, getDocs,
+  onSnapshot, query, where, orderBy, limit, startAfter,
+  serverTimestamp,
+  deleteDoc
 };
 
-export { onAuthStateChanged as onAuth };
+// Network toggles (optional resilience)
+window.addEventListener("offline", () => disableNetwork(db).catch(()=>{}));
+window.addEventListener("online",  () => enableNetwork(db).catch(()=>{}));
+
+/* ---- Global attach for legacy scripts that expect a global FB ---- */
+try {
+  window.FB = FB;
+  window.auth = auth;
+  window.db = db;
+} catch (e) {
+  // Ignore if window not available (SSR)
+}

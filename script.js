@@ -73,7 +73,7 @@ async function loadJournalOnly(){
   renderJournal(state.current, state.journalSort);
 }
 
-import { auth, db, FB } from './fb.mjs';
+import { auth, db, FB } from './firebase.js';
 
 // === Textarea auto-resize + safe Enter handling ===
 (function(){
@@ -3250,7 +3250,8 @@ try{
   document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
-  primary?.addEventListener('click', async ()=> {
+  if(primary){ try{ primary.setAttribute('type','button'); }catch(_){} }
+  const __authAction = async (e)=>{ try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){} ;
     try {
       if(active==='loginTab'){
         await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
@@ -3267,7 +3268,12 @@ try{
     }
   });
   // Secondary = cancel
-  secondary?.addEventListener('click', ()=> authModal?.close());
+  primary?.addEventListener('click', __authAction, {passive:false});
+  primary?.addEventListener('touchend', __authAction, {passive:false});
+  // submit on Enter (mobile keyboards)
+  try{ authModal?.querySelector('form')?.addEventListener('submit', __authAction, {passive:false}); }catch(_){}
+
+  secondary?.addEventListener('click', (e)=>{ try{ e?.preventDefault?.(); }catch(_){} authModal?.close(); });
 
   // Logout
   btnLogout?.addEventListener('click', async ()=> {
@@ -3297,3 +3303,21 @@ document.addEventListener('DOMContentLoaded', ()=>{
   mob?.addEventListener('click', runLogout, {passive:false});
   mob?.addEventListener('touchend', runLogout, {passive:false});
 });
+
+
+// Global auth visibility guard (mobile-safe)
+try{
+  FB.onAuthStateChanged(FB.auth, (user)=>{
+    const c = document.getElementById('container');
+    const ls = document.getElementById('loginScreen');
+    if(user){
+      if(c) c.style.display = '';
+      if(ls) ls.style.display = 'none';
+      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){}
+    } else {
+      if(c) c.style.display = 'none';
+      if(ls) ls.style.display = 'grid';
+      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){}
+    }
+  });
+}catch(_){}
