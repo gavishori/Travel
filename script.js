@@ -70,7 +70,23 @@ async function loadJournalOnly(){
   const t = snap.data() || {};
   if(!state.current) state.current = { id: tid };
   state.current.journal = t.journal || {};
-  renderJournal(state.current, state.journalSort);
+  
+  // Build dateIso/date/time for journal
+  const $d = $('#jrDate'), $t = $('#jrTime');
+  let _jr_dateIso;
+  if ($d && $t && $d.value && $t.value) {
+    _jr_dateIso = new Date(`${$d.value}T${$t.value}:00`).toISOString();
+  } else {
+    const curJ = (t.journal && t.journal[id]) || {};
+    _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
+  }
+  (function(){
+    const dt = new Date(_jr_dateIso);
+    const pad = n=>String(n).padStart(2,'0');
+    window.__jr_dateStr = `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()}`;
+    window.__jr_timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  })();
+renderJournal(state.current, state.journalSort);
 }
 
 import { auth, db, FB } from './firebase.js';
@@ -1286,6 +1302,22 @@ async function saveExpense(){
   // if rates don't exist, set them. otherwise, keep them.
   const expenseRates = currentExpense.rates || { USDILS: live.USDILS, USDEUR: live.USDEUR, lockedAt: live.lockedAt };
   if(live.USDLocal) expenseRates.USDLocal = live.USDLocal;
+
+  // Build dateIso/date/time from inputs (editable)
+  const $d = $('#expDate'), $t = $('#expTime');
+  let _exp_dateIso;
+  if ($d && $t && $d.value && $t.value) {
+    _exp_dateIso = new Date(`${$d.value}T${$t.value}:00`).toISOString();
+  } else {
+    const curE = (t.expenses && t.expenses[$('#expenseModal').dataset.id]) || {};
+    _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
+  }
+  (function(){ // derive date/time strings
+    const dt = new Date(_exp_dateIso);
+    const pad = n=>String(n).padStart(2,'0');
+    window.__exp_dateStr = `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()}`;
+    window.__exp_timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  })();
   
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
@@ -1298,6 +1330,9 @@ async function saveExpense(){
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
+    dateIso: _exp_dateIso,
+    date: (typeof window!=='undefined' && window.__exp_dateStr) || '',
+    time: (typeof window!=='undefined' && window.__exp_timeStr) || '',
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -1888,7 +1923,10 @@ async function saveJournal() {
     placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
+    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString(),
+    dateIso: _jr_dateIso,
+    date: (typeof window!=='undefined' && window.__jr_dateStr) || '',
+    time: (typeof window!=='undefined' && window.__jr_timeStr) || ''
   };
 
   await FB.updateDoc(ref, { journal: t.journal });
