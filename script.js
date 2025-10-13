@@ -1,3 +1,18 @@
+
+// --- Mobile-safe: close auth dialog consistently on iOS/WebKit ---
+window.__closeAuthModal = function() {
+  try {
+    const dlg = document.getElementById('authModal') || document.querySelector('dialog[open]');
+    if (!dlg) return;
+    if (typeof dlg.close === 'function') {
+      try { dlg.close(); } catch (_) {}
+    }
+    dlg.removeAttribute('open');
+    // Also remove any inert/backdrop classes if used
+    document.body.classList.remove('modal-open');
+  } catch (e) { /* no-op */ }
+};
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -1256,7 +1271,8 @@ $('#lsReset').addEventListener('click', async ()=>{
     const pass  = $(passSel)?.value;
     if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
     try{
-      await FB.signInWithEmailAndPassword(auth, email, pass);
+      await FB.signInWithEmailAndPassword(auth, email, pass).then(()=>window.__closeAuthModal()).catch(()=>{});
+
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
@@ -1281,7 +1297,8 @@ $('#lsReset').addEventListener('click', async ()=>{
       const pass  = $(passSel)?.value;
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
       try{
-        await FB.signInWithEmailAndPassword(auth, email, pass);
+        await FB.signInWithEmailAndPassword(auth, email, pass).then(()=>window.__closeAuthModal()).catch(()=>{});
+
         if($(errSel)) $(errSel).textContent = '';
       }catch(e){
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
@@ -3199,7 +3216,8 @@ document.addEventListener('DOMContentLoaded', () => {
   primary?.addEventListener('click', async ()=> {
     try {
       if(active==='loginTab'){
-        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
+        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value).then(()=>window.__closeAuthModal()).catch(()=>{});
+
       } else if(active==='signupTab'){
         await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
       } else {
@@ -3286,3 +3304,13 @@ function closeAuthModal(){
     document.documentElement.style.overflow = '';
   } catch(e){ /* noop */ }
 }
+
+
+// Fallback auto-close in case other listeners override:
+(function __AuthModalAutoClose__(){
+  try {
+    const auth = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
+    if (!auth || !window.onAuthStateChanged) return;
+    onAuthStateChanged(auth, (user) => { if (user) { window.__closeAuthModal(); } });
+  } catch (e) {}
+})();
