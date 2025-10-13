@@ -1,18 +1,38 @@
 
-// --- Global sign-out helper (minimal; no UI changes) ---
-window.__signOutNow = async function() {
+// --- Global sign-out helper ---
+window.__signOutNow = async function(){
   try {
     const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
     if (!a || !window.signOut) return;
     await signOut(a);
-  } catch (e) {
-    // swallow
-  } finally {
-    try { localStorage.clear(); sessionStorage.clear(); } catch(_) {}
-    try { location.reload(); } catch(_) {}
+  } catch(e){} finally {
+    try{ localStorage.clear(); sessionStorage.clear(); }catch(_){}
+    try{ location.reload(); }catch(_){}
   }
 };
 
+// --- Mobile-safe: open auth dialog full-screen ---
+window.__openAuthModal = function() {
+  try {
+    const dlg = document.getElementById('authModal') || document.querySelector('dialog');
+    if (!dlg) return false;
+    document.body.classList.add('modal-open');
+    if (typeof dlg.showModal === 'function') { try{ dlg.showModal(); }catch(_){} }
+    dlg.setAttribute('open','');
+    return false;
+  } catch(e){ return false; }
+};
+
+// --- Mobile-safe: close auth dialog consistently ---
+window.__closeAuthModal = function() {
+  try {
+    const dlg = document.getElementById('authModal') || document.querySelector('dialog[open]');
+    if (!dlg) return;
+    if (typeof dlg.close === 'function') { try{ dlg.close(); }catch(_){} }
+    dlg.removeAttribute('open');
+    document.body.classList.remove('modal-open');
+  } catch(e){}
+};
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -3303,80 +3323,42 @@ function closeAuthModal(){
 }
 
 
-// --- Wire click on visible user email / avatar to sign-out (no DOM changes) ---
-(function __wireEmailClickForSignOut(){
-  try {
-    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
-    if (!a || !window.onAuthStateChanged) return;
-    onAuthStateChanged(a, (user) => {
-      // Attach once when logged in
-      if (!user) return;
-      const selectorList = [
-        '[data-user-email]', '#userEmail', '.user-email',
-        '#accountMenu', '[data-action="account"]',
-        '.avatar', 'img[alt*="avatar"]', 'img[alt*="profile"]'
-      ];
-      function handler(ev){
-        // Ask once to prevent accidental tap
-        try {
-          const yes = window.confirm('להתנתק מהחשבון?');
-          if (yes) return window.__signOutNow();
-        } catch(_) { return window.__signOutNow(); }
-      }
-      selectorList.forEach(sel => {
-        try {
-          document.querySelectorAll(sel).forEach(el => {
-            if (!el.__logoutBound) {
-              el.addEventListener('click', handler, { passive: true });
-              el.__logoutBound = true;
-            }
-          });
-        } catch(_) {}
-      });
-      // Global fallback: tap on email text node
-      document.addEventListener('click', function(ev){
-        try {
-          const t = ev.target;
-          if (!t || t.__logoutBound) return;
-          const email = user && user.email ? String(user.email).toLowerCase().trim() : null;
-          if (!email) return;
-          const str = (t.innerText || t.textContent || '').toLowerCase().trim();
-          if (str === email) {
-            t.__logoutBound = true;
-            const yes = window.confirm('להתנתק מהחשבון?');
-            if (yes) window.__signOutNow();
-          }
-        } catch(_) {}
-      }, { passive: true, once: true });
-    });
-  } catch (e) {}
-})();
-
-
-// --- If there's a "login" button in header, repurpose it to sign-out when logged in (element optional) ---
+// --- Inject login/logout toggle button and wire behavior ---
 (function(){
   try {
     const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
     if (!a || !window.onAuthStateChanged) return;
-    const candidates = ['#authPrimary', '#openAuth', '#authBtn', '[data-open-auth]'];
-    function setLogoutUI(btn){
-      try {
-        btn.dataset._origText = btn.dataset._origText || btn.textContent;
-        btn.textContent = 'התנתקות';
-        btn.onclick = function(){ return window.__signOutNow(); };
-      } catch(_) {}
+
+    function ensureToggleButton(){
+      let btn = document.getElementById('authToggle');
+      if (btn) return btn;
+      btn = document.createElement('button');
+      btn.id = 'authToggle';
+      btn.type = 'button';
+      btn.style.marginInlineStart = '8px';
+      const emailEl = document.querySelector('[data-user-email], #userEmail, .user-email')
+                    || document.querySelector('header [role="group"], header .pill, header');
+      if (emailEl && emailEl.parentNode) {
+        emailEl.parentNode.insertBefore(btn, emailEl.nextSibling);
+      } else {
+        btn.style.position = 'fixed';
+        btn.style.top = '12px';
+        btn.style.right = '12px';
+        document.body.appendChild(btn);
+      }
+      return btn;
     }
-    function setLoginUI(btn){
-      try {
-        if (btn.dataset._origText) btn.textContent = btn.dataset._origText;
-      } catch(_) {}
-    }
+
+    function toLogin(btn){ btn.textContent = 'התחברות'; btn.onclick = function(){ return window.__openAuthModal(); }; }
+    function toLogout(btn){ btn.textContent = 'התנתקות'; btn.onclick = function(){ return window.__signOutNow(); }; }
+
     onAuthStateChanged(a, (user) => {
-      candidates.forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-          if (user) { setLogoutUI(btn); } else { setLoginUI(btn); }
-        });
-      });
+      const btn = ensureToggleButton();
+      if (!btn) return;
+      if (user) toLogout(btn); else toLogin(btn);
     });
-  } catch(e) {}
+  } catch(e){}
 })();
+
+
+(function(){ try{ const b=document.getElementById('authPrimary'); if(b){ b.onclick=function(){ return window.__openAuthModal(); }; } }catch(e){} })();
