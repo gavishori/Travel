@@ -1242,17 +1242,25 @@ function openExpenseModal(e){
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
-  // Prefill expDate/expTime
-  /* Prefill expDate */
+  // Prefill expDate/expTime (enrich)
   try {
-    const _ts = (typeof e!=='undefined' && e && (e.createdAt || e.date)) || (typeof j!=='undefined' && j && (j.createdAt || j.date));
-    const d = _ts ? new Date(_ts) : new Date();
-    const pad = n => String(n).padStart(2,'0');
-    const dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    const $d = $('#expDate'), $t = $('#expTime');
-    if ($d) $d.value = dStr;
-    if ($t) $t.value = tStr;
+    const base = (typeof e!=='undefined' && e) || (typeof j!=='undefined' && j) || null;
+    const pad = n=>String(n).padStart(2,'0');
+    let dStr=null, tStr=null;
+    if (base && base.date && base.time) {
+      dStr = base.date.split('/').reverse().join('-'); // dd/mm/yyyy -> yyyy-mm-dd
+      tStr = base.time;
+    } else if (base && (base.createdAt||base.dateIso)) {
+      const d = new Date(base.createdAt||base.dateIso);
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } else {
+      const d = new Date();
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    const $d=$('#expDate'), $t=$('#expTime');
+    if($d) $d.value=dStr; if($t) $t.value=tStr;
   } catch(_){}
 
   $('#expenseModal').showModal();
@@ -1834,17 +1842,25 @@ function openJournalModal(j) {
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
-  // Prefill jrDate/jrTime
-  /* Prefill jrDate */
+  // Prefill jrDate/jrTime (enrich)
   try {
-    const _ts = (typeof e!=='undefined' && e && (e.createdAt || e.date)) || (typeof j!=='undefined' && j && (j.createdAt || j.date));
-    const d = _ts ? new Date(_ts) : new Date();
-    const pad = n => String(n).padStart(2,'0');
-    const dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    const $d = $('#jrDate'), $t = $('#jrTime');
-    if ($d) $d.value = dStr;
-    if ($t) $t.value = tStr;
+    const base = (typeof e!=='undefined' && e) || (typeof j!=='undefined' && j) || null;
+    const pad = n=>String(n).padStart(2,'0');
+    let dStr=null, tStr=null;
+    if (base && base.date && base.time) {
+      dStr = base.date.split('/').reverse().join('-'); // dd/mm/yyyy -> yyyy-mm-dd
+      tStr = base.time;
+    } else if (base && (base.createdAt||base.dateIso)) {
+      const d = new Date(base.createdAt||base.dateIso);
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } else {
+      const d = new Date();
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    const $d=$('#jrDate'), $t=$('#jrTime');
+    if($d) $d.value=dStr; if($t) $t.value=tStr;
   } catch(_){}
 
   $('#journalModal').showModal();

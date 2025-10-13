@@ -1249,12 +1249,3 @@ html, body { overflow-x:hidden; }
 html, body { height:100%; }
 :root{ --vh: 1dvh; }
 .app, .container, .page, .main { min-height: 100svh; min-height: 100dvh; min-height: -webkit-fill-available;}
-
-/* Date/Time row styling */
-.dt-row { display:flex; gap:12px; margin-top:10px; }
-.dt-row .col { flex:1; display:flex; flex-direction:column; gap:6px; }
-.dt-row .lbl { font-weight:600; font-size:14px; }
-.dt-input { width:100%; }
-@media (max-width:768px){
-  .dt-row { flex-direction:column; }
-}
