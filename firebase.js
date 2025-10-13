@@ -47,7 +47,7 @@ setLogLevel("error");
 // --- AUTH ---
 export const auth = getAuth(app);
 // Persistence: prefer local, fallback to session (iOS/Safari private)
-try { await setPersistence(auth, browserLocalPersistence); } catch(e) { try { await setPersistence(auth, browserSessionPersistence); } catch(_) {} }
+try { setPersistence(auth, browserLocalPersistence).catch(async ()=>{ try{ await setPersistence(auth, browserSessionPersistence);}catch(_){}}); } catch(e) {}
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
