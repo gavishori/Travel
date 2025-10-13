@@ -82,12 +82,3 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
-
-
-/* SHIM: FB.getAuth fallback */
-try{
-  window.FB = window.FB || {};
-  if (typeof window.FB.getAuth !== 'function') {
-    window.FB.getAuth = function(){ try { return auth; } catch(e){ return null; } };
-  }
-}catch(e){}
