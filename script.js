@@ -1316,7 +1316,7 @@ $('#lsReset').addEventListener('click', async ()=>{
   const $ = (sel)=>document.querySelector(sel);
   async function doLogin(emailSel, passSel, errSel){
     try{
-      const auth = FB.getAuth();
+      const auth = (FB && FB.auth) ? FB.auth : (window.auth || null);
       const email = $(emailSel)?.value?.trim();
       const pass  = $(passSel)?.value;
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }

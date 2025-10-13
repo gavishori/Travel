@@ -1,13 +1,6 @@
 // Unified Firebase wrapper exposing the exact names script.js expects.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
   setLogLevel,
@@ -46,6 +39,13 @@ setLogLevel("error");
 
 // --- AUTH ---
 export const auth = getAuth(app);
+// Ensure persistent auth across iOS/Safari/Chrome on iPhone
+try {
+  setPersistence(auth, browserLocalPersistence);
+} catch (e) {
+  // no-op: fallback to default persistence
+}
+
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
