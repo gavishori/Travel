@@ -1,38 +1,3 @@
-
-// === Auth Button Toggle (Login <-> Logout) ===
-function wireAuthPrimaryButton(){
-  const btn = document.getElementById('btnLogin'); // header primary button
-  if(!btn) return;
-  if(btn.dataset.authWired==='1') return;
-  btn.dataset.authWired='1';
-  const doLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try{
-      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if(typeof signOutUser==='function'){ await signOutUser(); }
-      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
-    }catch(err){ console.error('primary logout failed', err); }
-  };
-  // Swap handlers on auth changes
-  window.__authPrimarySwap = (loggedIn)=>{
-    const old = document.getElementById('btnLogin');
-    if(!old) return;
-    const clone = old.cloneNode(true);
-    old.parentNode.replaceChild(clone, old);
-    const target = document.getElementById('btnLogin');
-    if(!target) return;
-    if(loggedIn){
-      target.textContent = 'ניתוק';
-      target.classList.add('danger');
-      target.addEventListener('click', doLogout, {passive:false});
-    } else {
-      target.textContent = 'התחברות';
-      target.classList.remove('danger');
-    }
-  };
-}
-document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
-
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -1095,13 +1060,8 @@ function renderJournal(t, order){
       const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
       const timeStr = d.isValid()? d.format('HH:mm') : '';
       const cat = j.category || '';
-            // Build compact place display: "Name, City, Country"
-      const parts = [j.placeName, j.city, j.country].filter(Boolean);
-      const placeCompact = parts.join(', ');
-      const locStr = placeCompact
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
-        : '';
-
+      const place = j.placeName || j.city || j.country || '';
+      const locStr = place ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(place)}" target="_blank">${place}</a>` : '';
       const text = linkifyText(j.text || '');
 
       const tr1 = document.createElement('tr');
@@ -1316,7 +1276,7 @@ $('#lsReset').addEventListener('click', async ()=>{
   const $ = (sel)=>document.querySelector(sel);
   async function doLogin(emailSel, passSel, errSel){
     try{
-      const auth = (FB && FB.auth) ? FB.auth : (window.auth || null);
+      const auth = FB.getAuth();
       const email = $(emailSel)?.value?.trim();
       const pass  = $(passSel)?.value;
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
@@ -3233,26 +3193,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
-
-// -- Mobile support: open user menu on touch as well
-try{
-  const __ub = document.getElementById('userBadge');
-  const __um = document.getElementById('userMenuList');
-  if(__ub && !__ub.dataset.touchFix){
-    __ub.dataset.touchFix = '1';
-    const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      if(__um){ __um.classList.toggle('open'); }
-    };
-    __ub.addEventListener('touchend', openMenu, {passive:false});
-  }
-}catch(_){}
-
   document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
-  if(primary){ try{ primary.setAttribute('type','button'); }catch(_){} }
-  const __authAction = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+  primary?.addEventListener('click', async ()=> {
     try {
       if(active==='loginTab'){
         await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
@@ -3267,14 +3211,9 @@ try{
       const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
       if(target) target.textContent = e?.message || 'שגיאה';
     }
-  };
+  });
   // Secondary = cancel
-  primary?.addEventListener('click', __authAction, {passive:false});
-  primary?.addEventListener('touchend', __authAction, {passive:false});
-  // submit on Enter (mobile keyboards)
-  try{ authModal?.querySelector('form')?.addEventListener('submit', __authAction, {passive:false}); }catch(_){}
-
-  secondary?.addEventListener('click', (e)=>{ try{ e?.preventDefault?.(); }catch(_){} authModal?.close(); });
+  secondary?.addEventListener('click', ()=> authModal?.close());
 
   // Logout
   btnLogout?.addEventListener('click', async ()=> {
@@ -3284,41 +3223,66 @@ try{
 });
 
 
-// Mobile logout button hookup
-document.addEventListener('DOMContentLoaded', ()=>{
-  const mob = document.getElementById('btnLogoutMobile');
-  const setVis = (user)=>{ if(mob){ mob.style.display = user ? 'inline-flex' : 'none'; } };
+
+// ======== GLOBAL HARD-WIRED LOGIN (mobile-safe) ========
+window.__loginNow = async function(){
   try{
-    if(typeof FB!=='undefined' && FB.onAuthStateChanged){
-      FB.onAuthStateChanged(FB.auth, (user)=> setVis(user));
+    const emailEl = document.querySelector('#authEmail') || document.querySelector('#lsEmail');
+    const passEl  = document.querySelector('#authPass')  || document.querySelector('#lsPass');
+    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
+    const email = (emailEl && emailEl.value || '').trim();
+    const pass  = (passEl && passEl.value || '');
+    if(!email || !pass){
+      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
+      alert('אנא מלא אימייל וסיסמה');
+      return false;
     }
-  }catch(e){}
-  const runLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try{
-      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if(typeof signOutUser==='function'){ await signOutUser(); }
-      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
-    }catch(err){ console.error('logout mobile failed', err); }
-  };
-  mob?.addEventListener('click', runLogout, {passive:false});
-  mob?.addEventListener('touchend', runLogout, {passive:false});
-});
+    // Get auth instance safely
+    let auth = (window.FB && typeof window.FB.getAuth === 'function' && window.FB.getAuth())
+            || (window.auth || null);
+    if(!auth){
+      if(errEl) errEl.textContent = 'Auth לא מאותחל (FB.getAuth)';
+      alert('Auth לא מאותחל (FB.getAuth)');
+      return false;
+    }
+    const fn = (window.FB && window.FB.signInWithEmailAndPassword) || null;
+    if(!fn){
+      if(errEl) errEl.textContent = 'signInWithEmailAndPassword לא קיים';
+      alert('signInWithEmailAndPassword לא קיים');
+      return false;
+    }
+    await fn(auth, email, pass);
+    if(errEl) errEl.textContent = '';
+    return true;
+  }catch(e){
+    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
+    const msg = e && (e.code || e.message) || 'שגיאת התחברות';
+    console.error('LOGIN ERROR', e);
+    if(errEl) errEl.textContent = msg;
+    alert('שגיאת התחברות: ' + msg);
+    return false;
+  }
+};
 
 
-// Global auth visibility guard (mobile-safe)
-try{
-  FB.onAuthStateChanged(FB.auth, (user)=>{
-    const c = document.getElementById('container');
-    const ls = document.getElementById('loginScreen');
-    if(user){
-      if(c) c.style.display = '';
-      if(ls) ls.style.display = 'none';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){}
-    } else {
-      if(c) c.style.display = 'none';
-      if(ls) ls.style.display = 'grid';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){}
+// === Modal close utility (robust) ===
+function closeAuthModal(){
+  try{
+    const modal = document.getElementById('authDialog')
+      || document.querySelector('dialog[open], dialog#authDialog')
+      || document.querySelector('.modal.is-open, .modal.open, .modal.show, [data-modal="auth"].open')
+      || document.querySelector('[role="dialog"].open, [role="dialog"].is-open');
+    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){} }
+    if (modal) {
+      modal.classList.remove('is-open','open','show');
+      modal.setAttribute('aria-hidden','true');
+      if (modal.style) modal.style.display = 'none';
     }
-  });
-}catch(_){}
+    const scrim = document.querySelector('.modal-backdrop, .overlay, .scrim');
+    if (scrim) scrim.remove();
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  } catch(e){ /* noop */ }
+}
