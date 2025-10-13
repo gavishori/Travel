@@ -1242,6 +1242,20 @@ function openExpenseModal(e){
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
+
+  // Prefill expDate/expTime
+  try {
+    const ts = e && (e.createdAt || e.date);
+    const d = ts ? new Date(ts) : new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const $d = $('#expDate'), $t = $('#expTime');
+    if ($d) $d.value = dStr;
+    if ($t) $t.value = tStr;
+  } catch(_){}
+
+
   $('#expenseModal').showModal();
 }
 async function saveExpense(){
@@ -1267,7 +1281,7 @@ async function saveExpense(){
     locationName: formatPlace(($('#expLocationName') ? $('#expLocationName').value.trim() : '')),
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
-    createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
+    createdAt: _createdAtExpense,
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -1821,6 +1835,20 @@ function openJournalModal(j) {
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
+
+  // Prefill jrDate/jrTime
+  try {
+    const ts = j && (j.createdAt || j.date);
+    const d = ts ? new Date(ts) : new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const $d = $('#jrDate'), $t = $('#jrTime');
+    if ($d) $d.value = dStr;
+    if ($t) $t.value = tStr;
+  } catch(_){}
+
+
   $('#journalModal').showModal();
 }
 
@@ -1837,7 +1865,7 @@ async function saveJournal() {
     placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
+    createdAt: _createdAtJournal
   };
 
   await FB.updateDoc(ref, { journal: t.journal });
