@@ -1,38 +1,36 @@
 
-// --- Global sign-out helper ---
+window.__openAuthModal = function(){
+  try{
+    const dlg = document.getElementById('authModal')||document.querySelector('dialog');
+    if(!dlg) return false;
+    document.body.classList.add('modal-open');
+    if(typeof dlg.showModal==='function'){ try{ dlg.showModal(); }catch(_){} }
+    dlg.setAttribute('open','');
+    return false;
+  }catch(e){ return false; }
+};
+
+window.__closeAuthModal = function(){
+  try{
+    const dlg = document.getElementById('authModal')||document.querySelector('dialog[open]');
+    if(!dlg) return;
+    if(typeof dlg.close==='function'){ try{ dlg.close(); }catch(_){} }
+    dlg.removeAttribute('open');
+    document.body.classList.remove('modal-open');
+  }catch(e){}
+};
+
 window.__signOutNow = async function(){
-  try {
-    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
-    if (!a || !window.signOut) return;
+  try{
+    const a=(window.FB&&FB.auth)?FB.auth:(window.auth||null);
+    if(!a||!window.signOut) return;
     await signOut(a);
-  } catch(e){} finally {
-    try{ localStorage.clear(); sessionStorage.clear(); }catch(_){}
-    try{ location.reload(); }catch(_){}
+  }catch(e){}finally{
+    try{localStorage.clear();sessionStorage.clear();}catch(_){}
+    try{location.reload();}catch(_){}
   }
 };
 
-// --- Mobile-safe: open auth dialog full-screen ---
-window.__openAuthModal = function() {
-  try {
-    const dlg = document.getElementById('authModal') || document.querySelector('dialog');
-    if (!dlg) return false;
-    document.body.classList.add('modal-open');
-    if (typeof dlg.showModal === 'function') { try{ dlg.showModal(); }catch(_){} }
-    dlg.setAttribute('open','');
-    return false;
-  } catch(e){ return false; }
-};
-
-// --- Mobile-safe: close auth dialog consistently ---
-window.__closeAuthModal = function() {
-  try {
-    const dlg = document.getElementById('authModal') || document.querySelector('dialog[open]');
-    if (!dlg) return;
-    if (typeof dlg.close === 'function') { try{ dlg.close(); }catch(_){} }
-    dlg.removeAttribute('open');
-    document.body.classList.remove('modal-open');
-  } catch(e){}
-};
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -3323,42 +3321,33 @@ function closeAuthModal(){
 }
 
 
-// --- Inject login/logout toggle button and wire behavior ---
+// --- Wire a persistent #authToggle in header: switches between login/logout and updates title ---
 (function(){
   try {
-    const a = (window.FB && FB.auth) ? FB.auth : (window.auth || null);
-    if (!a || !window.onAuthStateChanged) return;
+    const a=(window.FB&&FB.auth)?FB.auth:(window.auth||null);
+    if(!a||!window.onAuthStateChanged) return;
 
-    function ensureToggleButton(){
-      let btn = document.getElementById('authToggle');
-      if (btn) return btn;
-      btn = document.createElement('button');
-      btn.id = 'authToggle';
-      btn.type = 'button';
-      btn.style.marginInlineStart = '8px';
-      const emailEl = document.querySelector('[data-user-email], #userEmail, .user-email')
-                    || document.querySelector('header [role="group"], header .pill, header');
-      if (emailEl && emailEl.parentNode) {
-        emailEl.parentNode.insertBefore(btn, emailEl.nextSibling);
-      } else {
-        btn.style.position = 'fixed';
-        btn.style.top = '12px';
-        btn.style.right = '12px';
-        document.body.appendChild(btn);
-      }
-      return btn;
+    function getToggle(){
+      return document.getElementById('authToggle');
+    }
+    function setLogin(btn){
+      if(!btn) return;
+      btn.title='התחברות';
+      btn.setAttribute('aria-label','התחברות');
+      btn.onclick=function(){ return window.__openAuthModal(); };
+    }
+    function setLogout(btn){
+      if(!btn) return;
+      btn.title='התנתקות';
+      btn.setAttribute('aria-label','התנתקות');
+      btn.onclick=function(){ return window.__signOutNow(); };
     }
 
-    function toLogin(btn){ btn.textContent = 'התחברות'; btn.onclick = function(){ return window.__openAuthModal(); }; }
-    function toLogout(btn){ btn.textContent = 'התנתקות'; btn.onclick = function(){ return window.__signOutNow(); }; }
-
-    onAuthStateChanged(a, (user) => {
-      const btn = ensureToggleButton();
-      if (!btn) return;
-      if (user) toLogout(btn); else toLogin(btn);
+    onAuthStateChanged(a, (user)=>{
+      const btn=getToggle();
+      if(!btn) return;
+      if(user){ setLogout(btn); }
+      else { setLogin(btn); }
     });
   } catch(e){}
 })();
-
-
-(function(){ try{ const b=document.getElementById('authPrimary'); if(b){ b.onclick=function(){ return window.__openAuthModal(); }; } }catch(e){} })();

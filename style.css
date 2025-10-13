@@ -1156,41 +1156,45 @@ html.share-open [style*="overflow:scroll"]{
 body.modal-open { overflow: hidden; }
 
 
-/* === Mobile auth full-screen & controls === */
+/* === Header adjustments for mobile (logo bigger, toggle visible) === */
 @media (max-width: 768px) {
-  dialog#authModal, .auth-modal, dialog[open]#authModal {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    inset: 0 !important;
+  header, #mobileTopBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
-  dialog#authModal::backdrop {
-    background: rgba(0,0,0,0.35);
-  }
-  #authModal .panel, #authModal .content, #authModal form, #authModal .container {
-    width: 100%;
-    height: 100%;
-    padding: 16px;
-    box-sizing: border-box;
-    overflow: auto;
-  }
-  #authModal input, #authModal select, #authModal textarea {
-    font-size: 16px !important; /* prevent iOS zoom */
-  }
-  body.modal-open {
-    overflow: hidden !important;
-    position: fixed;
-    width: 100%;
-  }
-  #authToggle {
-    font-size: 14px;
+  #mobileTopBar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: white;
     padding: 8px 12px;
+    border-bottom: 1px solid #eef1f5;
+  }
+  #brandLogo {
+    height: 28px;
+  }
+  /* "Double size" vs previous small logo look */
+  @media (max-width: 768px) and (min-width: 360px) {
+    #brandLogo { height: 36px; }
+  }
+
+  /* Hide textual 'FLYMILY' brand if present (common class guesses) */
+  .brand, .brand-name, .brand-text, header h1.brand, header .title.brand {
+    display: none !important;
+  }
+
+  /* Toggle button style */
+  #authToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
     border-radius: 999px;
     border: 1px solid #c9d3e0;
-    background: white;
+    background: #fff;
+    line-height: 1;
   }
+  #authToggle svg { display: block; }
 }
