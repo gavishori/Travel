@@ -1,6 +1,6 @@
 
 // === Auth Button Toggle (Login <-> Logout) ===
-async function wireAuthPrimaryButton(){
+function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
   if(!btn) return;
   if(btn.dataset.authWired==='1') return;
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 })();
 // --- end ensure button ---
 
-async async function loadJournalOnly(){
+async function loadJournalOnly(){
   const tid = state.currentTripId;
   if(!tid) return;
   const ref = FB.doc(db, 'trips', tid);
@@ -164,7 +164,7 @@ async function loadExternalScript(urls) {
   }
   return false;
 }
-async async function ensureJsPDF() {
+async function ensureJsPDF() {
   if (typeof window.jspdf !== 'undefined' || typeof window.jsPDF !== 'undefined') return true;
   const ok = await loadExternalScript([
     "https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js",
@@ -177,14 +177,14 @@ async async function ensureJsPDF() {
   ]);
   return ok2;
 }
-async async function ensureXLSX() {
+async function ensureXLSX() {
   if (typeof window.XLSX !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js",
     "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
   ]);
 }
-async async function ensureDOCX() {
+async function ensureDOCX() {
   if (typeof window.docx !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/docx@8.5.0/build/index.umd.js",
@@ -223,7 +223,7 @@ function convertAmount(amount, from, to, rates){
   return a * M[from][to];
 }
 // === Fetch live USD rates once and lock ===
-async async function fetchRatesOnce(){
+async function fetchRatesOnce(){
   try{
     const localCur = state.current?.localCurrency;
     const to = ['ILS', 'EUR'];
@@ -934,7 +934,7 @@ function ensureExpenseCurrencyOption() {
   }catch(e){ console.warn('ensureExpenseCurrencyOption failed', e); }
 }
 
-async async function loadTrip(){
+async function loadTrip(){
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   if(!snap.exists()) return;
@@ -1244,7 +1244,7 @@ function openExpenseModal(e){
   $('#expDelete').style.display = e? 'inline-block':'none';
   $('#expenseModal').showModal();
 }
-async async async function saveExpense(){
+async function saveExpense(){
   const ref  = FB.doc(db,'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t    = snap.exists() ? (snap.data()||{}) : {};
@@ -1483,7 +1483,7 @@ function showConfirm(msg, onYes){
 
 
 // === Bind delete buttons inside the Expense & Journal modals ===
-(async function bindInlineDeleteButtons(){
+(function bindInlineDeleteButtons(){
   // Expense modal delete
   const expDelBtn = document.getElementById('expDelete');
   if (expDelBtn && !expDelBtn._bound) {
@@ -1824,7 +1824,7 @@ function openJournalModal(j) {
   $('#journalModal').showModal();
 }
 
-async async async function saveJournal(){
+async function saveJournal() {
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t = snap.exists() ? (snap.data() || {}) : {};
@@ -1933,7 +1933,7 @@ $('#unsavedDiscard').addEventListener('click', async () => {
 $('#unsavedCancel').addEventListener('click', () => {
     $('#unsavedChangesModal').close();
 });
-async async function saveMetaChanges() {
+async function saveMetaChanges() {
     const ref = FB.doc(db, 'trips', state.currentTripId);
     const people = $('#metaPeople').value.split(',').map(s => s.trim()).filter(Boolean);
     const types = $$('.metaType.active').map(b => b.dataset.value);
@@ -2018,7 +2018,7 @@ function asArray(o){ return Array.isArray(o)? o : (o? Object.values(o): []); }
 
 // Build a minimal HTML block for export (RTL + Hebrew-safe)
 // Load html2canvas for Hebrew-safe PDF (render as image)
-async async function ensureHtml2Canvas(){
+async function ensureHtml2Canvas(){
   if (typeof window.html2canvas !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js",
@@ -2053,7 +2053,7 @@ function kvRowsFromMeta(trip){
 }
 
 // override PDF to always include all sections
-async async function exportPDF(){
+async function exportPDF(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok1 = await ensureJsPDF();
@@ -2085,7 +2085,7 @@ async async function exportPDF(){
 }
 
 // override Excel
-async async function exportExcel(){
+async function exportExcel(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok = await ensureXLSX(); if(!ok){ toast('בעיה בייצוא Excel'); return; }
@@ -2108,7 +2108,7 @@ async async function exportExcel(){
 }
 
 // override Word
-async async function exportWord(){
+async function exportWord(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
