@@ -31,6 +31,40 @@ function wireAuthPrimaryButton(){
     }
   };
 }
+
+// === Robust logout & cleanup ===
+async function __doFullLogout(e){
+  try{ e && e.preventDefault && e.preventDefault(); e && e.stopPropagation && e.stopPropagation(); }catch(_){}
+  try{
+    // Unsubscribe live listeners if any
+    try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    try{ state._unsubCurrent && state._unsubCurrent(); }catch(_){}
+    // Clear volatile state
+    state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    state.currentTripId = null;
+    state.trips = [];
+    // Clear local UI selections / caches (scoped keys)
+    try{ Object.keys(localStorage||{}).forEach(k=>{ if(/^previewMobile\.|^flymily\./.test(k)) localStorage.removeItem(k); }); }catch(_){}
+  }catch(_){}
+  try{
+    if (typeof FB !== 'undefined' && FB?.signOut) await FB.signOut(FB.auth);
+    else if (typeof signOutUser === 'function') await signOutUser();
+  }catch(err){ console.error('logout error', err); }
+  try{
+    // Show login modal if exists; hide app
+    const authModal = document.getElementById('authModal');
+    if (authModal?.showModal) authModal.showModal();
+    const appContainer = document.querySelector('.container');
+    if (appContainer) appContainer.style.display = 'none';
+  }catch(_){}
+}
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(!t) return;
+  if(t.matches('#btnLogout, .btn-logout, #btnLogoutMobile, .btn-logout-mobile')){
+    __doFullLogout(ev);
+  }
+});
 document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
@@ -2272,7 +2306,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       // User is logged out: Show login, hide app content
       if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
       if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
-      state.user = null;
+      state.user = null; try{ state._unsubTrips && state._unsubTrips(); }catch(_){} try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     }
   });
 }
