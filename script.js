@@ -1,6 +1,6 @@
 
 // === Auth Button Toggle (Login <-> Logout) ===
-function wireAuthPrimaryButton(){
+async function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
   if(!btn) return;
   if(btn.dataset.authWired==='1') return;
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 })();
 // --- end ensure button ---
 
-async function loadJournalOnly(){
+async async function loadJournalOnly(){
   const tid = state.currentTripId;
   if(!tid) return;
   const ref = FB.doc(db, 'trips', tid);
@@ -164,7 +164,7 @@ async function loadExternalScript(urls) {
   }
   return false;
 }
-async function ensureJsPDF() {
+async async function ensureJsPDF() {
   if (typeof window.jspdf !== 'undefined' || typeof window.jsPDF !== 'undefined') return true;
   const ok = await loadExternalScript([
     "https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js",
@@ -177,14 +177,14 @@ async function ensureJsPDF() {
   ]);
   return ok2;
 }
-async function ensureXLSX() {
+async async function ensureXLSX() {
   if (typeof window.XLSX !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js",
     "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
   ]);
 }
-async function ensureDOCX() {
+async async function ensureDOCX() {
   if (typeof window.docx !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/docx@8.5.0/build/index.umd.js",
@@ -223,7 +223,7 @@ function convertAmount(amount, from, to, rates){
   return a * M[from][to];
 }
 // === Fetch live USD rates once and lock ===
-async function fetchRatesOnce(){
+async async function fetchRatesOnce(){
   try{
     const localCur = state.current?.localCurrency;
     const to = ['ILS', 'EUR'];
@@ -934,7 +934,7 @@ function ensureExpenseCurrencyOption() {
   }catch(e){ console.warn('ensureExpenseCurrencyOption failed', e); }
 }
 
-async function loadTrip(){
+async async function loadTrip(){
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   if(!snap.exists()) return;
@@ -1242,17 +1242,9 @@ function openExpenseModal(e){
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
-  (function(){
-    const ts = e?.createdAt || e?.date || null;
-    const d = ts ? new Date(ts) : new Date();
-    const pad=(n)=>String(n).padStart(2,'0');
-    const dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    const $d=$('#expDate'), $t=$('#expTime'); if($d) $d.value=dStr; if($t) $t.value=tStr;
-  })(); // prefill exp date/time
   $('#expenseModal').showModal();
 }
-async function saveExpense(){
+async async async function saveExpense(){
   const ref  = FB.doc(db,'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t    = snap.exists() ? (snap.data()||{}) : {};
@@ -1275,11 +1267,7 @@ async function saveExpense(){
     locationName: formatPlace(($('#expLocationName') ? $('#expLocationName').value.trim() : '')),
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
-    createdAt: (function(){
-      const $d=$('#expDate'), $t=$('#expTime');
-      if($d && $d.value){ const dateStr=$d.value.trim(); const timeStr=($t&&$t.value)?$t.value.trim():'00:00'; return new Date(`${dateStr}T${timeStr}:00`).toISOString(); }
-      return (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString();
-    })(),
+    createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -1495,7 +1483,7 @@ function showConfirm(msg, onYes){
 
 
 // === Bind delete buttons inside the Expense & Journal modals ===
-(function bindInlineDeleteButtons(){
+(async function bindInlineDeleteButtons(){
   // Expense modal delete
   const expDelBtn = document.getElementById('expDelete');
   if (expDelBtn && !expDelBtn._bound) {
@@ -1833,17 +1821,10 @@ function openJournalModal(j) {
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
-  (function(){
-    const ts = j?.createdAt || j?.date || null;
-    const d = ts ? new Date(ts) : new Date();
-    const pad=(n)=>String(n).padStart(2,'0');
-    const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; const tStr=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    const $d=$('#jrDate'), $t=$('#jrTime'); if($d) $d.value=dStr; if($t) $t.value=tStr;
-  })(); // prefill journal date/time
   $('#journalModal').showModal();
 }
 
-async function saveJournal() {
+async async async function saveJournal(){
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t = snap.exists() ? (snap.data() || {}) : {};
@@ -1856,7 +1837,7 @@ async function saveJournal() {
     placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    (function(){ const $d=$('#jrDate'), $t=$('#jrTime'); if($d && $d.value){ const dateStr=$d.value.trim(); const timeStr=($t&&$t.value)?$t.value.trim():'00:00'; return new Date(`${dateStr}T${timeStr}:00`).toISOString(); } return (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString(); })()
+    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
   };
 
   await FB.updateDoc(ref, { journal: t.journal });
@@ -1952,7 +1933,7 @@ $('#unsavedDiscard').addEventListener('click', async () => {
 $('#unsavedCancel').addEventListener('click', () => {
     $('#unsavedChangesModal').close();
 });
-async function saveMetaChanges() {
+async async function saveMetaChanges() {
     const ref = FB.doc(db, 'trips', state.currentTripId);
     const people = $('#metaPeople').value.split(',').map(s => s.trim()).filter(Boolean);
     const types = $$('.metaType.active').map(b => b.dataset.value);
@@ -2037,7 +2018,7 @@ function asArray(o){ return Array.isArray(o)? o : (o? Object.values(o): []); }
 
 // Build a minimal HTML block for export (RTL + Hebrew-safe)
 // Load html2canvas for Hebrew-safe PDF (render as image)
-async function ensureHtml2Canvas(){
+async async function ensureHtml2Canvas(){
   if (typeof window.html2canvas !== 'undefined') return true;
   return await loadExternalScript([
     "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js",
@@ -2072,7 +2053,7 @@ function kvRowsFromMeta(trip){
 }
 
 // override PDF to always include all sections
-async function exportPDF(){
+async async function exportPDF(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok1 = await ensureJsPDF();
@@ -2104,7 +2085,7 @@ async function exportPDF(){
 }
 
 // override Excel
-async function exportExcel(){
+async async function exportExcel(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok = await ensureXLSX(); if(!ok){ toast('בעיה בייצוא Excel'); return; }
@@ -2127,7 +2108,7 @@ async function exportExcel(){
 }
 
 // override Word
-async function exportWord(){
+async async function exportWord(){
   const t = currentTrip();
   if(!t.id){ toast('פתח נסיעה'); return; }
   const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
