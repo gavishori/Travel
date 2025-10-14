@@ -319,6 +319,15 @@ id="expenseModal" class="modal">
         </select>
       </label>
       <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
+      <div class="row">
+        <label>שעה
+          <input type="time" id="expTime" class="input">
+        </label>
+        <label>תאריך
+          <input type="date" id="expDate" class="input">
+        </label>
+      </div>
+
       <div class="row location-row">
         <label>מיקום<input id="expLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
@@ -355,6 +364,15 @@ id="expenseModal" class="modal">
 </header>
     <div class="body">
       <label>תיאור<textarea id="jrText" class="input auto-resize"></textarea></label>
+      <div class="row">
+        <label>שעה
+          <input type="time" id="jrTime" class="input">
+        </label>
+        <label>תאריך
+          <input type="date" id="jrDate" class="input">
+        </label>
+      </div>
+
       <div class="row location-row">
         <label>מיקום<input id="jrLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectJrLocation" class="btn location-btn">בחר ע"ג מפה</button>

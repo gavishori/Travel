@@ -326,7 +326,7 @@ function focusItemInTab(type, id){
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
-    const date = fmtDateTime(dataObj.createdAt || dataObj.ts || dataObj.date);
+    const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
     const place = placeLinkHtml(dataObj);
     const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
     const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
@@ -757,8 +757,7 @@ function fmtDateTime(d){
 }
 
 // Robust sort key for expenses (handles legacy fields)
-function expenseSortKey(e){
-  const candidates = [e.createdAt, e.date, e.time, e.ts, e.timestamp];
+function expenseSortKey(e){ const candidates = [e.dateIso, e.createdAt, e.date, e.time, e.ts, e.timestamp];
   for (const v of candidates){
     if(!v) continue;
     const d = new Date(v);
@@ -798,7 +797,7 @@ function cycleCurrency(cur){
   return opts[(idx + 1) % opts.length];
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-async let __subTripsTimer=null;
+let __subTripsTimer=null;
 function subscribeTrips(){
   if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
@@ -2146,7 +2145,7 @@ async function exportExcel(){
   const s0 = XLSX.utils.json_to_sheet(meta);
   XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
 
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
   const s1 = XLSX.utils.json_to_sheet(jr);
   XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
 
@@ -2182,7 +2181,7 @@ async function exportWord(){
   const journalRows = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j =>
     new TableRow({
       children:[
-        new TableCell({ children:[new Paragraph(fmtDateTime(j.createdAt)||'')]}),
+        new TableCell({ children:[new Paragraph(fmtDateTime(j.dateIso || j.createdAt)||'')]}),
         new TableCell({ children:[new Paragraph(j.placeName||'')]}),
         new TableCell({ children:[new Paragraph(j.text||'')]}),
       ]
