@@ -1281,3 +1281,46 @@ html, body { height:100%; }
 
 /* Bubble interaction tweaks */
 .rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+
+
+/* --- iOS viewport & overflow fixes --- */
+html, body { height:100%; }
+:root{ --vh: 1dvh; }
+.app, .container, .page, .main { min-height: 100svh; min-height: 100dvh; min-height: -webkit-fill-available; }
+html, body { overflow-x:hidden; }
+
+
+@media (max-width: 480px){
+  html, body { width:100%; max-width:100%; overflow-x:hidden; overscroll-behavior-x: none; }
+  .app, .container, .content, .sidebar, .section, .card, .modal, header, nav { max-width:100%; min-width:0; }
+  .row, .flex, header, nav, .tabs, .toolbar { display:flex; flex-wrap:wrap; min-width:0; }
+}
+
+
+/* --- Mobile-only Logout Button --- */
+.btn-logout-mobile{ display:none; }
+@media (max-width: 768px){
+  .btn-logout-mobile{
+    display:inline-flex;
+    align-items:center;
+    padding:.6rem .9rem;
+    font-weight:600;
+    border-radius:12px;
+  }
+  .btn-logout-mobile.btn.danger{
+    background:#ffe8e8;
+    border:1px solid #ffb3b3;
+    color:var(--danger);
+  }
+}
+
+
+@media (max-width: 768px){
+  header #btnLogin,
+  header #userBadge {
+    display: none !important;
+  }
+  header #userMenuList {
+    display: none !important;
+  }
+}

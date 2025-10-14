@@ -3666,50 +3666,64 @@ try{
   document.addEventListener('focusin', init);
 })();
 
-// === mobile-dialog-ponyfill ===
-(function(){ 
-  function setupDialogPonyfill(){ 
-    var dlg = document.getElementById('authModal'); 
-    if(!dlg) return; 
-    var supported = !!window.HTMLDialogElement && typeof dlg.showModal==='function' && typeof dlg.close==='function';
-    if(supported) return; 
-    var backdrop;
-    function ensureBackdrop(){
-      if(backdrop) return backdrop;
-      backdrop = document.createElement('div');
-      backdrop.className = 'dialog-backdrop';
-      backdrop.style.position='fixed'; backdrop.style.inset='0'; backdrop.style.background='rgba(0,0,0,.35)';
-      backdrop.style.zIndex='9998';
-      backdrop.addEventListener('click', function(){ dlg.close(); });
-      return backdrop;
-    }
-    dlg.setAttribute('data-ponyfill','1');
-    dlg.show = function(){ this.setAttribute('open',''); };
-    dlg.showModal = function(){ 
-      if(!this.parentNode) document.body.appendChild(this);
-      document.body.appendChild(ensureBackdrop());
-      this.setAttribute('open','');
-      this.style.display='block'; this.style.position='fixed'; this.style.inset='0'; this.style.margin='auto'; this.style.zIndex='9999';
-    };
-    dlg.close = function(){ 
-      this.removeAttribute('open'); 
-      if(backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
-      this.style.display='none';
-    };
-  }
-  function setupTapReliability(){
-    if(!('ontouchend' in window) || window.__tapSynthesized) return;
-    window.__tapSynthesized = true;
-    document.addEventListener('touchend', function(ev){
-      var t = ev.target; if(!t) return;
-      var clickable = t.closest && t.closest('button, a, [role="button"], input[type="submit"], input[type="button"]');
-      if(!clickable) return;
-      Promise.resolve().then(function(){
-        try{ clickable.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window})); }catch(_){}
-      });
-    }, {passive:true, capture:true});
-  }
-  document.addEventListener('DOMContentLoaded', function(){ 
-    try{ setupDialogPonyfill(); setupTapReliability(); }catch(_){}
+
+// --- Mobile logout button hookup ---
+document.addEventListener('DOMContentLoaded', ()=>{
+  const getAllMob = ()=>Array.from(document.querySelectorAll('#btnLogoutMobile, .btn-logout-mobile'));
+  const runLogout = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('logout mobile failed', err); }
+  };
+  const bind = ()=> getAllMob().forEach(btn=>{
+    if(btn.dataset._mobLogoutBound==='1') return;
+    btn.dataset._mobLogoutBound='1';
+    btn.addEventListener('click', runLogout, {passive:false});
+    btn.addEventListener('touchend', runLogout, {passive:false});
   });
+  bind();
+  // Rebind when any dialog opens (app emits 'open' class or attribute? do a mutation observer)
+  const mo = new MutationObserver(()=>bind());
+  mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true});
+});
+
+
+// --- Mobile Auth Visibility Guard (resilient) ---
+(function(){
+  function setMobileVisibility(loggedIn){
+    const allMob = Array.from(document.querySelectorAll('#btnLogoutMobile, .btn-logout-mobile'));
+    allMob.forEach(b=> b.style.display = loggedIn ? 'inline-flex' : 'none');
+    const btnLogin = document.getElementById('btnLogin');
+    const ub = document.getElementById('userBadge');
+    if(btnLogin) btnLogin.style.display = loggedIn ? 'none' : 'inline-block';
+    if(ub) ub.style.display = loggedIn ? 'inline-flex' : 'none';
+  }
+  try{
+    if (typeof FB !== 'undefined' && FB?.onAuthStateChanged && FB?.auth){
+      let __lastAuthUid = null;
+      FB.onAuthStateChanged(FB.auth, (user)=>{
+        if((user?.uid||null)===__lastAuthUid) return;
+        __lastAuthUid = user?.uid||null;
+        const emailSpan = document.getElementById('currentUserEmail');
+        const loginScreen = document.getElementById('loginScreen');
+        const appContainer = document.querySelector('.container');
+        if (user) {
+          if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
+          if (loginScreen) loginScreen.style.display = 'none';
+          if (appContainer) appContainer.style.display = 'grid';
+          try { window.state = window.state || {}; window.state.user = user; }catch(_){}
+        } else {
+          if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
+          if (loginScreen) loginScreen.style.display = 'grid';
+          if (appContainer) appContainer.style.display = 'none';
+          try { window.state = window.state || {}; window.state.user = null; }catch(_){}
+        }
+        setMobileVisibility(!!user);
+        if(typeof window.__authPrimarySwap === 'function'){ window.__authPrimarySwap(!!user); }
+      });
+    }
+  }catch(e){ console.warn('mobile auth guard error', e); }
 })();

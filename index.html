@@ -469,7 +469,35 @@ id="expenseModal" class="modal">
   <div class="body">
     <div id="categoryBreakdownDialog"></div>
   </div>
-</dialog></body>
+</dialog>
+
+</body>
+    <script>
+    // /*__MOBILE_LOGOUT_INJECT__*/
+    document.addEventListener('DOMContentLoaded', function() {
+      const modalIds = [
+        'authModal','tripModal','expenseModal','journalModal','confirmDeleteModal','filterModal',
+        'breakdownDialog','unsavedChangesModal','mapSelectModal'
+      ];
+      modalIds.forEach(id => {
+        const d = document.getElementById(id);
+        if(!d) return;
+        const h = d.querySelector('header') || d.querySelector('.header');
+        if(!h) return;
+        // Avoid duplicating a logout button in a given modal header
+        if(!h.querySelector('.btn-logout-mobile')) {
+          const b = document.createElement('button');
+          b.className = 'btn danger btn-logout-mobile';
+          b.setAttribute('aria-label','התנתקות');
+          b.style.display = 'none';
+          b.style.marginInlineStart = '.5rem';
+          b.textContent = 'התנתקות';
+          h.appendChild(b);
+        }
+      });
+    });
+    </script>
+    
 </html>
 <!-- Injected three-button import cluster -->
 
