@@ -1,6 +1,8 @@
 
-/* Mobile-first auth layer – ONLY login/logout wiring (no other features touched)
-   Robust: wires handlers immediately + via delegation, and doesn't assume existing header button.
+/* Bulletproof Auth layer (login/logout only)
+   - Global handlers via window.__AUTH_DO to avoid any listener issues
+   - Visible debug panel
+   - Works even if header/login DOM is re-rendered
 */
 import { auth, FB } from './firebase.js';
 
@@ -8,14 +10,34 @@ function qs(sel, el=document){ return el.querySelector(sel); }
 function ce(tag, cls){ const el=document.createElement(tag); if(cls) el.className=cls; return el; }
 function safeText(el, txt){ if(el) el.textContent = txt; }
 
-// Ensure header has a primary auth button + (optional) user badge
+// ---- Debug panel ----
+function ensureDebug(){
+  if(qs('#authDebug')) return;
+  const box = ce('div'); box.id='authDebug';
+  box.style.cssText='position:fixed;inset:auto 8px 8px auto;max-width:70vw;background:#111c;padding:10px 12px;border-radius:10px;color:#fff;font:12px/1.4 system-ui;z-index:9999;opacity:.92;display:none;direction:rtl;';
+  box.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Auth Debug</div><div id="authDebugBody"></div>';
+  document.body.appendChild(box);
+}
+function dbg(msg){
+  ensureDebug();
+  const body = qs('#authDebugBody');
+  if(body){
+    const line = ce('div');
+    line.textContent = (new Date()).toLocaleTimeString() + ' — ' + msg;
+    body.prepend(line);
+    qs('#authDebug').style.display='block';
+  }
+  console.log('[AUTH]', msg);
+}
+
+// ---- Header auth UI (idempotent) ----
 function ensureHeaderAuth(){
-  let header = qs('header');
-  if(!header){ header = document.body; } // fallback
+  let header = qs('header') || document.body;
   let btn = qs('#btnLogin');
   if(!btn){
     btn = ce('button'); btn.id='btnLogin'; btn.className='btn primary';
     btn.textContent = 'התחברות';
+    btn.setAttribute('onclick', "window.__AUTH_DO && window.__AUTH_DO('scrollToLogin')");
     header.appendChild(btn);
   }
   let badge = qs('#userBadge');
@@ -27,26 +49,24 @@ function ensureHeaderAuth(){
   return { btn, badge };
 }
 
-// Inject a minimal login screen if missing
+// ---- Login screen (idempotent) ----
 function ensureLoginScreen(){
   if (qs('.login-screen')) return;
   const wrap = ce('div', 'login-screen');
   const card = ce('div', 'login-card');
   card.innerHTML = `
     <h1>כניסה לחשבון</h1>
-    <label>
-      אימייל
+    <label>אימייל
       <input id="authEmail" class="input" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" />
     </label>
-    <label>
-      סיסמה
+    <label>סיסמה
       <input id="authPass" class="input" type="password" autocomplete="current-password" placeholder="••••••••" />
     </label>
     <div class="row">
-      <button id="btnDoLogin" class="btn primary" style="flex:2">התחברות</button>
-      <button id="btnDoSignup" class="btn" style="flex:1">הרשמה</button>
+      <button id="btnDoLogin" class="btn primary" style="flex:2" onclick="window.__AUTH_DO && window.__AUTH_DO('login')">התחברות</button>
+      <button id="btnDoSignup" class="btn" style="flex:1" onclick="window.__AUTH_DO && window.__AUTH_DO('signup')">הרשמה</button>
     </div>
-    <button id="btnDoReset" class="btn" style="width:100%">איפוס סיסמה</button>
+    <button id="btnDoReset" class="btn" style="width:100%" onclick="window.__AUTH_DO && window.__AUTH_DO('reset')">איפוס סיסמה</button>
   `;
   wrap.appendChild(card);
   const hdr = qs('header');
@@ -54,146 +74,74 @@ function ensureLoginScreen(){
   else document.body.appendChild(wrap);
 }
 
-// Wire the header primary button basic behavior (scroll to login when logged-out)
-function wireAuthPrimaryButton(){
-  const btn = qs('#btnLogin');
-  if(!btn || btn.dataset.authWired==='1') return;
-  btn.dataset.authWired='1';
-  btn.addEventListener('click', (e)=>{
-    const bodyLoggedOut = document.body.classList.contains('logged-out');
-    if(bodyLoggedOut){
-      e.preventDefault();
-      const card = qs('.login-card');
-      if(card && card.scrollIntoView) card.scrollIntoView({behavior:'smooth', block:'start'});
-    }
-  }, {passive:false});
-}
-
-// Attach direct handlers to the login form (idempotent)
-function wireLoginFormDirect(){
-  const email = qs('#authEmail');
-  const pass  = qs('#authPass');
-  const doLogin  = qs('#btnDoLogin');
-  const doSignup = qs('#btnDoSignup');
-  const doReset  = qs('#btnDoReset');
-
-  function val(){ return { email: (email?.value||'').trim(), pass: pass?.value||'' }; }
-
-  if(doLogin && !doLogin.dataset.wired){
-    doLogin.dataset.wired='1';
-    doLogin.addEventListener('click', async ()=>{
-      const v = val();
-      if(!v.email || !v.pass) return alert('נא למלא אימייל וסיסמה');
-      try{ await FB.signInWithEmailAndPassword(auth, v.email, v.pass); }
-      catch(e){ console.error(e); alert('כניסה נכשלה: '+(e.message||e.code||'')); }
-    });
-  }
-  if(doSignup && !doSignup.dataset.wired){
-    doSignup.dataset.wired='1';
-    doSignup.addEventListener('click', async ()=>{
-      const v = val();
-      if(!v.email || !v.pass) return alert('נא למלא אימייל וסיסמה');
-      try{ await FB.createUserWithEmailAndPassword(auth, v.email, v.pass); }
-      catch(e){ console.error(e); alert('הרשמה נכשלה: '+(e.message||e.code||'')); }
-    });
-  }
-  if(doReset && !doReset.dataset.wired){
-    doReset.dataset.wired='1';
-    doReset.addEventListener('click', async ()=>{
-      const vEmail = (email?.value||'').trim();
-      if(!vEmail) return alert('נא למלא אימייל לאיפוס');
-      try{ await FB.sendPasswordResetEmail(auth, vEmail); alert('נשלח מייל לאיפוס סיסמה'); }
-      catch(e){ console.error(e); alert('שגיאה באיפוס: '+(e.message||e.code||'')); }
-    });
-  }
-}
-
-// Add event delegation as a backup (handles dynamically replaced nodes)
-function wireDelegation(){
-  if(document.body.dataset.authDelegation==='1') return;
-  document.body.dataset.authDelegation='1';
-  document.addEventListener('click', async (ev)=>{
-    const t = ev.target;
-    if(!t) return;
-    const id = t.id;
-    const email = qs('#authEmail');
-    const pass  = qs('#authPass');
-    const vEmail = (email?.value||'').trim();
-    const vPass  = pass?.value||'';
-    try{
-      if(id==='btnDoLogin'){
-        ev.preventDefault();
-        if(!vEmail || !vPass) return alert('נא למלא אימייל וסיסמה');
-        await FB.signInWithEmailAndPassword(auth, vEmail, vPass);
-      } else if(id==='btnDoSignup'){
-        ev.preventDefault();
-        if(!vEmail || !vPass) return alert('נא למלא אימייל וסיסמה');
-        await FB.createUserWithEmailAndPassword(auth, vEmail, vPass);
-      } else if(id==='btnDoReset'){
-        ev.preventDefault();
-        if(!vEmail) return alert('נא למלא אימייל לאיפוס');
-        await FB.sendPasswordResetEmail(auth, vEmail);
-        alert('נשלח מייל לאיפוס סיסמה');
+// ---- Global action dispatcher ----
+window.__AUTH_DO = async function(action){
+  try{
+    dbg('action='+action);
+    if(action==='scrollToLogin'){
+      if(document.body.classList.contains('logged-out')){
+        qs('.login-card')?.scrollIntoView({behavior:'smooth', block:'start'});
+      } else {
+        // act as logout when logged-in
+        await FB.signOut(auth);
+        dbg('signed out');
       }
-    }catch(e){
-      console.error(e);
-      alert((e && (e.message||e.code)) || 'שגיאת אימות');
+      return;
     }
-  }, {capture:true});
-}
+    const email = (qs('#authEmail')?.value || '').trim();
+    const pass  = (qs('#authPass')?.value || '');
+    if(action==='login'){
+      if(!email || !pass) return alert('נא למלא אימייל וסיסמה');
+      await FB.signInWithEmailAndPassword(auth, email, pass);
+      dbg('login request sent');
+    } else if(action==='signup'){
+      if(!email || !pass) return alert('נא למלא אימייל וסיסמה');
+      await FB.createUserWithEmailAndPassword(auth, email, pass);
+      dbg('signup request sent');
+    } else if(action==='reset'){
+      if(!email) return alert('נא למלא אימייל לאיפוס');
+      await FB.sendPasswordResetEmail(auth, email);
+      alert('נשלח מייל לאיפוס סיסמה');
+      dbg('reset email sent');
+    }
+  }catch(e){
+    console.error(e);
+    dbg('ERROR: '+(e.message||e.code||e));
+    alert((e && (e.message||e.code)) || 'שגיאת אימות');
+  }
+};
 
-// Auth state handling
+// ---- Auth state handling ----
 let __unsub;
 function startAuthWatcher(){
-  try{
-    if(__unsub) try{ __unsub(); }catch(_){}
-    __unsub = FB.onAuthStateChanged(auth, (user)=>{
-      const { btn, badge } = ensureHeaderAuth();
-      if(user){
-        document.body.classList.remove('logged-out');
-        safeText(btn, 'ניתוק');
-        btn.classList.add('danger');
-        // Fresh logout handler
-        const clone = btn.cloneNode(true);
-        btn.parentNode.replaceChild(clone, btn);
-        clone.id = 'btnLogin';
-        clone.classList.add('danger');
-        clone.onclick = async (e)=>{
-          e && e.preventDefault && e.preventDefault();
-          try{ await FB.signOut(auth); }catch(e){ console.error(e); }
-        };
-        badge.style.display='inline-flex';
-        safeText(badge, user.email || 'משתמש');
-        const ls = qs('.login-screen'); if(ls) ls.style.display='none';
-      } else {
-        document.body.classList.add('logged-out');
-        safeText(btn, 'התחברות');
-        btn.classList.remove('danger');
-        badge.style.display='none'; safeText(badge, '');
-        const ls = qs('.login-screen'); if(ls) ls.style.display='';
-        wireLoginFormDirect(); // ensure direct wiring while logged-out
-      }
-    });
-  }catch(e){
-    console.error('Auth watcher error', e);
-    alert('שגיאה בטעינת אימות. ודא שהדומיין מורשה ב-Firebase ('+location.host+').');
-  }
+  if(__unsub) try{ __unsub(); }catch(_){}
+  __unsub = FB.onAuthStateChanged(auth, (user)=>{
+    const { btn, badge } = ensureHeaderAuth();
+    if(user){
+      document.body.classList.remove('logged-out');
+      safeText(btn, 'ניתוק');
+      btn.classList.add('danger');
+      btn.setAttribute('onclick', "window.__AUTH_DO && window.__AUTH_DO('scrollToLogin')");
+      badge.style.display='inline-flex';
+      safeText(badge, user.email || 'משתמש');
+      const ls = qs('.login-screen'); if(ls) ls.style.display='none';
+      dbg('AUTH OK: '+(user.email||''));
+    } else {
+      document.body.classList.add('logged-out');
+      safeText(btn, 'התחברות');
+      btn.classList.remove('danger');
+      badge.style.display='none'; safeText(badge, '');
+      const ls = qs('.login-screen'); if(ls) ls.style.display='';
+      dbg('AUTH: logged-out');
+    }
+  });
 }
 
-// Global error hook to surface early failures
-window.addEventListener('error', (e)=>{
-  try{
-    const msg = (e && (e.message || (e.error && e.error.message))) || 'שגיאה לא ידועה';
-    console.log('GlobalError:', msg);
-  }catch(_){}
-});
-
-// Boot
+// ---- Boot ----
 document.addEventListener('DOMContentLoaded', ()=>{
+  ensureDebug();
   ensureHeaderAuth();
   ensureLoginScreen();
-  wireAuthPrimaryButton();
-  wireLoginFormDirect();    // wire immediately
-  wireDelegation();         // + delegation safety net
   startAuthWatcher();
+  dbg('booted');
 });
