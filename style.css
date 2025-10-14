@@ -73,7 +73,7 @@ th{position:sticky;top:0;background:var(--card)}
 
 dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--ink);padding:0;max-width:420px;width:90%}
 .modal header{padding:12px 16px;border-bottom:1px solid var(--border);background:transparent}
-.modal .body{padding:14px 16px}
+.modal .body{padding:14px 16px;position:relative}
 .modal .footer{display:flex;gap:8px;justify-content:flex-start;padding:12px 16px;border-top:1px solid var(--border)}
 
 .toast{position:fixed;inset-inline-end:16px;inset-block-end:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);display:none}
@@ -1279,30 +1279,17 @@ html, body { height:100%; }
 #jrText a.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
 #jrText a{ word-break: break-all; }
 
+/* Bubble interaction tweaks */
+.rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
 
-/* === RTF editor tweaks (expenses + journal) === */
-.input.rtf[contenteditable="true"]{
-  min-height: 96px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.input.rtf[contenteditable="true"][placeholder]:empty:before{
-  content: attr(placeholder);
-  opacity: .55;
-}
-/* Force link icon blue */
-.link-icon::before{
-  color: #1E88E5 !important;
-  fill: #1E88E5 !important;
-}
-
-
-/* === RTF bubble positioning & rendering tweaks === */
-.rtf-bubble{
-  position: fixed !important;
-  z-index: 10000;
-}
-/* Make sure rendered rich text keeps line breaks similarly to the editor */
-.rtf-view, .journal .text, .exp-item .cell.notes, .exp-item .cell.desc {
-  white-space: pre-wrap;
+/* === auth-mobile-override === */
+/* Hide main app container when logged out, show compact login */
+body.logged-out .container { display: none !important; }
+body.logged-out .login-screen { display: grid !important; }
+/* Ensure header stays visible for the login/logout button */
+body.logged-out header { position: sticky; top: 0; }
+/* Better tap targets on mobile */
+@media (max-width: 420px){
+  header button, .btn { padding: 10px 14px; border-radius: 14px; }
+  .login-card h1 { font-size: 1.4rem; }
 }
