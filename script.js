@@ -1113,9 +1113,15 @@ function renderJournal(t, order){
       .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
 
     arr.forEach(j=>{
-      const d = dayjs(j.createdAt);
-      const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
-      const timeStr = d.isValid()? d.format('HH:mm') : '';
+      const baseIso = j.dateIso || j.createdAt;
+      let dateStr = '', timeStr = '';
+      if (baseIso) {
+        const d = dayjs(baseIso);
+        if (d.isValid()) { dateStr = d.format('DD/MM/YYYY'); timeStr = d.format('HH:mm'); }
+      }
+      // fallback to stored strings if exist
+      if (!dateStr && j.date) dateStr = j.date;
+      if (!timeStr && j.time) timeStr = j.time;
       const cat = j.category || '';
             // Build compact place display: "Name, City, Country"
       const parts = [j.placeName, j.city, j.country].filter(Boolean);
@@ -1926,14 +1932,36 @@ async function saveJournal() {
 
   const id = $('#journalModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.journal = t.journal || {};
+
+  const prev = t.journal[id] || {};
+
   t.journal[id] = {
     text: $('#jrText').value.trim(),
     placeName: formatPlace($('#jrLocationName').value.trim()),
-    placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
+    placeUrl: (function(){ 
+      const v=$('#jrLocationName').value.trim(); 
+      return /^(?:https?:\/\/|www\.)/.test(v) ? (v.startsWith('http')? v : 'http://' + v) : ''; 
+    })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
+    createdAt: prev.createdAt || new Date().toISOString()
   };
+
+  // --- align with Expenses: persist dateIso/date/time from inputs ---
+  const $jrD = $('#jrDate');
+  const $jrT = $('#jrTime');
+  let _jr_dateIso;
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  } else {
+    _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
+  }
+  const __dt = new Date(_jr_dateIso);
+  const pad2 = n => String(n).padStart(2, '0');
+
+  t.journal[id].dateIso = _jr_dateIso;
+  t.journal[id].date    = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
+  t.journal[id].time    = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
   await FB.updateDoc(ref, { journal: t.journal });
   $('#journalModal').close();
