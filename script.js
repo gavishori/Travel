@@ -69,7 +69,21 @@ async function loadJournalOnly(){
   if(!snap.exists()) return;
   const t = snap.data() || {};
   if(!state.current) state.current = { id: tid };
-  state.current.journal = t.journal || {};
+  state.current.journal = t.journal || {};  /*__JR_DT_BLOCK__*/
+  const $jrD = document.getElementById('jrDate');
+  const $jrT = document.getElementById('jrTime');
+  let _jr_dateIso;
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  } else {
+    const curJ = (t.journal && t.journal[id]) || {};
+    _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
+  }
+  const __jr_dt = new Date(_jr_dateIso);
+  const __pad2 = n=>String(n).padStart(2,'0');
+  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__jr_dt.getFullYear()}`;
+  const __jr_timeStr = `${__pad2(__jr_dt.getHours())}:${__pad2(__jr_dt.getMinutes())}`;
+
   renderJournal(state.current, state.journalSort);
 }
 
@@ -1229,6 +1243,20 @@ $('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
 $('#expSave').addEventListener('click', saveExpense);
 
 function openExpenseModal(e){
+  /*__OPEN_EXP_PREFILL__*/
+  try{
+    const base = e || null;
+    const $d = document.getElementById('expDate');
+    const $t = document.getElementById('expTime');
+    if($d && $t){
+      const src = base?.dateIso || base?.createdAt || new Date().toISOString();
+      const d = new Date(src);
+      const pad = n=>String(n).padStart(2,'0');
+      $d.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      $t.value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+  }catch(_){}
+
   if(window._bindTextareasForModals) window._bindTextareasForModals();
 
   seedExpenseCategories();
@@ -1285,6 +1313,20 @@ async function saveExpense(){
   // if rates don't exist, set them. otherwise, keep them.
   const expenseRates = currentExpense.rates || { USDILS: live.USDILS, USDEUR: live.USDEUR, lockedAt: live.lockedAt };
   if(live.USDLocal) expenseRates.USDLocal = live.USDLocal;
+  /*__EXP_DT_BLOCK__*/
+  const $expD = document.getElementById('expDate');
+  const $expT = document.getElementById('expTime');
+  let _exp_dateIso;
+  if ($expD && $expT && $expD.value && $expT.value) {
+    _exp_dateIso = new Date(`${$expD.value}T${$expT.value}:00`).toISOString();
+  } else {
+    const curE = (t.expenses && t.expenses[$('#expenseModal')?.dataset?.id || '']) || {};
+    _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
+  }
+  const __exp_dt = new Date(_exp_dateIso);
+  const __pad = n=>String(n).padStart(2,'0');
+  const __exp_dateStr = `${__pad(__exp_dt.getDate())}/${__pad(__exp_dt.getMonth()+1)}/${__exp_dt.getFullYear()}`;
+  const __exp_timeStr = `${__pad(__exp_dt.getHours())}:${__pad(__exp_dt.getMinutes())}`;
   
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
@@ -1297,6 +1339,9 @@ async function saveExpense(){
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
+    dateIso: _exp_dateIso,
+    date: __exp_dateStr,
+    time: __exp_timeStr,
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -2655,7 +2700,10 @@ async function importGPXFromFile(file){
         placeUrl: '',
         lat: p.lat, lng: p.lng,
         createdAt: p._time ? new Date(p._time).toISOString() : new Date().toISOString()
-      };
+      ,
+    dateIso: _jr_dateIso,
+    date: __jr_dateStr,
+    time: __jr_timeStr};
       added++;
     });
 
