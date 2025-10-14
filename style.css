@@ -1281,18 +1281,3 @@ html, body { height:100%; }
 
 /* Bubble interaction tweaks */
 .rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-
-/* === auth-click-override === */
-.login-screen {
-  position: relative !important;
-  z-index: 9999 !important;
-}
-.login-card, .login-card * {
-  pointer-events: auto !important;
-}
-#btnDoLogin, #btnDoSignup, #btnDoReset {
-  outline: 2px solid transparent;
-}
-#btnDoLogin:active, #btnDoSignup:active, #btnDoReset:active {
-  outline-color: rgba(0,0,0,.25);
-}
