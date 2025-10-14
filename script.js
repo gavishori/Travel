@@ -1,16 +1,11 @@
 
-/* Bulletproof Auth layer (login/logout only)
-   - Global handlers via window.__AUTH_DO to avoid any listener issues
-   - Visible debug panel
-   - Works even if header/login DOM is re-rendered
-*/
+/* Triple‑Wired Auth (login/logout only) */
 import { auth, FB } from './firebase.js';
 
 function qs(sel, el=document){ return el.querySelector(sel); }
 function ce(tag, cls){ const el=document.createElement(tag); if(cls) el.className=cls; return el; }
 function safeText(el, txt){ if(el) el.textContent = txt; }
 
-// ---- Debug panel ----
 function ensureDebug(){
   if(qs('#authDebug')) return;
   const box = ce('div'); box.id='authDebug';
@@ -30,7 +25,6 @@ function dbg(msg){
   console.log('[AUTH]', msg);
 }
 
-// ---- Header auth UI (idempotent) ----
 function ensureHeaderAuth(){
   let header = qs('header') || document.body;
   let btn = qs('#btnLogin');
@@ -49,7 +43,6 @@ function ensureHeaderAuth(){
   return { btn, badge };
 }
 
-// ---- Login screen (idempotent) ----
 function ensureLoginScreen(){
   if (qs('.login-screen')) return;
   const wrap = ce('div', 'login-screen');
@@ -74,7 +67,6 @@ function ensureLoginScreen(){
   else document.body.appendChild(wrap);
 }
 
-// ---- Global action dispatcher ----
 window.__AUTH_DO = async function(action){
   try{
     dbg('action='+action);
@@ -82,7 +74,6 @@ window.__AUTH_DO = async function(action){
       if(document.body.classList.contains('logged-out')){
         qs('.login-card')?.scrollIntoView({behavior:'smooth', block:'start'});
       } else {
-        // act as logout when logged-in
         await FB.signOut(auth);
         dbg('signed out');
       }
@@ -111,7 +102,41 @@ window.__AUTH_DO = async function(action){
   }
 };
 
-// ---- Auth state handling ----
+function wireDirect(){
+  const email = ()=> (qs('#authEmail')?.value || '').trim();
+  const pass  = ()=> (qs('#authPass')?.value || '');
+  const map = [
+    ['#btnDoLogin',  async ()=>{ if(!email()||!pass()) return alert('נא למלא אימייל וסיסמה'); await FB.signInWithEmailAndPassword(auth, email(), pass()); dbg('login via direct'); }],
+    ['#btnDoSignup', async ()=>{ if(!email()||!pass()) return alert('נא למלא אימייל וסיסמה'); await FB.createUserWithEmailAndPassword(auth, email(), pass()); dbg('signup via direct'); }],
+    ['#btnDoReset',  async ()=>{ if(!email()) return alert('נא למלא אימייל לאיפוס'); await FB.sendPasswordResetEmail(auth, email()); alert('נשלח מייל לאיפוס סיסמה'); dbg('reset via direct'); }],
+  ];
+  map.forEach(([sel, fn])=>{
+    const el = qs(sel);
+    if(el && !el.dataset.wired){
+      el.dataset.wired='1';
+      el.addEventListener('click', (e)=>{ e.preventDefault(); fn().catch(err=>{console.error(err); dbg('ERROR: '+(err.message||err.code||err)); alert(err.message||err.code||'שגיאת אימות');}); });
+    }
+  });
+}
+
+function wireDelegation(){
+  if(document.body.dataset.authDelegation==='1') return;
+  document.body.dataset.authDelegation='1';
+  document.addEventListener('click', async (ev)=>{
+    const t = ev.target;
+    if(!t) return;
+    const id = t.id;
+    const g = (sel)=> (qs(sel)?.value||'').trim();
+    try{
+      if(id==='btnDoLogin'){ ev.preventDefault(); if(!g('#authEmail')||!g('#authPass')) return alert('נא למלא אימייל וסיסמה'); await FB.signInWithEmailAndPassword(auth, g('#authEmail'), g('#authPass')); dbg('login via delegation'); }
+      else if(id==='btnDoSignup'){ ev.preventDefault(); if(!g('#authEmail')||!g('#authPass')) return alert('נא למלא אימייל וסיסמה'); await FB.createUserWithEmailAndPassword(auth, g('#authEmail'), g('#authPass')); dbg('signup via delegation'); }
+      else if(id==='btnDoReset'){ ev.preventDefault(); if(!g('#authEmail')) return alert('נא למלא אימייל לאיפוס'); await FB.sendPasswordResetEmail(auth, g('#authEmail')); alert('נשלח מייל לאיפוס סיסמה'); dbg('reset via delegation'); }
+    }catch(e){
+      console.error(e); dbg('ERROR: '+(e.message||e.code||e)); alert(e.message||e.code||'שגיאת אימות');
+    }
+  }, {capture:true});
+}
+
 let __unsub;
 function startAuthWatcher(){
   if(__unsub) try{ __unsub(); }catch(_){}
@@ -132,16 +157,18 @@ function startAuthWatcher(){
       btn.classList.remove('danger');
       badge.style.display='none'; safeText(badge, '');
       const ls = qs('.login-screen'); if(ls) ls.style.display='';
+      wireDirect();
       dbg('AUTH: logged-out');
     }
   });
 }
 
-// ---- Boot ----
 document.addEventListener('DOMContentLoaded', ()=>{
   ensureDebug();
   ensureHeaderAuth();
   ensureLoginScreen();
+  wireDirect();
+  wireDelegation();
   startAuthWatcher();
   dbg('booted');
 });
