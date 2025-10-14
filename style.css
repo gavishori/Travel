@@ -1281,15 +1281,3 @@ html, body { height:100%; }
 
 /* Bubble interaction tweaks */
 .rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-
-/* === auth-mobile-override === */
-/* Hide main app container when logged out, show compact login */
-body.logged-out .container { display: none !important; }
-body.logged-out .login-screen { display: grid !important; }
-/* Ensure header stays visible for the login/logout button */
-body.logged-out header { position: sticky; top: 0; }
-/* Better tap targets on mobile */
-@media (max-width: 420px){
-  header button, .btn { padding: 10px 14px; border-radius: 14px; }
-  .login-card h1 { font-size: 1.4rem; }
-}
