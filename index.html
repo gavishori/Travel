@@ -363,7 +363,21 @@ id="expenseModal" class="modal">
 <button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
     <div class="body">
-      <label>תיאור<textarea id="jrText" class="input auto-resize"></textarea></label>
+      <label>תיאור<div id="jrText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true"></div></label>
+<div id="rtfBubble" class="rtf-bubble" hidden>
+  <div class="colors">
+    <button class="dot" data-color="#FFD60A" title="צהוב"></button>
+    <button class="dot" data-color="#E53935" title="אדום"></button>
+    <button class="dot" data-color="#1E88E5" title="כחול"></button>
+    <button class="dot" data-color="#34A853" title="ירוק"></button>
+    <button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button>
+  </div>
+  <div class="styles">
+    <button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button>
+    <button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button>
+    <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
+  </div>
+</div>
       <div class="row">
         <label>תאריך
           <input type="date" id="jrDate" class="input">

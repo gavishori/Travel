@@ -106,7 +106,7 @@ import { auth, db, FB } from './firebase.js';
   // bind on DOM ready and whenever modals open
   document.addEventListener('DOMContentLoaded', ()=>{
     bindAutoResize(document.getElementById('expDesc'));
-    bindAutoResize(document.getElementById('jrText'));
+    // bindAutoResize skipped for contenteditable jrText
   });
 
   // Enter behavior inside modals:
@@ -133,7 +133,7 @@ import { auth, db, FB } from './firebase.js';
   // Expose to modal openers to (re)bind
   window._bindTextareasForModals = function(){
     bindAutoResize(document.getElementById('expDesc'));
-    bindAutoResize(document.getElementById('jrText'));
+    // bindAutoResize skipped for contenteditable jrText
   };
 })();
 // === End textarea helpers ===
@@ -1130,7 +1130,7 @@ function renderJournal(t, order){
         ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
         : '';
 
-      const text = linkifyText(j.text || '');
+      const text = (j.html && typeof j.html === 'string' && j.html.trim()) ? sanitizeJournalHTML(j.html) : linkifyText(j.text || '');
 
       const tr1 = document.createElement('tr');
       tr1.className = 'exp-item'; tr1.dataset.id = j.id;
@@ -1280,7 +1280,7 @@ function openExpenseModal(e){
   });
 
   $('#expenseModal').dataset.id = e?.id||'';
-  $('#expDesc').value = e?.desc||''; $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
+  $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
@@ -1337,7 +1337,8 @@ async function saveExpense(){
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
   t.expenses[id] = {
-    desc: $('#expDesc').value.trim(),
+    html: (document.getElementById('expDescRtf') ? sanitizeJournalHTML(document.getElementById('expDescRtf').innerHTML||'') : ''),
+    desc: (document.getElementById('expDescRtf') ? document.getElementById('expDescRtf').innerText.trim() : ''),
     category: $('#expCat').value.trim(),
     amount: Number($('#expAmount').value||0),
     currency: $('#expCurr').value,
@@ -1896,7 +1897,7 @@ $('#jrSave').addEventListener('click', saveJournal);
 
 function openJournalModal(j) {
   $('#journalModal').dataset.id = j?.id || '';
-  $('#jrText').value = j?.text || '';
+  document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
   $('#jrLocationName').value = j?.placeName || '';
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
@@ -1936,7 +1937,8 @@ async function saveJournal() {
   const prev = t.journal[id] || {};
 
   t.journal[id] = {
-    text: $('#jrText').value.trim(),
+    text: (document.getElementById('jrText').innerText || '').trim(),
+    html: (document.getElementById('jrText').innerHTML || '').trim(),
     placeName: formatPlace($('#jrLocationName').value.trim()),
     placeUrl: (function(){ 
       const v=$('#jrLocationName').value.trim(); 
@@ -2557,6 +2559,66 @@ window.searchAndNavigate = searchAndNavigate;
 
 
 // --- Utils: linkify plain text into clickable <a> tags (http/https + www + emails) ---
+
+function normalizeEditorLinks(editor){
+  if(!editor) return;
+  editor.querySelectorAll('a').forEach(a=>{
+    try{
+      const href = a.getAttribute('href')||'';
+      const txt = (a.textContent||'').trim();
+      const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
+      const tooLong = txt.length > 40 || href.length > 60;
+      if (looksRaw || tooLong){
+        a.classList.add('link-chip');
+        a.textContent = '🔗';
+      }
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener');
+      a.style.display = 'inline';
+    }catch(_){}
+  });
+}
+
+function pasteAsIconLink(editor, url){
+  const a = document.createElement('a');
+  a.href = url;
+  a.className = 'link-chip';
+  a.textContent = '🔗';
+  a.target = '_blank';
+  a.rel = 'noopener';
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount){ sel.getRangeAt(0).deleteContents(); sel.getRangeAt(0).insertNode(a); }
+}
+
+function sanitizeJournalHTML(html){
+  // Convert to DOM, post-process anchors
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  
+  tmp.querySelectorAll('a').forEach(a=>{
+    try{
+      const href = a.getAttribute('href')||'';
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener');
+
+      const txt = (a.textContent||'').trim();
+      const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
+      const tooLong = txt.length > 40 || href.length > 60;
+
+      // If long/raw, render as a blue link icon only
+      if (looksRaw || tooLong){
+        a.classList.add('link-chip');
+        a.innerHTML = '🔗'; // icon only
+        return;
+      }
+
+      // Otherwise keep user label but ensure anchors remain inline
+      a.style.display = 'inline';
+    }catch(_){}
+  });
+
+  return tmp.innerHTML;
+}
 
 function linkifyText(str, label){
   if (!str) return '';
@@ -3479,3 +3541,269 @@ try{
     }
   });
 }catch(_){}
+
+
+// === RTF bubble for journal ===
+(function(){
+  let __jr_inited = false;
+  let __jr_lastRange = null;
+
+  function init(){
+    if(__jr_inited) return;
+    const editor = document.getElementById('jrText');
+    const bubble = document.getElementById('rtfBubble');
+    if(!editor || !bubble) return;
+
+    __jr_inited = true;
+
+    function selectionInEditor(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0) return false;
+      const r = sel.getRangeAt(0);
+      return editor.contains(r.startContainer) && editor.contains(r.endContainer) && !sel.isCollapsed && String(sel).trim().length>0;
+    }
+    function showBubble(){
+      const sel = window.getSelection();
+      if(!selectionInEditor()){ hideBubble(); return; }
+      __jr_lastRange = sel.getRangeAt(0).cloneRange();
+      const r = __jr_lastRange.cloneRange();
+      const rect = r.getBoundingClientRect();
+      const host = editor.closest('.body') || editor.parentElement;
+      const hostRect = host.getBoundingClientRect();
+      bubble.style.left = (rect.left - hostRect.left + rect.width/2) + 'px';
+      bubble.style.top  = (rect.top - hostRect.top) + 'px';
+      bubble.hidden = false;
+      // clamp inside host
+      const b = bubble.getBoundingClientRect();
+      let x = parseFloat(bubble.style.left);
+      const min = 12;
+      const max = hostRect.width - (b.width + 12);
+      x = Math.max(min, Math.min(x - b.width/2, max));
+      bubble.style.left = x + 'px';
+    }
+    function hideBubble(){ bubble.hidden = true; }
+    function restoreSel(){
+      if(!__jr_lastRange) return;
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(__jr_lastRange);
+    }
+
+    editor.addEventListener('mouseup', ()=> setTimeout(showBubble, 0));
+    document.addEventListener('mousedown', (e)=>{
+      if(!bubble.hidden && !bubble.contains(e.target) && !editor.contains(e.target)) hideBubble();
+    });
+
+    // Prevent losing selection when pressing bubble buttons
+    bubble.addEventListener('mousedown', (e)=>{ e.preventDefault(); restoreSel(); });
+
+    // Color buttons
+    bubble.querySelectorAll('.dot').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        restoreSel();
+        const color = btn.getAttribute('data-color') || '#000000';
+        try{ document.execCommand('foreColor', false, color); }catch(_){}
+        editor.focus();
+        hideBubble();
+      });
+    });
+
+    // Bold/Italic/Underline
+    bubble.querySelectorAll('.fmt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        restoreSel();
+        const cmd = btn.getAttribute('data-cmd');
+        try{ document.execCommand(cmd, false, null); }catch(_){}
+        editor.focus();
+        hideBubble();
+      });
+    });
+
+    // Normalize existing anchors as icons if long/raw
+    normalizeEditorLinks(editor);
+    editor.addEventListener('input', ()=> normalizeEditorLinks(editor));
+
+    // Paste handler: if single URL, insert as icon-link
+    editor.addEventListener('paste', (e)=>{
+      const t = e.clipboardData && e.clipboardData.getData('text');
+      if(t && /^https?:\/\//.test(t.trim()) && !t.includes('\n')){
+        e.preventDefault();
+        pasteAsIconLink(editor, t.trim());
+        return;
+      }
+      // default paste otherwise; will be normalized on input
+      setTimeout(()=> normalizeEditorLinks(editor), 0);
+    });
+  }
+
+  // Try once now, and also when the modal opens/focus changes
+  init();
+  document.addEventListener('click', init);
+  document.addEventListener('focusin', init);
+})();
+
+
+/* ---- RTF Bubble for EXPENSES: mirror Journal behavior ---- */
+(function(){
+  const editor = document.getElementById('expDescRtf');
+  const bubble = document.getElementById('rtfBubbleExp');
+  if(!editor || !bubble) return;
+
+  function selRangeInEditor(){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    const r = sel.getRangeAt(0);
+    if(!editor.contains(r.commonAncestorContainer)) return null;
+    return r;
+  }
+  function showBubbleNear(r){
+    const rect = r.getBoundingClientRect();
+    bubble.hidden = false;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    bubble.style.top  = (rect.top + scrollY - bubble.offsetHeight - 8) + 'px';
+    bubble.style.left = (rect.left + scrollX + rect.width/2 - bubble.offsetWidth/2) + 'px';
+  }
+  function hideBubble(){ bubble.hidden = true; }
+  editor.addEventListener('mouseup', ()=>{
+    const r = selRangeInEditor();
+    if(r && !r.collapsed) showBubbleNear(r); else hideBubble();
+  });
+  editor.addEventListener('keyup', ()=>{
+    const r = selRangeInEditor();
+    if(r && !r.collapsed) showBubbleNear(r); else hideBubble();
+  });
+  document.addEventListener('scroll', ()=> hideBubble(), {passive:true});
+  document.addEventListener('click', (ev)=>{
+    if(editor.contains(ev.target) || bubble.contains(ev.target)) return;
+    hideBubble();
+  });
+  bubble.querySelectorAll('.dot').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const color = btn.dataset.color || '#000';
+      const r = selRangeInEditor();
+      if(!r) return;
+      const span = document.createElement('span');
+      span.style.backgroundColor = color;
+      span.style.padding = '0 2px';
+      r.surroundContents(span);
+      hideBubble();
+      editor.focus();
+    });
+  });
+  bubble.querySelectorAll('.fmt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cmd = btn.dataset.cmd;
+      if(cmd) document.execCommand(cmd, false, null);
+      editor.focus();
+    });
+  });
+})();
+
+
+/* === Override: preserve inline highlight styles in rich text (safe reassign) === */
+(function(){
+  const prev = (typeof window !== 'undefined' && typeof window.sanitizeJournalHTML === 'function')
+    ? window.sanitizeJournalHTML
+    : (typeof sanitizeJournalHTML === 'function' ? sanitizeJournalHTML : null);
+
+  window.sanitizeJournalHTML = function(html){
+    if(!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+
+    function clean(node){
+      if(node.nodeType === Node.TEXT_NODE){
+        return node.textContent;
+      }
+      if(node.nodeType !== Node.ELEMENT_NODE){
+        return '';
+      }
+      const tag = node.tagName.toLowerCase();
+      const inner = Array.from(node.childNodes).map(clean).join('');
+
+      if(tag === 'br') return '<br>';
+      if(tag === 'b' || tag === 'strong') return '<b>'+inner+'</b>';
+      if(tag === 'i' || tag === 'em') return '<i>'+inner+'</i>';
+      if(tag === 'u') return '<u>'+inner+'</u>';
+      if(tag === 'span'){
+        const style = node.getAttribute('style') || '';
+        const bg  = /background-color\s*:\s*([^;]+)/i.exec(style);
+        const col = /color\s*:\s*([^;]+)/i.exec(style);
+        const pad = /padding\s*:\s*([^;]+)/i.exec(style);
+        const allowed = [];
+        if(bg)  allowed.push('background-color:'+bg[1]);
+        if(col) allowed.push('color:'+col[1]);
+        if(pad) allowed.push('padding:'+pad[1]);
+        const attr = allowed.length ? ' style="'+allowed.join(';')+'"' : '';
+        return '<span'+attr+'>'+inner+'</span>';
+      }
+      if(tag === 'a'){
+        let href = node.getAttribute('href') || '';
+        try { href = href.trim(); } catch(_){}
+        const txt = (node.textContent||'').trim();
+        const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
+        const tooLong = txt.length > 40 || href.length > 60;
+        if(!href){ return inner; }
+        if(!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)){
+          href = 'http://' + href;
+        }
+        if(looksRaw || tooLong){
+          return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="קישור"></a>';
+        }
+        return '<a class="text-link" href="'+href+'" target="_blank" rel="noopener">'+inner+'</a>';
+      }
+      if(tag === 'div' || tag === 'p'){
+        return inner + '<br>';
+      }
+      return inner;
+    }
+
+    const out = Array.from(tmp.childNodes).map(clean).join('');
+    return out;
+  };
+})();
+/* === Shared: keep RTF bubbles above CURRENT selection (journal + expenses) === */
+(function(){
+  const pairs = [
+    { editorId: 'jrText',      bubbleId: 'rtfBubble'    },
+    { editorId: 'expDescRtf',  bubbleId: 'rtfBubbleExp' },
+  ];
+
+  function rangeIn(editor){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    const r = sel.getRangeAt(0);
+    return editor && editor.contains(r.commonAncestorContainer) ? r : null;
+  }
+
+  function place(bubble, rect){
+    if(!bubble) return;
+    bubble.hidden = false;
+    bubble.style.position = 'fixed';
+    const top = Math.max(8, rect.top - bubble.offsetHeight - 8);
+    const center = rect.left + rect.width/2;
+    const left = Math.max(8, Math.min(window.innerWidth - bubble.offsetWidth - 8, center - bubble.offsetWidth/2));
+    bubble.style.top = top + 'px';
+    bubble.style.left = left + 'px';
+  }
+
+  function update(){
+    pairs.forEach(({editorId, bubbleId})=>{
+      const editor = document.getElementById(editorId);
+      const bubble = document.getElementById(bubbleId);
+      if(!editor || !bubble) return;
+      const r = rangeIn(editor);
+      if(r && !r.collapsed){
+        const rect = r.getBoundingClientRect();
+        place(bubble, rect);
+      } else {
+        bubble.hidden = true;
+      }
+    });
+  }
+
+  document.addEventListener('selectionchange', update);
+  window.addEventListener('scroll', update, {passive:true});
+  window.addEventListener('resize', update);
+})();

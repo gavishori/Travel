@@ -1249,3 +1249,60 @@ html, body { overflow-x:hidden; }
 html, body { height:100%; }
 :root{ --vh: 1dvh; }
 .app, .container, .page, .main { min-height: 100svh; min-height: 100dvh; min-height: -webkit-fill-available;}
+
+
+/* URLs in journal outputs wrap cleanly */
+#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
+
+/* === RTF editor === */
+.input.rtf{ min-height:120px; overflow:auto; white-space:pre-wrap; }
+.input.rtf *{ font-family: inherit; }
+.input.rtf:focus{ outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent); }
+.rtf-bubble{ position:absolute; z-index:1000; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:6px 8px; display:flex; gap:10px; box-shadow:var(--shadow); transform:translate(-50%,-100%); }
+.rtf-bubble .colors,.rtf-bubble .styles{ display:flex; gap:6px; align-items:center; }
+.rtf-bubble .dot{ width:16px; height:16px; border-radius:50%; border:1px solid var(--border); cursor:pointer; padding:0; }
+.rtf-bubble .dot[data-color="#FFD60A"]{ background:#FFD60A; }
+.rtf-bubble .dot[data-color="#E53935"]{ background:#E53935; }
+.rtf-bubble .dot[data-color="#1E88E5"]{ background:#1E88E5; }
+.rtf-bubble .dot[data-color="#34A853"]{ background:#34A853; }
+.rtf-bubble .dot[data-color="#000000"]{ background:#000000; }
+.rtf-bubble .fmt{ border:1px solid var(--border); background:transparent; border-radius:10px; padding:2px 8px; cursor:pointer; font-weight:700; }
+#journalModal .body{ position:relative; }
+#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
+
+
+/* Blue link icon for long/raw links */
+.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
+
+
+/* Ensure long/raw links show as blue icon inside editor as well */
+#jrText a.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
+#jrText a{ word-break: break-all; }
+
+
+/* === RTF editor tweaks (expenses + journal) === */
+.input.rtf[contenteditable="true"]{
+  min-height: 96px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.input.rtf[contenteditable="true"][placeholder]:empty:before{
+  content: attr(placeholder);
+  opacity: .55;
+}
+/* Force link icon blue */
+.link-icon::before{
+  color: #1E88E5 !important;
+  fill: #1E88E5 !important;
+}
+
+
+/* === RTF bubble positioning & rendering tweaks === */
+.rtf-bubble{
+  position: fixed !important;
+  z-index: 10000;
+}
+/* Make sure rendered rich text keeps line breaks similarly to the editor */
+.rtf-view, .journal .text, .exp-item .cell.notes, .exp-item .cell.desc {
+  white-space: pre-wrap;
+}
