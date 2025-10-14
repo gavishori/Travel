@@ -70,19 +70,6 @@ async function loadJournalOnly(){
   const t = snap.data() || {};
   if(!state.current) state.current = { id: tid };
   state.current.journal = t.journal || {};
-  // Build dateIso/date/time for journal
-  const $d = $('#jrDate'), $t = $('#jrTime');
-  let _jr_dateIso;
-  if ($d && $t && $d.value && $t.value) {
-    _jr_dateIso = new Date(`${$d.value}T${$t.value}:00`).toISOString();
-  } else {
-    const curJ = (t.journal && t.journal[id]) || {};
-    _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
-  }
-  (function(){ const dt=new Date(_jr_dateIso); const pad=n=>String(n).padStart(2,'0');
-    window.__jr_dateStr = `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()}`;
-    window.__jr_timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;})();
-
   renderJournal(state.current, state.journalSort);
 }
 
@@ -339,7 +326,7 @@ function focusItemInTab(type, id){
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
-    const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
+    const date = fmtDateTime(dataObj.createdAt || dataObj.ts || dataObj.date);
     const place = placeLinkHtml(dataObj);
     const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
     const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
@@ -771,7 +758,7 @@ function fmtDateTime(d){
 
 // Robust sort key for expenses (handles legacy fields)
 function expenseSortKey(e){
-  const candidates = [e.dateIso, e.createdAt, e.date, e.time, e.ts, e.timestamp];
+  const candidates = [e.createdAt, e.date, e.time, e.ts, e.timestamp];
   for (const v of candidates){
     if(!v) continue;
     const d = new Date(v);
@@ -811,7 +798,7 @@ function cycleCurrency(cur){
   return opts[(idx + 1) % opts.length];
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-let __subTripsTimer=null;
+async let __subTripsTimer=null;
 function subscribeTrips(){
   if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
@@ -1026,7 +1013,7 @@ function renderExpenses(t, order){
     }
   })();
 arr.forEach(e=>{
-    const d = dayjs(e.createdAt);
+    const d = dayjs(e.dateIso || e.createdAt);
     const dateStr = d.isValid() ? d.format('DD/MM/YYYY') : '';
     const timeStr = d.isValid() ? d.format('HH:mm') : '';
     const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1299,19 +1286,6 @@ async function saveExpense(){
   // if rates don't exist, set them. otherwise, keep them.
   const expenseRates = currentExpense.rates || { USDILS: live.USDILS, USDEUR: live.USDEUR, lockedAt: live.lockedAt };
   if(live.USDLocal) expenseRates.USDLocal = live.USDLocal;
-
-  // Build dateIso/date/time from inputs (editable)
-  const $d = $('#expDate'), $t = $('#expTime');
-  let _exp_dateIso;
-  if ($d && $t && $d.value && $t.value) {
-    _exp_dateIso = new Date(`${$d.value}T${$t.value}:00`).toISOString();
-  } else {
-    const curE = (t.expenses && t.expenses[$('#expenseModal').dataset.id]) || {};
-    _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
-  }
-  (function(){ const dt=new Date(_exp_dateIso); const pad=n=>String(n).padStart(2,'0');
-    window.__exp_dateStr = `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()}`;
-    window.__exp_timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;})();
   
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
@@ -1324,9 +1298,6 @@ async function saveExpense(){
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
-    dateIso: _exp_dateIso,
-    date: (typeof window!=='undefined' && window.__exp_dateStr) || '',
-    time: (typeof window!=='undefined' && window.__exp_timeStr) || '',
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -2175,7 +2146,7 @@ async function exportExcel(){
   const s0 = XLSX.utils.json_to_sheet(meta);
   XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
 
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
   const s1 = XLSX.utils.json_to_sheet(jr);
   XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
 
@@ -2211,7 +2182,7 @@ async function exportWord(){
   const journalRows = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j =>
     new TableRow({
       children:[
-        new TableCell({ children:[new Paragraph(fmtDateTime(j.dateIso || j.createdAt)||'')]}),
+        new TableCell({ children:[new Paragraph(fmtDateTime(j.createdAt)||'')]}),
         new TableCell({ children:[new Paragraph(j.placeName||'')]}),
         new TableCell({ children:[new Paragraph(j.text||'')]}),
       ]
@@ -2685,10 +2656,7 @@ async function importGPXFromFile(file){
         placeUrl: '',
         lat: p.lat, lng: p.lng,
         createdAt: p._time ? new Date(p._time).toISOString() : new Date().toISOString()
-      ,
-    dateIso: _jr_dateIso,
-    date: (typeof window!=='undefined' && window.__jr_dateStr) || '',
-    time: (typeof window!=='undefined' && window.__jr_timeStr) || ''};
+      };
       added++;
     });
 
