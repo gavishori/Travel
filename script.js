@@ -3318,3 +3318,53 @@ document.addEventListener('flymily-auth-logged-out-fix', ()=>{
   }catch(_){}
 });
 
+/* ================= Mobile Aggressive Logout ================= */
+window.mobileAggressiveLogout = async function mobileAggressiveLogout(){
+  try{
+    // 1) Try signOut via Firebase wrapper if available
+    try{
+      if (window.FB && typeof FB.signOut === 'function'){
+        await FB.signOut();
+      } else if (window.auth && typeof auth.signOut === 'function'){
+        await auth.signOut();
+      }
+    }catch(e){ /* continue anyway */ }
+
+    // 2) Clear storages (common iOS/Safari/Chrome mobile persistence)
+    try{ localStorage.clear(); }catch(_){}
+    try{ sessionStorage.clear(); }catch(_){}
+
+    // 3) Nuke known Firebase IndexedDB databases
+    try{
+      const dbs = ['firebase-auth-database','firebaseLocalStorageDb'];
+      dbs.forEach(name=>{ try{ indexedDB.deleteDatabase(name); }catch(_){} });
+    }catch(_){}
+
+    // 4) Clear caches + service workers (if any)
+    try{
+      if (window.caches && caches.keys){
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k=>caches.delete(k).catch(()=>{})));
+      }
+    }catch(_){}
+    try{
+      if (navigator.serviceWorker){
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r=>r.unregister().catch(()=>{})));
+      }
+    }catch(_){}
+
+    // 5) Emit UI-fix event to ensure login view shows immediately
+    try{ document.dispatchEvent(new Event('flymily-auth-logged-out-fix')); }catch(_){}
+
+    // 6) Hard reload to ensure clean auth state
+    try{ location.replace(location.origin + location.pathname + location.search); }catch(_){ location.reload(true); }
+  } catch(e){
+    console.error('Mobile aggressive logout failed', e);
+    // Fallback: still attempt reload
+    try{ location.reload(true); }catch(_){}
+  }
+  return false;
+};
+/* ============================================================ */
+

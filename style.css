@@ -1154,3 +1154,35 @@ html.share-open [style*="overflow:scroll"]{
 /* Modal truly hidden when aria-hidden=true */
 .modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
 body.modal-open { overflow: hidden; }
+
+/* === Mobile-only aggressive logout button === */
+.mobile-logout-btn{ display:none; }
+@media (max-width: 820px){
+  .mobile-logout-btn{
+    position: fixed;
+    inset: auto 16px 16px auto; /* bottom-right in RTL UI it's still visually right */
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-radius: 999px;
+    background: #1f2937; /* slate-800 */
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    font-weight: 500;
+    letter-spacing: .3px;
+    border: none;
+  }
+  .mobile-logout-btn:active{ transform: scale(0.98); }
+  .mobile-logout-btn .icon{
+    width: 18px; height: 18px; display: inline-block;
+    border: 2px solid currentColor; border-radius: 2px;
+    border-left: none; position: relative;
+  }
+  .mobile-logout-btn .icon::after{
+    content: ''; position: absolute; right: -6px; top: 50%;
+    width: 8px; height: 2px; background: currentColor; transform: translateY(-50%);
+  }
+}
+
