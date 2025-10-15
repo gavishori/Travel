@@ -1,13 +1,38 @@
 
-// Utility: forcibly close any open <dialog> to avoid blocking UI on mobile
-function closeAllDialogs(){
-  try{
-    document.querySelectorAll('dialog[open]').forEach(d=>{
-      try{ d.close(); }catch(_){ }
-      d.removeAttribute('open');
-    });
-  }catch(_){ }
+// === Auth Button Toggle (Login <-> Logout) ===
+function wireAuthPrimaryButton(){
+  const btn = document.getElementById('btnLogin'); // header primary button
+  if(!btn) return;
+  if(btn.dataset.authWired==='1') return;
+  btn.dataset.authWired='1';
+  const doLogout = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('primary logout failed', err); }
+  };
+  // Swap handlers on auth changes
+  window.__authPrimarySwap = (loggedIn)=>{
+    const old = document.getElementById('btnLogin');
+    if(!old) return;
+    const clone = old.cloneNode(true);
+    old.parentNode.replaceChild(clone, old);
+    const target = document.getElementById('btnLogin');
+    if(!target) return;
+    if(loggedIn){
+      target.textContent = 'ניתוק';
+      target.classList.add('danger');
+      target.addEventListener('click', doLogout, {passive:false});
+    } else {
+      target.textContent = 'התחברות';
+      target.classList.remove('danger');
+    }
+  };
 }
+document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -44,7 +69,21 @@ async function loadJournalOnly(){
   if(!snap.exists()) return;
   const t = snap.data() || {};
   if(!state.current) state.current = { id: tid };
-  state.current.journal = t.journal || {};
+  state.current.journal = t.journal || {};  /*__JR_DT_BLOCK__*/
+  const $jrD = document.getElementById('jrDate');
+  const $jrT = document.getElementById('jrTime');
+  let _jr_dateIso;
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  } else {
+    const curJ = (t.journal && t.journal[id]) || {};
+    _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
+  }
+  const __jr_dt = new Date(_jr_dateIso);
+  const __pad2 = n=>String(n).padStart(2,'0');
+  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__jr_dt.getFullYear()}`;
+  const __jr_timeStr = `${__pad2(__jr_dt.getHours())}:${__pad2(__jr_dt.getMinutes())}`;
+
   renderJournal(state.current, state.journalSort);
 }
 
@@ -67,7 +106,7 @@ import { auth, db, FB } from './firebase.js';
   // bind on DOM ready and whenever modals open
   document.addEventListener('DOMContentLoaded', ()=>{
     bindAutoResize(document.getElementById('expDesc'));
-    bindAutoResize(document.getElementById('jrText'));
+    // bindAutoResize skipped for contenteditable jrText
   });
 
   // Enter behavior inside modals:
@@ -94,7 +133,7 @@ import { auth, db, FB } from './firebase.js';
   // Expose to modal openers to (re)bind
   window._bindTextareasForModals = function(){
     bindAutoResize(document.getElementById('expDesc'));
-    bindAutoResize(document.getElementById('jrText'));
+    // bindAutoResize skipped for contenteditable jrText
   };
 })();
 // === End textarea helpers ===
@@ -301,7 +340,7 @@ function focusItemInTab(type, id){
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
-    const date = fmtDateTime(dataObj.createdAt || dataObj.ts || dataObj.date);
+    const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
     const place = placeLinkHtml(dataObj);
     const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
     const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
@@ -732,8 +771,7 @@ function fmtDateTime(d){
 }
 
 // Robust sort key for expenses (handles legacy fields)
-function expenseSortKey(e){
-  const candidates = [e.createdAt, e.date, e.time, e.ts, e.timestamp];
+function expenseSortKey(e){ const candidates = [e.dateIso, e.createdAt, e.date, e.time, e.ts, e.timestamp];
   for (const v of candidates){
     if(!v) continue;
     const d = new Date(v);
@@ -773,7 +811,9 @@ function cycleCurrency(cur){
   return opts[(idx + 1) % opts.length];
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
-async function subscribeTrips(){
+let __subTripsTimer=null;
+function subscribeTrips(){
+  if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
     console.warn('subscribeTrips: user not ready; skipping');
     return;
@@ -784,6 +824,13 @@ async function subscribeTrips(){
     state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
   }, (err)=>{
+    try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    // If permissions missing, wait a bit and retry once auth is stable
+    if(String(err).includes('Missing or insufficient permissions')){
+      console.warn('subscribeTrips PERM error – will retry shortly');
+      __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
+      return;
+    }
     console.warn('subscribeTrips error', err);
     showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
   });
@@ -979,7 +1026,7 @@ function renderExpenses(t, order){
     }
   })();
 arr.forEach(e=>{
-    const d = dayjs(e.createdAt);
+    const d = dayjs(e.dateIso || e.createdAt);
     const dateStr = d.isValid() ? d.format('DD/MM/YYYY') : '';
     const timeStr = d.isValid() ? d.format('HH:mm') : '';
     const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1066,13 +1113,24 @@ function renderJournal(t, order){
       .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
 
     arr.forEach(j=>{
-      const d = dayjs(j.createdAt);
-      const dateStr = d.isValid()? d.format('DD/MM/YYYY') : '';
-      const timeStr = d.isValid()? d.format('HH:mm') : '';
+      const baseIso = j.dateIso || j.createdAt;
+      let dateStr = '', timeStr = '';
+      if (baseIso) {
+        const d = dayjs(baseIso);
+        if (d.isValid()) { dateStr = d.format('DD/MM/YYYY'); timeStr = d.format('HH:mm'); }
+      }
+      // fallback to stored strings if exist
+      if (!dateStr && j.date) dateStr = j.date;
+      if (!timeStr && j.time) timeStr = j.time;
       const cat = j.category || '';
-      const place = j.placeName || j.city || j.country || '';
-      const locStr = place ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(place)}" target="_blank">${place}</a>` : '';
-      const text = linkifyText(j.text || '');
+            // Build compact place display: "Name, City, Country"
+      const parts = [j.placeName, j.city, j.country].filter(Boolean);
+      const placeCompact = parts.join(', ');
+      const locStr = placeCompact
+        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
+        : '';
+
+      const text = (j.html && typeof j.html === 'string' && j.html.trim()) ? sanitizeJournalHTML(j.html) : linkifyText(j.text || '');
 
       const tr1 = document.createElement('tr');
       tr1.className = 'exp-item'; tr1.dataset.id = j.id;
@@ -1191,6 +1249,20 @@ $('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
 $('#expSave').addEventListener('click', saveExpense);
 
 function openExpenseModal(e){
+  /*__OPEN_EXP_PREFILL__*/
+  try{
+    const base = e || null;
+    const $d = document.getElementById('expDate');
+    const $t = document.getElementById('expTime');
+    if($d && $t){
+      const src = base?.dateIso || base?.createdAt || new Date().toISOString();
+      const d = new Date(src);
+      const pad = n=>String(n).padStart(2,'0');
+      $d.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      $t.value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+  }catch(_){}
+
   if(window._bindTextareasForModals) window._bindTextareasForModals();
 
   seedExpenseCategories();
@@ -1212,6 +1284,27 @@ function openExpenseModal(e){
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
+  // Prefill expDate/expTime (enrich)
+  try {
+    const base = (typeof e!=='undefined' && e) || (typeof j!=='undefined' && j) || null;
+    const pad = n=>String(n).padStart(2,'0');
+    let dStr=null, tStr=null;
+    if (base && base.date && base.time) {
+      dStr = base.date.split('/').reverse().join('-'); // dd/mm/yyyy -> yyyy-mm-dd
+      tStr = base.time;
+    } else if (base && (base.createdAt||base.dateIso)) {
+      const d = new Date(base.createdAt||base.dateIso);
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } else {
+      const d = new Date();
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    const $d=$('#expDate'), $t=$('#expTime');
+    if($d) $d.value=dStr; if($t) $t.value=tStr;
+  } catch(_){}
+
   $('#expenseModal').showModal();
 }
 async function saveExpense(){
@@ -1226,6 +1319,20 @@ async function saveExpense(){
   // if rates don't exist, set them. otherwise, keep them.
   const expenseRates = currentExpense.rates || { USDILS: live.USDILS, USDEUR: live.USDEUR, lockedAt: live.lockedAt };
   if(live.USDLocal) expenseRates.USDLocal = live.USDLocal;
+  /*__EXP_DT_BLOCK__*/
+  const $expD = document.getElementById('expDate');
+  const $expT = document.getElementById('expTime');
+  let _exp_dateIso;
+  if ($expD && $expT && $expD.value && $expT.value) {
+    _exp_dateIso = new Date(`${$expD.value}T${$expT.value}:00`).toISOString();
+  } else {
+    const curE = (t.expenses && t.expenses[$('#expenseModal')?.dataset?.id || '']) || {};
+    _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
+  }
+  const __exp_dt = new Date(_exp_dateIso);
+  const __pad = n=>String(n).padStart(2,'0');
+  const __exp_dateStr = `${__pad(__exp_dt.getDate())}/${__pad(__exp_dt.getMonth()+1)}/${__exp_dt.getFullYear()}`;
+  const __exp_timeStr = `${__pad(__exp_dt.getHours())}:${__pad(__exp_dt.getMinutes())}`;
   
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
@@ -1238,6 +1345,9 @@ async function saveExpense(){
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
+    dateIso: _exp_dateIso,
+    date: __exp_dateStr,
+    time: __exp_timeStr,
     rates: expenseRates // save the specific rates for this expense
   };
 
@@ -1267,9 +1377,6 @@ $('#lsReset').addEventListener('click', async ()=>{
     if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
     try{
       await FB.signInWithEmailAndPassword(auth, email, pass);
-    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
-    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
-    
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
@@ -1295,9 +1402,6 @@ $('#lsReset').addEventListener('click', async ()=>{
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
       try{
         await FB.signInWithEmailAndPassword(auth, email, pass);
-    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
-    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
-    
         if($(errSel)) $(errSel).textContent = '';
       }catch(e){
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
@@ -1792,11 +1896,32 @@ $('#jrSave').addEventListener('click', saveJournal);
 
 function openJournalModal(j) {
   $('#journalModal').dataset.id = j?.id || '';
-  $('#jrText').value = j?.text || '';
+  document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
   $('#jrLocationName').value = j?.placeName || '';
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
+  // Prefill jrDate/jrTime (enrich)
+  try {
+    const base = (typeof e!=='undefined' && e) || (typeof j!=='undefined' && j) || null;
+    const pad = n=>String(n).padStart(2,'0');
+    let dStr=null, tStr=null;
+    if (base && base.date && base.time) {
+      dStr = base.date.split('/').reverse().join('-'); // dd/mm/yyyy -> yyyy-mm-dd
+      tStr = base.time;
+    } else if (base && (base.createdAt||base.dateIso)) {
+      const d = new Date(base.createdAt||base.dateIso);
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } else {
+      const d = new Date();
+      dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    const $d=$('#jrDate'), $t=$('#jrTime');
+    if($d) $d.value=dStr; if($t) $t.value=tStr;
+  } catch(_){}
+
   $('#journalModal').showModal();
 }
 
@@ -1807,14 +1932,37 @@ async function saveJournal() {
 
   const id = $('#journalModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.journal = t.journal || {};
+
+  const prev = t.journal[id] || {};
+
   t.journal[id] = {
-    text: $('#jrText').value.trim(),
+    text: (document.getElementById('jrText').innerText || '').trim(),
+    html: (document.getElementById('jrText').innerHTML || '').trim(),
     placeName: formatPlace($('#jrLocationName').value.trim()),
-    placeUrl: (function(){ const v=$('#jrLocationName').value.trim(); return /^(?:https?:\/\/|www\.)/.test(v)? (v.startsWith('http')?v:'http://'+v) : '' })(),
+    placeUrl: (function(){ 
+      const v=$('#jrLocationName').value.trim(); 
+      return /^(?:https?:\/\/|www\.)/.test(v) ? (v.startsWith('http')? v : 'http://' + v) : ''; 
+    })(),
     lat: numOrNull($('#jrLat').value),
     lng: numOrNull($('#jrLng').value),
-    createdAt: (t.journal[id] && t.journal[id].createdAt) ? t.journal[id].createdAt : new Date().toISOString()
+    createdAt: prev.createdAt || new Date().toISOString()
   };
+
+  // --- align with Expenses: persist dateIso/date/time from inputs ---
+  const $jrD = $('#jrDate');
+  const $jrT = $('#jrTime');
+  let _jr_dateIso;
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  } else {
+    _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
+  }
+  const __dt = new Date(_jr_dateIso);
+  const pad2 = n => String(n).padStart(2, '0');
+
+  t.journal[id].dateIso = _jr_dateIso;
+  t.journal[id].date    = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
+  t.journal[id].time    = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
   await FB.updateDoc(ref, { journal: t.journal });
   $('#journalModal').close();
@@ -2071,11 +2219,11 @@ async function exportExcel(){
   const s0 = XLSX.utils.json_to_sheet(meta);
   XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
 
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
   const s1 = XLSX.utils.json_to_sheet(jr);
   XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
 
-  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:e.amount||'', מטבע:e.currency||'', תאריך:fmtDateTime(e.createdAt)}));
+  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:e.amount||'', מטבע:e.currency||'', תאריך:fmtDateTime(e.dateIso || e.createdAt)}));
   const s2 = XLSX.utils.json_to_sheet(ex);
   XLSX.utils.book_append_sheet(wb, s2, 'הוצאות');
 
@@ -2107,7 +2255,7 @@ async function exportWord(){
   const journalRows = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j =>
     new TableRow({
       children:[
-        new TableCell({ children:[new Paragraph(fmtDateTime(j.createdAt)||'')]}),
+        new TableCell({ children:[new Paragraph(fmtDateTime(j.dateIso || j.createdAt)||'')]}),
         new TableCell({ children:[new Paragraph(j.placeName||'')]}),
         new TableCell({ children:[new Paragraph(j.text||'')]}),
       ]
@@ -2128,7 +2276,7 @@ async function exportWord(){
       new TableCell({ children:[new Paragraph(e.category||'')]}),
       new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),
       new TableCell({ children:[new Paragraph(e.currency||'')]}),
-      new TableCell({ children:[new Paragraph(fmtDateTime(e.createdAt)||'')]}),
+      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}),
     ]})
   );
   const exTable = new Table({
@@ -2164,11 +2312,42 @@ async function exportWord(){
 
 
 
+
+// ---- Explicit login flow only (no auto-submit) ----
+let __loginInFlight = false;
+async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
+  if(__loginInFlight) return;
+  __loginInFlight = true;
+  try{
+    const email = document.querySelector(emailSel)?.value?.trim();
+    const pass  = document.querySelector(passSel)?.value;
+    if(!email || !pass){
+      const e = document.querySelector(errSel);
+      if(e) e.textContent = 'אנא מלא אימייל וסיסמה';
+      return;
+    }
+    await FB.signInWithEmailAndPassword(FB.auth, email, pass);
+    const e = document.querySelector(errSel); if(e) e.textContent = '';
+  }catch(err){
+    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
+    console.error('login failed', err);
+  }finally{
+    __loginInFlight = false;
+  }
+}
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(!t) return;
+  if(t.matches('#authPrimary')){ loginWithCredentials(); }
+});
 // ===== Auth UI helpers (final) =====
 // Toggle app/login screens on auth state change + start subscriptions
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
+  let __lastAuthUid = null;
   FB.onAuthStateChanged(FB.auth, (user) => {
     console.log('auth state', !!user, user?.uid);
+    if((user?.uid||null)===__lastAuthUid){ return; }
+    __lastAuthUid = user?.uid||null;
     const emailSpan = document.getElementById('currentUserEmail');
     const btnLogin = document.getElementById('btnLogin');
     const btnLogout = document.getElementById('btnLogout');
@@ -2380,6 +2559,66 @@ window.searchAndNavigate = searchAndNavigate;
 
 // --- Utils: linkify plain text into clickable <a> tags (http/https + www + emails) ---
 
+function normalizeEditorLinks(editor){
+  if(!editor) return;
+  editor.querySelectorAll('a').forEach(a=>{
+    try{
+      const href = a.getAttribute('href')||'';
+      const txt = (a.textContent||'').trim();
+      const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
+      const tooLong = txt.length > 40 || href.length > 60;
+      if (looksRaw || tooLong){
+        a.classList.add('link-chip');
+        a.textContent = '🔗';
+      }
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener');
+      a.style.display = 'inline';
+    }catch(_){}
+  });
+}
+
+function pasteAsIconLink(editor, url){
+  const a = document.createElement('a');
+  a.href = url;
+  a.className = 'link-chip';
+  a.textContent = '🔗';
+  a.target = '_blank';
+  a.rel = 'noopener';
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount){ sel.getRangeAt(0).deleteContents(); sel.getRangeAt(0).insertNode(a); }
+}
+
+function sanitizeJournalHTML(html){
+  // Convert to DOM, post-process anchors
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  
+  tmp.querySelectorAll('a').forEach(a=>{
+    try{
+      const href = a.getAttribute('href')||'';
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener');
+
+      const txt = (a.textContent||'').trim();
+      const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
+      const tooLong = txt.length > 40 || href.length > 60;
+
+      // If long/raw, render as a blue link icon only
+      if (looksRaw || tooLong){
+        a.classList.add('link-chip');
+        a.innerHTML = '🔗'; // icon only
+        return;
+      }
+
+      // Otherwise keep user label but ensure anchors remain inline
+      a.style.display = 'inline';
+    }catch(_){}
+  });
+
+  return tmp.innerHTML;
+}
+
 function linkifyText(str, label){
   if (!str) return '';
   const escMap = {'&':'&','<':'<','>':'>','"':'"','\'':'\''};
@@ -2550,7 +2789,10 @@ async function importGPXFromFile(file){
         placeUrl: '',
         lat: p.lat, lng: p.lng,
         createdAt: p._time ? new Date(p._time).toISOString() : new Date().toISOString()
-      };
+      ,
+    dateIso: _jr_dateIso,
+    date: __jr_dateStr,
+    time: __jr_timeStr};
       added++;
     });
 
@@ -3209,16 +3451,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // User badge menu
   userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
+
+// -- Mobile support: open user menu on touch as well
+try{
+  const __ub = document.getElementById('userBadge');
+  const __um = document.getElementById('userMenuList');
+  if(__ub && !__ub.dataset.touchFix){
+    __ub.dataset.touchFix = '1';
+    const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      if(__um){ __um.classList.toggle('open'); }
+    };
+    __ub.addEventListener('touchend', openMenu, {passive:false});
+  }
+}catch(_){}
+
   document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
 
   // Primary action per tab
-  primary?.addEventListener('click', async ()=> {
+  if(primary){ try{ primary.setAttribute('type','button'); }catch(_){} }
+  const __authAction = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
     try {
       if(active==='loginTab'){
         await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
-    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
-    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
-    
       } else if(active==='signupTab'){
         await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
       } else {
@@ -3230,9 +3485,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
       if(target) target.textContent = e?.message || 'שגיאה';
     }
-  });
+  };
   // Secondary = cancel
-  secondary?.addEventListener('click', ()=> authModal?.close());
+  primary?.addEventListener('click', __authAction, {passive:false});
+  primary?.addEventListener('touchend', __authAction, {passive:false});
+  // submit on Enter (mobile keyboards)
+  try{ authModal?.querySelector('form')?.addEventListener('submit', __authAction, {passive:false}); }catch(_){}
+
+  secondary?.addEventListener('click', (e)=>{ try{ e?.preventDefault?.(); }catch(_){} authModal?.close(); });
 
   // Logout
   btnLogout?.addEventListener('click', async ()=> {
@@ -3242,79 +3502,166 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
-// ======== GLOBAL HARD-WIRED LOGIN (mobile-safe) ========
-window.__loginNow = async function(){
+// Mobile logout button hookup
+document.addEventListener('DOMContentLoaded', ()=>{
+  const mob = document.getElementById('btnLogoutMobile');
+  const setVis = (user)=>{ if(mob){ mob.style.display = user ? 'inline-flex' : 'none'; } };
   try{
-    const emailEl = document.querySelector('#authEmail') || document.querySelector('#lsEmail');
-    const passEl  = document.querySelector('#authPass')  || document.querySelector('#lsPass');
-    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
-    const email = (emailEl && emailEl.value || '').trim();
-    const pass  = (passEl && passEl.value || '');
-    if(!email || !pass){
-      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
-      alert('אנא מלא אימייל וסיסמה');
-      return false;
+    if(typeof FB!=='undefined' && FB.onAuthStateChanged){
+      FB.onAuthStateChanged(FB.auth, (user)=> setVis(user));
     }
-    // Get auth instance safely
-    let auth = (window.FB && typeof window.FB.getAuth === 'function' && window.FB.getAuth())
-            || (window.auth || null);
-    if(!auth){
-      if(errEl) errEl.textContent = 'Auth לא מאותחל (FB.getAuth)';
-      alert('Auth לא מאותחל (FB.getAuth)');
-      return false;
-    }
-    const fn = (window.FB && window.FB.signInWithEmailAndPassword) || null;
-    if(!fn){
-      if(errEl) errEl.textContent = 'signInWithEmailAndPassword לא קיים';
-      alert('signInWithEmailAndPassword לא קיים');
-      return false;
-    }
-    await fn(auth, email, pass);
-    if(errEl) errEl.textContent = '';
-    return true;
-  }catch(e){
-    const errEl   = document.querySelector('#authError') || document.querySelector('#lsError');
-    const msg = e && (e.code || e.message) || 'שגיאת התחברות';
-    console.error('LOGIN ERROR', e);
-    if(errEl) errEl.textContent = msg;
-    alert('שגיאת התחברות: ' + msg);
-    return false;
-  }
-};
-
-
-// === Modal close utility (robust) ===
-function closeAuthModal(){
-  try{
-    const modal = document.getElementById('authDialog')
-      || document.querySelector('dialog[open], dialog#authDialog')
-      || document.querySelector('.modal.is-open, .modal.open, .modal.show, [data-modal="auth"].open')
-      || document.querySelector('[role="dialog"].open, [role="dialog"].is-open');
-    if (modal && typeof modal.close === 'function') { try { modal.close(); } catch(e){} }
-    if (modal) {
-      modal.classList.remove('is-open','open','show');
-      modal.setAttribute('aria-hidden','true');
-      if (modal.style) modal.style.display = 'none';
-    }
-    const scrim = document.querySelector('.modal-backdrop, .overlay, .scrim');
-    if (scrim) scrim.remove();
-    document.body.classList.remove('modal-open');
-    document.documentElement.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
-  } catch(e){ /* noop */ }
-}
-
-
-// Ensure when logged-out: show login screen, hide app, close dialogs
-document.addEventListener('flymily-auth-logged-out-fix', ()=>{
-  try{
-    const loginScreen = document.getElementById('loginScreen');
-    const appContainer = document.querySelector('.container');
-    if (loginScreen) loginScreen.style.display = 'grid';
-    if (appContainer) appContainer.style.display = 'none';
-    closeAllDialogs();
-  }catch(_){}
+  }catch(e){}
+  const runLogout = async (e)=>{
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('logout mobile failed', err); }
+  };
+  mob?.addEventListener('click', runLogout, {passive:false});
+  mob?.addEventListener('touchend', runLogout, {passive:false});
 });
 
+
+// Global auth visibility guard (mobile-safe)
+try{
+  FB.onAuthStateChanged(FB.auth, (user)=>{
+    const c = document.getElementById('container');
+    const ls = document.getElementById('loginScreen');
+    if(user){
+      if(c) c.style.display = '';
+      if(ls) ls.style.display = 'none';
+      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){}
+    } else {
+      if(c) c.style.display = 'none';
+      if(ls) ls.style.display = 'grid';
+      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){}
+    }
+  });
+}catch(_){}
+
+
+// === RTF bubble for journal ===
+(function(){
+  let __jr_inited = false;
+  let __jr_lastRange = null;
+
+  function init(){
+    if(__jr_inited) return;
+    const editor = document.getElementById('jrText');
+    const bubble = document.getElementById('rtfBubble');
+    if(!editor || !bubble) return;
+
+    __jr_inited = true;
+
+    function selectionInEditor(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0) return false;
+      const r = sel.getRangeAt(0);
+      return editor.contains(r.startContainer) && editor.contains(r.endContainer) && !sel.isCollapsed && String(sel).trim().length>0;
+    }
+    function showBubble(){
+      const sel = window.getSelection();
+      if(!selectionInEditor()){ setTimeout(showBubble, 0); return; }
+      __jr_lastRange = sel.getRangeAt(0).cloneRange();
+      const r = __jr_lastRange.cloneRange();
+      const rects = Array.from(r.getClientRects());
+      const rect = rects.length ? rects.reduce((acc, rc)=>({
+        left: Math.min(acc.left, rc.left),
+        top: Math.min(acc.top, rc.top),
+        right: Math.max(acc.right, rc.right),
+        bottom: Math.max(acc.bottom, rc.bottom),
+        width: Math.max(acc.right, rc.right) - Math.min(acc.left, rc.left),
+        height: Math.max(acc.bottom, rc.bottom) - Math.min(acc.top, rc.top)
+      }), rects[0]) : r.getBoundingClientRect();
+      const host = editor.closest('.body') || editor.parentElement;
+      const hostRect = host.getBoundingClientRect();
+      const offX = (host.scrollLeft || 0);
+      const offY = (host.scrollTop  || 0);
+      bubble.style.left = (offX + rect.left - hostRect.left + rect.width/2) + 'px';
+      bubble.style.top  = (offY + rect.top - hostRect.top - 8) + 'px';
+      bubble.hidden = false;
+      // clamp inside host
+      const b = bubble.getBoundingClientRect();
+      let x = parseFloat(bubble.style.left);
+      const min = 12;
+      const max = hostRect.width - (b.width + 12);
+      x = Math.max(min, Math.min(x - b.width/2, max));
+      bubble.style.left = x + 'px';
+      // vertical clamp + auto-flip
+      let topPx = parseFloat(bubble.style.top);
+      const aboveSpace = (rect.top - hostRect.top);          // visible space above selection
+      const belowSpace = hostRect.height - (rect.bottom - hostRect.top);
+      const bubbleH = b.height;
+      // if not enough room above, flip below selection
+      if (aboveSpace < bubbleH + 12) {
+        topPx = (offY + rect.bottom - hostRect.top + 8);
+      }
+      // keep inside container vertically
+      const minTop = 8;
+      const maxTop = host.scrollHeight - bubbleH - 8;
+      topPx = Math.max(minTop, Math.min(topPx, maxTop));
+      bubble.style.top = topPx + 'px';
+
+    }
+    function hideBubble(){ bubble.hidden = true; }
+    function restoreSel(){
+      if(!__jr_lastRange) return;
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(__jr_lastRange);
+    }
+
+    editor.addEventListener('mouseup', ()=> setTimeout(showBubble, 0));
+    document.addEventListener('mousedown', (e)=>{
+      if(!bubble.hidden && !bubble.contains(e.target) && !editor.contains(e.target)) setTimeout(showBubble, 0);
+    });
+
+    // Prevent losing selection when pressing bubble buttons
+    bubble.addEventListener('mousedown', (e)=>{ e.preventDefault(); restoreSel(); });
+
+    // Color buttons
+    bubble.querySelectorAll('.dot').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        restoreSel();
+        const color = btn.getAttribute('data-color') || '#000000';
+        try{ document.execCommand('foreColor', false, color); }catch(_){}
+        editor.focus();
+        setTimeout(showBubble, 0);
+      });
+    });
+
+    // Bold/Italic/Underline
+    bubble.querySelectorAll('.fmt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        restoreSel();
+        const cmd = btn.getAttribute('data-cmd');
+        try{ document.execCommand(cmd, false, null); }catch(_){}
+        editor.focus();
+        setTimeout(showBubble, 0);
+      });
+    });
+
+    // Normalize existing anchors as icons if long/raw
+    normalizeEditorLinks(editor);
+    editor.addEventListener('input', ()=> normalizeEditorLinks(editor));
+
+    // Paste handler: if single URL, insert as icon-link
+    editor.addEventListener('paste', (e)=>{
+      const t = e.clipboardData && e.clipboardData.getData('text');
+      if(t && /^https?:\/\//.test(t.trim()) && !t.includes('\n')){
+        e.preventDefault();
+        pasteAsIconLink(editor, t.trim());
+        return;
+      }
+      // default paste otherwise; will be normalized on input
+      setTimeout(()=> normalizeEditorLinks(editor), 0);
+    });
+  }
+
+  // Try once now, and also when the modal opens/focus changes
+  init();
+  document.addEventListener('click', init);
+  document.addEventListener('focusin', init);
+})();
