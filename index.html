@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY — מנהל נסיעות</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"></script>
+
+<style id="antiZoom">@media (max-width:480px){input,select,textarea{font-size:16px} html{-webkit-text-size-adjust:100%}}</style>
 </head>
 <body data-theme="light">
   <div id="previewRoot">
@@ -38,9 +40,7 @@
 
       <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
       <span id="userBadge" class="muted" style="display:none"></span>
-    
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    </header>
 
     
 <div id="loginScreen" class="login-screen">
@@ -257,9 +257,7 @@
       <button class="tab-btn" data-tab="signupTab">הרשמה</button>
       <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
     </nav>
-  
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+  </header>
   <div class="body">
     <section id="loginTab" class="tab-panel">
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
@@ -277,16 +275,14 @@
     </section>
   </div>
   <div class="footer">
-    <button id="authPrimary" class="btn primary">כניסה</button>
+    <button id="authPrimary" class="btn primary" onclick="return window.__loginNow()" onclick="return window.__loginNow()">כניסה</button>
     <button id="authSecondary" class="btn">ביטול</button>
   </div>
 </dialog>
 
 
   <dialog id="tripModal" class="modal">
-    <header><strong>נסיעה חדשה</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    <header><strong>נסיעה חדשה</strong></header>
     <div class="body">
       <label>יעד<input id="tripDest" class="input"/></label>
       <div class="row"><label>תאריך התחלה<input type="date" id="tripStart" class="input"></label><label>תאריך סיום<input type="date" id="tripEnd" class="input"></label></div>
@@ -299,9 +295,7 @@
 
   <dialog
 id="expenseModal" class="modal">
-    <header><strong>הוצאה</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    <header><strong>הוצאה</strong></header>
     <div class="body">
       <label>תיאור<textarea id="expDesc" class="input auto-resize" rows="4" placeholder="כתוב תיאור ההוצאה..."></textarea></label>
       <label>קטגוריה
@@ -319,15 +313,6 @@ id="expenseModal" class="modal">
         </select>
       </label>
       <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
-      <div class="row">
-        <label>תאריך
-          <input type="date" id="expDate" class="input">
-        </label>
-        <label>שעה
-          <input type="time" id="expTime" class="input">
-        </label>
-      </div>
-
       <div class="row location-row">
         <label>מיקום<input id="expLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
@@ -346,9 +331,7 @@ id="expenseModal" class="modal">
 
 
 <dialog id="rowMenuModal" class="modal">
-  <header><strong>פעולות</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+  <header><strong>פעולות</strong></header>
   <div class="body"><p class="muted">בחר פעולה עבור הפריט.</p></div>
   <div class="footer">
     <button id="rowMenuEdit" class="btn">ערוך</button>
@@ -359,34 +342,9 @@ id="expenseModal" class="modal">
 
 
   <dialog id="journalModal" class="modal">
-    <header><strong>רישום יומן</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    <header><strong>רישום יומן</strong></header>
     <div class="body">
-      <label>תיאור<div id="jrText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true"></div></label>
-<div id="rtfBubble" class="rtf-bubble" hidden>
-  <div class="colors">
-    <button class="dot" data-color="#FFD60A" title="צהוב"></button>
-    <button class="dot" data-color="#E53935" title="אדום"></button>
-    <button class="dot" data-color="#1E88E5" title="כחול"></button>
-    <button class="dot" data-color="#34A853" title="ירוק"></button>
-    <button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button>
-  </div>
-  <div class="styles">
-    <button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button>
-    <button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button>
-    <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
-  </div>
-</div>
-      <div class="row">
-        <label>תאריך
-          <input type="date" id="jrDate" class="input">
-        </label>
-        <label>שעה
-          <input type="time" id="jrTime" class="input">
-        </label>
-      </div>
-
+      <label>תיאור<textarea id="jrText" class="input auto-resize"></textarea></label>
       <div class="row location-row">
         <label>מיקום<input id="jrLocationName" autocomplete="off" placeholder="שם מקום, עיר, ארץ" class="input" placeholder="בחר עפ״י שם"/></label>
         <button id="btnSelectJrLocation" class="btn location-btn">בחר ע"ג מפה</button>
@@ -405,9 +363,7 @@ id="expenseModal" class="modal">
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <dialog id="unsavedChangesModal" class="modal">
-    <header><strong>שינויים שלא נשמרו</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    <header><strong>שינויים שלא נשמרו</strong></header>
     <div class="body">
         <p>ישנם שינויים שלא נשמרו. האם תרצה לשמור אותם לפני שאתה עוזב את הדף?</p>
     </div>
@@ -419,9 +375,7 @@ id="expenseModal" class="modal">
   </dialog>
   
   <dialog id="mapSelectModal" class="modal">
-    <header><strong>בחר מיקום על המפה</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+    <header><strong>בחר מיקום על המפה</strong></header>
     <div class="body">
       <div id="selectMap" class="leaflet-container" style="height:350px"></div>
     </div>
@@ -437,9 +391,7 @@ id="expenseModal" class="modal">
   <script type="module" src="./script.js"></script>
 
 <dialog id="confirmDeleteModal" class="modal">
-  <header><strong>לאשר מחיקה?</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+  <header><strong>לאשר מחיקה?</strong></header>
   <div class="body"><p>האם אתה בטוח שברצונך למחוק? הפעולה אינה ניתנת לביטול.</p></div>
   <div class="footer">
     <button id="confirmDeleteYes" class="btn danger">מחק</button>
@@ -447,9 +399,7 @@ id="expenseModal" class="modal">
   </div>
 </dialog>
 <dialog id="filterModal" class="modal">
-  <header><strong>סינון הוצאות</strong>
-<button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
+  <header><strong>סינון הוצאות</strong></header>
   <div class="body">
     <label>קטגוריית הוצאה
       <select id="filterCat" class="input"></select>
@@ -472,32 +422,6 @@ id="expenseModal" class="modal">
 </dialog>
 
 </body>
-    <script>
-    // /*__MOBILE_LOGOUT_INJECT__*/
-    document.addEventListener('DOMContentLoaded', function() {
-      const modalIds = [
-        'authModal','tripModal','expenseModal','journalModal','confirmDeleteModal','filterModal',
-        'breakdownDialog','unsavedChangesModal','mapSelectModal'
-      ];
-      modalIds.forEach(id => {
-        const d = document.getElementById(id);
-        if(!d) return;
-        const h = d.querySelector('header') || d.querySelector('.header');
-        if(!h) return;
-        // Avoid duplicating a logout button in a given modal header
-        if(!h.querySelector('.btn-logout-mobile')) {
-          const b = document.createElement('button');
-          b.className = 'btn danger btn-logout-mobile';
-          b.setAttribute('aria-label','התנתקות');
-          b.style.display = 'none';
-          b.style.marginInlineStart = '.5rem';
-          b.textContent = 'התנתקות';
-          h.appendChild(b);
-        }
-      });
-    });
-    </script>
-    
 </html>
 <!-- Injected three-button import cluster -->
 
