@@ -1,3 +1,13 @@
+
+// Utility: forcibly close any open <dialog> to avoid blocking UI on mobile
+function closeAllDialogs(){
+  try{
+    document.querySelectorAll('dialog[open]').forEach(d=>{
+      try{ d.close(); }catch(_){ }
+      d.removeAttribute('open');
+    });
+  }catch(_){ }
+}
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
@@ -1257,6 +1267,9 @@ $('#lsReset').addEventListener('click', async ()=>{
     if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
     try{
       await FB.signInWithEmailAndPassword(auth, email, pass);
+    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
+    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
+    
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
@@ -1282,6 +1295,9 @@ $('#lsReset').addEventListener('click', async ()=>{
       if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
       try{
         await FB.signInWithEmailAndPassword(auth, email, pass);
+    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
+    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
+    
         if($(errSel)) $(errSel).textContent = '';
       }catch(e){
         const xErr = (e)=> (e?.code || e?.message || 'שגיאת התחברות');
@@ -3200,6 +3216,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if(active==='loginTab'){
         await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
+    try{ if(typeof closeAuthModal==='function') closeAuthModal(); }catch(_){}
+    try{ const __am=document.getElementById('authModal'); if(__am && __am.close) __am.close(); }catch(_){}
+    
       } else if(active==='signupTab'){
         await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
       } else {
@@ -3286,3 +3305,16 @@ function closeAuthModal(){
     document.documentElement.style.overflow = '';
   } catch(e){ /* noop */ }
 }
+
+
+// Ensure when logged-out: show login screen, hide app, close dialogs
+document.addEventListener('flymily-auth-logged-out-fix', ()=>{
+  try{
+    const loginScreen = document.getElementById('loginScreen');
+    const appContainer = document.querySelector('.container');
+    if (loginScreen) loginScreen.style.display = 'grid';
+    if (appContainer) appContainer.style.display = 'none';
+    closeAllDialogs();
+  }catch(_){}
+});
+
