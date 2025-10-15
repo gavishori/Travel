@@ -3665,3 +3665,84 @@ try{
   document.addEventListener('click', init);
   document.addEventListener('focusin', init);
 })();
+
+
+// === HARD FORCE LOGOUT (Mobile-safe) ===
+let __forceLogoutInFlight = false;
+async function forceLogoutNow(e){
+  try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+  if(__forceLogoutInFlight) return;
+  __forceLogoutInFlight = true;
+  try{
+    // 1) Try normal Firebase signOut
+    try{
+      if(typeof FB!=='undefined' && FB?.auth && typeof FB.signOut==='function'){
+        await FB.signOut(FB.auth);
+      }else if(FB?.auth && typeof FB.auth.signOut==='function'){
+        await FB.auth.signOut();
+      }
+    }catch(_){}
+
+    // 2) Purge local/session storage leftovers (Chrome Mobile sometimes sticks to cached auth)
+    try{
+      const killKeys = (store)=>{
+        const toDel = [];
+        for(let i=0;i<store.length;i++){
+          const k = store.key(i);
+          if(!k) continue;
+          if(k.startsWith('firebase:') || k.startsWith('FIREBASE') || k.includes('auth')) toDel.push(k);
+        }
+        toDel.forEach(k=>{ try{ store.removeItem(k); }catch(_){}});
+      };
+      killKeys(window.localStorage || {});
+      killKeys(window.sessionStorage || {});
+    }catch(_){}
+
+    // 3) Drop IndexedDB Firebase DBs (auth persistence on some devices)
+    try{
+      const dbs = [
+        'firebaseLocalStorageDb',
+        'firebase-heartbeat-database',
+        'firebase-installations-database',
+        'firebase-messaging-database',
+        'firebase-app-check-database'
+      ];
+      (window.indexedDB ? dbs : []).forEach(name=>{ try{ window.indexedDB.deleteDatabase(name); }catch(_){} });
+    }catch(_){}
+
+    // 4) Close any open dialogs & flip UI to logged-out immediately
+    try{
+      if(typeof closeAllDialogs==='function') closeAllDialogs();
+      const loginScreen = document.getElementById('loginScreen');
+      const appContainer = document.querySelector('.container');
+      if (loginScreen) loginScreen.style.display = 'grid';
+      if (appContainer) appContainer.style.display = 'none';
+      const ub = document.getElementById('userBadge'); if(ub) ub.style.display='none';
+      const bl = document.getElementById('btnLogin'); if(bl) bl.style.display='inline-block';
+    }catch(_){}
+
+  }finally{
+    // 5) Last resort: full reload to guarantee a clean state
+    setTimeout(()=>{ try{ location.reload(); }catch(_){} }, 50);
+    __forceLogoutInFlight = false;
+  }
+}
+window.forceLogoutNow = forceLogoutNow;
+
+
+
+// Bind force logout to mobile buttons (id + class), non-destructive
+document.addEventListener('DOMContentLoaded', ()=>{
+  const bind = ()=>{
+    const btns = Array.from(document.querySelectorAll('#btnLogoutMobile, .btn-logout-mobile, #btnLogoutForce'));
+    btns.forEach(b=>{
+      if(b.dataset._forceLogoutBound==='1') return;
+      b.dataset._forceLogoutBound='1';
+      b.addEventListener('click', forceLogoutNow, {passive:false});
+      b.addEventListener('touchend', forceLogoutNow, {passive:false});
+    });
+  };
+  bind();
+  new MutationObserver(bind).observe(document.documentElement, {subtree:true, childList:true, attributes:true});
+});
+

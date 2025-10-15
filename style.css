@@ -18,7 +18,7 @@ header button, .btn{background:transparent;border:1px solid var(--border);color:
 .btn.danger{border-color:var(--danger);color:var(--danger)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
-.container{display:grid;grid-template-columns:320px 1fr;height:calc(100dvh - 56px)}
+.container{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 56px)}
 .sidebar{border-inline-start:1px solid var(--border);background:var(--card);padding:16px;overflow:auto}
 .content{padding:16px;overflow:auto}
 
@@ -64,7 +64,7 @@ th{position:sticky;top:0;background:var(--card)}
 
 .menu{position:relative}
 .menu-btn{border:1px solid var(--border);background:transparent;border-radius:10px;padding:6px 10px}
-.menu-list{position:absolute;left:0;top:36px;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:160px;display:none;z-index: 2000}
+.menu-list{position:absolute;left:0;top:36px;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:160px;display:none;z-index:3}
 .menu-list.open{display:block}
 .menu-list button{display:block;width:100%;padding:10px;background:transparent;border:none;text-align:right}
 
@@ -73,7 +73,7 @@ th{position:sticky;top:0;background:var(--card)}
 
 dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--ink);padding:0;max-width:420px;width:90%}
 .modal header{padding:12px 16px;border-bottom:1px solid var(--border);background:transparent}
-.modal .body{padding:14px 16px;position:relative}
+.modal .body{padding:14px 16px}
 .modal .footer{display:flex;gap:8px;justify-content:flex-start;padding:12px 16px;border-top:1px solid var(--border)}
 
 .toast{position:fixed;inset-inline-end:16px;inset-block-end:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);display:none}
@@ -102,7 +102,7 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 
 
 /* Centered login screen */
-.login-screen{display:grid;place-items:center;height:calc(100dvh - 56px);padding:20px}
+.login-screen{display:grid;place-items:center;height:calc(100vh - 56px);padding:20px}
 .login-card{width:min(420px,92vw);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .login-card h1{font-size:1.6rem;margin:.2rem 0 .4rem}
 .login-card .input{width:100%}
@@ -602,7 +602,7 @@ header :is(#userBadge, #userEmail, .user-pill, .email-pill) { order: 20 !importa
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  height:calc(100dvh - 0px);
+  height:calc(100vh - 0px);
   overflow:auto;
   gap:0;
 }
@@ -1056,7 +1056,7 @@ html.share-open, body.share-open { overflow: hidden !important; }
 #view-share {
   display:flex;
   flex-direction:column;
-  height: calc(100dvh - 120px);
+  height: calc(100vh - 120px);
   overflow: hidden;
 }
 #view-share .cards.share-grid{
@@ -1071,7 +1071,7 @@ html.share-open, body.share-open { overflow: hidden !important; }
 #view-share .card .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
 #view-share .btn{ min-width:140px; }
 @media (max-width: 1100px){
-  #view-share{ height: calc(100dvh - 140px); }
+  #view-share{ height: calc(100vh - 140px); }
   #view-share .cards.share-grid{ grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 720px){
@@ -1099,11 +1099,11 @@ html.share-open [style*="overflow: scroll"],
 html.share-open [style*="overflow:scroll"]{
   overflow: hidden !important;
   overscroll-behavior: contain !important;
-  max-height: 100dvh !important;
+  max-height: 100vh !important;
 }
 /* Share view itself fills viewport and clips overflow */
 #view-share{
-  height: calc(100dvh - 120px);
+  height: calc(100vh - 120px);
   overflow: clip !important;
 }
 
@@ -1151,133 +1151,6 @@ html.share-open [style*="overflow:scroll"]{
 .flash-green > * { background: #e6ffe9 !important; }
 
 
-/* === Mobile rigid layout fixes (iPhone 13 Pro Max) === */
-@media (max-width: 480px){
-  html, body { width:100%; max-width:100%; overflow-x:hidden; overscroll-behavior-x: none; }
-  body { overflow-y:auto; touch-action: manipulation; }
-  .app, .container, .content, .sidebar, .section, .card, .panel, .sheet, .modal, .tabs, header, nav { max-width:100%; min-width:0; }
-  .row, .flex, header, nav, .tabs, .toolbar { display:flex; flex-wrap:wrap; min-width:0; }
-  * { box-sizing: border-box; }
-  img, svg, video, canvas, iframe { max-width:100%; height:auto; }
-  .leaflet-container, #map, .map, .map-container { width:100% !important; max-width:100% !important; }
-  .leaflet-container { height: 60vh !important; }
-  table { width:100%; table-layout: fixed; border-collapse: collapse; }
-  th, td { word-break: break-word; min-width:0; }
-  input, select, textarea, button { max-width:100%; }
-  /* prevent accidental fixed widths from causing horizontal scroll */
-  [style*="width:"] { max-width:100%; }
-}
-
-/* Global overflow guard */
-html, body { overflow-x:hidden; }
-
-
-/* ======== Mobile-only compact headers for Expenses & Journal ======== */
-@media (max-width: 480px){
-
-  /* Shared */
-  #view-expenses .expenses-table, 
-  #view-journal .expenses-table { border-spacing:0; width:100%; }
-  #view-expenses .expenses-table tr.exp-item,
-  #view-journal .expenses-table tr.exp-item { display:grid; gap:.5rem .75rem; align-items:center; }
-
-  /* --- Expenses: two-line header layout ---
-     Row 1: date | time | menu
-     Row 2: amount | currency | menu
-     Notes row remains full width.
-  */
-  #view-expenses .expenses-table.stacked tr.exp-item { 
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas: "date time menu"
-                         "amount currency menu";
-  }
-  #view-expenses .expenses-table.stacked td.cell{ border:none; padding:0; background:transparent; }
-  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
-  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
-  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
-  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
-  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; }
-  #view-expenses .expenses-table.stacked td.header.category{ display:none; } /* חוסך מקום במובייל */
-  #view-expenses .expenses-table.stacked td.notes{ grid-column: 1 / -1; padding:.25rem 0 .75rem 0; }
-
-  /* טיפוגרפיה */
-  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
-
-  /* --- Journal: מקום בשורה משל עצמו ---
-     Row 1: date | time | menu
-     Row 2: location | location | menu
-  */
-  #view-journal .expenses-table tr.exp-item{ 
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas: "date time menu"
-                         "location location menu";
-  }
-  #view-journal .expenses-table td.cell{ border:none; padding:0; background:transparent; }
-  #view-journal .expenses-table td.header.date{ grid-area:date; }
-  #view-journal .expenses-table td.header.time{ grid-area:time; }
-  #view-journal .expenses-table td.header.location{ grid-area:location; }
-  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; }
-  #view-journal .expenses-table + * td.notes,
-  #view-journal .expenses-table tr.exp-item + tr.exp-item td.notes{ grid-column:1 / -1; }
-
-  /* הסתרת תאי בחירה במובייל ברירת מחדל (כשאין מצב בחירה) */
-  #view-journal .expenses-table td.select-cell,
-  #view-expenses .expenses-table td.select-cell{ display:none; }
-
-  /* --- Trip meta (נתוני נסיעה): קריא ונוח --- */
-  #view-meta .section .row,
-  #view-meta .budget-row,
-  #view-meta .budget-actions-row{ display:grid; grid-template-columns: 1fr; gap:.6rem; }
-  #view-meta .chips, #view-meta .pill-group, #view-meta .tag-row{ display:flex; flex-wrap:wrap; gap:.4rem; }
-  #view-meta input, #view-meta select, #view-meta textarea{ width:100%; }
-  #view-meta .budget-block{ padding:1rem; }
-  #view-meta .budget-row{ grid-template-columns: repeat(2, 1fr); }
-  #view-meta .budget-row label{ width:100%; }
-
-}
-
-/* --- Mobile-only Logout Button --- */
-.btn-logout-mobile{ display:none; }
-@media (max-width: 768px){
-  .btn-logout-mobile{ display:inline-flex; align-items:center; padding:.6rem .9rem; font-weight:600; border-radius:12px; }
-  .btn-logout-mobile.btn.danger{ background:#ffe8e8; border:1px solid #ffb3b3; }
-}
-
-/* iOS viewport fix */
-html, body { height:100%; }
-:root{ --vh: 1dvh; }
-.app, .container, .page, .main { min-height: 100svh; min-height: 100dvh; min-height: -webkit-fill-available;}
-
-
-/* URLs in journal outputs wrap cleanly */
-#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
-
-/* === RTF editor === */
-.input.rtf{ min-height:120px; overflow:auto; white-space:pre-wrap; }
-.input.rtf *{ font-family: inherit; }
-.input.rtf:focus{ outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent); }
-.rtf-bubble{ position:absolute; z-index:1000; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:6px 8px; display:flex; gap:10px; box-shadow:var(--shadow); transform:translate(-50%,-100%); }
-.rtf-bubble .colors,.rtf-bubble .styles{ display:flex; gap:6px; align-items:center; }
-.rtf-bubble .dot{ width:16px; height:16px; border-radius:50%; border:1px solid var(--border); cursor:pointer; padding:0; }
-.rtf-bubble .dot[data-color="#FFD60A"]{ background:#FFD60A; }
-.rtf-bubble .dot[data-color="#E53935"]{ background:#E53935; }
-.rtf-bubble .dot[data-color="#1E88E5"]{ background:#1E88E5; }
-.rtf-bubble .dot[data-color="#34A853"]{ background:#34A853; }
-.rtf-bubble .dot[data-color="#000000"]{ background:#000000; }
-.rtf-bubble .fmt{ border:1px solid var(--border); background:transparent; border-radius:10px; padding:2px 8px; cursor:pointer; font-weight:700; }
-#journalModal .body{ position:relative; }
-#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
-
-
-/* Blue link icon for long/raw links */
-.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
-
-
-/* Ensure long/raw links show as blue icon inside editor as well */
-#jrText a.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
-#jrText a{ word-break: break-all; }
-
-/* Bubble interaction tweaks */
-.rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+/* Modal truly hidden when aria-hidden=true */
+.modal[aria-hidden="true"], dialog[aria-hidden="true"] { display: none !important; pointer-events: none !important; }
+body.modal-open { overflow: hidden; }
