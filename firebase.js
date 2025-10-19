@@ -2,8 +2,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
-  setPersistence,
-  browserSessionPersistence,
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
@@ -48,12 +46,6 @@ setLogLevel("error");
 
 // --- AUTH ---
 export const auth = getAuth(app);
-try{
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  if(isMobile){
-    setPersistence(auth, browserSessionPersistence).catch(()=>{});
-  }
-}catch(_){}
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);

@@ -1,8 +1,3 @@
-
-function getUserBadgeTextEl(){
-  return document.getElementById('userBadgeText') || document.getElementById('userBadge');
-}
-
 // === Auth Button Toggle (Login <-> Logout) ===
 function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
@@ -3246,6 +3241,20 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 
+// === Mobile logout wiring ===
+document.addEventListener('DOMContentLoaded', ()=>{
+  const outMob = document.getElementById('btnLogoutMobile');
+  if(outMob && !outMob.dataset.wired){
+    outMob.dataset.wired='1';
+    outMob.addEventListener('click', async (e)=>{
+      try{
+        e && e.preventDefault && e.preventDefault();
+        if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
+      }catch(err){ console.error('mobile signOut failed', err); }
+    });
+  }
+});
 // === Logout wiring ===
 document.addEventListener('DOMContentLoaded', ()=>{
   const out = document.getElementById('btnLogout');
@@ -4034,54 +4043,17 @@ function renderCategoryBreakdownNode(targetId){
 
 })();
 
-// === Mobile/logout additions ===
-(function(){
-  document.addEventListener('DOMContentLoaded', function(){
-    var out = document.getElementById('btnLogoutMobile');
-    if(out && !out.dataset.wired){
-      out.dataset.wired='1';
-      out.addEventListener('click', async function(e){
-        try{
-          e && e.preventDefault && e.preventDefault();
-          if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
-          else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
-        }catch(err){ console.error('mobile logout failed', err); }
-      });
-    }
-  });
-})();
-
-(function(){
-  document.addEventListener('DOMContentLoaded', function(){
-    var sw = document.getElementById('btnSwitchAccount');
-    if(sw && !sw.dataset.wired){
-      sw.dataset.wired='1';
-      sw.addEventListener('click', async function(e){
-        try{
-          e && e.preventDefault && e.preventDefault();
-          if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
-          else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
-        }catch(err){ console.error('switch account signOut failed', err); }
-        try{
-          var login = document.getElementById('loginScreen');
-          if(login){ login.style.display='block'; }
-        }catch(_){}
-      });
-    }
-  });
-})();
-
+// === Hash-based emergency logout ===
 (function(){
   async function doHashLogout(){
     try{
       if(location.hash === '#logout'){
-        if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
+        if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
         else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
         try { history.replaceState(null, '', location.pathname + location.search); } catch(_){}
       }
-    }catch(err){ console.error('hash logout failed', err); }
+    }catch(e){ console.error('hash logout error', e); }
   }
   window.addEventListener('hashchange', doHashLogout);
-  // also check on initial load:
   document.addEventListener('DOMContentLoaded', doHashLogout);
 })();

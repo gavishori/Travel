@@ -1399,9 +1399,3 @@ html, body { height:100%; }
   vertical-align:middle;
   text-decoration:none;
 }
-
-
-/* Mobile auth dropdown fix */
-@media (max-width: 900px){
-  header .menu .menu-list{ right: 0; left: auto; }
-}
