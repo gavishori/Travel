@@ -79,12 +79,14 @@
 
       <main class="content" id="main">
         <nav class="tabs" id="tabs" style="display:none">
-          <button data-tab="overview" class="active">הצג הכל</button>
-          <button data-tab="meta">נתוני נסיעה</button>
+          
           <button data-tab="expenses">הוצאות</button>
           <button data-tab="journal">יומן יומי</button>
+          <button data-tab="overview" class="active">הצג הכל</button>
+          <button data-tab="meta">נתוני נסיעה</button>
           <button data-tab="map">מפה</button>
           <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
+        
         </nav>
 
         <section id="view-overview" class="tabview" data-active="1">
@@ -110,7 +112,7 @@
 </table>
             </div>
             <div class="card">
-              <h3>הטיול שלי</h3>
+              <h3 class="center-title">הטיול שלי - תאילנד</h3>
               <div id="miniMap" style="height:280px" class="leaflet-container"></div>
             </div>
           </div>
@@ -136,7 +138,7 @@
           <button class="chip metaType" data-value="בטן גב">בטן גב</button>
           <button class="chip metaType" data-value="סקי">סקי</button>
           <button class="chip metaType" data-value="טרק">טרק</button>
-	    <button class="chip metaType" data-value="המלצות">המלצות</button>
+	    <button class="chip metaType" data-value="תכנון">תכנון</button>
           <button class="chip metaType" data-value="אחר">אחר</button>
         </div>
       </div>
@@ -218,6 +220,7 @@
     <div class="row" style="gap:12px;flex-wrap:wrap">
       <button id="btnExportExcel" class="btn">Excel</button>
       <button id="btnExportWord" class="btn">Word</button>
+<button id="btnExportTripSchedule" class="btn">הצג לפני הדפסה</button>
       <button id="btnExportGPX" class="btn">GPX</button>
     </div>
   </div>
@@ -303,7 +306,8 @@ id="expenseModal" class="modal">
 <button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
     <div class="body">
-      <label>תיאור<textarea id="expDesc" class="input auto-resize" rows="4" placeholder="כתוב תיאור ההוצאה..."></textarea></label>
+      <label>תיאור<div id="expText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true" placeholder="כתוב תיאור ההוצאה."></div></label>
+<div id="rtfBubbleExp" class="rtf-bubble" hidden><div class="colors"><button class="dot" data-color="#FFD60A" title="צהוב"></button><button class="dot" data-color="#E53935" title="אדום"></button><button class="dot" data-color="#1E88E5" title="כחול"></button><button class="dot" data-color="#34A853" title="ירוק"></button><button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button></div><div class="styles"><button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button><button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button><button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button></div></div>
       <label>קטגוריה
         <select id="expCat" class="input">
           <option value="">בחר...</option>

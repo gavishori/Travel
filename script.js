@@ -1,4 +1,3 @@
-
 // === Auth Button Toggle (Login <-> Logout) ===
 function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
@@ -81,7 +80,7 @@ async function loadJournalOnly(){
   }
   const __jr_dt = new Date(_jr_dateIso);
   const __pad2 = n=>String(n).padStart(2,'0');
-  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__jr_dt.getFullYear()}`;
+  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__pad2(__jr_dt.getFullYear())}`;
   const __jr_timeStr = `${__pad2(__jr_dt.getHours())}:${__pad2(__jr_dt.getMinutes())}`;
 
   renderJournal(state.current, state.journalSort);
@@ -583,7 +582,8 @@ function initBigMap() {
 function _numberedMarker(lat, lng, n, kind){
   const cls = (kind==='expense') ? 'red' : 'green';
   const html = `<div class="num-pin ${cls}">${n}</div>`;
-  return L.marker([lat,lng], { icon: L.divIcon({ className:'', html, iconSize:[28,28], iconAnchor:[14,28] }) });
+  const icon = L.divIcon({ className:'', html, iconSize:[28,28], iconAnchor:[14,28] });
+  return L.marker([lat,lng], { icon: icon });
 }
 // Sort items by created timestamp if possible (fallback to key)
 function _sortByCreated(entries){
@@ -1049,7 +1049,7 @@ arr.forEach(e=>{
     const convertedAmountStr = convertedAmountILS ? convertedAmountILS.toLocaleString('he-IL',{minimumFractionDigits:2, maximumFractionDigits:2}) : '';
 
     const cat    = esc(e.category||'');
-    const desc   = linkifyText(e.desc||'');
+    const desc = (e.descHtml && /(<a|link-icon)/i.test(e.descHtml)) ? e.descHtml : linkifyToIcons(e.descHtml || e.desc || '');
     const locStr = placeLinkHtml(e);
     
     const tr1 = document.createElement('tr');
@@ -1248,7 +1248,8 @@ $('#btnAddExpense').addEventListener('click', ()=> openExpenseModal());
 $('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
 $('#expSave').addEventListener('click', saveExpense);
 
-function openExpenseModal(e){
+function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
+
   /*__OPEN_EXP_PREFILL__*/
   try{
     const base = e || null;
@@ -1280,7 +1281,7 @@ function openExpenseModal(e){
   });
 
   $('#expenseModal').dataset.id = e?.id||'';
-  $('#expDesc').value = e?.desc||''; $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
+  $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc) : '')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
@@ -1305,7 +1306,7 @@ function openExpenseModal(e){
     if($d) $d.value=dStr; if($t) $t.value=tStr;
   } catch(_){}
 
-  $('#expenseModal').showModal();
+  document.dispatchEvent(new Event('openExpenseModal')); $('#expenseModal').showModal();
 }
 async function saveExpense(){
   const ref  = FB.doc(db,'trips', state.currentTripId);
@@ -1337,7 +1338,8 @@ async function saveExpense(){
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
   t.expenses[id] = {
-    desc: $('#expDesc').value.trim(),
+    desc: (document.getElementById('expText')?.textContent||'').trim(),
+    descHtml: sanitizeExpenseNoLinks(document.getElementById('expText')?.innerHTML||'').trim(),
     category: $('#expCat').value.trim(),
     amount: Number($('#expAmount').value||0),
     currency: $('#expCurr').value,
@@ -1894,7 +1896,9 @@ $('#btnAddJournal').addEventListener('click', ()=> openJournalModal());
 $('#jrCancel').addEventListener('click', ()=> $('#journalModal').close());
 $('#jrSave').addEventListener('click', saveJournal);
 
-function openJournalModal(j) {
+function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
+
+  try{ document.querySelector('#journalModal .input.rtf').style.paddingBottom='72px'; }catch(_){}
   $('#journalModal').dataset.id = j?.id || '';
   document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
   $('#jrLocationName').value = j?.placeName || '';
@@ -2272,21 +2276,21 @@ async function exportWord(){
 
   const exRows = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e =>
     new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(e.desc||'')]}),
-      new TableCell({ children:[new Paragraph(e.category||'')]}),
-      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),
-      new TableCell({ children:[new Paragraph(e.currency||'')]}),
-      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}),
+      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}), // 1. תאריך
+      new TableCell({ children:[new Paragraph(e.currency||'')]}),                               // 2. מטבע
+      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),                       // 3. סכום
+      new TableCell({ children:[new Paragraph(e.category||'')]}),                               // 4. קטגוריה
+      new TableCell({ children:[new Paragraph(e.desc||'')]}),                                   // 5. תיאור
     ]})
   );
   const exTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'קטגוריה', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'סכום', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'מטבע', alignment: AlignmentType.CENTER})]}),
       new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'מטבע', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'סכום', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'קטגוריה', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
     ]}), ...exRows ]
   });
 
@@ -2294,13 +2298,17 @@ async function exportWord(){
     sections:[{
       properties:{},
       children:[
-        new Paragraph({ text:`הטיול שלי – ${t.destination||''}`, heading: HeadingLevel.TITLE }),
+        // כותרת ראשית: שונתה ל"הטיול שלי ל[יעד]"
+        new Paragraph({ text:`הטיול שלי ל${t.destination||'המרכז'}`, heading: HeadingLevel.TITLE }),
         new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
-        new Paragraph({ text:'נתוני נסיעה', heading: HeadingLevel.HEADING_2 }),
+        // כותרת משנה: "נתוני נסיעה" - הוספת יישור לימין
+        new Paragraph({ text:'נתוני נסיעה', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         metaTable,
-        new Paragraph({ text:'יומן יומי', heading: HeadingLevel.HEADING_2 }),
+        // כותרת משנה: "יומן יומי" - הוצמדה לימין
+        new Paragraph({ text:'יומן יומי', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         jrTable,
-        new Paragraph({ text:'הוצאות', heading: HeadingLevel.HEADING_2 }),
+        // כותרת משנה: "הוצאות" - הוצמדה לימין
+        new Paragraph({ text:'הוצאות', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         exTable
       ]
     }]
@@ -2309,6 +2317,96 @@ async function exportWord(){
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
   link.download = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.docx`; link.click(); URL.revokeObjectURL(link.href);
 }
+
+
+// --- Export Trip Schedule to Word (A4, RTL, Sunday->Saturday) ---
+async function exportTripScheduleWord(){
+  const t = currentTrip();
+  if(!t || !t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, TextRun } = window.docx || window;
+
+  // Build inclusive range from Sunday before/at start to Saturday after/at end
+  const dStart = dayjs(t.start);
+  const dEnd   = dayjs(t.end);
+  if(!dStart.isValid() || !dEnd.isValid()){ toast('תאריכי נסיעה לא תקינים'); return; }
+  const startSunday = dStart.day()===0 ? dStart.startOf('day') : dStart.subtract(dStart.day(), 'day').startOf('day');
+  const endSaturday = dEnd.day()===6 ? dEnd.endOf('day')   : dEnd.add(6 - dEnd.day(), 'day').endOf('day');
+
+  const days = [];
+  for(let d = startSunday.clone(); d.isBefore(endSaturday) || d.isSame(endSaturday,'day'); d = d.add(1,'day')){
+    days.push(d.clone());
+  }
+
+  // Map expenses to date YYYY-MM-DD -> array of lines (max 5 per expense)
+  const expMap = Object.create(null);
+const expenses = Object.values(t.expenses || {});
+for(const e of expenses){
+  const dIso = e?.dateIso || e?.createdAt || e?.date;
+  const dd = dayjs(dIso);
+  if(!dd.isValid()) continue;
+  const key = dd.format('YYYY-MM-DD');
+  const raw = (e?.desc || e?.text || '').toString();
+  const lines = raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+  if(!expMap[key]) expMap[key] = [];
+  expMap[key].push({ t: dd.valueOf(), lines });
+}
+// Sort expenses within each day by time (earliest first)
+Object.keys(expMap).forEach(k=>{
+  expMap[k] = expMap[k].sort((a,b)=>a.t-b.t).map(o=>o.lines);
+});
+
+  // Header row: days labels, right-to-left visual order (rightmost=Sunday)
+  const headerLabels = ['שבת','שישי','חמישי','רביעי','שלישי','שני','ראשון'];
+  const headerRow = new TableRow({ children: headerLabels.map(txt => new TableCell({ children:[ new Paragraph({ text: txt, alignment: AlignmentType.CENTER }) ] })) });
+
+  const weekRows = [];
+  for(let i=0; i<days.length; i+=7){
+    const slice = days.slice(i, i+7); // [Sunday..Saturday]
+    const cells = [];
+    for(let col=6; col>=0; col--){ // iterate Saturday->Sunday to render RTL columns (rightmost shows Sunday)
+      const d = slice[col];
+      if(!d){ cells.push(new TableCell({ children:[ new Paragraph('') ] })); continue; }
+      const key = d.format('YYYY-MM-DD');
+      const dateLabel = d.format('DD/MM');
+
+      const paras = [ new Paragraph({ children:[ new TextRun({ text: dateLabel, bold: true }) ], alignment: AlignmentType.RIGHT }) ];
+      const dayExps = expMap[key] || [];
+      dayExps.forEach((arr, idx) => {
+        arr.forEach(line => paras.push(new Paragraph({ text: line, alignment: AlignmentType.RIGHT })));
+        if(idx < dayExps.length - 1) paras.push(new Paragraph({ text: '', alignment: AlignmentType.RIGHT })); // blank line between expenses
+      });
+
+      cells.push(new TableCell({ children: paras }));
+    }
+    weekRows.push(new TableRow({ children: cells }));
+  }
+
+  const doc = new Document({
+    sections: [{
+      properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
+      children: [
+        new Paragraph({ text: (t.destination ? `לו"ז טיול – ${t.destination}` : 'לו"ז טיול'), heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
+        new Paragraph({ text: `${fmtDate(t.start)} – ${fmtDate(t.end)}`, alignment: AlignmentType.RIGHT }),
+        new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: Array(7).fill(1200), rows: [headerRow, ...weekRows] })
+      ]
+    }]
+  });
+
+  const fileName = `FLYMILY_Trip_Schedule_${(t.destination||'trip').replace(/\\s+/g,'_')}.docx`;
+  const blob = await Packer.toBlob(doc);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 2000);
+  toast('נוצר קובץ לו"ז טיול (Word)');
+}
+
+// Wire the new Export Trip Schedule button
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('btnExportTripSchedule');
+  if(btn){ btn.addEventListener('click', ()=> exportTripScheduleWord()); }
+});
+
+
 
 
 
@@ -2589,6 +2687,92 @@ function pasteAsIconLink(editor, url){
   if(sel && sel.rangeCount){ sel.getRangeAt(0).deleteContents(); sel.getRangeAt(0).insertNode(a); }
 }
 
+
+// --- Added: sanitizeExpenseNoLinks ---
+// Keeps simple formatting (b/i/u, lists, line breaks, colored spans) and strips links & unsafe attributes.
+// This mirrors the journal sanitizer policy but forbids anchors entirely for expenses.
+function sanitizeExpenseNoLinks(html){
+  try{
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+
+    // remove dangerous nodes
+    tmp.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(n => n.remove());
+
+    // 0) Convert raw URLs in text nodes into <a class="link-icon">
+    const urlRe = /((https?:\/\/|www\.)[^\s<]+)/gi;
+    const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const text = node.nodeValue || '';
+      if(!text) return;
+      let m; urlRe.lastIndex = 0;
+      if(!urlRe.test(text)) return;
+      urlRe.lastIndex = 0;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      text.replace(urlRe, (match, _p1, _p2, offset) => {
+        if(offset > last) frag.appendChild(document.createTextNode(text.slice(last, offset)));
+        const href = match.startsWith('http') ? match : 'http://' + match;
+        const a = document.createElement('a');
+        a.href = href;
+        a.className = 'link-icon';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = '';
+        a.style.display = 'inline-flex';
+        frag.appendChild(a);
+        last = offset + match.length;
+        return match;
+      });
+      if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      node.replaceWith(frag);
+    });
+
+    // 1) Normalize any existing anchors to be icon-only + safe
+    tmp.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href') || a.textContent || '';
+      if(!href) { a.remove(); return; }
+      if(!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+        a.setAttribute('href', href.startsWith('www.') ? 'http://' + href : 'http://' + href);
+      }
+      a.setAttribute('target','_blank');
+      a.setAttribute('rel','noopener');
+      // strip unsafe attributes
+      [...a.attributes].forEach(attr => {
+        const n = attr.name.toLowerCase();
+        if (n.startsWith('on') || n === 'style') a.removeAttribute(attr.name);
+      });
+      a.classList.add('link-icon');
+      a.textContent = '';
+      a.style.display = 'inline-flex';
+    });
+
+    // 2) Sanitize attributes on remaining nodes (allow limited inline styles)
+    tmp.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(attr => {
+        const n = attr.name.toLowerCase();
+        if (n.startsWith('on') || n === 'src') el.removeAttribute(attr.name);
+        if (n === 'style'){
+          const allowed = ['color','background-color','font-weight','font-style','text-decoration'];
+          const rules = (attr.value||'').split(';').map(s=>s.trim()).filter(Boolean)
+            .map(rule => {
+              const i = rule.indexOf(':');
+              if (i === -1) return null;
+              const k = rule.slice(0,i).trim().toLowerCase();
+              const v = rule.slice(i+1).trim();
+              return allowed.includes(k) ? `${k}:${v}` : null;
+            }).filter(Boolean);
+          if (rules.length) el.setAttribute('style', rules.join('; '));
+          else el.removeAttribute('style');
+        }
+      });
+    });
+
+    return tmp.innerHTML;
+  }catch(_){ return (html||''); }
+}
 function sanitizeJournalHTML(html){
   // Convert to DOM, post-process anchors
   const tmp = document.createElement('div');
@@ -2643,6 +2827,42 @@ function linkifyText(str, label){
   }).join('<br>');
   return out;
 }
+
+function linkifyToIcons(str){
+  if(!str) return '';
+  // Escape '&','<','>' minimally for safety when input is plain text (not HTML)
+  const escaped = String(str).replace(/[&<>]/g, m=>({'&':'&','<':'<','>':'>'}[m]));
+  // If looks like HTML (has tags), continue; otherwise work on text
+  const tmp = document.createElement('div');
+  tmp.innerHTML = escaped;
+  const urlRe = /((https?:\/\/|www\.)[^\s<]+)/gi;
+  const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    const text = node.nodeValue || '';
+    if(!text) return;
+    urlRe.lastIndex = 0;
+    if(!urlRe.test(text)) return;
+    urlRe.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    text.replace(urlRe, (match, _p1, _p2, offset) => {
+      if(offset > last) frag.appendChild(document.createTextNode(text.slice(last, offset)));
+      const href = match.startsWith('http') ? match : 'http://' + match;
+      const a = document.createElement('a');
+      a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.className = 'link-icon'; a.textContent=''; a.style.display='inline-flex';
+      frag.appendChild(a);
+      last = offset + match.length;
+      return match;
+    });
+    if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.replaceWith(frag);
+  });
+  return tmp.innerHTML;
+}
+
+
 
 
 // --- Normalize place display: "name, city, country" ---
@@ -2923,6 +3143,7 @@ document.addEventListener('click', (e)=>{
 });
 // --- end cancel selection handler ---
 
+
 // --- ESC to exit selection mode ---
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape' && state.journalSelectionMode){
@@ -3036,8 +3257,8 @@ function exportGPX(){
     const points = Object.values(journal).filter(x=>Number.isFinite(x?.lat) && Number.isFinite(x?.lng));
     const name = (t.destination||'Trip');
     const gpxPts = points.map(p=>`  <wpt lat="${p.lat}" lon="${p.lng}">
-    <name>${(p.placeName||'').replace(/[<&>]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</name>
-    <desc>${(p.text||'').replace(/[<&>]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]))}</desc>
+    <name>${(p.placeName||'').replace(/[<&>]/g,s=>({'<':'<','>':'>','&':'&'}[s]))}</name>
+    <desc>${(p.text||'').replace(/[<&>]/g,s=>({'<':'<','>':'>','&':'&'}[s]))}</desc>
   </wpt>`).join('\n');
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="FLYMILY" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>${name}</name></metadata>\n${gpxPts}\n</gpx>`;
     const blob = new Blob([xml], {type:'application/gpx+xml'});
@@ -3416,252 +3637,391 @@ function renderCategoryBreakdownNode(targetId){
   });
 })();
 
-
-// === Auth Modal Tabs & Controls ===
-document.addEventListener('DOMContentLoaded', () => {
-  const authModal = document.getElementById('authModal');
-  const btnLogin = document.getElementById('btnLogin');
-  const userBadge = document.getElementById('userBadge');
-  const userMenu = document.getElementById('userMenuList');
-  const btnLogout = document.getElementById('btnLogout');
-  const primary = document.getElementById('authPrimary');
-  const secondary = document.getElementById('authSecondary');
-  const tabBtns = Array.from(document.querySelectorAll('.tabs .tab-btn'));
-  const panels = {
-    loginTab: document.getElementById('loginTab'),
-    signupTab: document.getElementById('signupTab'),
-    resetTab: document.getElementById('resetTab'),
-  };
-  const els = {
-    login: { email: document.getElementById('authEmail'), pass: document.getElementById('authPass'), err: document.getElementById('authError') },
-    signup:{ email: document.getElementById('suEmail'),   pass: document.getElementById('suPass'),   err: document.getElementById('suError') },
-    reset: { email: document.getElementById('rsEmail'),   info: document.getElementById('rsInfo') }
-  };
-  let active = 'loginTab';
-  function setTab(id){
-    active = id;
-    tabBtns.forEach(b=> b.classList.toggle('active', b.dataset.tab===id));
-    Object.entries(panels).forEach(([k,el])=> el.hidden = (k!==id));
-    primary.textContent = (id==='loginTab') ? 'כניסה' : (id==='signupTab' ? 'הרשמה' : 'שלח קישור');
-  }
-  tabBtns.forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
-
-  // Open modal
-  btnLogin?.addEventListener('click', ()=> { if(authModal?.showModal) authModal.showModal(); setTab('loginTab'); });
-
-  // User badge menu
-  userBadge?.addEventListener('click', (e)=>{ e.stopPropagation(); userMenu?.classList.toggle('open'); });
-
-// -- Mobile support: open user menu on touch as well
-try{
-  const __ub = document.getElementById('userBadge');
-  const __um = document.getElementById('userMenuList');
-  if(__ub && !__ub.dataset.touchFix){
-    __ub.dataset.touchFix = '1';
-    const openMenu = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      if(__um){ __um.classList.toggle('open'); }
-    };
-    __ub.addEventListener('touchend', openMenu, {passive:false});
-  }
-}catch(_){}
-
-  document.addEventListener('click', ()=> userMenu?.classList.remove('open'));
-
-  // Primary action per tab
-  if(primary){ try{ primary.setAttribute('type','button'); }catch(_){} }
-  const __authAction = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try {
-      if(active==='loginTab'){
-        await FB.signInWithEmailAndPassword(FB.auth, els.login.email.value, els.login.pass.value);
-      } else if(active==='signupTab'){
-        await FB.createUserWithEmailAndPassword(FB.auth, els.signup.email.value, els.signup.pass.value);
-      } else {
-        await FB.sendPasswordResetEmail(FB.auth, els.reset.email.value);
-        els.reset.info.textContent = 'נשלח מייל לאיפוס אם הכתובת קיימת.';
-      }
-      authModal?.close();
-    } catch(e){
-      const target = (active==='loginTab') ? els.login.err : (active==='signupTab' ? els.signup.err : els.reset.info);
-      if(target) target.textContent = e?.message || 'שגיאה';
-    }
-  };
-  // Secondary = cancel
-  primary?.addEventListener('click', __authAction, {passive:false});
-  primary?.addEventListener('touchend', __authAction, {passive:false});
-  // submit on Enter (mobile keyboards)
-  try{ authModal?.querySelector('form')?.addEventListener('submit', __authAction, {passive:false}); }catch(_){}
-
-  secondary?.addEventListener('click', (e)=>{ try{ e?.preventDefault?.(); }catch(_){} authModal?.close(); });
-
-  // Logout
-  btnLogout?.addEventListener('click', async ()=> {
-    try { await FB.signOut(FB.auth); } catch(e){}
-    userMenu?.classList.remove('open');
-  });
-});
-
-
-// Mobile logout button hookup
-document.addEventListener('DOMContentLoaded', ()=>{
-  const mob = document.getElementById('btnLogoutMobile');
-  const setVis = (user)=>{ if(mob){ mob.style.display = user ? 'inline-flex' : 'none'; } };
-  try{
-    if(typeof FB!=='undefined' && FB.onAuthStateChanged){
-      FB.onAuthStateChanged(FB.auth, (user)=> setVis(user));
-    }
-  }catch(e){}
-  const runLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try{
-      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if(typeof signOutUser==='function'){ await signOutUser(); }
-      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
-    }catch(err){ console.error('logout mobile failed', err); }
-  };
-  mob?.addEventListener('click', runLogout, {passive:false});
-  mob?.addEventListener('touchend', runLogout, {passive:false});
-});
-
-
-// Global auth visibility guard (mobile-safe)
-try{
-  FB.onAuthStateChanged(FB.auth, (user)=>{
-    const c = document.getElementById('container');
-    const ls = document.getElementById('loginScreen');
-    if(user){
-      if(c) c.style.display = '';
-      if(ls) ls.style.display = 'none';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(true); }catch(_){}
-    } else {
-      if(c) c.style.display = 'none';
-      if(ls) ls.style.display = 'grid';
-      try{ window.__authPrimarySwap && window.__authPrimarySwap(false); }catch(_){}
-    }
-  });
-}catch(_){}
-
-
-// === RTF bubble for journal ===
+// === Print Preview (Trip Schedule) ===
 (function(){
-  let __jr_inited = false;
-  let __jr_lastRange = null;
+  function openPrintPreview(){
+    try{
+      const source = document.querySelector('#view-overview') || document.querySelector('#overview') || document.body;
+      const clone = source.cloneNode(true);
+      const w = window.open('', '_blank', 'noopener,noreferrer');
+      if(!w){ alert('לא ניתן לפתוח חלון תצוגה (יתכן שחסימת פופ-אפים פעילה).'); return; }
+      const html = `<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>תצוגה לפני הדפסה</title>
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    body{padding:16px}
+    .toolbar{display:flex;gap:8px;margin-bottom:12px}
+    .toolbar .btn{border:1px solid #ccc;border-radius:10px;padding:8px 12px;background:transparent;cursor:pointer}
+    @media print {.toolbar{display:none !important}}
+    table{width:100%;border-collapse:collapse} th,td{border:1px solid #e3e3e3;padding:6px 8px} th{background:#f7f7f7}
+    .card{break-inside:avoid;page-break-inside:avoid}
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button class="btn" onclick="print()">🖨️ הדפס</button><button class="btn" onclick="close()">✖️ סגור</button></div>
+  <main id="printRoot"></main>
+</body>
+</html>`;
+      w.document.open(); w.document.write(html); w.document.close();
+      w.document.getElementById('printRoot')?.appendChild(clone);
+      Array.from(w.document.querySelectorAll('[hidden]')).forEach(el=>el.removeAttribute('hidden'));
+    }catch(e){ console.error('print preview error', e); alert('שגיאה בתצוגה לפני הדפסה'); }
+  }
+  window.openTripPrintPreview = openPrintPreview;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn = document.getElementById('btnExportTripSchedule');
+    if(btn && !btn.dataset._ppBound){
+      btn.dataset._ppBound = '1';
+      btn.textContent = 'הצג לפני הדפסה';
+      btn.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); openPrintPreview(); });
+    }
+  });
+})();
+// === End Print Preview ===
 
-  function init(){
-    if(__jr_inited) return;
-    const editor = document.getElementById('jrText');
-    const bubble = document.getElementById('rtfBubble');
+
+// === Robust RTF toolbar wiring for contentEditable editors ===
+(function(){
+  // Robust RTF binder for Chrome desktop + mobile
+  function saveSelWithin(root){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    const r = sel.getRangeAt(0).cloneRange();
+    if(root && r && !root.contains(r.commonAncestorContainer)) return null;
+    return r;
+  }
+  function restoreSel(r){
+    if(!r) return;
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  function ensureFocus(el){ if(document.activeElement!==el) el.focus({preventScroll:true}); }
+  function exec(cmd,val){
+    try{ document.execCommand('styleWithCSS', false, true); }catch(_){}
+    try{ document.execCommand(cmd,false,val); return true; }catch(_){ return false; }
+  }
+  function wrapSelection(style, tag){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return false;
+    const r = sel.getRangeAt(0);
+    const span = document.createElement(tag||'span');
+    Object.assign(span.style, style||{});
+    try{
+      r.surroundContents(span);
+      return true;
+    }catch(_){
+      // fallback: insert nodes
+      const frag = r.extractContents();
+      span.appendChild(frag);
+      r.insertNode(span);
+      return true;
+    }
+  }
+  function bind(editor, bubble){
     if(!editor || !bubble) return;
+    if(editor.dataset._rtfBound) return;
+    editor.dataset._rtfBound='1';
+    bubble.hidden=false;
+    bubble.classList.remove('hidden');
 
-    __jr_inited = true;
+    let saved=null;
+    const remember=()=>{ saved = saveSelWithin(editor); };
 
-    function selectionInEditor(){
+    // save on most selection changes
+    editor.addEventListener('keyup', remember);
+    editor.addEventListener('mouseup', remember);
+    document.addEventListener('selectionchange', ()=>{
       const sel = window.getSelection();
-      if(!sel || sel.rangeCount===0) return false;
-      const r = sel.getRangeAt(0);
-      return editor.contains(r.startContainer) && editor.contains(r.endContainer) && !sel.isCollapsed && String(sel).trim().length>0;
-    }
-    function showBubble(){
-      const sel = window.getSelection();
-      if(!selectionInEditor()){ setTimeout(showBubble, 0); return; }
-      __jr_lastRange = sel.getRangeAt(0).cloneRange();
-      const r = __jr_lastRange.cloneRange();
-      const rects = Array.from(r.getClientRects());
-      const rect = rects.length ? rects.reduce((acc, rc)=>({
-        left: Math.min(acc.left, rc.left),
-        top: Math.min(acc.top, rc.top),
-        right: Math.max(acc.right, rc.right),
-        bottom: Math.max(acc.bottom, rc.bottom),
-        width: Math.max(acc.right, rc.right) - Math.min(acc.left, rc.left),
-        height: Math.max(acc.bottom, rc.bottom) - Math.min(acc.top, rc.top)
-      }), rects[0]) : r.getBoundingClientRect();
-      const host = editor.closest('.body') || editor.parentElement;
-      const hostRect = host.getBoundingClientRect();
-      const offX = (host.scrollLeft || 0);
-      const offY = (host.scrollTop  || 0);
-      bubble.style.left = (offX + rect.left - hostRect.left + rect.width/2) + 'px';
-      bubble.style.top  = (offY + rect.top - hostRect.top - 8) + 'px';
-      bubble.hidden = false;
-      // clamp inside host
-      const b = bubble.getBoundingClientRect();
-      let x = parseFloat(bubble.style.left);
-      const min = 12;
-      const max = hostRect.width - (b.width + 12);
-      x = Math.max(min, Math.min(x - b.width/2, max));
-      bubble.style.left = x + 'px';
-      // vertical clamp + auto-flip
-      let topPx = parseFloat(bubble.style.top);
-      const aboveSpace = (rect.top - hostRect.top);          // visible space above selection
-      const belowSpace = hostRect.height - (rect.bottom - hostRect.top);
-      const bubbleH = b.height;
-      // if not enough room above, flip below selection
-      if (aboveSpace < bubbleH + 12) {
-        topPx = (offY + rect.bottom - hostRect.top + 8);
-      }
-      // keep inside container vertically
-      const minTop = 8;
-      const maxTop = host.scrollHeight - bubbleH - 8;
-      topPx = Math.max(minTop, Math.min(topPx, maxTop));
-      bubble.style.top = topPx + 'px';
-
-    }
-    function hideBubble(){ bubble.hidden = true; }
-    function restoreSel(){
-      if(!__jr_lastRange) return;
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(__jr_lastRange);
-    }
-
-    editor.addEventListener('mouseup', ()=> setTimeout(showBubble, 0));
-    document.addEventListener('mousedown', (e)=>{
-      if(!bubble.hidden && !bubble.contains(e.target) && !editor.contains(e.target)) setTimeout(showBubble, 0);
+      if(!sel || sel.rangeCount===0) return;
+      const n = sel.anchorNode;
+      if(n && editor.contains(n)) saved = saveSelWithin(editor);
     });
 
-    // Prevent losing selection when pressing bubble buttons
-    bubble.addEventListener('mousedown', (e)=>{ e.preventDefault(); restoreSel(); });
+    // keep selection when clicking toolbar
+    bubble.addEventListener('mousedown', e=> e.preventDefault());
 
-    // Color buttons
-    bubble.querySelectorAll('.dot').forEach(btn=>{
+    // format buttons
+    bubble.querySelectorAll('.fmt[data-cmd]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        restoreSel();
-        const color = btn.getAttribute('data-color') || '#000000';
-        try{ document.execCommand('foreColor', false, color); }catch(_){}
-        editor.focus();
-        setTimeout(showBubble, 0);
+        ensureFocus(editor);
+        // if selection lost, try to restore
+        if(!saveSelWithin(editor)) restoreSel(saved);
+        // try execCommand, else manual wrap
+        const c = btn.getAttribute('data-cmd');
+        let ok=false;
+        if(c==='bold'||c==='italic'||c==='underline'){
+          ok = exec(c);
+          if(!ok){
+            const tag = c==='bold'?'strong':(c==='italic'?'em':'span');
+            const style = c==='underline'?{textDecoration:'underline'}:{};
+            ok = wrapSelection(style, tag);
+          }
+        }else{
+          ok = exec(c);
+        }
+        editor.dispatchEvent(new Event('input'));
       });
     });
 
-    // Bold/Italic/Underline
-    bubble.querySelectorAll('.fmt').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        restoreSel();
-        const cmd = btn.getAttribute('data-cmd');
-        try{ document.execCommand(cmd, false, null); }catch(_){}
-        editor.focus();
-        setTimeout(showBubble, 0);
+    // color dots -> highlight background; black clears
+    bubble.querySelectorAll('.dot[data-color]').forEach(dot=>{
+      dot.addEventListener('click', ()=>{
+        ensureFocus(editor);
+        if(!saveSelWithin(editor)) restoreSel(saved);
+        const color = dot.getAttribute('data-color')||'#000000';
+        let ok=false;
+        if(color==='#000000'){
+          try{ exec('removeFormat'); ok=true; }catch(_){}
+          if(!ok){ wrapSelection({backgroundColor:'transparent'}); }
+        }else{
+          ok = exec('hiliteColor', color) || exec('backColor', color);
+          if(!ok){ wrapSelection({backgroundColor: color}); }
+        }
+        editor.dispatchEvent(new Event('input'));
       });
-    });
-
-    // Normalize existing anchors as icons if long/raw
-    normalizeEditorLinks(editor);
-    editor.addEventListener('input', ()=> normalizeEditorLinks(editor));
-
-    // Paste handler: if single URL, insert as icon-link
-    editor.addEventListener('paste', (e)=>{
-      const t = e.clipboardData && e.clipboardData.getData('text');
-      if(t && /^https?:\/\//.test(t.trim()) && !t.includes('\n')){
-        e.preventDefault();
-        pasteAsIconLink(editor, t.trim());
-        return;
-      }
-      // default paste otherwise; will be normalized on input
-      setTimeout(()=> normalizeEditorLinks(editor), 0);
     });
   }
 
-  // Try once now, and also when the modal opens/focus changes
-  init();
-  document.addEventListener('click', init);
-  document.addEventListener('focusin', init);
+  window._bindRTFEditors = function(){
+    bind(document.getElementById('jrText'), document.getElementById('rtfBubble'));
+    bind(document.getElementById('expText'), document.getElementById('rtfBubbleExp'));
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{ try{ window._bindRTFEditors(); }catch(_){} });
+  // also after expense modal open
+  document.addEventListener('openExpenseModal', ()=>{ try{ window._bindRTFEditors(); }catch(_){} });
+})();// === End RTF wiring ===
+
+
+// === Text color (foreColor) utilities ===
+(function(){
+  function saveSelection(){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    return sel.getRangeAt(0).cloneRange();
+  }
+  function restoreSelection(r){
+    if(!r) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  function ensureFocus(el){ if(document.activeElement!==el){ el.focus({preventScroll:true}); } }
+  function exec(cmd,val){
+    try { document.execCommand(cmd,false,val); } catch(e){}
+  }
+  function wrapWithSpan(range, styleObj){
+    if(!range || range.collapsed) return;
+    const span = document.createElement('span');
+    Object.assign(span.style, styleObj);
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+  }
+  window._applyTextColor = function(editor, color){
+    // Try the standard command first
+    exec('styleWithCSS', true);
+    exec('foreColor', color);
+    // Fallback: manual wrap if the command didn't change anything (Chrome sometimes no-op)
+    // Heuristic: if there's a selection and no parent with inline color, wrap it.
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount){
+      const r = sel.getRangeAt(0);
+      const parent = r.commonAncestorContainer.nodeType===1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement;
+      const hasColor = parent && (parent.style && parent.style.color);
+      if(!hasColor && color && color!=='initial' && color!==''){
+        wrapWithSpan(r, { color });
+      }
+    }
+    editor.dispatchEvent(new Event('input'));
+  };
+  window._clearInlineColor = function(editor){
+    // remove inline color by selecting and removing format, then normalize
+    exec('removeFormat');
+    // also remove color styles from nested spans in selection
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount){
+      const r = sel.getRangeAt(0).cloneRange();
+      const container = r.commonAncestorContainer.nodeType===1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement;
+      if(container){
+        container.querySelectorAll('span[style*="color"]').forEach(s=>{
+          s.style.color='';
+          if(!s.getAttribute('style')) s.removeAttribute('style');
+        });
+      }
+    }
+    editor.dispatchEvent(new Event('input'));
+  };
+
+  // Re-bind color dots to text color instead of highlight
+  window._retargetDotsToTextColor = function(editor, bubble){
+    if(!editor || !bubble) return;
+    bubble.querySelectorAll('.dot[data-color]').forEach(dot=>{
+      // Remove previous listeners by cloning
+      const newDot = dot.cloneNode(true);
+      dot.parentNode.replaceChild(newDot, dot);
+      newDot.addEventListener('click', ()=>{
+        const color = newDot.getAttribute('data-color') || '#000000';
+        const sel = window.getSelection();
+        let savedRange = null;
+        if(sel && sel.rangeCount) savedRange = sel.getRangeAt(0).cloneRange();
+        ensureFocus(editor);
+        restoreSelection(savedRange);
+        if(color === '#000000'){
+          window._clearInlineColor(editor);
+        }else{
+          window._applyTextColor(editor, color);
+        }
+      });
+    });
+  };
+
+  // Hook into our previous binder if exists
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try{
+      const jrText = document.getElementById('jrText');
+      const jrBubble = document.getElementById('rtfBubble');
+      const expText = document.getElementById('expText');
+      const expBubble = document.getElementById('rtfBubbleExp');
+      if(jrText && jrBubble) window._retargetDotsToTextColor(jrText, jrBubble);
+      if(expText && expBubble) window._retargetDotsToTextColor(expText, expBubble);
+    }catch(e){}
+  });
+
+  // Also expose a manual rebind if modals recreate DOM
+  window._rebindTextColorDots = function(){
+    const jrText = document.getElementById('jrText');
+    const jrBubble = document.getElementById('rtfBubble');
+    const expText = document.getElementById('expText');
+    const expBubble = document.getElementById('rtfBubbleExp');
+    if(jrText && jrBubble) window._retargetDotsToTextColor(jrText, jrBubble);
+    if(expText && expBubble) window._retargetDotsToTextColor(expText, expBubble);
+  };
+})();
+
+// [auto-url->anchor + icon-only]
+// 1) Convert raw URLs in the DOM into <a href="...">...</a>
+// 2) Turn those anchors into icon-only links (blue icon), unless opted out.
+//
+// Opt-out container: add data-no-autolink on any ancestor to skip.
+// Opt-out link: .no-link-icon or [data-no-link-icon]
+// Keep text: .show-link-text or [data-show-text]
+
+(function(){
+  var URL_RE = /(?:https?:\/\/)[^\s<>"']+/gi;
+
+  function isEditable(node){
+    if(!node || node.nodeType !== 1) return false;
+    var tag = node.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return true;
+    if(node.isContentEditable) return true;
+    return false;
+  }
+
+  function inNoAutolink(node){
+    try{
+      return !!(node.closest && node.closest('[data-no-autolink]'));
+    }catch(e){ return false; }
+  }
+
+  function autolink(root){
+    var walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function(node){
+          if(!node.nodeValue) return NodeFilter.FILTER_REJECT;
+          var parent = node.parentNode;
+          if(!parent || parent.nodeType !== 1) return NodeFilter.FILTER_REJECT;
+          var tag = parent.tagName;
+          if(tag === 'A' || tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return NodeFilter.FILTER_REJECT;
+          if(isEditable(parent)) return NodeFilter.FILTER_REJECT;
+          if(inNoAutolink(parent)) return NodeFilter.FILTER_REJECT;
+          if(!URL_RE.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    var nodes = [];
+    var n;
+    while(n = walker.nextNode()){
+      nodes.push(n);
+    }
+    nodes.forEach(function(textNode){
+      var html = textNode.nodeValue.replace(URL_RE, function(url){
+        var safe = url.replace(/"/g, '&quot;');
+        return '<a href="'+safe+'" rel="noopener" target="_blank">'+safe+'</a>';
+      });
+      var span = document.createElement('span');
+      span.innerHTML = html;
+      textNode.parentNode.replaceChild(span, textNode);
+    });
+  }
+
+  function shouldSkip(a){
+    try{
+      if(!a || !a.getAttribute) return true;
+      if(!a.hasAttribute('href')) return true;
+      if(a.classList.contains('btn')) return true;
+      if(a.getAttribute('role') === 'button') return true;
+      if(a.classList.contains('menu-btn')) return true;
+      if(a.closest('.leaflet-control')) return true;
+      if(a.classList.contains('no-link-icon') || a.hasAttribute('data-no-link-icon')) return true;
+    }catch(e){}
+    return false;
+  }
+
+  function applyIconOnly(a){
+    var label = (a.getAttribute('aria-label') || a.textContent || a.getAttribute('title') || a.href || '').trim();
+    if(label) a.setAttribute('aria-label', label);
+    a.classList.add('link-icon-only');
+    if(!(a.classList.contains('show-link-text') || a.hasAttribute('data-show-text'))){
+      a.textContent = '';
+      if(!a.getAttribute('title')) a.setAttribute('title', a.href);
+    }
+  }
+
+  function transform(root){
+    autolink(root);
+    var anchors = (root.querySelectorAll ? root.querySelectorAll('a[href]') : []);
+    anchors.forEach(function(a){
+      if(!shouldSkip(a)) applyIconOnly(a);
+    });
+  }
+
+  function runInitial(){
+    transform(document.body || document.documentElement);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', runInitial);
+  } else {
+    runInitial();
+  }
+
+  var obs = new MutationObserver(function(muts){
+    for (var m of muts){
+      for (var node of m.addedNodes){
+        if(node.nodeType === 1){
+          if(!inNoAutolink(node)) transform(node);
+        }else if(node.nodeType === 3){
+          var parent = node.parentNode;
+          if(parent && !isEditable(parent) && !inNoAutolink(parent)){
+            autolink(parent);
+            if(parent.querySelectorAll){
+              parent.querySelectorAll('a[href]').forEach(function(a){ if(!shouldSkip(a)) applyIconOnly(a); });
+            }
+          }
+        }
+      }
+    }
+  });
+  try{
+    obs.observe(document.documentElement, {childList:true, subtree:true});
+  }catch(e){}
+
 })();

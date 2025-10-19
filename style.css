@@ -783,7 +783,7 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   content:'';
   display:inline-block;
   width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231a73e8' d='M10.59 13.41a1 1 0 0 0 1.41 1.41l4.24-4.24a3 3 0 1 0-4.24-4.24l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-4.24 4.24Z'/></svg>");
+  background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g transform='rotate(-18 12 12)' fill='none' stroke='%231a73e8' stroke-width='2'><ellipse cx='12' cy='8' rx='5' ry='3.8'/><ellipse cx='12' cy='16' rx='5' ry='3.8'/></g></svg>\");
   background-repeat:no-repeat;
   background-position:center;
   background-size:30px 30px;
@@ -1281,3 +1281,110 @@ html, body { height:100%; }
 
 /* Bubble interaction tweaks */
 .rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+
+
+/* === RTF bubble -> docked toolbar (sticky, bottom-centered) === */
+#journalModal .body{ position: relative; }
+#journalModal .input.rtf{ padding-bottom: 72px; } /* space so toolbar won't overlap text */
+#journalModal .rtf-bubble{
+  position: sticky;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  transform: none;
+  margin-inline: auto;
+  z-index: 1100;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+#journalModal .rtf-bubble .colors,
+#journalModal .rtf-bubble .styles{
+  display:flex; gap:8px; align-items:center; flex-wrap:nowrap;
+}
+#journalModal .rtf-bubble.hidden{ display: none !important; }
+
+#expenseModal .body{ position: relative; }
+#expenseModal .input.rtf{ padding-bottom: 72px; }
+#expenseModal .rtf-bubble{ position: sticky; bottom: 8px; left:0; right:0; transform:none; margin-inline:auto; z-index:1100; display:flex; justify-content:center; gap:10px; max-width:calc(100% - 16px); overflow-x:auto; pointer-events:auto; }
+#expenseModal .rtf-bubble .colors, #expenseModal .rtf-bubble .styles{ display:flex; gap:8px; align-items:center; }
+#expenseModal .rtf-bubble.hidden{ display:none!important; }
+
+
+/* === Notes line-break fidelity (expenses + journal) === */
+#view-expenses .cell.notes,
+#view-journal  .cell.notes,
+#tblRecentExpenses td:first-child,
+#tblRecentJournal  td:nth-child(3){
+  white-space: pre-wrap;     /* preserve \n from editor */
+  word-break: break-word;
+}
+/* Remove default margins from contentEditable output */
+#view-expenses .cell.notes div,
+#view-journal  .cell.notes div,
+#view-expenses .cell.notes p,
+#view-journal  .cell.notes p{
+  margin: 0;
+  padding: 0;
+}
+
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g transform='rotate(-20 12 12)' stroke='%231a73e8' stroke-width='2' fill='none' stroke-linecap='round'><circle cx='12' cy='8' r='4'/><circle cx='12' cy='16' r='4'/></g></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+
+/* === Exact line-break preservation in notes cells (expenses + journal) === */
+#view-expenses .cell.notes,
+#view-journal  .cell.notes {
+  white-space: break-spaces;   /* preserve spaces and newlines 1:1 */
+  word-break: break-word;      /* avoid horizontal scroll */
+}
+
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g fill='none' stroke='%231a73e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(35 8 12)'><rect x='1' y='6' width='14' height='6' rx='3' ry='3'/></g><g transform='rotate(35 16 12)'><rect x='9' y='12' width='14' height='6' rx='3' ry='3'/></g></g></svg>);
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:24px; height:24px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g transform='rotate(30 12 12)' fill='none' stroke='%231a73e8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='9' width='10' height='6' rx='3' ry='3'/><rect x='12' y='9' width='10' height='6' rx='3' ry='3'/><path d='M10 12h4'/></g></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:24px 24px;
+}
+
+/* std link-icon sizing */
+.link-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:24px; height:24px;
+  margin: 0 6px;
+  vertical-align: middle;
+  text-decoration:none;
+}
+.link-icon:hover::before{
+  filter: brightness(0.85);
+}
+
+/* center only the requested title */
+.center-title{ text-align:center; }
