@@ -1,3 +1,8 @@
+
+function getUserBadgeTextEl(){
+  return document.getElementById('userBadgeText') || document.getElementById('userBadge');
+}
+
 // === Auth Button Toggle (Login <-> Logout) ===
 function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
@@ -745,7 +750,7 @@ if (token && tripId) {
   state.currentTripId = tripId;
   $('#sidebar').style.display = 'none';
   $('#btnLogin').style.display = 'none';
-  $('#btnLogout').style.display = 'none';
+  $('#btnLogout').style.display = 'inline-block';
   $('#tabs').style.display = 'flex';
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');

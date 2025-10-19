@@ -51,7 +51,7 @@ export const auth = getAuth(app);
 try{
   const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   if(isMobile){
-    await setPersistence(auth, browserSessionPersistence);
+    setPersistence(auth, browserSessionPersistence).catch(()=>{});
   }
 }catch(_){}
 // Convenience named exports (used in a few places)
