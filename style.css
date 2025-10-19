@@ -1388,3 +1388,20 @@ html, body { height:100%; }
 
 /* center only the requested title */
 .center-title{ text-align:center; }
+
+/* --- Ensure blue link icon renders correctly in Journal (list + editor) --- */
+#tblJournal a.link-icon,
+#tblRecentJournal a.link-icon,
+#jrText a.link-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align:middle;
+  text-decoration:none;
+}
+
+
+/* Mobile auth dropdown fix */
+@media (max-width: 900px){
+  header .menu .menu-list{ right: 0; left: auto; }
+}

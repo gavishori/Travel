@@ -1130,7 +1130,7 @@ function renderJournal(t, order){
         ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
         : '';
 
-      const text = (j.html && typeof j.html === 'string' && j.html.trim()) ? sanitizeJournalHTML(j.html) : linkifyText(j.text || '');
+      const text = (j.html && /(<a|link-icon)/i.test(j.html)) ? j.html : linkifyToIcons(j.html || j.text || '');
 
       const tr1 = document.createElement('tr');
       tr1.className = 'exp-item'; tr1.dataset.id = j.id;
@@ -2666,8 +2666,9 @@ function normalizeEditorLinks(editor){
       const looksRaw = (txt === href) || /^https?:\/\//.test(txt);
       const tooLong = txt.length > 40 || href.length > 60;
       if (looksRaw || tooLong){
-        a.classList.add('link-chip');
-        a.textContent = '🔗';
+        a.classList.add('link-icon');
+        a.textContent = '';
+        a.style.display = 'inline-flex';
       }
       a.setAttribute('target','_blank');
       a.setAttribute('rel','noopener');
@@ -2679,8 +2680,9 @@ function normalizeEditorLinks(editor){
 function pasteAsIconLink(editor, url){
   const a = document.createElement('a');
   a.href = url;
-  a.className = 'link-chip';
-  a.textContent = '🔗';
+  a.className = 'link-icon';
+  a.textContent = '';
+  a.style.display = 'inline-flex';
   a.target = '_blank';
   a.rel = 'noopener';
   const sel = window.getSelection();
@@ -2790,8 +2792,9 @@ function sanitizeJournalHTML(html){
 
       // If long/raw, render as a blue link icon only
       if (looksRaw || tooLong){
-        a.classList.add('link-chip');
-        a.innerHTML = '🔗'; // icon only
+        a.classList.add('link-icon');
+        a.textContent = '';
+        a.style.display = 'inline-flex'; // icon only
         return;
       }
 
@@ -2816,7 +2819,7 @@ function linkifyText(str, label){
     const trimmed = line.trim();
     if (trimmed && singleUrlPattern.test(trimmed)){
       const href = trimmed.startsWith('http') ? trimmed : 'http://' + trimmed;
-      return '<a class="text-link" href="'+href+'" target="_blank" rel="noopener">'+(label||'קישור')+'</a>';
+      return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="קישור"></a>';
     }
     return line
       .replace(urlPattern, m=>{
@@ -4024,4 +4027,56 @@ function renderCategoryBreakdownNode(targetId){
     obs.observe(document.documentElement, {childList:true, subtree:true});
   }catch(e){}
 
+})();
+
+// === Mobile/logout additions ===
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    var out = document.getElementById('btnLogoutMobile');
+    if(out && !out.dataset.wired){
+      out.dataset.wired='1';
+      out.addEventListener('click', async function(e){
+        try{
+          e && e.preventDefault && e.preventDefault();
+          if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
+          else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
+        }catch(err){ console.error('mobile logout failed', err); }
+      });
+    }
+  });
+})();
+
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    var sw = document.getElementById('btnSwitchAccount');
+    if(sw && !sw.dataset.wired){
+      sw.dataset.wired='1';
+      sw.addEventListener('click', async function(e){
+        try{
+          e && e.preventDefault && e.preventDefault();
+          if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
+          else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
+        }catch(err){ console.error('switch account signOut failed', err); }
+        try{
+          var login = document.getElementById('loginScreen');
+          if(login){ login.style.display='block'; }
+        }catch(_){}
+      });
+    }
+  });
+})();
+
+(function(){
+  async function doHashLogout(){
+    try{
+      if(location.hash === '#logout'){
+        if(typeof FB !== 'undefined' && FB?.signOut){ await FB.signOut(FB.auth); }
+        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
+        try { history.replaceState(null, '', location.pathname + location.search); } catch(_){}
+      }
+    }catch(err){ console.error('hash logout failed', err); }
+  }
+  window.addEventListener('hashchange', doHashLogout);
+  // also check on initial load:
+  document.addEventListener('DOMContentLoaded', doHashLogout);
 })();
