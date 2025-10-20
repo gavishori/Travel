@@ -1,43 +1,81 @@
-import { auth, sendMagicLink, completeMagicLinkIfNeeded, hardLogout } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-
-const APP_PATH = "./app/";  // שנה אם צריך
+import { auth } from "./firebase.js";
+import {
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const emailInput = document.getElementById("email");
-const sendBtn = document.getElementById("sendLinkBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const goBtn = document.getElementById("goAppBtn");
+const sendLinkBtn = document.getElementById("send-link");
+const gotoAppBtn = document.getElementById("goto-app");
+const logoutBtn = document.getElementById("logout");
 const statusEl = document.getElementById("status");
 
-sendBtn.addEventListener("click", async () => {
-  const email = (emailInput.value || "").trim();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
-    alert("נא להזין אימייל תקין");
-    emailInput.focus();
-    return;
+const actionCodeSettings = {
+  url: window.location.origin + window.location.pathname, // come back to login page
+  handleCodeInApp: true
+};
+
+function setStatus(txt) { if (statusEl) statusEl.textContent = txt || ""; }
+
+// Handle returning via magic link
+(async () => {
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    try {
+      let email = window.localStorage.getItem('emailForSignIn');
+      if (!email) {
+        email = window.prompt('הכנס אימייל כדי להשלים התחברות:');
+      }
+      await signInWithEmailLink(auth, email, window.location.href);
+      window.localStorage.removeItem('emailForSignIn');
+      setStatus("התחברת בהצלחה ✓");
+      // after login auto-redirect to app/
+      setTimeout(() => location.assign("./app/"), 400);
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בהתחברות: " + (e?.message || e));
+    }
   }
-  sendBtn.disabled = true;
-  try{
-    await sendMagicLink(email);
-  }catch(err){
-    console.error(err);
-    alert("שגיאה בשליחת לינק: " + (err.message || err));
-  }finally{
-    sendBtn.disabled = false;
+})();
+
+sendLinkBtn?.addEventListener("click", async () => {
+  try {
+    const email = emailInput.value.trim();
+    if (!email) return alert("הכנס אימייל");
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem('emailForSignIn', email);
+    alert("נשלח לינק כניסה לאימייל.");
+  } catch (e) {
+    console.error(e);
+    alert("שגיאה בשליחת לינק: " + (e?.message || e));
   }
 });
 
-logoutBtn.addEventListener("click", hardLogout);
-goBtn.addEventListener("click", () => { window.location.href = APP_PATH; });
+gotoAppBtn?.addEventListener("click", () => {
+  location.assign("./app/");
+});
 
-await completeMagicLinkIfNeeded();
+logoutBtn?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    setStatus("התנתקת");
+  } catch (e) {
+    console.error(e);
+    alert("שגיאה בהתנתקות: " + (e?.message || e));
+  }
+});
 
 onAuthStateChanged(auth, (user) => {
-  if (user){
-    statusEl.textContent = "מחובר: " + (user.email || "");
-    goBtn.style.display = "block";
-  }else{
-    statusEl.textContent = "לא מחובר";
-    goBtn.style.display = "none";
+  const badge = document.getElementById("badge");
+  if (user) {
+    badge.textContent = "מחובר";
+    badge.className = "chip success";
+    setStatus(user.email + " :מחובר");
+  } else {
+    badge.textContent = "אורח";
+    badge.className = "chip";
+    setStatus("");
   }
 });

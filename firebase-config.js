@@ -1,5 +1,5 @@
-// firebase-config.js — production keys
-const firebaseConfig = {
+// Firebase config — embedded from your message
+export const firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
   projectId: "travel-416ff",
@@ -8,4 +8,3 @@ const firebaseConfig = {
   appId: "1:1075073511694:web:7876f492d18a702b09e75f",
   measurementId: "G-FT56H33X5J"
 };
-export default firebaseConfig;
