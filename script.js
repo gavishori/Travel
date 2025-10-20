@@ -5,13 +5,20 @@ function wireAuthPrimaryButton(){
   if(btn.dataset.authWired==='1') return;
   btn.dataset.authWired='1';
   const doLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-    try{
-      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if(typeof signOutUser==='function'){ await signOutUser(); }
-      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
-    }catch(err){ console.error('primary logout failed', err); }
-  };
+  try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+  try{
+    if (typeof window.hardSignOut === 'function') {
+      await window.hardSignOut();
+    } else if (typeof FB !== 'undefined' && typeof FB.signOut === 'function') {
+      await FB.signOut(FB.auth);
+    } else if (typeof signOutUser === 'function') {
+      await signOutUser();
+    } else if (typeof FB?.auth?.signOut === 'function') {
+      await FB.auth.signOut();
+    }
+  }catch(err){ console.error('primary logout failed', err); }
+  try{ location.reload(); }catch(_){}
+};
   // Swap handlers on auth changes
   window.__authPrimarySwap = (loggedIn)=>{
     const old = document.getElementById('btnLogin');
@@ -667,9 +674,11 @@ function placeLinkHtml(e){
   const name=_displayNameCityCountry(raw);
   let href=null;
   if(e && typeof e.lat==='number' && typeof e.lng==='number' && isFinite(e.lat) && isFinite(e.lng)){
-    // FIX: Added missing backtick after the 0
-    href=`https://maps.google.com/?q=$${e.lat},${e.lng}`;
+    href=`https://maps.google.com/?q=${e.lat},${e.lng}`;
   }else if(_isUrl(raw)){ href=raw.trim(); }
+  if(!href && e && typeof e.lat==='number' && typeof e.lng==='number'){
+    href=`https://maps.google.com/?q=${e.lat},${e.lng}`;
+  }
   if(href){ return `<a href="${encodeURI(href)}" target="_blank" rel="noopener">${esc(name||raw)}</a>`; }
   return esc(name||raw);
 }
@@ -745,7 +754,7 @@ if (token && tripId) {
   state.currentTripId = tripId;
   $('#sidebar').style.display = 'none';
   $('#btnLogin').style.display = 'none';
-  $('#btnLogout').style.display = 'inline-block';
+  $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
@@ -1123,14 +1132,34 @@ function renderJournal(t, order){
       if (!dateStr && j.date) dateStr = j.date;
       if (!timeStr && j.time) timeStr = j.time;
       const cat = j.category || '';
-            // Build compact place display: "Name, City, Country"
-      const parts = [j.placeName, j.city, j.country].filter(Boolean);
-      const placeCompact = parts.join(', ');
-      const locStr = placeCompact
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
-        : '';
+            // Build compact place display only when we actually have coordinates
+let locStr = '';
+      const _lat = Number(j.lat), _lng = Number(j.lng);
+      const hasCoords = isFinite(_lat) && isFinite(_lng);
+      let display = j.placeName || ''; // שימוש ישיר בערך השמור
+      
+      if (display){
+        // 1. אם יש שם מיקום, זה יהיה טקסט הבסיס
+        locStr = esc(display); 
 
-      const text = (j.html && /(<a|link-icon)/i.test(j.html)) ? j.html : linkifyToIcons(j.html || j.text || '');
+        // 2. ננסה לשפר את התצוגה לקישור למפה אם יש קואורדינטות
+        if (hasCoords){
+          // אם יש קואורדינטות, נשתמש בטקסט שהוזן כתווית לקישור המפה
+          const href = `https://maps.google.com/?q=$?q=${_lat},${_lng}`;
+          locStr = `<a href="${encodeURI(href)}" target="_blank" rel="noopener">${locStr} 🌐</a>`; 
+        } 
+        
+        // 3. ננסה לשפר את התצוגה לקישור URL אם יש URL
+        else if (j.placeUrl){
+          // אם הטקסט הוא URL, נציג אותו כקישור
+          locStr = `<a href="${encodeURI(j.placeUrl)}" target="_blank" rel="noopener">${locStr} 🔗</a>`;
+        }
+
+      } else {
+        // אם אין שם מקום כלל (גם לא טקסט שהוזן), נציג (ללא מיקום)
+        locStr = '<span class="muted">(ללא מיקום)</span>';
+      }
+const text =   (j.html && /(<a|link-icon)/i.test(j.html)) ? j.html : linkifyToIcons(j.html || j.text || '');
 
       const tr1 = document.createElement('tr');
       tr1.className = 'exp-item'; tr1.dataset.id = j.id;
@@ -1139,7 +1168,7 @@ function renderJournal(t, order){
         ${selectCell}
         <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
         <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
-        <td class="cell header location" colspan="2"><span class="lbl">מקום:</span> ${locStr||''}</td>
+        <td class="cell header location" colspan="2"><span class="lbl">מקום:</span> ${locStr}</td>
         <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
       `;
       const tr4 = document.createElement('tr');
@@ -1343,7 +1372,7 @@ async function saveExpense(){
     category: $('#expCat').value.trim(),
     amount: Number($('#expAmount').value||0),
     currency: $('#expCurr').value,
-    locationName: formatPlace(($('#expLocationName') ? $('#expLocationName').value.trim() : '')),
+    locationName: $('#expLocationName') ? $('#expLocationName').value.trim() : '', // <--- **תיקון**
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
@@ -1901,7 +1930,10 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
   try{ document.querySelector('#journalModal .input.rtf').style.paddingBottom='72px'; }catch(_){}
   $('#journalModal').dataset.id = j?.id || '';
   document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
-  $('#jrLocationName').value = j?.placeName || '';
+  
+  // ***התיקון החדש/המשופר הוא כאן***:
+  $('#jrLocationName').value = (j?.placeName || j?.locationName) || ''; 
+  
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
@@ -1942,7 +1974,7 @@ async function saveJournal() {
   t.journal[id] = {
     text: (document.getElementById('jrText').innerText || '').trim(),
     html: (document.getElementById('jrText').innerHTML || '').trim(),
-    placeName: formatPlace($('#jrLocationName').value.trim()),
+    placeName: $('#jrLocationName').value.trim(), // <--- **ודא שזה הערך המדויק**
     placeUrl: (function(){ 
       const v=$('#jrLocationName').value.trim(); 
       return /^(?:https?:\/\/|www\.)/.test(v) ? (v.startsWith('http')? v : 'http://' + v) : ''; 
@@ -1973,7 +2005,6 @@ async function saveJournal() {
   showToast('רישום יומן נשמר');
   await loadTrip();
 }
-
 
 $('#btnUseCurrentJr').addEventListener('click', () => {
   getCurrentLocation((lat, lng) => {
@@ -3241,20 +3272,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 
-// === Mobile logout wiring ===
-document.addEventListener('DOMContentLoaded', ()=>{
-  const outMob = document.getElementById('btnLogoutMobile');
-  if(outMob && !outMob.dataset.wired){
-    outMob.dataset.wired='1';
-    outMob.addEventListener('click', async (e)=>{
-      try{
-        e && e.preventDefault && e.preventDefault();
-        if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
-      }catch(err){ console.error('mobile signOut failed', err); }
-    });
-  }
-});
 // === Logout wiring ===
 document.addEventListener('DOMContentLoaded', ()=>{
   const out = document.getElementById('btnLogout');
@@ -4043,17 +4060,15 @@ function renderCategoryBreakdownNode(targetId){
 
 })();
 
-// === Hash-based emergency logout ===
-(function(){
-  async function doHashLogout(){
-    try{
-      if(location.hash === '#logout'){
-        if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
-        try { history.replaceState(null, '', location.pathname + location.search); } catch(_){}
-      }
-    }catch(e){ console.error('hash logout error', e); }
-  }
-  window.addEventListener('hashchange', doHashLogout);
-  document.addEventListener('DOMContentLoaded', doHashLogout);
-})();
+// Bind "Switch Account" button if present
+window.__bindSwitchAccount = function(){
+  const el = document.getElementById('btnSwitchAccount');
+  if(!el || el.dataset._bound==='1') return;
+  el.dataset._bound = '1';
+  el.addEventListener('click', async (e)=>{
+    e?.preventDefault?.();
+    try{ await (window.hardSignOut?.() || Promise.resolve()); }catch(_){}
+    try{ location.reload(); }catch(_){}
+  }, {passive:false});
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindSwitchAccount, 0));

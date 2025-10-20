@@ -27,7 +27,8 @@
       <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
       <!-- Auth Compact -->
       <div id="authArea" class="menu">
-        <button id="btnLogin" class="btn primary">התחברות</button>
+        \1
+      <button id=\"btnSwitchAccount\" class=\"btn\" title=\"התנתק והתחבר עם אחר\">החלף חשבון</button>
         <button id="userBadge" class="menu-btn" style="display:none">
           <span id="currentUserEmail"></span>
         </button>
@@ -80,9 +81,9 @@
       <main class="content" id="main">
         <nav class="tabs" id="tabs" style="display:none">
           
-          <button data-tab="expenses">הוצאות</button>
+	    <button data-tab="overview" class="active">הצג הכל</button>          
+	    <button data-tab="expenses">הוצאות</button>
           <button data-tab="journal">יומן יומי</button>
-          <button data-tab="overview" class="active">הצג הכל</button>
           <button data-tab="meta">נתוני נסיעה</button>
           <button data-tab="map">מפה</button>
           <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
@@ -475,8 +476,6 @@ id="expenseModal" class="modal">
   </div>
 </dialog>
 
-
-  <a id="logoutLinkHidden" href="#logout" style="display:none">logout</a>
 </body>
     <script>
     // /*__MOBILE_LOGOUT_INJECT__*/
