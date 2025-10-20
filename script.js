@@ -1,39 +1,39 @@
-// script.js — לוגיקה של כפתורים
-import { FB, sendMagicLink, hardSignOut } from './firebase.js';
-
-export function initUI(){
-  const $ = s => document.querySelector(s);
-  const emailEl = $('#email');
-  const msg = $('#msg');
-  const sendBtn = $('#sendLink');
-  const logoutBtn = $('#hardLogout');
-
-  sendBtn.addEventListener('click', async () => {
-    const email = (emailEl.value||'').trim();
-    if(!email) { msg.textContent = 'נא להזין אימייל'; return; }
-    try{
-      sendBtn.disabled = true;
-      await FB.ensurePersistence();
-      await sendMagicLink(email, FB.APP_BASE);
-      msg.textContent = 'שלחנו לינק כניסה לאימייל. פתח/י מהנייד והכניסה תאושר.';
-    }catch(err){
-      console.error(err);
-      alert('שגיאה בשליחת הלינק: ' + (err?.message||err));
-    }finally{
-      sendBtn.disabled = false;
-    }
-  });
-
-  logoutBtn.addEventListener('click', async () => {
-    try{
-      logoutBtn.disabled = true;
-      await hardSignOut();
-      location.href = FB.APP_BASE + '?logout=' + Date.now();
-    }catch(err){
-      console.error(err);
-      alert('שגיאה בהתנתקות: ' + (err?.message||err));
-    }finally{
-      logoutBtn.disabled = false;
-    }
-  });
+import { initAuth, sendMagicLink, completeSignInIfNeeded, hardLogout } from './firebase.js';
+const emailEl = document.getElementById('email');
+const sendBtn = document.getElementById('send');
+const logoutBtn = document.getElementById('hardLogout');
+const msgEl = document.getElementById('msg');
+initAuth();
+completeSignInIfNeeded(msgEl);
+sendBtn.addEventListener('click', async () => {
+  const email = (emailEl.value || '').trim();
+  if (!email) { show('נא להזין אימייל.', true); return; }
+  try {
+    sendBtn.disabled = true;
+    window.localStorage.setItem('emailForSignIn', email);
+    await sendMagicLink(email);
+    show('לינק נשלח! פתח את המייל מהמכשיר ולחץ על הקישור.', false, true);
+  } catch (e) {
+    console.error(e);
+    show(`שגיאה בשליחת הלינק: ${e.message || e}`, true);
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await hardLogout();
+    show('בוצעה התנתקות מלאה ונוקה מטמון.', false, true);
+    const u = new URL(window.location.href);
+    u.searchParams.set('logout', Date.now());
+    location.replace(u.toString());
+  } catch (e) {
+    console.error(e);
+    show('שגיאה בהתנתקות: ' + (e.message || e), true);
+  }
+});
+function show(text, isErr=false, persist=false){
+  msgEl.textContent = text;
+  msgEl.className = 'msg ' + (isErr ? 'error' : 'success');
+  if (!persist) setTimeout(()=>{ msgEl.textContent=''; msgEl.className='msg'; }, 7000);
 }

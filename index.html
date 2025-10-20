@@ -1,40 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY — כניסה</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>כניסה ל־FLYMILY</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="app-header"><h1>FLYMILY־ ל כניסה</h1></header>
-
   <main class="card">
-    <p class="hint">הכי יציב במובייל — <b>Magic Link</b> אימות באימייל</p>
+    <h1>כניסה ל־<span>FLYMILY</span></h1>
+    <p class="sub">הכי יציב במובייל — <b>Magic Link</b> אימות באימייל</p>
     <label class="label">אימייל</label>
-    <input id="email" class="input" type="email" placeholder="name@example.com" autocomplete="email" />
-    <div class="row">
-      <button id="sendLink" class="btn primary">שלח לינק כניסה</button>
-    </div>
-    <div class="row">
-      <button id="hardLogout" class="btn danger">התנתקות מלאה</button>
-    </div>
+    <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" />
+    <button id="send" class="primary">שלח לינק כניסה</button>
+    <button id="hardLogout" class="danger outline">התנתקות מלאה</button>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
   </main>
-
-  <script type="module">
-    import { FB } from './firebase.js';
-    import { initUI } from './script.js';
-
-    (async () => {
-      await FB.ensurePersistence();
-      const completed = await FB.completeEmailLinkLogin();
-      if (completed) {
-        document.querySelector('#msg').textContent = 'התחברת בהצלחה ✔';
-      }
-    })();
-
-    initUI();
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
