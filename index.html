@@ -265,6 +265,13 @@
 </header>
   <div class="body">
     <section id="loginTab" class="tab-panel">
+<div class="oauth-row" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:.5rem 0">
+  <button id="btnGoogleRedirect" class="btn provider google" type="button">התחבר עם Google</button>
+  <input id="magicEmail" type="email" placeholder="האימייל ללינק כניסה" style="flex:1;min-width:220px;max-width:320px" />
+  <button id="btnEmailMagicLink" class="btn" type="button">שלח לינק</button>
+  <button id="btnHardSignOut" class="btn" type="button" style="background:#fee;border:1px solid #f66;color:#a00">התנתקות מלאה</button>
+</div>
+
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
       <p id="authError" class="muted" style="color:var(--danger);"></p>
@@ -474,9 +481,10 @@ id="expenseModal" class="modal">
     <div id="categoryBreakdownDialog"></div>
   </div>
 </dialog>
-
+<script type="module" src="firebase.js"></script>
+<script type="module" src="script.js"></script>
 </body>
-    <script>
+<script>
     // /*__MOBILE_LOGOUT_INJECT__*/
     document.addEventListener('DOMContentLoaded', function() {
       const modalIds = [

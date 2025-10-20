@@ -4053,32 +4053,56 @@ function renderCategoryBreakdownNode(targetId){
 
 })();
 
+document.addEventListener('DOMContentLoaded', async () => {
+  try { const mode = await (FB.ensurePersistence?.() || Promise.resolve('unknown')); console.log('auth persistence:', mode); } catch(_){}
+});
+
+
+window.__bindAuthProviders = function(){
+  const g = document.getElementById('btnGoogleRedirect');
+  if(g && !g.dataset._bound){ g.dataset._bound='1';
+    g.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      try{ await (window.doHardSignOut?.()||Promise.resolve()); }catch(_){}
+      try{ await FB.signInWithGoogleRedirect(); }catch(err){ alert('שגיאת Google: '+(err?.code||err?.message||err)); }
+    }, {passive:false});
+  }
+  const m = document.getElementById('btnEmailMagicLink');
+  if(m && !m.dataset._bound){ m.dataset._bound='1';
+    m.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      const email = document.getElementById('magicEmail')?.value?.trim();
+      if(!email){ alert('נא להזין אימייל לקבלת לינק'); return; }
+      try{ await FB.sendMagicLink(email, FB.APP_BASE || (location.origin+location.pathname)); alert('נשלח לינק למייל. פתח/י אותו במכשיר זה.'); }
+      catch(err){ alert('שגיאת לינק: '+(err?.code||err?.message||err)); }
+    }, {passive:false});
+  }
+  const h = document.getElementById('btnHardSignOut');
+  if(h && !h.dataset._bound){ h.dataset._bound='1';
+    h.addEventListener('click', async (e)=>{ e?.preventDefault?.(); try{ await doHardSignOut(); }catch(_){} }, {passive:false});
+  }
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindAuthProviders, 0));
+
+(async ()=>{
+  try { await FB.completeEmailLinkLogin?.(); } catch(_){}
+  try {
+    const res = await (FB.getRedirectResult ? FB.getRedirectResult(FB.auth) : null).catch(()=>null);
+    if(res && res.user){ console.log('redirect done', res.user.uid); }
+  } catch(_){}
+})();
+
+
 async function doHardSignOut() {
   try { await (FB?.hardSignOut?.() || Promise.resolve()); } catch(_){}
   try {
     if ('caches' in window) { const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
   } catch(_){}
   try {
-    if (navigator.serviceWorker) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r=>r.unregister().catch(()=>{})));
-    }
+    if (navigator.serviceWorker) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister().catch(()=>{}))); }
   } catch(_){}
   const base = (FB && FB.APP_BASE) ? FB.APP_BASE : (location.origin + location.pathname.replace(/[^/]*$/, ''));
   const ts = Date.now();
   location.replace(base + (base.includes('?') ? '&' : '?') + 'logout=' + ts);
 }
 try { window.doHardSignOut = doHardSignOut; } catch(_){}
-
-
-window.__bindHardLogout = function(){
-  const b = document.getElementById('btnHardSignOut');
-  if(b && !b.dataset._bound){
-    b.dataset._bound='1';
-    b.addEventListener('click', async (e)=>{
-      e?.preventDefault?.();
-      await doHardSignOut();
-    }, {passive:false});
-  }
-};
-document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindHardLogout, 0));

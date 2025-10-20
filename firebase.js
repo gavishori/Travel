@@ -3,10 +3,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getAuth,
   onAuthStateChanged,
-  signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  signOut,
+  setPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
@@ -84,14 +94,22 @@ try {
 }
 
 
-/** Hard sign-out: clears Firebase auth state and persistent stores. */
+export async function ensurePersistence() {
+  try { await setPersistence(auth, indexedDBLocalPersistence); return 'indexedDB'; }
+  catch(e1){ try { await setPersistence(auth, browserLocalPersistence); return 'localStorage'; }
+  catch(e2){ try { await setPersistence(auth, browserSessionPersistence); return 'session'; }
+  catch(e3){ console.warn('All persistence modes failed', e1, e2, e3); return 'none'; }}}
+}
+try { FB.ensurePersistence = ensurePersistence; } catch(_){}
+
+
 export async function hardSignOut() {
   try { await signOut(auth); } catch(_){}
   try {
     const clearStore = (store) => {
       try {
         Object.keys(store).forEach(k => {
-          if (k.startsWith('firebase:') || k.includes('firebase') || k === 'emailForSignIn') {
+          if (k.startsWith('firebase:') || k.includes('firebase') || k == 'emailForSignIn') {
             try { store.removeItem(k); } catch(_){}
           }
         });
