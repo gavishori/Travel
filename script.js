@@ -5,20 +5,13 @@ function wireAuthPrimaryButton(){
   if(btn.dataset.authWired==='1') return;
   btn.dataset.authWired='1';
   const doLogout = async (e)=>{
-  try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
-  try{
-    if (typeof window.hardSignOut === 'function') {
-      await window.hardSignOut();
-    } else if (typeof FB !== 'undefined' && typeof FB.signOut === 'function') {
-      await FB.signOut(FB.auth);
-    } else if (typeof signOutUser === 'function') {
-      await signOutUser();
-    } else if (typeof FB?.auth?.signOut === 'function') {
-      await FB.auth.signOut();
-    }
-  }catch(err){ console.error('primary logout failed', err); }
-  try{ location.reload(); }catch(_){}
-};
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{
+      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      else if(typeof signOutUser==='function'){ await signOutUser(); }
+      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+    }catch(err){ console.error('primary logout failed', err); }
+  };
   // Swap handlers on auth changes
   window.__authPrimarySwap = (loggedIn)=>{
     const old = document.getElementById('btnLogin');
@@ -2488,7 +2481,8 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     if (appEl) appEl.style.display = 'grid'; // Restore the display setting if it was hidden globally
 
     if (user) {
-      if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
+            if (typeof authModal!=='undefined' && authModal?.open) try{ authModal.close(); }catch(_){}
+if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
       if(btnLogin) btnLogin.style.display='none';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
       // User is logged in: Hide login, show app content
@@ -4059,16 +4053,3 @@ function renderCategoryBreakdownNode(targetId){
   }catch(e){}
 
 })();
-
-// Bind "Switch Account" button if present
-window.__bindSwitchAccount = function(){
-  const el = document.getElementById('btnSwitchAccount');
-  if(!el || el.dataset._bound==='1') return;
-  el.dataset._bound = '1';
-  el.addEventListener('click', async (e)=>{
-    e?.preventDefault?.();
-    try{ await (window.hardSignOut?.() || Promise.resolve()); }catch(_){}
-    try{ location.reload(); }catch(_){}
-  }, {passive:false});
-};
-document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindSwitchAccount, 0));
