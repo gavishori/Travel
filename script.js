@@ -2441,22 +2441,24 @@ async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', 
   if(__loginInFlight) return;
   __loginInFlight = true;
   const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent||'');
+  const errBox = document.querySelector(errSel);
   try{
     const email = document.querySelector(emailSel)?.value?.trim();
     const pass  = document.querySelector(passSel)?.value;
-    const errBox = document.querySelector(errSel);
     if(!email || !pass){
       if(errBox) errBox.textContent = 'אנא מלא אימייל וסיסמה';
       if(isMobile) alert('אנא מלא אימייל וסיסמה');
       return;
     }
+    try { await (FB?.applyMobilePersistence?.() || Promise.resolve()); } catch(_){}
     await FB.signInWithEmailAndPassword(FB.auth, email, pass);
     if(errBox) errBox.textContent = '';
   }catch(err){
-    const msg = (err?.code || err?.message || 'שגיאת התחברות לא ידועה');
-    const errBox = document.querySelector(errSel);
-    if(errBox) errBox.textContent = msg;
-    if(isMobile) alert('שגיאת התחברות: ' + msg);
+    const code = err?.code || '';
+    const msg  = err?.message || 'שגיאת התחברות לא ידועה';
+    const full = (code ? code+': ' : '') + msg;
+    if(errBox){ errBox.textContent = full; errBox.style.color='#c62828'; }
+    if(isMobile) alert('שגיאת התחברות: ' + full);
     console.error('login failed', err);
   } finally {
     __loginInFlight = false;
@@ -4127,3 +4129,29 @@ try { window.forceLogout = forceLogout; } catch(_){}
     el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
   }
 })();
+
+
+// Simple connectivity/auth endpoint diagnostic
+window.__bindAuthDiag = function(){
+  const b = document.getElementById('authDiagBtn');
+  if(!b || b.dataset._bound==='1') return;
+  b.dataset._bound='1';
+  b.addEventListener('click', async (e)=>{
+    e?.preventDefault?.();
+    const out = [];
+    try {
+      out.push('online: '+navigator.onLine);
+      // Try a harmless OPTIONS request to identitytoolkit (CORS preflight)
+      const key = FB?.auth?.app?.options?.apiKey || '';
+      const url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(key);
+      const r = await fetch(url, {method:'OPTIONS', mode:'cors'}).catch(e=>e);
+      out.push('preflight: ' + (r && r.status ? r.status : 'ERR'));
+    } catch (err) {
+      out.push('error: '+(err?.message||err));
+    }
+    alert('בדיקת חיבור:\n'+out.join('\n'));
+  }, {passive:false});
+};
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{ try{ window.__bindAuthDiag(); }catch(_){} }, 0);
+});
