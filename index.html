@@ -27,7 +27,8 @@
       <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
       <!-- Auth Compact -->
       <div id="authArea" class="menu">
-        <button id="btnLogin" class="btn primary">התחברות</button>
+        \1
+<button id="btnSwitchAccount" class="btn" type="button" title="התנתקות והתחברות עם אחר">החלף חשבון</button>
         <button id="userBadge" class="menu-btn" style="display:none">
           <span id="currentUserEmail"></span>
         </button>
@@ -264,7 +265,16 @@
 <button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
   <div class="body">
-    <section id="loginTab" class="tab-panel">
+    \1
+        <div class="oauth-buttons" style="display:flex;gap:.5rem;margin:.5rem 0;flex-wrap:wrap">
+          <button id="btnGoogleRedirect" class="btn provider google" type="button">התחבר עם Google</button>
+          <button id="btnAppleRedirect" class="btn provider apple" type="button">התחבר עם Apple</button>
+        </div>
+        <div class="magic-link" style="display:flex;gap:.5rem;align-items:center;margin:.25rem 0 .5rem">
+          <input id="magicEmail" type="email" placeholder="האימייל שלך ללינק כניסה" style="flex:1;min-width:200px" />
+          <button id="btnEmailMagicLink" class="btn" type="button">שלח לינק למייל</button>
+        </div>
+        
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
       <p id="authError" class="muted" style="color:var(--danger);"></p>

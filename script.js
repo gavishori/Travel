@@ -4052,3 +4052,52 @@ function renderCategoryBreakdownNode(targetId){
   }catch(e){}
 
 })();
+
+// === Auth Providers wiring ===
+window.__bindAuthProviders = function(){
+  const g = document.getElementById('btnGoogleRedirect');
+  if(g && !g.dataset._bound){ g.dataset._bound='1';
+    g.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      try{ await (window.forceLogout?.()||Promise.resolve()); }catch(_){}
+      await FB.signInWithGoogleRedirect();
+    }, {passive:false});
+  }
+  const a = document.getElementById('btnAppleRedirect');
+  if(a && !a.dataset._bound){ a.dataset._bound='1';
+    a.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      try{ await (window.forceLogout?.()||Promise.resolve()); }catch(_){}
+      await FB.signInWithAppleRedirect();
+    }, {passive:false});
+  }
+  const m = document.getElementById('btnEmailMagicLink');
+  if(m && !m.dataset._bound){ m.dataset._bound='1';
+    m.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      const email = document.getElementById('magicEmail')?.value?.trim();
+      if(!email){ alert('נא להזין אימייל לקבלת לינק'); return; }
+      try{
+        await FB.sendMagicLink(email, location.origin+location.pathname);
+        alert('שלחנו לינק כניסה למייל. פתח/י את המייל במכשיר זה והתחבר/י.');
+      }catch(err){
+        alert('שגיאת לינק למייל: '+(err?.code||err?.message||err));
+        console.error(err);
+      }
+    }, {passive:false});
+  }
+  const s = document.getElementById('btnSwitchAccount');
+  if(s && !s.dataset._bound){ s.dataset._bound='1';
+    s.addEventListener('click', async (e)=>{ e?.preventDefault?.(); try{ await (window.forceLogout?.()||Promise.resolve()); }catch(_){ } }, {passive:false});
+  }
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindAuthProviders, 0));
+
+(async ()=>{
+  try { await FB.completeEmailLinkLogin(); } catch(_) {}
+  try {
+    const fn = FB.getRedirectResult ? FB.getRedirectResult : null;
+    const res = fn ? await fn(FB.auth).catch(()=>null) : null;
+    if(res && res.user){ console.log('redirect login completed', res.user.uid); }
+  } catch(err){ console.error('redirect result error', err); }
+})();

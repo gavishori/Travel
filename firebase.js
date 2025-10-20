@@ -51,6 +51,41 @@ export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
 
 // --- FB namespace matching script.js expectations ---
+
+// === Providers & Redirect/Magic-Link helpers ===
+export async function signInWithGoogleRedirect() {
+  const provider = new GoogleAuthProvider();
+  try { provider.setCustomParameters({ prompt: 'select_account' }); } catch(_){}
+  await signInWithRedirect(auth, provider);
+}
+export async function signInWithAppleRedirect() {
+  const provider = new OAuthProvider('apple.com');
+  await signInWithRedirect(auth, provider);
+}
+export async function sendMagicLink(email, continueUrl=location.origin+location.pathname) {
+  await sendSignInLinkToEmail(auth, email, { url: continueUrl, handleCodeInApp: true });
+  try { localStorage.setItem('emailForSignIn', email); } catch(_){}
+}
+export async function completeEmailLinkLogin() {
+  const href = location.href;
+  if (isSignInWithEmailLink(auth, href)) {
+    let email = null;
+    try { email = localStorage.getItem('emailForSignIn'); } catch(_){}
+    if (!email) email = prompt('אשר/י אימייל:');
+    if (!email) return;
+    await signInWithEmailLink(auth, email, href);
+    try { localStorage.removeItem('emailForSignIn'); } catch(_){}
+    history.replaceState({}, '', (location.origin+location.pathname));
+  }
+}
+try{
+  FB.signInWithGoogleRedirect = signInWithGoogleRedirect;
+  FB.signInWithAppleRedirect  = signInWithAppleRedirect;
+  FB.sendMagicLink            = sendMagicLink;
+  FB.completeEmailLinkLogin   = completeEmailLinkLogin;
+  FB.getRedirectResult        = getRedirectResult;
+}catch(_){} 
+
 export const FB = {
   // db & auth handles
   db, auth,
@@ -60,6 +95,13 @@ export const FB = {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
   signOut,
 
   // firestore API surface
