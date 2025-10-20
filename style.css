@@ -1399,3 +1399,6 @@ html, body { height:100%; }
   vertical-align:middle;
   text-decoration:none;
 }
+
+.btn.provider.google{border:1px solid rgba(66,133,244,.35);}
+.oauth-grid .btn{min-width:120px}

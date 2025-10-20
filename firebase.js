@@ -5,6 +5,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   setPersistence,
   indexedDBLocalPersistence,
@@ -61,6 +62,75 @@ export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
 
 // --- FB namespace matching script.js expectations ---
+
+// Base URL used for redirects (works on GitHub Pages /Travel/)
+export const APP_BASE = new URL("./", location.href).toString();
+
+// ---- Providers & Magic Link ----
+export async function signInWithGoogleRedirect(){
+  const provider = new GoogleAuthProvider();
+  try{ provider.setCustomParameters({prompt:'select_account'});}catch(_){}
+  return await signInWithRedirect(auth, provider);
+}
+export async function signInWithAppleRedirect(){
+  const provider = new OAuthProvider('apple.com');
+  return await signInWithRedirect(auth, provider);
+}
+export async function sendMagicLink(email, continueUrl = APP_BASE){
+  await sendSignInLinkToEmail(auth, email, { url: continueUrl, handleCodeInApp: true });
+  try{ localStorage.setItem('emailForSignIn', email); }catch(_){}
+  return true;
+}
+export async function completeEmailLinkLogin(){
+  const href = location.href;
+  if (isSignInWithEmailLink(auth, href)){
+    let email = null;
+    try { email = localStorage.getItem('emailForSignIn'); } catch(_){}
+    if (!email) email = prompt('אישור מייל עבור כניסה:');
+    if (!email) return;
+    await signInWithEmailLink(auth, email, href);
+    try{ localStorage.removeItem('emailForSignIn'); }catch(_){}
+    // clean querystring
+    try{ history.replaceState({}, '', APP_BASE); }catch(_){}
+  }
+}
+// passwordless + reset
+export async function sendReset(email){ return await sendPasswordResetEmail(auth, email); }
+
+// Persistence cascade for iOS
+export async function ensurePersistence(){
+  try{ await setPersistence(auth, indexedDBLocalPersistence); return 'indexedDB'; }
+  catch(e1){ try{ await setPersistence(auth, browserLocalPersistence); return 'local'; }
+  catch(e2){ try{ await setPersistence(auth, browserSessionPersistence); return 'session'; }
+  catch(e3){ console.warn('All persistence failed', e1, e2, e3); return 'none'; }}}
+}
+
+// Hard sign-out
+export async function hardSignOut(){
+  try{ await signOut(auth);}catch(_){}
+  try{
+    const clearStore=(s)=>{try{Object.keys(s).forEach(k=>{ if(k.startsWith('firebase:')||k.includes('firebase')||k==='emailForSignIn'){ try{s.removeItem(k);}catch(_){}}});}catch(_){}};
+    clearStore(localStorage); clearStore(sessionStorage);
+  }catch(_){}
+  try{
+    if (indexedDB && indexedDB.deleteDatabase){
+      ['firebaseLocalStorageDb','firebase-heartbeat-database'].forEach(n=>{try{indexedDB.deleteDatabase(n);}catch(_){}});
+    }
+  }catch(_){}
+  return true;
+}
+
+try{
+  FB.APP_BASE=APP_BASE;
+  FB.signInWithGoogleRedirect=signInWithGoogleRedirect;
+  FB.signInWithAppleRedirect=signInWithAppleRedirect;
+  FB.sendMagicLink=sendMagicLink;
+  FB.completeEmailLinkLogin=completeEmailLinkLogin;
+  FB.ensurePersistence=ensurePersistence;
+  FB.hardSignOut=hardSignOut;
+  FB.sendReset=sendReset;
+}catch(_){}
+
 export const FB = {
   // db & auth handles
   db, auth,
@@ -94,35 +164,8 @@ try {
 }
 
 
-export async function ensurePersistence() {
-  try { await setPersistence(auth, indexedDBLocalPersistence); return 'indexedDB'; }
-  catch(e1){ try { await setPersistence(auth, browserLocalPersistence); return 'localStorage'; }
-  catch(e2){ try { await setPersistence(auth, browserSessionPersistence); return 'session'; }
-  catch(e3){ console.warn('All persistence modes failed', e1, e2, e3); return 'none'; }}}
+export async function sendReset(email){
+  if(!email) throw new Error('missing email');
+  return await sendPasswordResetEmail(auth, email);
 }
-try { FB.ensurePersistence = ensurePersistence; } catch(_){}
-
-
-export async function hardSignOut() {
-  try { await signOut(auth); } catch(_){}
-  try {
-    const clearStore = (store) => {
-      try {
-        Object.keys(store).forEach(k => {
-          if (k.startsWith('firebase:') || k.includes('firebase') || k == 'emailForSignIn') {
-            try { store.removeItem(k); } catch(_){}
-          }
-        });
-      } catch(_){}
-    };
-    clearStore(localStorage);
-    clearStore(sessionStorage);
-  } catch(_){}
-  try {
-    if (indexedDB && indexedDB.deleteDatabase) {
-      ['firebaseLocalStorageDb','firebase-heartbeat-database'].forEach(db => { try { indexedDB.deleteDatabase(db); } catch(_){} });
-    }
-  } catch(_){}
-  return true;
-}
-try { FB.hardSignOut = hardSignOut; } catch(_){}
+try { FB.sendReset = sendReset; } catch(_){}
