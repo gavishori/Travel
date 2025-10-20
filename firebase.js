@@ -1,12 +1,14 @@
 
+// Firebase Magic Link only, JSON import removed (use JS config module)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signOut,
-  setPersistence, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
+  getAuth, signOut, setPersistence,
+  indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import config from './firebase-config.json' assert { type: 'json' };
+import config from './firebase-config.js'; // JS module, no 'assert'
+
 export const app = initializeApp(config);
 export const auth = getAuth(app);
 export const APP_BASE = new URL("./", location.href).toString();
@@ -43,11 +45,7 @@ export async function hardSignOut(){
     const clr=(s)=>{ try{ Object.keys(s).forEach(k=>{ if(k.startsWith('firebase:')||k.includes('firebase')||k==='emailForSignIn'){ try{s.removeItem(k);}catch(_){}} }); }catch(_){}};
     clr(localStorage); clr(sessionStorage);
   }catch(_){}
-  try{
-    if(indexedDB && indexedDB.deleteDatabase){
-      ['firebaseLocalStorageDb','firebase-heartbeat-database'].forEach(n=>{ try{ indexedDB.deleteDatabase(n); }catch(_){} });
-    }
-  }catch(_){}
+  try{ if(indexedDB && indexedDB.deleteDatabase){ ['firebaseLocalStorageDb','firebase-heartbeat-database'].forEach(n=>{ try{ indexedDB.deleteDatabase(n);}catch(_){} }); } }catch(_){}
   return true;
 }
 
