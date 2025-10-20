@@ -5,19 +5,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FLYMILY — כניסה</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text x="6" y="50" font-size="48">✈️</text></svg>'>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="appbar"><div class="brand">FLYMILY</div></header>
   <main id="login" class="card">
-    <h1>כניסה ל-FLYMILY</h1>
+    <h1>כניסה ל‑FLYMILY</h1>
     <p class="muted">כניסה באימייל (Magic Link) — הכי יציב במובייל.</p>
+
     <label class="lbl" for="magicEmail">אימייל</label>
     <input id="magicEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" />
+
     <button id="btnSendLink" class="btn primary">שלח לינק כניסה</button>
     <button id="btnHardSignOut" class="btn danger outline">התנתקות מלאה</button>
+
     <p id="msg" class="msg"></p>
   </main>
+
   <script type="module" src="firebase.js"></script>
   <script type="module" src="script.js"></script>
 </body>
