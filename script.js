@@ -4053,79 +4053,6 @@ function renderCategoryBreakdownNode(targetId){
 
 })();
 
-
-// ======== PREVIEW / PRINT (links active in preview, stripped for print) =========
-function buildPrintHTML(mode) {
-  // Choose the main container to clone for printing
-  const container = document.querySelector('#tripsContainer') || document.querySelector('#app') || document.body;
-  const temp = document.createElement('div');
-  temp.innerHTML = container.innerHTML; // snapshot of current UI
-
-  if (mode === 'print') {
-    // Replace anchors with spans so no link styling/URLs appear on paper
-    temp.querySelectorAll('a').forEach(a => {
-      const span = document.createElement('span');
-      span.textContent = a.textContent || a.href || '';
-      if (a.style?.cssText) span.style.cssText = a.style.cssText; // keep layout
-      a.replaceWith(span);
-    });
-  }
-
-  const title = document.querySelector('.page-title')?.textContent || document.title || 'FLYMILY';
-
-  return `<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <title>${title} – ${mode === 'print' ? 'הדפסה' : 'תצוגה'}</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body { padding: 16px; }
-    .no-print { display: ${mode === 'print' ? 'none' : 'initial'}; }
-    ${mode === 'print' ? 'a { text-decoration: none !important; color: inherit !important; }' : ''}
-    @media print { .no-print { display: none !important; } }
-  </style>
-</head>
-<body>
-  <h1 style="margin:0 0 12px">${title}</h1>
-  <div id="print-root">${temp.innerHTML}</div>
-  ${mode !== 'print' ? '<div class="no-print" style="margin-top:12px;opacity:.7">בתצוגה הקישורים פעילים; להדפסה השתמש בכפתור "הדפס".</div>' : ''}
-</body>
-</html>`;
-}
-
-function openPreviewWindow(mode) {
-  // Open immediately on click to avoid popup blockers
-  const w = window.open('', '_blank', 'noopener');
-  if (!w) {
-    alert('לא ניתן לפתוח חלון תצוגה (כנראה חסימת פופ-אפים). אפשר פופ-אפים לאתר ונסה שוב.');
-    return;
-  }
-  const html = buildPrintHTML(mode);
-  w.document.open(); w.document.write(html); w.document.close();
-
-  if (mode === 'print') {
-    w.onload = () => {
-      try { w.focus(); w.print(); w.onafterprint = () => { try { w.close(); } catch(_) {} }; } catch(_){}
-    };
-  }
-}
-
-(function bindPreviewPrintButtons(){
-  const previewBtn = document.getElementById('btnPreview');
-  const printBtn   = document.getElementById('btnPrint');
-  if (previewBtn && !previewBtn.dataset._bound) {
-    previewBtn.dataset._bound = '1';
-    previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPreviewWindow('preview'); }, {passive:false});
-  }
-  if (printBtn && !printBtn.dataset._bound) {
-    printBtn.dataset._bound = '1';
-    printBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPreviewWindow('print'); }, {passive:false});
-  }
-})();
-// ==============================================================================
-
-
 async function forceLogout(){
   try { await (window.hardSignOut?.() || (FB?.auth?.signOut?.() ?? Promise.resolve())); } catch(_){}
   try { if ('caches' in window) { const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } } catch(_){}
@@ -4187,3 +4114,63 @@ document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindAuthP
     }
   } catch(err){ console.error('redirect result error', err); }
 })();
+
+
+// ======== PREVIEW / PRINT (links active in preview, stripped for print) =========
+function buildPrintHTML(mode) {
+  const container = document.querySelector('#tripsContainer') || document.querySelector('#app') || document.body;
+  const temp = document.createElement('div');
+  temp.innerHTML = container.innerHTML;
+  if (mode === 'print') {
+    temp.querySelectorAll('a').forEach(a => {
+      const span = document.createElement('span');
+      span.textContent = a.textContent || a.href || '';
+      if (a.style?.cssText) span.style.cssText = a.style.cssText;
+      a.replaceWith(span);
+    });
+  }
+  const title = document.querySelector('.page-title')?.textContent || document.title || 'FLYMILY';
+  return `<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>${title} – ${mode === 'print' ? 'הדפסה' : 'תצוגה'}</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding: 16px; }
+    .no-print { display: ${mode === 'print' ? 'none' : 'initial'}; }
+    ${mode === 'print' ? 'a { text-decoration: none !important; color: inherit !important; }' : ''}
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+  <h1 style="margin:0 0 12px">${title}</h1>
+  <div id="print-root">${temp.innerHTML}</div>
+  ${mode !== 'print' ? '<div class="no-print" style="margin-top:12px;opacity:.7">בתצוגה הקישורים פעילים; להדפסה השתמש בכפתור "הדפס".</div>' : ''}
+</body>
+</html>`;
+}
+
+function openPreviewWindow(mode) {
+  const w = window.open('', '_blank', 'noopener');
+  if (!w) { alert('לא ניתן לפתוח חלון תצוגה (כנראה חסימת פופ-אפים). אפשר פופ-אפים לאתר ונסה שוב.'); return; }
+  const html = buildPrintHTML(mode);
+  w.document.open(); w.document.write(html); w.document.close();
+  if (mode === 'print') {
+    w.onload = () => { try { w.focus(); w.print(); w.onafterprint = () => { try { w.close(); } catch(_) {} }; } catch(_){} };
+  }
+}
+
+(function bindPreviewPrintButtons(){
+  const previewBtn = document.getElementById('btnPreview');
+  const printBtn   = document.getElementById('btnPrint');
+  if (previewBtn && !previewBtn.dataset._bound) {
+    previewBtn.dataset._bound = '1';
+    previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPreviewWindow('preview'); }, {passive:false});
+  }
+  if (printBtn && !printBtn.dataset._bound) {
+    printBtn.dataset._bound = '1';
+    printBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPreviewWindow('print'); }, {passive:false});
+  }
+})();
+// ==============================================================================
