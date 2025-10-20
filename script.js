@@ -4155,3 +4155,19 @@ window.__bindAuthDiag = function(){
 document.addEventListener('DOMContentLoaded', ()=>{
   setTimeout(()=>{ try{ window.__bindAuthDiag(); }catch(_){} }, 0);
 });
+
+
+// Hard bind login button + form submit
+window.__bindAuthPrimary = function(){
+  const btn = document.getElementById('authPrimary');
+  if(btn && !btn.dataset._bound){
+    btn.dataset._bound='1';
+    btn.addEventListener('click', (e)=>{ e?.preventDefault?.(); loginWithCredentials(); }, {passive:false});
+  }
+  const form = document.getElementById('authForm');
+  if(form && !form.dataset._bound){
+    form.dataset._bound='1';
+    form.addEventListener('submit', (e)=>{ e?.preventDefault?.(); loginWithCredentials(); }, {passive:false});
+  }
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindAuthPrimary, 0));

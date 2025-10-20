@@ -257,7 +257,7 @@
 <dialog id="authModal" class="modal">
   <header>
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="loginTab">כניסה</button>
+      <button id="authPrimary" onclick="try{loginWithCredentials();}catch(_){}" class="tab-btn active" data-tab="loginTab">כניסה</button>
       <button class="tab-btn" data-tab="signupTab">הרשמה</button>
       <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
     </nav>
@@ -265,11 +265,11 @@
 <button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
   <div class="body">
-    <section id="loginTab" class="tab-panel">
+    <section id="loginTab" class="tab-panel"><form id="authForm" onsubmit="event.preventDefault(); try{loginWithCredentials();}catch(_){}"> 
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
       <p id="authError" class="muted" style="color:var(--danger);"></p>
-    </section>
+     </form></section>
     <section id="signupTab" class="tab-panel" hidden>
       <label>אימייל<input id="suEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="suPass" type="password" class="input" placeholder="מינימום 6 תווים"/></label>
