@@ -1,28 +1,109 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>כניסה ל-FLYMILY</title>
-  <link rel="stylesheet" href="style.css"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FLYMILY — כניסה</title>
+<style>
+  :root { --b:#0b61ff; --r:#e5484d; --bg:#f6f7fb; --tx:#0a0a0a; }
+  html,body { margin:0; padding:0; font-family:system-ui,Arial,Helvetica,sans-serif; background:var(--bg); color:var(--tx);}
+  .wrap { max-width:840px; margin:4rem auto; padding:2rem; background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.06);}
+  h1 { margin:0 0 1rem; letter-spacing:.02em; font-weight:800; font-size:clamp(28px,5vw,42px);}
+  .subtitle { color:#5b5e66; margin-bottom:1.25rem;}
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  input[type=email] { flex:1 1 360px; padding:14px 16px; border-radius:12px; border:1px solid #d9dbe1; font-size:16px; }
+  .btn { border:0; border-radius:12px; padding:14px 18px; font-size:16px; cursor:pointer; transition:.2s; }
+  .btn-primary { background:var(--b); color:#fff; }
+  .btn-primary:hover { filter:brightness(1.05); }
+  .btn-outline { background:#fff; border:1px solid #d9dbe1; }
+  .btn-danger { background:#fff0f0; color:#a61616; border:1px solid #f3c3c3; }
+  .note { margin-top:18px; color:#68707b; font-size:14px; }
+  .status { margin-top:18px; font-weight:600; color:#14833b; }
+</style>
 </head>
 <body>
-  <main class="card">
-    <h1>כניסה ל-<span class="brand">FLYMILY</span></h1>
-    <p class="sub">הכי יציב במובייל — <b>Magic Link</b></p>
+  <div class="wrap">
+    <h1>FLYMILY — כניסה</h1>
+    <div class="subtitle"><strong>Magic Link</strong> — הכי יציב במובייל</div>
 
-    <label class="label">אימייל</label>
-    <input id="email" type="email" placeholder="name@example.com" inputmode="email"/>
+    <div class="row" style="margin:16px 0;">
+      <input id="email" type="email" placeholder="name@example.com" autocomplete="email" />
+      <button id="send" class="btn btn-primary">שלח לינק כניסה</button>
+    </div>
 
-    <button id="sendLinkBtn" class="btn btn-primary">שלח לינק כניסה</button>
-    <button id="logoutBtn" class="btn btn-danger">התנתקות מלאה</button>
-    <button id="goAppBtn" class="btn btn-primary" style="display:none;">המשך לאפליקציה</button>
+    <div class="row" style="margin:10px 0;">
+      <button id="logout" class="btn btn-danger">התנתקות מלאה</button>
+      <button id="goApp" class="btn btn-outline">המשך לאפליקציה</button>
+    </div>
 
-    <p id="status" class="status">בודק מצב…</p>
-    <p class="hint">אם לא מגיע מייל, בדוק את <code>firebase-config.js</code> וש־Email/Password + Email Link מאופשרים ב-Firebase.</p>
-  </main>
+    <div id="status" class="status" hidden></div>
+    <div class="note">אם לא מגיע מייל, בדוק את ההגדרות ב‑Firebase וודא שהדומיין <code>gavishori.github.io</code> נמצא ב‑Authorized domains.</div>
+  </div>
 
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="script.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const firebaseConfig = {"apiKey": "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0", "authDomain": "travel-416ff.firebaseapp.com", "projectId": "travel-416ff", "storageBucket": "travel-416ff.firebasestorage.app", "messagingSenderId": "1075073511694", "appId": "1:1075073511694:web:7876f492d18a702b09e75f", "measurementId": "G-FT56H33X5J"};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    auth.languageCode = 'he';
+
+    const actionCodeSettings = {
+      url: 'https://gavishori.github.io/Travel/',
+      handleCodeInApp: true
+    };
+
+    const el = (id)=>document.getElementById(id);
+    const statusEl = el('status');
+
+    el('send').addEventListener('click', async () => {
+      const email = el('email').value.trim();
+      if (!email) { alert('נא להזין אימייל'); return; }
+      try {
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem('emailForSignIn', email);
+        alert('לינק התחברות נשלח אליך למייל. פתח את ההודעה מהנייד והקש על הלינק.');
+      } catch (e) {
+        alert('שגיאה בשליחת לינק: ' + (e.message || e));
+        console.error(e);
+      }
+    });
+
+    el('logout').addEventListener('click', async () => {
+      try { await signOut(auth); } catch { }
+      localStorage.removeItem('emailForSignIn');
+      alert('התנתקת.');
+    });
+
+    el('goApp').addEventListener('click', () => {
+      window.location.href = './app/';
+    });
+
+    (async () => {
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) email = prompt('הזן אימייל לאימות');
+        try {
+          await signInWithEmailLink(auth, email, window.location.href);
+          window.localStorage.removeItem('emailForSignIn');
+          statusEl.hidden = false;
+          statusEl.textContent = 'מחובר: ' + email;
+        } catch (e) {
+          console.error(e); alert('שגיאת התחברות: ' + (e.message||e));
+        }
+      }
+    })();
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        statusEl.hidden = false;
+        statusEl.textContent = 'מחובר: ' + (user.email || '');
+      } else {
+        statusEl.hidden = true;
+      }
+    });
+  </script>
 </body>
 </html>
