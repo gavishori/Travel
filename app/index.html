@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>כניסה ל-FLYMILY</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <main class="card">
+    <h1>כניסה ל-<span class="brand">FLYMILY</span></h1>
+    <p class="sub">הכי יציב במובייל — <b>Magic Link</b></p>
+
+    <label class="label">אימייל</label>
+    <input id="email" type="email" placeholder="name@example.com" inputmode="email"/>
+
+    <button id="sendLinkBtn" class="btn btn-primary">שלח לינק כניסה</button>
+    <button id="logoutBtn" class="btn btn-danger">התנתקות מלאה</button>
+    <button id="goAppBtn" class="btn btn-primary" style="display:none;">המשך לאפליקציה</button>
+
+    <p id="status" class="status">בודק מצב…</p>
+    <p class="hint">אם לא מגיע מייל, בדוק את <code>firebase-config.js</code> וש־Email/Password + Email Link מאופשרים ב-Firebase.</p>
+  </main>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
