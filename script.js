@@ -2440,27 +2440,20 @@ let __loginInFlight = false;
 async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
   if(__loginInFlight) return;
   __loginInFlight = true;
-  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent||'');
-  const errBox = document.querySelector(errSel);
   try{
     const email = document.querySelector(emailSel)?.value?.trim();
     const pass  = document.querySelector(passSel)?.value;
     if(!email || !pass){
-      if(errBox) errBox.textContent = 'אנא מלא אימייל וסיסמה';
-      if(isMobile) alert('אנא מלא אימייל וסיסמה');
+      const e = document.querySelector(errSel);
+      if(e) e.textContent = 'אנא מלא אימייל וסיסמה';
       return;
     }
-    try { await (FB?.applyMobilePersistence?.() || Promise.resolve()); } catch(_){}
     await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-    if(errBox) errBox.textContent = '';
+    const e = document.querySelector(errSel); if(e) e.textContent = '';
   }catch(err){
-    const code = err?.code || '';
-    const msg  = err?.message || 'שגיאת התחברות לא ידועה';
-    const full = (code ? code+': ' : '') + msg;
-    if(errBox){ errBox.textContent = full; errBox.style.color='#c62828'; }
-    if(isMobile) alert('שגיאת התחברות: ' + full);
+    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
     console.error('login failed', err);
-  } finally {
+  }finally{
     __loginInFlight = false;
   }
 }
@@ -2488,8 +2481,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     if (appEl) appEl.style.display = 'grid'; // Restore the display setting if it was hidden globally
 
     if (user) {
-            if (typeof authModal!=='undefined' && authModal?.open) try{ authModal.close(); }catch(_){}
-if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
+      if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
       if(btnLogin) btnLogin.style.display='none';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
       // User is logged in: Hide login, show app content
@@ -4060,114 +4052,3 @@ function renderCategoryBreakdownNode(targetId){
   }catch(e){}
 
 })();
-
-// Bind header logout/switch account button
-window.__bindHeaderLogout = function(){
-  const el = document.getElementById('btnLogoutHeader');
-  if(!el || el.dataset._bound==='1') return;
-  el.dataset._bound='1';
-  el.addEventListener('click', async (e)=>{
-    e?.preventDefault?.();
-    try { await (window.hardSignOut?.() || (FB?.auth?.signOut?.() ?? Promise.resolve())); } catch(_){}
-    try { location.reload(); } catch(_){}
-  }, {passive:false});
-};
-document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindHeaderLogout, 0));
-
-
-// --- Ultra-aggressive logout for Safari/Chrome mobile ---
-async function forceLogout(){
-  try { await (window.hardSignOut?.() || (FB?.auth?.signOut?.() ?? Promise.resolve())); } catch(_){}
-  try {
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-  } catch(_){}
-  try {
-    if (navigator.serviceWorker) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister().catch(()=>{})));
-    }
-  } catch(_){}
-  try { navigator?.credentials?.preventSilentAccess?.(); } catch(_){}
-  try { const e=document.querySelector('#authEmail'); if(e) e.value=''; const p=document.querySelector('#authPass'); if(p) p.value=''; } catch(_){}
-  try {
-    const url = new URL(location.href); url.searchParams.set('logged_out', Date.now().toString()); location.replace(url.toString());
-  } catch(_){ location.reload(); }
-}
-try { window.forceLogout = forceLogout; } catch(_){}
-
-
-(function(){
-  const el = document.getElementById('btnLogoutHeader');
-  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
-    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
-  }
-})();
-
-
-(function(){
-  const el = document.getElementById('btnLogoutMobile');
-  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
-    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
-  }
-})();
-
-
-(function(){
-  const el = document.getElementById('btnLogout');
-  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
-    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
-  }
-})();
-
-
-(function(){
-  const el = document.getElementById('btnSwitchAccount');
-  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
-    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
-  }
-})();
-
-
-// Simple connectivity/auth endpoint diagnostic
-window.__bindAuthDiag = function(){
-  const b = document.getElementById('authDiagBtn');
-  if(!b || b.dataset._bound==='1') return;
-  b.dataset._bound='1';
-  b.addEventListener('click', async (e)=>{
-    e?.preventDefault?.();
-    const out = [];
-    try {
-      out.push('online: '+navigator.onLine);
-      // Try a harmless OPTIONS request to identitytoolkit (CORS preflight)
-      const key = FB?.auth?.app?.options?.apiKey || '';
-      const url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(key);
-      const r = await fetch(url, {method:'OPTIONS', mode:'cors'}).catch(e=>e);
-      out.push('preflight: ' + (r && r.status ? r.status : 'ERR'));
-    } catch (err) {
-      out.push('error: '+(err?.message||err));
-    }
-    alert('בדיקת חיבור:\n'+out.join('\n'));
-  }, {passive:false});
-};
-document.addEventListener('DOMContentLoaded', ()=>{
-  setTimeout(()=>{ try{ window.__bindAuthDiag(); }catch(_){} }, 0);
-});
-
-
-// Hard bind login button + form submit
-window.__bindAuthPrimary = function(){
-  const btn = document.getElementById('authPrimary');
-  if(btn && !btn.dataset._bound){
-    btn.dataset._bound='1';
-    btn.addEventListener('click', (e)=>{ e?.preventDefault?.(); loginWithCredentials(); }, {passive:false});
-  }
-  const form = document.getElementById('authForm');
-  if(form && !form.dataset._bound){
-    form.dataset._bound='1';
-    form.addEventListener('submit', (e)=>{ e?.preventDefault?.(); loginWithCredentials(); }, {passive:false});
-  }
-};
-document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindAuthPrimary, 0));

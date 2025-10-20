@@ -51,27 +51,6 @@ export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
 
 // --- FB namespace matching script.js expectations ---
-
-// --- Mobile-friendly persistence picker ---
-export async function applyMobilePersistence() {
-  try {
-    const ua = (navigator.userAgent||'').toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    const isMobileChrome = /android|mobile/.test(ua) && /chrome/.test(ua);
-    const target = isIOS ? browserSessionPersistence : (isMobileChrome ? browserLocalPersistence : indexedDBLocalPersistence);
-    await setPersistence(auth, target).catch(async ()=>{
-      try { await setPersistence(auth, browserLocalPersistence); } catch(_) {}
-    });
-  } catch(_) {}
-}
-try{
-  FB.applyMobilePersistence = applyMobilePersistence;
-  FB.setPersistence = setPersistence;
-  FB.browserLocalPersistence = browserLocalPersistence;
-  FB.browserSessionPersistence = browserSessionPersistence;
-  FB.indexedDBLocalPersistence = indexedDBLocalPersistence;
-}catch(_){} 
-
 export const FB = {
   // db & auth handles
   db, auth,
@@ -103,5 +82,3 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
-
-try{window.__authDebug={auth};}catch(_){}

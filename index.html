@@ -30,7 +30,6 @@
         <button id="btnLogin" class="btn primary">התחברות</button>
         <button id="userBadge" class="menu-btn" style="display:none">
           <span id="currentUserEmail"></span>
-<button id="btnLogoutHeader" class="btn danger" title="התנתק/י והתחבר/י עם חשבון אחר">התנתקות</button>
         </button>
         <div id="userMenuList" class="menu-list">
           <button id="btnLogout" class="btn" style="display:block;width:100%">התנתקות</button>
@@ -257,7 +256,7 @@
 <dialog id="authModal" class="modal">
   <header>
     <nav class="tabs">
-      <button id="authPrimary" onclick="try{loginWithCredentials();}catch(_){}" class="tab-btn active" data-tab="loginTab">כניסה</button>
+      <button class="tab-btn active" data-tab="loginTab">כניסה</button>
       <button class="tab-btn" data-tab="signupTab">הרשמה</button>
       <button class="tab-btn" data-tab="resetTab">איפוס סיסמה</button>
     </nav>
@@ -265,11 +264,11 @@
 <button id="btnLogoutMobile" class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
   <div class="body">
-    <section id="loginTab" class="tab-panel"><form id="authForm" onsubmit="event.preventDefault(); try{loginWithCredentials();}catch(_){}"> 
+    <section id="loginTab" class="tab-panel">
       <label>אימייל<input id="authEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="authPass" type="password" class="input" placeholder="••••••••"/></label>
       <p id="authError" class="muted" style="color:var(--danger);"></p>
-     </form></section>
+    </section>
     <section id="signupTab" class="tab-panel" hidden>
       <label>אימייל<input id="suEmail" type="email" class="input" placeholder="name@example.com"/></label>
       <label>סיסמה<input id="suPass" type="password" class="input" placeholder="מינימום 6 תווים"/></label>
@@ -282,8 +281,6 @@
   </div>
   <div class="footer">
     <button id="authPrimary" class="btn primary">כניסה</button>
-        <button id="authDiagBtn" class="btn" style="margin-inline-start:.5rem">בדיקת חיבור</button>
-        
     <button id="authSecondary" class="btn">ביטול</button>
   </div>
 </dialog>
