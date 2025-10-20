@@ -1,14 +1,16 @@
-*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f6f7fb;color:#111}
-.card{max-width:560px;margin:40px auto;padding:28px 24px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
-h1{font-size:28px;margin:0 0 8px}h1 span{letter-spacing:.5px}
-.sub{color:#5a6b7b;margin:0 0 22px}
-.label{display:block;margin:.5rem 0 .25rem;color:#424b57}
-input{width:100%;padding:14px 16px;border:1px solid #d9dee5;border-radius:12px;font-size:16px;outline:0}
-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-button{width:100%;padding:14px 16px;border-radius:12px;border:1px solid transparent;font-size:16px;cursor:pointer;margin-top:14px}
-.primary{background:#2563eb;color:#fff}
-.primary:disabled{opacity:.6;cursor:not-allowed}
-.danger{background:#fff;color:#b91c1c;border-color:#b91c1c}
-.outline{background:#fff}
-.msg{min-height:22px;margin-top:12px;color:#0f172a}
-.success{color:#0a7f3f}.error{color:#b91c1c}
+*:where(:not(iframe,canvas,img,svg,video):not(svg *,symbol *)){all:unset;display:revert}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.5;background:#f6f7fb;color:#0f172a;display:grid;place-items:center}
+.card{width:min(720px,92vw);background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(2,6,23,.08);padding:28px 24px}
+h1{font-size:clamp(24px,3.4vw,38px);font-weight:800;margin:0 0 6px}
+.brand{letter-spacing:.5px}
+.sub{opacity:.8;margin:0 0 18px}
+.label{display:block;font-weight:600;margin:10px 0 6px}
+input{width:100%;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.btn{width:100%;text-align:center;border-radius:12px;padding:14px 16px;margin-top:12px;cursor:pointer}
+.btn-primary{background:#1f57ff;color:#fff}
+.btn-primary:hover{filter:brightness(.95)}
+.btn-danger{background:#fff;color:#b91c1c;border:2px solid #b91c1c}
+.status{margin-top:14px;color:#0ea5e9}
+.hint{margin-top:10px;font-size:.9rem;opacity:.7}

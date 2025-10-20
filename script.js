@@ -1,39 +1,43 @@
-import { initAuth, sendMagicLink, completeSignInIfNeeded, hardLogout } from './firebase.js';
-const emailEl = document.getElementById('email');
-const sendBtn = document.getElementById('send');
-const logoutBtn = document.getElementById('hardLogout');
-const msgEl = document.getElementById('msg');
-initAuth();
-completeSignInIfNeeded(msgEl);
-sendBtn.addEventListener('click', async () => {
-  const email = (emailEl.value || '').trim();
-  if (!email) { show('נא להזין אימייל.', true); return; }
-  try {
-    sendBtn.disabled = true;
-    window.localStorage.setItem('emailForSignIn', email);
+import { auth, sendMagicLink, completeMagicLinkIfNeeded, hardLogout } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+const APP_PATH = "./app/";  // שנה אם צריך
+
+const emailInput = document.getElementById("email");
+const sendBtn = document.getElementById("sendLinkBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const goBtn = document.getElementById("goAppBtn");
+const statusEl = document.getElementById("status");
+
+sendBtn.addEventListener("click", async () => {
+  const email = (emailInput.value || "").trim();
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+    alert("נא להזין אימייל תקין");
+    emailInput.focus();
+    return;
+  }
+  sendBtn.disabled = true;
+  try{
     await sendMagicLink(email);
-    show('לינק נשלח! פתח את המייל מהמכשיר ולחץ על הקישור.', false, true);
-  } catch (e) {
-    console.error(e);
-    show(`שגיאה בשליחת הלינק: ${e.message || e}`, true);
-  } finally {
+  }catch(err){
+    console.error(err);
+    alert("שגיאה בשליחת לינק: " + (err.message || err));
+  }finally{
     sendBtn.disabled = false;
   }
 });
-logoutBtn.addEventListener('click', async () => {
-  try {
-    await hardLogout();
-    show('בוצעה התנתקות מלאה ונוקה מטמון.', false, true);
-    const u = new URL(window.location.href);
-    u.searchParams.set('logout', Date.now());
-    location.replace(u.toString());
-  } catch (e) {
-    console.error(e);
-    show('שגיאה בהתנתקות: ' + (e.message || e), true);
+
+logoutBtn.addEventListener("click", hardLogout);
+goBtn.addEventListener("click", () => { window.location.href = APP_PATH; });
+
+await completeMagicLinkIfNeeded();
+
+onAuthStateChanged(auth, (user) => {
+  if (user){
+    statusEl.textContent = "מחובר: " + (user.email || "");
+    goBtn.style.display = "block";
+  }else{
+    statusEl.textContent = "לא מחובר";
+    goBtn.style.display = "none";
   }
 });
-function show(text, isErr=false, persist=false){
-  msgEl.textContent = text;
-  msgEl.className = 'msg ' + (isErr ? 'error' : 'success');
-  if (!persist) setTimeout(()=>{ msgEl.textContent=''; msgEl.className='msg'; }, 7000);
-}
