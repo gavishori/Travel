@@ -4053,3 +4053,16 @@ function renderCategoryBreakdownNode(targetId){
   }catch(e){}
 
 })();
+
+// Bind header logout/switch account button
+window.__bindHeaderLogout = function(){
+  const el = document.getElementById('btnLogoutHeader');
+  if(!el || el.dataset._bound==='1') return;
+  el.dataset._bound='1';
+  el.addEventListener('click', async (e)=>{
+    e?.preventDefault?.();
+    try { await (window.hardSignOut?.() || (FB?.auth?.signOut?.() ?? Promise.resolve())); } catch(_){}
+    try { location.reload(); } catch(_){}
+  }, {passive:false});
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindHeaderLogout, 0));
