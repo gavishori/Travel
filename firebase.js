@@ -3,19 +3,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getAuth,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signOut,
-  setPersistence,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  GoogleAuthProvider,
-  OAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
-  isSignInWithEmailLink,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
@@ -60,45 +51,6 @@ export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
 
 // --- FB namespace matching script.js expectations ---
-
-// --- App base for GitHub Pages project (/Travel/) ---
-export const APP_BASE = new URL("./", location.href).toString();
-
-// === Providers & Redirect/Magic-Link helpers ===
-export async function signInWithGoogleRedirect() {
-  const provider = new GoogleAuthProvider();
-  try { provider.setCustomParameters({ prompt: 'select_account' }); } catch(_){}
-  await signInWithRedirect(auth, provider);
-}
-export async function signInWithAppleRedirect() {
-  const provider = new OAuthProvider('apple.com');
-  await signInWithRedirect(auth, provider);
-}
-export async function sendMagicLink(email, continueUrl = APP_BASE) {
-  await sendSignInLinkToEmail(auth, email, { url: continueUrl, handleCodeInApp: true });
-  try { localStorage.setItem('emailForSignIn', email); } catch(_){}
-}
-export async function completeEmailLinkLogin() {
-  const href = location.href;
-  if (isSignInWithEmailLink(auth, href)) {
-    let email = null;
-    try { email = localStorage.getItem('emailForSignIn'); } catch(_){}
-    if (!email) email = prompt('אשר/י אימייל:');
-    if (!email) return;
-    await signInWithEmailLink(auth, email, href);
-    try { localStorage.removeItem('emailForSignIn'); } catch(_){}
-    history.replaceState({}, '', APP_BASE);
-  }
-}
-try{
-  FB.signInWithGoogleRedirect = signInWithGoogleRedirect;
-  FB.signInWithAppleRedirect  = signInWithAppleRedirect;
-  FB.sendMagicLink            = sendMagicLink;
-  FB.completeEmailLinkLogin   = completeEmailLinkLogin;
-  FB.getRedirectResult        = getRedirectResult;
-  FB.APP_BASE                 = APP_BASE;
-}catch(_){} 
-
 export const FB = {
   // db & auth handles
   db, auth,
@@ -130,3 +82,9 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
+
+
+export async function emailPasswordRegister(email, password){
+  return await createUserWithEmailAndPassword(auth, email, password);
+}
+try{ FB.emailPasswordRegister = emailPasswordRegister; }catch(_){}
