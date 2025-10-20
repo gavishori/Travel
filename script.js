@@ -4052,3 +4052,33 @@ function renderCategoryBreakdownNode(targetId){
   }catch(e){}
 
 })();
+
+async function doHardSignOut() {
+  try { await (FB?.hardSignOut?.() || Promise.resolve()); } catch(_){}
+  try {
+    if ('caches' in window) { const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+  } catch(_){}
+  try {
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister().catch(()=>{})));
+    }
+  } catch(_){}
+  const base = (FB && FB.APP_BASE) ? FB.APP_BASE : (location.origin + location.pathname.replace(/[^/]*$/, ''));
+  const ts = Date.now();
+  location.replace(base + (base.includes('?') ? '&' : '?') + 'logout=' + ts);
+}
+try { window.doHardSignOut = doHardSignOut; } catch(_){}
+
+
+window.__bindHardLogout = function(){
+  const b = document.getElementById('btnHardSignOut');
+  if(b && !b.dataset._bound){
+    b.dataset._bound='1';
+    b.addEventListener('click', async (e)=>{
+      e?.preventDefault?.();
+      await doHardSignOut();
+    }, {passive:false});
+  }
+};
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindHardLogout, 0));

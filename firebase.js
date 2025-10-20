@@ -84,7 +84,27 @@ try {
 }
 
 
-export async function emailPasswordRegister(email, password){
-  return await createUserWithEmailAndPassword(auth, email, password);
+/** Hard sign-out: clears Firebase auth state and persistent stores. */
+export async function hardSignOut() {
+  try { await signOut(auth); } catch(_){}
+  try {
+    const clearStore = (store) => {
+      try {
+        Object.keys(store).forEach(k => {
+          if (k.startsWith('firebase:') || k.includes('firebase') || k === 'emailForSignIn') {
+            try { store.removeItem(k); } catch(_){}
+          }
+        });
+      } catch(_){}
+    };
+    clearStore(localStorage);
+    clearStore(sessionStorage);
+  } catch(_){}
+  try {
+    if (indexedDB && indexedDB.deleteDatabase) {
+      ['firebaseLocalStorageDb','firebase-heartbeat-database'].forEach(db => { try { indexedDB.deleteDatabase(db); } catch(_){} });
+    }
+  } catch(_){}
+  return true;
 }
-try{ FB.emailPasswordRegister = emailPasswordRegister; }catch(_){}
+try { FB.hardSignOut = hardSignOut; } catch(_){}
