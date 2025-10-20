@@ -2440,20 +2440,25 @@ let __loginInFlight = false;
 async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
   if(__loginInFlight) return;
   __loginInFlight = true;
+  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent||'');
   try{
     const email = document.querySelector(emailSel)?.value?.trim();
     const pass  = document.querySelector(passSel)?.value;
+    const errBox = document.querySelector(errSel);
     if(!email || !pass){
-      const e = document.querySelector(errSel);
-      if(e) e.textContent = 'אנא מלא אימייל וסיסמה';
+      if(errBox) errBox.textContent = 'אנא מלא אימייל וסיסמה';
+      if(isMobile) alert('אנא מלא אימייל וסיסמה');
       return;
     }
     await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-    const e = document.querySelector(errSel); if(e) e.textContent = '';
+    if(errBox) errBox.textContent = '';
   }catch(err){
-    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
+    const msg = (err?.code || err?.message || 'שגיאת התחברות לא ידועה');
+    const errBox = document.querySelector(errSel);
+    if(errBox) errBox.textContent = msg;
+    if(isMobile) alert('שגיאת התחברות: ' + msg);
     console.error('login failed', err);
-  }finally{
+  } finally {
     __loginInFlight = false;
   }
 }
@@ -4066,3 +4071,59 @@ window.__bindHeaderLogout = function(){
   }, {passive:false});
 };
 document.addEventListener('DOMContentLoaded', ()=> setTimeout(window.__bindHeaderLogout, 0));
+
+
+// --- Ultra-aggressive logout for Safari/Chrome mobile ---
+async function forceLogout(){
+  try { await (window.hardSignOut?.() || (FB?.auth?.signOut?.() ?? Promise.resolve())); } catch(_){}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(_){}
+  try {
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister().catch(()=>{})));
+    }
+  } catch(_){}
+  try { navigator?.credentials?.preventSilentAccess?.(); } catch(_){}
+  try { const e=document.querySelector('#authEmail'); if(e) e.value=''; const p=document.querySelector('#authPass'); if(p) p.value=''; } catch(_){}
+  try {
+    const url = new URL(location.href); url.searchParams.set('logged_out', Date.now().toString()); location.replace(url.toString());
+  } catch(_){ location.reload(); }
+}
+try { window.forceLogout = forceLogout; } catch(_){}
+
+
+(function(){
+  const el = document.getElementById('btnLogoutHeader');
+  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
+    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
+  }
+})();
+
+
+(function(){
+  const el = document.getElementById('btnLogoutMobile');
+  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
+    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
+  }
+})();
+
+
+(function(){
+  const el = document.getElementById('btnLogout');
+  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
+    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
+  }
+})();
+
+
+(function(){
+  const el = document.getElementById('btnSwitchAccount');
+  if(el && !el.dataset._fbound){ el.dataset._fbound='1';
+    el.addEventListener('click', (e)=>{ e?.preventDefault?.(); forceLogout(); }, {passive:false});
+  }
+})();

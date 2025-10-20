@@ -82,3 +82,5 @@ try {
 } catch (e) {
   // Ignore if window not available (SSR)
 }
+
+try{window.__authDebug={auth};}catch(_){}
