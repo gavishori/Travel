@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FLYMILY – כניסה ב‑Magic Link</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>כניסה ל‑FLYMILY</h1>
+    <p class="sub">הקלידו אימייל ונשלח לכם לינק כניסה חד‑פעמי.</p>
+
+    <form id="loginForm">
+      <input id="email" type="email" placeholder="name@example.com" autocomplete="email" required>
+      <button id="sendBtn" type="submit">שלח לינק כניסה</button>
+    </form>
+
+    <p id="msg" class="msg"></p>
+
+    <section class="welcome">
+      <h2>ברוך/ה הבא/ה!</h2>
+      <p>זהו מקום דוגמה לתוכן האמיתי של האפליקציה (כרטיסים, טבלאות וכו').</p>
+      <div class="row">
+        <div class="box">מחובר/ת: <span id="userBadge">—</span></div>
+        <div class="box"><button id="goAppBtn" class="ghost">המשך לאפליקציה</button></div>
+        <div class="box"><button id="logoutBtn" class="danger">התנתקות מלאה</button></div>
+      </div>
+    </section>
+
+    <footer class="hint">
+      אם לא מגיע מייל, בדקו ש־<code>firebase.js</code> מכיל את ה‑<code>config</code> האמיתי של הפרויקט, ושב־Firebase: Email/Password + Email Link מופעלים וב־Authorized domains מופיע <code>gavishori.github.io</code>.
+    </footer>
+  </main>
+
+  <!-- IMPORTANT: relative paths from repo root -->
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
