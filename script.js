@@ -6,11 +6,12 @@ const emailInput = $('#emailInput');
 const sendBtn = $('#sendBtn');
 const msg = $('#msg');
 
-const APP_REDIRECT = new URL('./app.html', location.href).href;
+// ✅ Redirect to the *current directory* so it also works on GitHub Project Pages (/repo/)
+const APP_REDIRECT = new URL('./', location.href).href;
 
 $('#loginForm')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const email = emailInput.value.trim();
+  const email = (emailInput?.value || '').trim();
   if(!email) return;
 
   sendBtn.disabled = true;
@@ -20,25 +21,27 @@ $('#loginForm')?.addEventListener('submit', async (e)=>{
 
   try {
     await api.sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    window.localStorage.setItem('emailForSignIn', email);
+    localStorage.setItem('emailForSignIn', email);
     say('נשלח מייל. בדוק/י את הדואר ולחץ/י על הלינק.', 'ok');
   } catch(err) {
     console.error(err);
-    say(err.message || 'שגיאה בשליחה', 'err');
+    say(cleanErr(err), 'err');
   } finally { sendBtn.disabled = false; }
 });
 
 async function completeIfNeeded(){
   if(api.isSignInWithEmailLink(auth, location.href)){
-    let email = window.localStorage.getItem('emailForSignIn');
+    let email = localStorage.getItem('emailForSignIn');
     if(!email){ email = prompt('נא לאשר את כתובת האימייל איתה התחברת:'); if(!email) return; }
     try{
       await api.signInWithEmailLink(auth, email, location.href);
-      window.localStorage.removeItem('emailForSignIn');
+      localStorage.removeItem('emailForSignIn');
+      // strip the action parameters and stay on the same page
       location.replace(APP_REDIRECT);
-    }catch(err){ console.error(err); say(err.message || 'שגיאה בהתחברות', 'err'); }
+    }catch(err){ console.error(err); say(cleanErr(err), 'err'); }
   }
 }
 completeIfNeeded();
 
-function say(text, type='info'){ msg.className = 'msg ' + type; msg.textContent = text; }
+function say(text, type='info'){ if(!msg) return; msg.className = 'msg ' + type; msg.textContent = text; }
+function cleanErr(err){ return (err && (err.message||err.code)) || 'שגיאה'; }

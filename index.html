@@ -3,14 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>כניסה ל־FLYMILY</title>
+  <title>FLYMILY — כניסה</title>
   <link rel="stylesheet" href="style.css" />
   <script type="module" src="firebase.js"></script>
 </head>
 <body class="page">
   <main class="card">
-    <h1 class="title">כניסה ל־<span>FLYMILY</span></h1>
-    <p class="muted">הקלידו אימייל ונשלח לכם Magic Link חד־פעמי.</p>
+    <header class="brand">
+      <img class="logo" src="./logo.png" alt="FLYMILY logo" />
+      <h1 class="title">ברוכים הבאים ל־<span>FLYMILY</span></h1>
+    </header>
+
+    <p class="muted">הקלידו אימייל ונשלח לכם לינק כניסה חד־פעמי.</p>
 
     <form id="loginForm" class="row">
       <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required />
@@ -19,10 +23,9 @@
 
     <p id="msg" class="msg"></p>
 
-    <section class="info">
-      <div class="pill">טיפ</div>
-      ודאו ב־Firebase שמופעלים <b>Email/Password</b> ו־<b>Email Link</b>, וש־
-      <code>gavishori.github.io</code> קיים ב־Authorized domains.
+    <section class="tip">
+      <div class="pill">הערה</div>
+      ודאו שב־Firebase Auth מופעל <b>Email Link</b> והדומיין שלכם נמצא ב־<b>Authorized domains</b>.
     </section>
   </main>
 
