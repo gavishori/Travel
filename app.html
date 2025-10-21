@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLYMILY — לוח טיולים</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="appbar">
+    <h1>לוח טיולים — FLYMILY</h1>
+    <div>
+      <span id="userBadge" class="badge">אורח/ת</span>
+      <button id="logoutBtn" class="danger">התנתקות</button>
+    </div>
+  </header>
+
+  <main class="card">
+    <p class="muted">האפליקציה נטענה. זהו מקום לדוגמה לתוכן האמיתי שלך.</p>
+  </main>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module">
+    import { api, auth } from './firebase.js';
+    const msg = (t, type='ok') => { console[type==='ok'?'log':'error'](t); };
+
+    // אם הגענו דרך לינק במייל – להשלים התחברות
+    (async () => {
+      try {
+        if (api.isSignInWithEmailLink(auth, location.href)) {
+          const cached = localStorage.getItem('emailForSignIn') || '';
+          const email = cached || prompt('הכניסו אימייל לאימות:');
+          if (!email) throw new Error('email-missing');
+          await api.signInWithEmailLink(auth, email, location.href);
+          localStorage.removeItem('emailForSignIn');
+          history.replaceState({}, '', location.pathname);
+        }
+      } catch (err) { msg('signin error: '+err.message, 'err'); }
+    })();
+
+    // סטייט משתמש
+    api.onAuthStateChanged(auth, (user) => {
+      const badge = document.getElementById('userBadge');
+      badge.textContent = user ? (user.email || 'מחובר/ת') : 'אורח/ת';
+    });
+
+    // התנתקות
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await api.signOut(auth);
+      location.href = './';
+    });
+  </script>
+</body>
+</html>

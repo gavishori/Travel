@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLYMILY — כניסה</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>כניסה ל־FLYMILY</h1>
+    <p class="muted">הקלידו אימייל ונשלח לינק כניסה חד־פעמי.</p>
+    <form id="loginForm">
+      <input id="email" type="email" placeholder="name@example.com" required />
+      <button id="sendBtn" type="submit">שלח לינק כניסה</button>
+    </form>
+    <p id="msg" class="msg"></p>
+    <div class="hr"></div>
+    <p class="muted small">אם לא מגיע מייל, ודאו שהדומיין מופיע ב‑Authorized domains.</p>
+  </main>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
