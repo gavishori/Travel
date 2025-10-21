@@ -1,0 +1,63 @@
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#0f1320;
+  --muted:#6b7280;
+  --brand:#2d6cdf;
+  --brand-ink:#0c48b3;
+  --danger:#ef4444;
+  --ring: 0 8px 30px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Heebo,Arial,sans-serif;
+  background:var(--bg); color:var(--text);
+  display:flex; flex-direction:column; gap:24px;
+}
+.wrap{width:min(960px,92vw); margin-inline:auto}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 0;
+}
+h1{margin:0; font-size:28px; letter-spacing:.5px}
+.badge{
+  background:#e5f0ff; color:var(--brand-ink);
+  padding:6px 10px; border-radius:999px; font-size:14px
+}
+.card{
+  background:var(--card); border-radius:18px;
+  padding:28px; box-shadow:var(--ring)
+}
+h2{margin:0 0 6px}
+.muted{color:var(--muted); margin:0 0 16px}
+.grid{display:grid; grid-template-columns:1fr auto; gap:12px}
+input{
+  height:46px; padding:0 14px; border-radius:12px; border:1px solid #e6e8ee;
+  outline:none; font-size:16px;
+}
+input:focus{border-color:#2d6cdf; box-shadow:0 0 0 3px #2d6cdf1a}
+button{
+  height:46px; padding:0 16px; border-radius:12px; border:0; cursor:pointer;
+  font-size:16px; transition:.15s transform ease, .15s opacity ease;
+}
+button:active{transform:translateY(1px)}
+.primary{background:var(--brand); color:#fff}
+.primary:hover{background:var(--brand-ink)}
+.outline{background:#fff; border:1px solid #e6e8ee}
+.danger{color:var(--danger); border-color:#f1c3c3}
+.danger:hover{background:#ffefef}
+.actions{display:flex; gap:10px; margin:14px 0 4px}
+.hint{
+  margin-top:8px; font-size:14px; color:var(--muted);
+  background:#f7fafc; border:1px dashed #e2e8f0; padding:10px 12px; border-radius:10px
+}
+.msg{ margin-top:10px; min-height:20px; font-size:15px}
+.msg.ok{color:var(--brand-ink)}
+.msg.err{color:var(--danger)}
+.footer{color:var(--muted); text-align:center; padding-bottom:28px}
+@media (max-width:620px){
+  .grid{grid-template-columns:1fr; gap:10px}
+  .actions{flex-direction:column}
+}

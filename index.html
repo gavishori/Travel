@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FLYMILY — כניסה</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="wrap topbar">
+    <h1>FLYMILY</h1>
+    <div id="authBadge" class="badge">אורח/ת</div>
+  </header>
+
+  <main class="wrap card">
+    <h2>כניסה ב-Magic Link</h2>
+    <p class="muted">הקלידו אימייל, נשלח לכם לינק כניסה חד-פעמי.</p>
+
+    <form id="loginForm" class="grid">
+      <input id="email" type="email" inputmode="email" placeholder="name@example.com" required />
+      <button id="sendLinkBtn" type="submit" class="primary">שלח לינק כניסה</button>
+    </form>
+
+    <div class="actions">
+      <button id="logoutBtn" class="danger outline" hidden>התנתקות מלאה</button>
+      <button id="goAppBtn" class="primary" hidden>המשך לאפליקציה</button>
+    </div>
+
+    <div id="hint" class="hint">
+      אם לא מגיע מייל, ודאו שב-Firebase מופעלים <strong>Email/Password</strong> + <strong>Email Link</strong>,
+      ושבקובץ <code>firebase.js</code> הוזן config אמיתי.
+    </div>
+
+    <div id="msg" role="status" aria-live="polite" class="msg"></div>
+  </main>
+
+  <footer class="wrap footer">
+    <small>© FLYMILY • מסך כניסה</small>
+  </footer>
+
+  <script src="firebase.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
