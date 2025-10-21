@@ -1,31 +1,44 @@
+// script.js
 import { api, auth } from './firebase.js';
 
-const $ = (s, r=document) => r.querySelector(s);
-const form = $('#loginForm');
-const email = $('#email');
+const $ = (s) => document.querySelector(s);
+const emailInput = $('#emailInput');
 const sendBtn = $('#sendBtn');
-const msgEl = $('#msg');
+const msg = $('#msg');
 
-const say = (t, type='ok') => {
-  msgEl.textContent = t;
-  msgEl.className = 'msg ' + type;
-};
+const APP_REDIRECT = new URL('./app.html', location.href).href;
 
-form.addEventListener('submit', async (e) => {
+$('#loginForm')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const address = (email.value || '').trim();
-  if (!address) return email.focus();
-  sendBtn.disabled = true; say('שולח לינק...');
+  const email = emailInput.value.trim();
+  if(!email) return;
+
+  sendBtn.disabled = true;
+  say('שולח לינק...', 'info');
+
+  const actionCodeSettings = { url: APP_REDIRECT, handleCodeInApp: true };
 
   try {
-    const appUrl = new URL('./app.html', location.href).href;
-    const actionCodeSettings = { url: appUrl, handleCodeInApp: true };
-    await api.sendSignInLinkToEmail(auth, address, actionCodeSettings);
-    localStorage.setItem('emailForSignIn', address);
-    say('נשלח! בדקו מייל.', 'ok');
-  } catch (err) {
-    say(err.message || String(err), 'err');
-  } finally {
-    sendBtn.disabled = false;
-  }
+    await api.sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem('emailForSignIn', email);
+    say('נשלח מייל. בדוק/י את הדואר ולחץ/י על הלינק.', 'ok');
+  } catch(err) {
+    console.error(err);
+    say(err.message || 'שגיאה בשליחה', 'err');
+  } finally { sendBtn.disabled = false; }
 });
+
+async function completeIfNeeded(){
+  if(api.isSignInWithEmailLink(auth, location.href)){
+    let email = window.localStorage.getItem('emailForSignIn');
+    if(!email){ email = prompt('נא לאשר את כתובת האימייל איתה התחברת:'); if(!email) return; }
+    try{
+      await api.signInWithEmailLink(auth, email, location.href);
+      window.localStorage.removeItem('emailForSignIn');
+      location.replace(APP_REDIRECT);
+    }catch(err){ console.error(err); say(err.message || 'שגיאה בהתחברות', 'err'); }
+  }
+}
+completeIfNeeded();
+
+function say(text, type='info'){ msg.className = 'msg ' + type; msg.textContent = text; }

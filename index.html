@@ -2,24 +2,30 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FLYMILY — כניסה</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>כניסה ל־FLYMILY</title>
   <link rel="stylesheet" href="style.css" />
+  <script type="module" src="firebase.js"></script>
 </head>
-<body>
+<body class="page">
   <main class="card">
-    <h1>כניסה ל־FLYMILY</h1>
-    <p class="muted">הקלידו אימייל ונשלח לינק כניסה חד־פעמי.</p>
-    <form id="loginForm">
-      <input id="email" type="email" placeholder="name@example.com" required />
-      <button id="sendBtn" type="submit">שלח לינק כניסה</button>
+    <h1 class="title">כניסה ל־<span>FLYMILY</span></h1>
+    <p class="muted">הקלידו אימייל ונשלח לכם Magic Link חד־פעמי.</p>
+
+    <form id="loginForm" class="row">
+      <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required />
+      <button id="sendBtn" class="btn" type="submit">שלח לינק כניסה</button>
     </form>
+
     <p id="msg" class="msg"></p>
-    <div class="hr"></div>
-    <p class="muted small">אם לא מגיע מייל, ודאו שהדומיין מופיע ב‑Authorized domains.</p>
+
+    <section class="info">
+      <div class="pill">טיפ</div>
+      ודאו ב־Firebase שמופעלים <b>Email/Password</b> ו־<b>Email Link</b>, וש־
+      <code>gavishori.github.io</code> קיים ב־Authorized domains.
+    </section>
   </main>
 
-  <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

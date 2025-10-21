@@ -2,52 +2,40 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>FLYMILY — לוח טיולים</title>
   <link rel="stylesheet" href="style.css" />
+  <script type="module" src="firebase.js"></script>
+  <script>
+    const appUrl = new URL('./app/index.html', location.href).href;
+    window.addEventListener('DOMContentLoaded', () => { try { location.replace(appUrl); } catch(e) { location.href = appUrl; } });
+  </script>
 </head>
-<body>
-  <header class="appbar">
-    <h1>לוח טיולים — FLYMILY</h1>
-    <div>
-      <span id="userBadge" class="badge">אורח/ת</span>
-      <button id="logoutBtn" class="danger">התנתקות</button>
-    </div>
+<body class="page">
+  <header class="topbar">
+    <div class="user" id="userBadge"></div>
+    <button id="logoutBtn" class="btn danger">התנתקות</button>
   </header>
 
   <main class="card">
-    <p class="muted">האפליקציה נטענה. זהו מקום לדוגמה לתוכן האמיתי שלך.</p>
+    <h1 class="title"><span>FLYMILY</span> — לוח טיולים</h1>
+    <p class="lead">מעביר אותך לעמוד האפליקציה…</p>
+    <p class="muted">אם ההפניה לא בוצעה, <a id="appLink" href="./app/index.html">לחץ כאן</a>.</p>
   </main>
 
-  <script type="module" src="./firebase.js"></script>
   <script type="module">
-    import { api, auth } from './firebase.js';
-    const msg = (t, type='ok') => { console[type==='ok'?'log':'error'](t); };
+    import { api } from './firebase.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js';
+    const userBadge = document.getElementById('userBadge');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const appLink = document.getElementById('appLink');
+    appLink.href = new URL('./app/index.html', location.href).href;
 
-    // אם הגענו דרך לינק במייל – להשלים התחברות
-    (async () => {
-      try {
-        if (api.isSignInWithEmailLink(auth, location.href)) {
-          const cached = localStorage.getItem('emailForSignIn') || '';
-          const email = cached || prompt('הכניסו אימייל לאימות:');
-          if (!email) throw new Error('email-missing');
-          await api.signInWithEmailLink(auth, email, location.href);
-          localStorage.removeItem('emailForSignIn');
-          history.replaceState({}, '', location.pathname);
-        }
-      } catch (err) { msg('signin error: '+err.message, 'err'); }
-    })();
-
-    // סטייט משתמש
-    api.onAuthStateChanged(auth, (user) => {
-      const badge = document.getElementById('userBadge');
-      badge.textContent = user ? (user.email || 'מחובר/ת') : 'אורח/ת';
+    onAuthStateChanged(api.auth, (user)=>{
+      userBadge.textContent = user ? (user.email || 'מחובר/ת') : 'אורח/ת';
     });
-
-    // התנתקות
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await api.signOut(auth);
-      location.href = './';
+    logoutBtn.addEventListener('click', async ()=>{
+      try { await signOut(api.auth); } finally { location.href = './'; }
     });
   </script>
 </body>

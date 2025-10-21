@@ -1,4 +1,10 @@
-// Firebase bootstrap (ES modules)
+// firebase.js (ESM)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import {
+  getAuth, isSignInWithEmailLink, sendSignInLinkToEmail,
+  signInWithEmailLink, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
 export const firebaseConfig = {
   apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
   authDomain: "travel-416ff.firebaseapp.com",
@@ -9,12 +15,7 @@ export const firebaseConfig = {
   measurementId: "G-FT56H33X5J"
 };
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-import {
-  getAuth, isSignInWithEmailLink, sendSignInLinkToEmail,
-  signInWithEmailLink, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const api = { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut };
+
+export const api = { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut, auth };
