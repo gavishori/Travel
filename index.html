@@ -2,43 +2,43 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FLYMILY — כניסה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLYMILY – כניסה ב‑Magic Link</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="wrap topbar">
-    <h1>FLYMILY</h1>
-    <div id="authBadge" class="badge">אורח/ת</div>
+  <header class="topbar">
+    <div class="brand">FLYMILY</div>
+    <div id="userBadge" class="badge">אורח/ת</div>
   </header>
 
-  <main class="wrap card">
-    <h2>כניסה ב-Magic Link</h2>
-    <p class="muted">הקלידו אימייל, נשלח לכם לינק כניסה חד-פעמי.</p>
+  <main class="card">
+    <h1>כניסה ב‑Magic Link</h1>
+    <p class="sub">הקלד/י אימייל, נשלח לך לינק חד‑פעמי. אם כבר נכנסת – נזהה אוטומטית.</p>
 
-    <form id="loginForm" class="grid">
-      <input id="email" type="email" inputmode="email" placeholder="name@example.com" required />
-      <button id="sendLinkBtn" type="submit" class="primary">שלח לינק כניסה</button>
+    <form id="loginForm" class="form">
+      <input id="email" type="email" required placeholder="name@example.com" inputmode="email" />
+      <button id="sendBtn" class="btn primary">שלח לינק כניסה</button>
     </form>
 
+    <div id="msg" class="msg"></div>
+
+    <div class="hint">
+      אם לא מגיע מייל, בדוק/י את
+      <code>firebase.js</code> עם config אמיתי, ושהרשאות Firebase:
+      <b>Email/Password + Email Link</b> מופעלות. כמו כן הוספ/י את הדומיין
+      <b>gavishori.github.io</b> ל‑Authorized domains.
+    </div>
+
     <div class="actions">
-      <button id="logoutBtn" class="danger outline" hidden>התנתקות מלאה</button>
-      <button id="goAppBtn" class="primary" hidden>המשך לאפליקציה</button>
+      <button id="logoutBtn" class="btn danger">התנתקות מלאה</button>
+      <a id="goAppBtn" class="btn" href="#">המשך לאפליקציה</a>
     </div>
-
-    <div id="hint" class="hint">
-      אם לא מגיע מייל, ודאו שב-Firebase מופעלים <strong>Email/Password</strong> + <strong>Email Link</strong>,
-      ושבקובץ <code>firebase.js</code> הוזן config אמיתי.
-    </div>
-
-    <div id="msg" role="status" aria-live="polite" class="msg"></div>
   </main>
 
-  <footer class="wrap footer">
-    <small>© FLYMILY • מסך כניסה</small>
-  </footer>
+  <footer class="foot">מסך כניסה • FLYMILY ©</footer>
 
-  <script src="firebase.js"></script>
-  <script src="script.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
