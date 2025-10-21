@@ -1,40 +1,158 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FLYMILY – כניסה ב‑Magic Link</title>
-  <link rel="stylesheet" href="./style.css">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FLYMILY — כניסה</title>
+
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f6f7fb;margin:0;color:#0f172a;direction:rtl}
+    .card{max-width:1080px;margin:64px auto;background:#fff;border-radius:24px;padding:48px;box-shadow:0 30px 60px rgba(2,6,23,.08)}
+    h1{font-size:44px;margin:0 0 8px 0;letter-spacing:.5px}
+    p.muted{color:#64748b;margin-top:0}
+    .row{display:flex;gap:16px;align-items:center}
+    input[type=email]{flex:1;padding:18px 20px;border:1px solid #e5e7eb;border-radius:14px;background:#eef5ff;font-size:18px}
+    button.primary{background:#2251e6;color:#fff;border:0;border-radius:14px;padding:18px 28px;font-size:18px;cursor:pointer}
+    button.primary:disabled{opacity:.6;cursor:not-allowed}
+    .hint{margin-top:14px;padding:14px 16px;border:1px dashed #e2e8f0;border-radius:12px;background:#f8fafc;color:#334155}
+    #status{margin-top:10px;font-weight:600}
+    #status.ok{color:#059669} #status.err{color:#dc2626}
+    .sectionTitle{font-size:28px;margin:8px 0 18px 0}
+    .pill{display:inline-flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:14px;padding:14px 18px;background:#f8fafc;color:#0f172a}
+    .pill .muted{color:#64748b}
+    .btn-outline{border:1px solid #cbd5e1;background:#fff;padding:14px 18px;border-radius:12px;cursor:pointer}
+  </style>
+
 </head>
 <body>
   <main class="card">
-    <h1>כניסה ל‑FLYMILY</h1>
-    <p class="sub">הקלידו אימייל ונשלח לכם לינק כניסה חד‑פעמי.</p>
+    <h1>כניסה ל־FLYMILY</h1>
+    <p class="muted">הקלד/י אימייל ונשלח לינק חד־פעמי.</p>
 
-    <form id="loginForm">
-      <input id="email" type="email" placeholder="name@example.com" autocomplete="email" required>
-      <button id="sendBtn" type="submit">שלח לינק כניסה</button>
-    </form>
-
-    <p id="msg" class="msg"></p>
-
-    <section class="welcome">
-      <h2>ברוך/ה הבא/ה!</h2>
-      <p>זהו מקום דוגמה לתוכן האמיתי של האפליקציה (כרטיסים, טבלאות וכו').</p>
-      <div class="row">
-        <div class="box">מחובר/ת: <span id="userBadge">—</span></div>
-        <div class="box"><button id="goAppBtn" class="ghost">המשך לאפליקציה</button></div>
-        <div class="box"><button id="logoutBtn" class="danger">התנתקות מלאה</button></div>
-      </div>
+    <section id="login">
+      <form id="loginForm" class="row">
+        <button id="sendBtn" class="primary" type="submit">שלח לינק כניסה</button>
+        <input id="email" type="email" placeholder="name@example.com" required/>
+      </form>
+      <div id="status" class="muted"></div>
+      <div class="hint">אם לא מגיע מייל: ודא/י ש־<span dir="ltr">firebase.js</span> מכיל את ה־config האמיתי,
+      ושב־Firebase Authentication מופעלים Email/Password + Email Link, וב־Authorized domains קיים <b>gavishori.github.io</b>.</div>
     </section>
 
-    <footer class="hint">
-      אם לא מגיע מייל, בדקו ש־<code>firebase.js</code> מכיל את ה‑<code>config</code> האמיתי של הפרויקט, ושב־Firebase: Email/Password + Email Link מופעלים וב־Authorized domains מופיע <code>gavishori.github.io</code>.
-    </footer>
+    <section id="authed" hidden>
+      <div class="sectionTitle">ברוך/ה הבא/ה!</div>
+      <div class="row" style="justify-content:space-between">
+        <span class="pill"><span class="muted">מחובר/ת:</span> <b id="userBadge">—</b></span>
+        <button id="logoutBtn" class="btn-outline">התנתקות מלאה</button>
+      </div>
+      <div class="hint" style="margin-top:16px">
+        זהו מקום דוגמה לתוכן האמיתי של האפליקציה שלך (כרטיסים, טבלאות, דוחות וכו').
+      </div>
+    </section>
   </main>
 
-  <!-- IMPORTANT: relative paths from repo root -->
-  <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./script.js"></script>
+  <!-- firebase.js -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import {
+      getAuth,
+      isSignInWithEmailLink,
+      sendSignInLinkToEmail,
+      signInWithEmailLink,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+      authDomain: "travel-416ff.firebaseapp.com",
+      projectId: "travel-416ff",
+      storageBucket: "travel-416ff.firebasestorage.app",
+      messagingSenderId: "1075073511694",
+      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+      measurementId: "G-FT56H33X5J"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    window.__FIREBASE__ = {
+      app, auth,
+      api: { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut }
+    };
+  </script>
+
+  <!-- script.js -->
+  <script type="module">
+    const { auth, api } = window.__FIREBASE__;
+    const { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut } = api;
+
+    const form = document.querySelector("#loginForm");
+    const emailInput = document.querySelector("#email");
+    const sendBtn = document.querySelector("#sendBtn");
+    const statusEl = document.querySelector("#status");
+    const userBadge = document.querySelector("#userBadge");
+    const logoutBtn = document.querySelector("#logoutBtn");
+
+    const actionCodeSettings = {
+      url: location.origin + location.pathname,
+      handleCodeInApp: true,
+    };
+
+    function say(msg, type="ok") {
+      statusEl.textContent = msg; statusEl.className = type;
+    }
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if(!email) { say("נא להזין אימייל", "err"); return; }
+      sendBtn.disabled = true;
+      try {
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        localStorage.setItem("emailForSignIn", email);
+        say("קישור נשלח. בדוק/י תיבה.", "ok");
+      } catch (err) {
+        console.error(err);
+        say("שגיאה בשליחת הקישור: " + (err.code||err.message), "err");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+
+    async function completeFromLinkIfNeeded() {
+      if(isSignInWithEmailLink(auth, location.href)) {
+        let email = localStorage.getItem("emailForSignIn");
+        if(!email) email = prompt("הקלד/י אימייל אליו נשלח הקישור:");
+        try {
+          await signInWithEmailLink(auth, email, location.href);
+          localStorage.removeItem("emailForSignIn");
+          history.replaceState({}, "", location.pathname);
+          say("התחברת בהצלחה.", "ok");
+        } catch (err) {
+          console.error(err);
+          say("שגיאה בהשלמת כניסה: " + (err.code||err.message), "err");
+        }
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if(user) {
+        userBadge.textContent = user.email || "מחוברת/מחובר";
+        document.querySelector("#authed").hidden = false;
+        document.querySelector("#login").hidden = true;
+      } else {
+        userBadge.textContent = "אורח/ת";
+        document.querySelector("#authed").hidden = true;
+        document.querySelector("#login").hidden = false;
+      }
+    });
+
+    logoutBtn?.addEventListener("click", async () => {
+      try { await signOut(auth); say("התנתקת.", "ok"); }
+      catch(e){ say("שגיאה בהתנתקות", "err"); }
+    });
+
+    completeFromLinkIfNeeded();
+  </script>
 </body>
 </html>
