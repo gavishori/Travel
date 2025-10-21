@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FLYMILY — כניסה</title>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <style>
+    :root{
+      --bg:#f5f7fc;--card:#fff;--ink:#0e1525;--muted:#6b7280;
+      --accent:#2357ff;--accent-ink:#fff;--ok:#059669;--err:#dc2626;
+      --br:18px; --shadow:0 8px 28px rgba(14,21,37,.08);
+    }
+    html,body{height:100%;margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; color:var(--ink);}
+    .wrap{max-width:980px;margin:48px auto;padding:24px;}
+    .card{background:var(--card);border-radius:var(--br);box-shadow:var(--shadow);padding:28px 28px 20px}
+    h1{font-size:40px;margin:0 0 6px;font-weight:800;letter-spacing:.02em}
+    p.sub{color:var(--muted);margin:0 0 18px}
+    form{display:flex;gap:12px;margin:4px 0 10px;align-items:center}
+    input[type=email]{flex:1;border:1px solid #e5e7eb;background:#eef3ff;border-radius:12px;padding:16px 18px;font-size:18px;outline:none}
+    button.primary{background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;padding:16px 22px;font-size:18px;cursor:pointer}
+    button.secondary{background:#eef2f7;color:#111827;border:none;border-radius:12px;padding:14px 18px;cursor:pointer}
+    .hint{background:#f8fafc;border:1px dashed #e5e7eb;padding:10px 14px;border-radius:12px;color:#374151;margin-top:10px}
+    .row{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+    .pill{background:#f5f5f7;border-radius:999px;padding:10px 16px;color:#374151;font-size:14px}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+    .footer{color:#6b7280;font-size:14px;margin-top:12px}
+    .app{display:none}
+    .kudos{margin-top:20px;text-align:center;color:#6b7280}
+    a.btnlink{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:14px 18px;border-radius:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>FLYMILY</h1>
+      <p class="sub">קליק קצר — ונשלח לינק כניסה חד‑פעמי למייל.</p>
+      <form id="loginForm">
+        <button id="sendBtn" class="primary" type="submit">שלח לינק כניסה</button>
+        <input id="email" type="email" placeholder="name@example.com" required autocomplete="email" />
+      </form>
+      <div id="msg" class="pill" style="display:none"></div>
+
+      <div class="hint">
+        אם לא מגיע מייל, ודאו ש‑Firebase: <b>Email/Password + Email Link</b> מופעלים, ושהקובץ <code>index.html</code> נמצא בשורש הריפו ושהדומיין
+        <b>gavishori.github.io</b> מופיע ב‑<b>Authorized domains</b>.
+      </div>
+
+      <div class="row">
+        <span class="pill">מחובר/ת: <span id="badge">אורח/ת</span></span>
+        <button id="logoutBtn" class="secondary" style="display:none">התנתקות מלאה</button>
+      </div>
+
+      <div class="row" style="margin-top:22px">
+        <a class="btnlink" id="goApp" href="#" style="display:none">המשך לאפליקציה</a>
+      </div>
+
+      <div class="footer">שימי לב: אם הכניסה האוטומטית לא התבצעה, לחצי על הלינק שקיבלת במייל שוב מהדפדפן שבו נפתחה האפליקציה.</div>
+    </div>
+
+    <div class="kudos">© FLYMILY</div>
+  </div>
+
+  <script type="module">
+    // Firebase SDK v10.12.3 (modular)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import {
+      getAuth, isSignInWithEmailLink, sendSignInLinkToEmail,
+      signInWithEmailLink, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+    // === CONFIG (מוכנס כפי שנתת) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyArvkyWzgOmPjYYXUIOdilmtfrWt7WxK-0",
+      authDomain: "travel-416ff.firebaseapp.com",
+      projectId: "travel-416ff",
+      storageBucket: "travel-416ff.firebasestorage.app",
+      messagingSenderId: "1075073511694",
+      appId: "1:1075073511694:web:7876f492d18a702b09e75f",
+      measurementId: "G-FT56H33X5J"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const $ = s => document.querySelector(s);
+    const emailInput = $("#email");
+    const sendBtn = $("#sendBtn");
+    const form = $("#loginForm");
+    const msg = $("#msg");
+    const badge = $("#badge");
+    const logoutBtn = $("#logoutBtn");
+    const goApp = $("#goApp");
+
+    const APP_REDIRECT = new URL("/", location.href).toString();
+
+    const actionCodeSettings = {
+      url: APP_REDIRECT,
+      handleCodeInApp: true
+    };
+
+    function say(t, cls="") {
+      msg.style.display = "inline-block";
+      msg.className = "pill " + cls;
+      msg.textContent = t;
+    }
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      sendBtn.disabled = true;
+      try {
+        const email = emailInput.value.trim();
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem("emailForSignIn", email);
+        say("שלחנו לינק אל: " + email, "ok");
+      } catch(err) {
+        console.error(err);
+        say(err.message || String(err), "err");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+
+    async function completeIfNeeded() {
+      if(isSignInWithEmailLink(auth, location.href)) {
+        let email = window.localStorage.getItem("emailForSignIn");
+        if(!email) email = prompt("נא להקליד את כתובת המייל שבה ביקשת את הלינק:");
+        try {
+          await signInWithEmailLink(auth, email, location.href);
+          window.localStorage.removeItem("emailForSignIn");
+          history.replaceState({}, "", APP_REDIRECT);
+          say("מחובר/ת בהצלחה", "ok");
+        } catch(err) {
+          console.error(err);
+          say(err.message || String(err), "err");
+        }
+      }
+    }
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        badge.textContent = user.email || "מחובר/ת";
+        logoutBtn.style.display = "inline-block";
+        goApp.style.display = "inline-block";
+        goApp.href = APP_REDIRECT + "app/"; // אם אין אפליקציה אמיתית, הכפתור פשוט נשאר כקישור
+      }else{
+        badge.textContent = "אורח/ת";
+        logoutBtn.style.display = "none";
+        goApp.style.display = "none";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async ()=>{
+      logoutBtn.disabled = true;
+      try{ await signOut(auth); say("התנתקת", ""); }catch(err){ console.error(err); }
+      finally{ logoutBtn.disabled = false; }
+    });
+
+    completeIfNeeded();
+  </script>
+</body>
+</html>
