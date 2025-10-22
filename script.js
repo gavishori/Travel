@@ -5,13 +5,20 @@ function wireAuthPrimaryButton(){
   if(btn.dataset.authWired==='1') return;
   btn.dataset.authWired='1';
   const doLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){}
+    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){ }
+
     try{
-      if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+      if(typeof hardSignOut==='function'){ await hardSignOut(); }
+      else if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
       else if(typeof signOutUser==='function'){ await signOutUser(); }
       else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
     }catch(err){ console.error('primary logout failed', err); }
-  };
+    try { window.state = { trips: [], current: null }; } catch(_) {}
+    try { sessionStorage.clear(); } catch(_) {}
+    try { localStorage.removeItem('activeTripId'); } catch(_) {}
+    // Force a hard reload with a cache-busting query so Firestore listeners fully reset
+    try { location.replace(location.pathname + '?logout=' + Date.now()); } catch(_) { location.reload(); }
+};
   // Swap handlers on auth changes
   window.__authPrimarySwap = (loggedIn)=>{
     const old = document.getElementById('btnLogin');
@@ -86,7 +93,23 @@ async function loadJournalOnly(){
   renderJournal(state.current, state.journalSort);
 }
 
-import { auth, db, FB } from './firebase.js';
+import { auth, db, FB, hardSignOut } from './firebase.js';
+
+// Safe Leaflet map init (prevents double-init)
+window.safeInitMap = function(containerId, opts){
+  const id = typeof containerId==='string' ? containerId : (containerId?.id || 'map');
+  const el = typeof containerId==='string' ? document.getElementById(containerId) : containerId;
+  if(!el) return null;
+  if (el._leaflet_id && el._leaflet_id !== undefined) {
+    try { el._leaflet_map && el._leaflet_map.remove(); } catch(_){ }
+    try { el.replaceWith(el.cloneNode(true)); } catch(_){ }
+  }
+  const node = document.getElementById(id) || el;
+  const map = L.map(node, opts || {});
+  node._leaflet_map = map;
+  return map;
+};
+
 
 // === Textarea auto-resize + safe Enter handling ===
 (function(){

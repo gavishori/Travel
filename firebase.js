@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore,
   setLogLevel,
@@ -46,6 +47,8 @@ setLogLevel("error");
 
 // --- AUTH ---
 export const auth = getAuth(app);
+// Persist across tabs & restarts
+try { setPersistence(auth, browserLocalPersistence); } catch(e) { console.warn('setPersistence failed', e); }
 // Convenience named exports (used in a few places)
 export const onAuth = onAuthStateChanged;
 export const signOutUser = () => signOut(auth);
@@ -74,6 +77,27 @@ export const FB = {
 window.addEventListener("offline", () => disableNetwork(db).catch(()=>{}));
 window.addEventListener("online",  () => enableNetwork(db).catch(()=>{}));
 
+
+// --- Hard sign-out: also wipe local caches so the next login truly switches accounts ---
+export async function hardSignOut() {
+  try { await signOut(auth); } catch(e) { console.warn('signOut err', e); }
+  try {
+    // Remove Firebase Auth localStorage shards
+    if (typeof localStorage !== 'undefined') {
+      for (let i=0; i<localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('firebase:authUser:')) { try { localStorage.removeItem(key); } catch(_){} }
+        if (key && key.startsWith('firebase:storedPersistence:')) { try { localStorage.removeItem(key); } catch(_){} }
+        if (key && key.startsWith('firebase-heartbeat')) { try { localStorage.removeItem(key); } catch(_){} }
+      }
+    }
+  } catch(e) { console.warn('localStorage cleanup err', e); }
+  try { indexedDB && indexedDB.deleteDatabase && indexedDB.deleteDatabase('firebaseLocalStorageDb'); } catch(e) {}
+  try { indexedDB && indexedDB.deleteDatabase && indexedDB.deleteDatabase('firebase-messaging-database'); } catch(e) {}
+  // Optional: give Firestore network a moment to detach
+  try { await new Promise(res=>setTimeout(res, 150)); } catch(_) {}
+  return true;
+}
 /* ---- Global attach for legacy scripts that expect a global FB ---- */
 try {
   window.FB = FB;
