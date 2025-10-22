@@ -477,6 +477,47 @@ id="expenseModal" class="modal">
   </div>
 </dialog>
 
+
+  <!-- Mobile Auth Fallback (non-intrusive on desktop) -->
+  <style>
+    @media (min-width: 820px){ #mobileAuthOverlay{ display:none !important; } }
+    #mobileAuthOverlay{ position:fixed; inset:0; display:none; z-index:999999; background:rgba(10,12,16,.96); backdrop-filter: blur(6px);
+      align-items:center; justify-content:center; padding:24px; }
+    #mobileAuthCard{ width:min(420px, 94vw); background:#131722; color:#e9eef4; border:1px solid #263043; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,.35); }
+    #mobileAuthCard header{ padding:16px 18px; border-bottom:1px solid #263043; font-weight:700; text-align:center; }
+    #mobileAuthCard .body{ padding:18px; display:grid; gap:12px; }
+    #mobileAuthCard label{ font-size:14px; opacity:.85 }
+    #mobileAuthCard input{ width:100%; padding:12px 14px; border:1px solid #2d3a50; border-radius:12px; background:#0f131c; color:#e9eef4; }
+    #mobileAuthCard .row{ display:grid; gap:6px; }
+    #mobileAuthCard .actions{ display:flex; gap:10px; margin-top:6px; }
+    #mobileAuthCard .btn{ flex:1; padding:12px 14px; border-radius:12px; border:1px solid #2d3a50; background:#1a2030; color:#e9eef4; font-weight:600; }
+    #mobileAuthCard .btn.primary{ background:#2563eb; border-color:#2563eb; color:white; }
+    #mobileAuthCard .muted{ font-size:13px; opacity:.8; text-align:center; }
+    #mError{ min-height:18px; color:#ffd166; font-size:13px; text-align:center; }
+  </style>
+  <div id="mobileAuthOverlay" aria-hidden="true">
+    <div id="mobileAuthCard" role="dialog" aria-label="התחברות למערכת">
+      <header>כניסה לחשבון</header>
+      <div class="body">
+        <div class="row">
+          <label for="mEmail">אימייל</label>
+          <input id="mEmail" type="email" inputmode="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="row">
+          <label for="mPass">סיסמה</label>
+          <input id="mPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div id="mError"></div>
+        <div class="actions">
+          <button id="mLogout" class="btn">התנתקות</button>
+          <button id="mLogin" class="btn primary">התחברות</button>
+        </div>
+        <div class="muted">אם במסכים הרגילים לא קורה כלום במובייל — השתמש/י בחלון זה.</div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./auth-fallback.js"></script>
+
 </body>
     <script>
     // /*__MOBILE_LOGOUT_INJECT__*/
