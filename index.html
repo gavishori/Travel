@@ -14,18 +14,38 @@
       <h1 class="title">ברוכים הבאים ל־<span>FLYMILY</span></h1>
     </header>
 
-    <p class="muted">הקלידו אימייל ונשלח לכם לינק כניסה חד־פעמי.</p>
+    <p class="muted">בחרו שיטת התחברות. ברירת מחדל: לינק למייל. במקרה של מגבלת שליחה יופעל מעבר אוטומטי לסיסמה.</p>
 
-    <form id="loginForm" class="row">
-      <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required />
-      <button id="sendBtn" class="btn" type="submit">שלח לינק כניסה</button>
-    </form>
+    <nav class="tabs">
+      <button id="tab-link" class="tab active" type="button">Email Link</button>
+      <button id="tab-pass" class="tab" type="button">Email + Password</button>
+    </nav>
+
+    <section id="pane-link" class="pane active">
+      <form id="loginForm" class="row">
+        <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required />
+        <button id="sendBtn" class="btn" type="submit">שלח לינק כניסה</button>
+      </form>
+      <p class="muted">לאחר קבלת המייל, לחצו על הלינק — תוחזרו לכאן מחוברים.</p>
+    </section>
+
+    <section id="pane-pass" class="pane">
+      <form id="passForm" class="col">
+        <input id="emailInputP" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required />
+        <input id="passInput" type="password" autocomplete="current-password" placeholder="סיסמה" required minlength="6" />
+        <div class="row">
+          <button id="signInBtn" class="btn" type="submit">התחבר</button>
+          <button id="signUpBtn" class="btn ghost" type="button">צור משתמש</button>
+        </div>
+      </form>
+      <p class="muted">סיסמה מינימום 6 תווים. ניתן ליצור משתמש חדש אם אין עדיין.</p>
+    </section>
 
     <p id="msg" class="msg"></p>
 
     <section class="tip">
       <div class="pill">הערה</div>
-      ודאו שב־Firebase Auth מופעל <b>Email Link</b> והדומיין שלכם נמצא ב־<b>Authorized domains</b>.
+      ודאו שב־Firebase Auth מופעלים <b>Email Link</b> ו/או <b>Email/Password</b>, והדומיין שלכם ב־<b>Authorized domains</b>.
     </section>
   </main>
 

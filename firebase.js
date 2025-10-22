@@ -2,7 +2,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
 import {
   getAuth, isSignInWithEmailLink, sendSignInLinkToEmail,
-  signInWithEmailLink, onAuthStateChanged, signOut
+  signInWithEmailLink, onAuthStateChanged, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
 
 export const firebaseConfig = {
@@ -18,4 +19,4 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-export const api = { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut, auth };
+export const api = { isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, auth };
