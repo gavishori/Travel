@@ -4132,3 +4132,53 @@ function renderCategoryBreakdownNode(targetId){
     document.addEventListener('DOMContentLoaded', attachLogout, { once: true });
   }
 })();
+
+
+// === Account Chip wiring ===
+(function(){
+  const chip = document.getElementById('accountChip');
+  if(!chip) return;
+  const btn  = document.getElementById('accountBtn');
+  const menu = document.getElementById('accountMenu');
+  const out  = document.getElementById('menuLogout');
+  const name = document.getElementById('accountName');
+  const av   = document.getElementById('accountAvatar');
+
+  function toggle(){ menu.classList.toggle('open'); }
+  function close(){ menu.classList.remove('open'); }
+  function setAvatarFromEmail(email){
+    const letter = (email||'?').trim().charAt(0).toUpperCase() || '?';
+    av.textContent = letter;
+  }
+  // Close on click-away
+  document.addEventListener('click', (e)=>{ if(!chip.contains(e.target)) close(); }, {passive:true});
+  btn?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggle(); });
+
+  // Logout
+  out?.addEventListener('click', async (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    try{
+      if(typeof hardSignOut==='function'){ await hardSignOut(); }
+      else if(window.FB?.signOut && (window.auth||window.FB?.auth)){ await window.FB.signOut(window.auth||window.FB.auth); }
+      close();
+    }catch(err){ console.error('logout error', err); }
+  });
+
+  // Auth observe → fill email
+  try{
+    const FBNS = window.FB;
+    const auth = window.auth || (FBNS && FBNS.auth);
+    FBNS?.onAuthStateChanged?.(auth, (u)=>{
+      if(u && u.email){
+        name.textContent = u.email;
+        setAvatarFromEmail(u.email);
+        chip.removeAttribute('aria-hidden');
+      }else{
+        name.textContent = 'לא מחובר';
+        setAvatarFromEmail('?');
+        chip.setAttribute('aria-hidden','true'); // hide when logged out
+      }
+    });
+  }catch(e){ console.warn('Account chip: no auth context', e); }
+})();
+

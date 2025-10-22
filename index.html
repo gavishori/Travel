@@ -518,6 +518,22 @@ id="expenseModal" class="modal">
   </div>
   <script type="module" src="./auth-fallback.js"></script>
 
+
+  <!-- Account Chip (decorative, non-invasive) -->
+  <div id="accountChip" dir="rtl" class="account-chip" aria-hidden="true">
+    <button id="accountBtn" class="chip">
+      <span class="avatar" id="accountAvatar" aria-hidden="true">G</span>
+      <span class="account-text">
+        <span class="label">מחובר</span>
+        <span class="name" id="accountName">user@example.com</span>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+    </button>
+    <div id="accountMenu" class="menu" role="menu">
+      <button id="menuLogout" class="menu-item danger" role="menuitem">התנתקות</button>
+    </div>
+  </div>
+
 </body>
     <script>
     // /*__MOBILE_LOGOUT_INJECT__*/
