@@ -1455,3 +1455,15 @@ html, body { height:100%; }
     text-align: center;
   }
 }
+
+
+/* === MOBILE HEADER BACKGROUND OVERRIDE — LAST WINS === */
+@media (max-width: 480px){
+  /* Apply visible background to header cells only, without touching desktop */
+  #view-expenses .expenses-table.stacked td.cell.header,
+  #view-expenses .expenses-table.stacked td.cell.menu-cell,
+  #view-journal  .expenses-table           td.cell.header,
+  #view-journal  .expenses-table           td.cell.menu-cell{
+    background-color: var(--mobileHeaderBg, #F2F4F8) !important;
+  }
+}
