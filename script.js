@@ -1,3 +1,17 @@
+
+// --- Helper: strip links (for Word export) ---
+function stripLinks(text){
+  try{
+    if(text==null) return '';
+    let s = String(text);
+    s = s.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, '$1'); // remove anchors keep text
+    s = s.replace(/\bhttps?:\/\/\S+/gi, ''); // remove raw urls
+    s = s.replace(/\bwww\.[^\s)]+/gi, '');    // remove www.*
+    s = s.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    return s;
+  }catch(e){ return (text||''); }
+}
+
 // === Auth Button Toggle (Login <-> Logout) ===
 function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
@@ -1304,7 +1318,8 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
   });
 
   $('#expenseModal').dataset.id = e?.id||'';
-  $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc) : '')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
+  $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc,'קישור') : '')) || '';
+  enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
   $('#expDelete').style.display = e? 'inline-block':'none';
@@ -1924,6 +1939,7 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
   try{ document.querySelector('#journalModal .input.rtf').style.paddingBottom='72px'; }catch(_){}
   $('#journalModal').dataset.id = j?.id || '';
   document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
+  enableLinkRemoval(document.getElementById('jrText'));
   $('#jrLocationName').value = j?.placeName || '';
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
@@ -2284,7 +2300,7 @@ async function exportWord(){
       children:[
         new TableCell({ children:[new Paragraph(fmtDateTime(j.dateIso || j.createdAt)||'')]}),
         new TableCell({ children:[new Paragraph(j.placeName||'')]}),
-        new TableCell({ children:[new Paragraph(j.text||'')]}),
+        new TableCell({ children:[new Paragraph(stripLinks(j.text||''))]}),
       ]
     })
   );
@@ -2303,7 +2319,7 @@ async function exportWord(){
       new TableCell({ children:[new Paragraph(e.currency||'')]}),                               // 2. מטבע
       new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),                       // 3. סכום
       new TableCell({ children:[new Paragraph(e.category||'')]}),                               // 4. קטגוריה
-      new TableCell({ children:[new Paragraph(e.desc||'')]}),                                   // 5. תיאור
+      new TableCell({ children:[new Paragraph(stripLinks(e.desc||''))]}),                                   // 5. תיאור
     ]})
   );
   const exTable = new Table({
@@ -2886,6 +2902,35 @@ function linkifyToIcons(str){
     node.replaceWith(frag);
   });
   return tmp.innerHTML;
+}
+
+// --- Add small X to remove links inside contenteditable editors ---
+function enableLinkRemoval(container){
+  try{
+    if(!container) return;
+    // Add remove buttons on link/mail icons
+    const ensureButtons = ()=>{
+      container.querySelectorAll('a.link-icon, a.mail-icon').forEach(a=>{
+        if(!a.querySelector('.link-x')){
+          const x = document.createElement('span');
+          x.className = 'link-x';
+          x.textContent = '×';
+          x.title = 'מחק קישור';
+          a.appendChild(x);
+        }
+      });
+    };
+    ensureButtons();
+    container.addEventListener('click', function(ev){
+      const x = ev.target.closest('.link-x');
+      if(x){
+        ev.preventDefault(); ev.stopPropagation();
+        const a = x.closest('a');
+        if(a){ a.replaceWith(document.createTextNode('')); }
+      }
+    });
+    container.addEventListener('input', function(){ setTimeout(ensureButtons,0); });
+  }catch(e){ console.warn('enableLinkRemoval failed', e); }
 }
 
 
@@ -3702,7 +3747,7 @@ function renderCategoryBreakdownNode(targetId){
     const btn = document.getElementById('btnExportTripSchedule');
     if(btn && !btn.dataset._ppBound){
       btn.dataset._ppBound = '1';
-      btn.textContent = 'הצג לפני הדפסה';
+      btn.textContent = 'ייצא הוצאות ל WORD';
       btn.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); openPrintPreview(); });
     }
   });
@@ -4132,53 +4177,3 @@ function renderCategoryBreakdownNode(targetId){
     document.addEventListener('DOMContentLoaded', attachLogout, { once: true });
   }
 })();
-
-
-// === Account Chip wiring ===
-(function(){
-  const chip = document.getElementById('accountChip');
-  if(!chip) return;
-  const btn  = document.getElementById('accountBtn');
-  const menu = document.getElementById('accountMenu');
-  const out  = document.getElementById('menuLogout');
-  const name = document.getElementById('accountName');
-  const av   = document.getElementById('accountAvatar');
-
-  function toggle(){ menu.classList.toggle('open'); }
-  function close(){ menu.classList.remove('open'); }
-  function setAvatarFromEmail(email){
-    const letter = (email||'?').trim().charAt(0).toUpperCase() || '?';
-    av.textContent = letter;
-  }
-  // Close on click-away
-  document.addEventListener('click', (e)=>{ if(!chip.contains(e.target)) close(); }, {passive:true});
-  btn?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggle(); });
-
-  // Logout
-  out?.addEventListener('click', async (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    try{
-      if(typeof hardSignOut==='function'){ await hardSignOut(); }
-      else if(window.FB?.signOut && (window.auth||window.FB?.auth)){ await window.FB.signOut(window.auth||window.FB.auth); }
-      close();
-    }catch(err){ console.error('logout error', err); }
-  });
-
-  // Auth observe → fill email
-  try{
-    const FBNS = window.FB;
-    const auth = window.auth || (FBNS && FBNS.auth);
-    FBNS?.onAuthStateChanged?.(auth, (u)=>{
-      if(u && u.email){
-        name.textContent = u.email;
-        setAvatarFromEmail(u.email);
-        chip.removeAttribute('aria-hidden');
-      }else{
-        name.textContent = 'לא מחובר';
-        setAvatarFromEmail('?');
-        chip.setAttribute('aria-hidden','true'); // hide when logged out
-      }
-    });
-  }catch(e){ console.warn('Account chip: no auth context', e); }
-})();
-

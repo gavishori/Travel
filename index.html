@@ -82,13 +82,18 @@
       <main class="content" id="main">
         <nav class="tabs" id="tabs" style="display:none">
           
-          <button data-tab="expenses">הוצאות</button>
-          <button data-tab="journal">יומן יומי</button>
           <button data-tab="overview" class="active">הצג הכל</button>
+          
           <button data-tab="meta">נתוני נסיעה</button>
+          
+          <button data-tab="expenses">הוצאות</button>
+          
+          <button data-tab="journal">יומן יומי</button>
+          
           <button data-tab="map">מפה</button>
+          
           <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
-        
+          
         </nav>
 
         <section id="view-overview" class="tabview" data-active="1">
@@ -220,9 +225,9 @@
   <div class="card" id="card-export">
     <h3>ייצוא</h3>
     <div class="row" style="gap:12px;flex-wrap:wrap">
-      <button id="btnExportExcel" class="btn">Excel</button>
-      <button id="btnExportWord" class="btn">Word</button>
-<button id="btnExportTripSchedule" class="btn">הצג לפני הדפסה</button>
+      <button id="btnExportExcel" class="btn">ייצוא יומן ל EXCEL</button>
+      <button id="btnExportWord" class="btn">ייצוא יומן ל WORD</button>
+<button id="btnExportTripSchedule" class="btn">ייצא הוצאות ל WORD</button>
       <button id="btnExportGPX" class="btn">GPX</button>
     </div>
   </div>
@@ -517,22 +522,6 @@ id="expenseModal" class="modal">
     </div>
   </div>
   <script type="module" src="./auth-fallback.js"></script>
-
-
-  <!-- Account Chip (decorative, non-invasive) -->
-  <div id="accountChip" dir="rtl" class="account-chip" aria-hidden="true">
-    <button id="accountBtn" class="chip">
-      <span class="avatar" id="accountAvatar" aria-hidden="true">G</span>
-      <span class="account-text">
-        <span class="label">מחובר</span>
-        <span class="name" id="accountName">user@example.com</span>
-      </span>
-      <svg class="chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
-    </button>
-    <div id="accountMenu" class="menu" role="menu">
-      <button id="menuLogout" class="menu-item danger" role="menuitem">התנתקות</button>
-    </div>
-  </div>
 
 </body>
     <script>
