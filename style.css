@@ -1424,3 +1424,11 @@ html, body { height:100%; }
 .rtf a.link-icon, .rtf a.mail-icon{ position:relative; display:inline-flex; }
 .rtf a .link-x{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; line-height:16px; font-size:11px; text-align:center; border-radius:50%; background:#e53935; color:#fff; cursor:pointer; display:none; z-index: 5; }
 .rtf a:hover .link-x{ display:block; }
+/* === Mobile-only tweak: gray background for expense rows === */
+@media (max-width: 900px){
+  /* Limit to the Expenses view to avoid side-effects elsewhere */
+  #view-expenses .trip-row{
+    background: #f0f2f5 !important; /* light gray */
+    border-color: #d9dbe0 !important;
+  }
+}
