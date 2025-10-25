@@ -153,9 +153,9 @@
     <div class="budget-block">
       <h3>תקציב</h3>
       <div class="row budget-row">
-        <label>USD <input id="bUSD" type="text" class="input money" inputmode="decimal" enterkeyhint="done" pattern="[0-9]*([.,][0-9]{0,2})?" autocomplete="off"></label>
-        <label>EUR <input id="bEUR" type="text" class="input money" inputmode="decimal" enterkeyhint="done" pattern="[0-9]*([.,][0-9]{0,2})?" autocomplete="off"></label>
-        <label>ILS <input id="bILS" type="text" class="input money" inputmode="decimal" enterkeyhint="done" pattern="[0-9]*([.,][0-9]{0,2})?" autocomplete="off"></label>
+        <label>USD <input id="bUSD" type="text" class="input money"></label>
+        <label>EUR <input id="bEUR" type="text" class="input money"></label>
+        <label>ILS <input id="bILS" type="text" class="input money"></label>
       </div>
       <div class="row budget-actions-row">
         <button id="btnBudgetEdit" class="btn">קבע תקציב</button>
@@ -329,7 +329,7 @@ id="expenseModal" class="modal">
           <option>אחר</option>
         </select>
       </label>
-      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money" inputmode="decimal" enterkeyhint="done" pattern="[0-9]*([.,][0-9]{0,2})?" autocomplete="off"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
+      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
       <div class="row">
         <label>תאריך
           <input type="date" id="expDate" class="input">
