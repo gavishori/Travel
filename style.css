@@ -1432,3 +1432,29 @@ html, body { height:100%; }
     border-color: #d9dbe0 !important;
   }
 }
+
+/* === Mobile-only: gray background for the red-boxed expense block === */
+@media (max-width: 900px){
+  /* color the main expense row */
+  #view-expenses .expenses-table tr.exp-item{
+    background:#f2f3f5 !important;
+    border:1px solid #e1e3e8 !important;
+    border-radius:12px;
+    margin:10px 6px;
+    padding:10px;
+  }
+  /* remove inner cell borders so it looks like one gray card */
+  #view-expenses .expenses-table tr.exp-item td{
+    background:transparent !important;
+    border-bottom:none !important;
+  }
+  /* color the notes row (the row immediately following the header row) */
+  #view-expenses .expenses-table tr.exp-item + tr.exp-item td.notes{
+    background:#f8f9fb !important;
+    border:1px solid #e1e3e8 !important;
+    border-top:none !important;
+    border-radius:0 0 12px 12px;
+    margin:0 6px 10px 6px;
+    padding:10px 12px;
+  }
+}
