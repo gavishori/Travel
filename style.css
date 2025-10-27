@@ -1227,8 +1227,7 @@ html, body { overflow-x:hidden; }
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; /* Notes cell is transparent */
-      border-top: none; 
-      border-bottom: none; /* <-- הוסר הקו התחתון */
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
    }
 
   /* טיפוגרפיה */
@@ -1271,8 +1270,7 @@ html, body { overflow-x:hidden; }
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; 
-      border-top: none;
-      border-bottom: none; /* <-- הוסר הקו התחתון */
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
   }
 
 
