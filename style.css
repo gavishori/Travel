@@ -1178,17 +1178,15 @@ html, body { overflow-x:hidden; }
   /* Shared */
   #view-expenses .expenses-table,
   #view-journal .expenses-table { border-spacing:0; width:100%; }
+  /* Remove background/padding from TR */
   #view-expenses .expenses-table tr.exp-item,
   #view-journal .expenses-table tr.exp-item {
       display: grid;
       align-items: center;
-      /* Apply background to the row */
-      background: color-mix(in srgb, var(--ink, #000) 6%, transparent);
-      /* Add some padding around the whole row */
-      padding: 0.5rem 0.75rem;
-      /* Add space between rows */
-      margin-bottom: 8px;
-      border-radius: 8px; /* Optional: Rounded corners */
+      background: transparent; /* TR is transparent */
+      padding: 0; /* No padding on TR */
+      margin-bottom: 8px; /* Space between items */
+      border-radius: 0; /* Remove rounded corners if applied before */
   }
 
 
@@ -1203,43 +1201,35 @@ html, body { overflow-x:hidden; }
                          "amount currency menu";
     gap: 0; /* Remove internal gap */
   }
-  /* === Ensure cells are transparent and have padding === */
-  #view-expenses .expenses-table.stacked td.cell {
+  /* === Apply background and padding ONLY to header/menu cells === */
+  #view-expenses .expenses-table.stacked td.cell.header,
+  #view-expenses .expenses-table.stacked td.menu-cell {
       border: none;
       padding: .5rem .75rem; /* Add padding inside cells */
-      background: transparent !important; /* Make cells transparent */
+      background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important; /* Make ONLY header/menu cells gray */
   }
+   /* Round corners for the grid */
+   #view-expenses .expenses-table.stacked td.header.date { border-top-right-radius: 8px; }
+   #view-expenses .expenses-table.stacked td.menu-cell { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+   #view-expenses .expenses-table.stacked td.header.currency { border-bottom-right-radius: 8px; }
 
-  /* === REMOVED OLD FIX BLOCK === */
-  /*
-  #view-expenses .expenses-table.stacked td.cell.header,
-  #view-expenses .expenses-table.stacked td.header,
-  #view-expenses .expenses-table.stacked td.menu-cell {
-    background: rgba(0,0,0,.06) !important;
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
-  }
-  */
 
   #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
   #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
   #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
   #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
-  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0; /* Adjust menu padding if needed */ }
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
   #view-expenses .expenses-table.stacked td.header.category{ display:none; } /* חוסך מקום במובייל */
-  /* Notes cell - Ensure it spans full width and has appropriate padding/margin */
-   #view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td.notes {
-      grid-column: 1 / -1;
-      padding: .5rem .75rem; /* Match row padding */
-      background: transparent; /* Ensure notes row is transparent if it follows header */
-      border-top: 1px solid var(--border); /* Add separator if needed */
-      margin-top: -8px; /* Adjust if margin-bottom on tr is used */
-   }
-   /* If notes is a direct sibling td */
+
+   /* Notes cell - Ensure it spans full width and has appropriate padding/margin, NO background */
+   #view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td.notes,
    #view-expenses .expenses-table.stacked td.notes {
-       grid-column: 1 / -1;
-       padding: .5rem .75rem;
-       background: transparent;
-       margin-top: 4px; /* Space between header grid and notes */
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; /* Notes cell should NOT be gray */
+      border-top: none; /* No top border needed if header is gray */
+      margin-top: 4px; /* Space between header block and notes */
+      border-bottom: 1px solid var(--border); /* Keep bottom separator */
    }
 
 
@@ -1257,45 +1247,38 @@ html, body { overflow-x:hidden; }
     grid-template-areas: "date time menu"
                          "location location menu";
     gap: 0; /* Remove internal gap */
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* Add BG to TR */
-    padding: 0.5rem 0.75rem; /* Add padding around the whole row */
-    margin-bottom: 8px; /* Add space between rows */
-    border-radius: 8px; /* Optional: Rounded corners */
+    background: transparent; /* TR is transparent */
+    padding: 0;
+    margin-bottom: 8px;
+    border-radius: 0;
   }
-  /* === Ensure cells are transparent and have padding === */
-  #view-journal .expenses-table td.cell{
+  /* === Apply background and padding ONLY to header/menu cells === */
+  #view-journal .expenses-table td.cell.header,
+  #view-journal .expenses-table td.menu-cell{
       border:none;
       padding: .5rem .75rem; /* Add padding inside cells */
-      background: transparent !important; /* Make cells transparent */
+      background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important; /* Make ONLY header/menu cells gray */
   }
+  /* Round corners for the grid */
+   #view-journal .expenses-table td.header.date { border-top-right-radius: 8px; }
+   #view-journal .expenses-table td.menu-cell { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+   #view-journal .expenses-table td.header.location { border-bottom-right-radius: 8px; }
 
-  /* === REMOVED OLD FIX BLOCK === */
-  /*
-  #view-journal .expenses-table td.cell.header,
-  #view-journal .expenses-table td.header,
-  #view-journal .expenses-table td.menu-cell {
-    background: rgba(0,0,0,.06) !important;
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
-  }
-  */
 
   #view-journal .expenses-table td.header.date{ grid-area:date; }
   #view-journal .expenses-table td.header.time{ grid-area:time; }
   #view-journal .expenses-table td.header.location{ grid-area:location; }
-  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0; /* Adjust menu padding */ }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+
   /* Notes row adjustments */
-  #view-journal .expenses-table tr.exp-item + tr.exp-item td.notes {
-      grid-column: 1 / -1;
-      padding: .5rem .75rem;
-      background: transparent;
-      border-top: 1px solid var(--border);
-      margin-top: -8px;
-  }
+  #view-journal .expenses-table tr.exp-item + tr.exp-item td.notes,
   #view-journal .expenses-table td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
-      background: transparent;
-      margin-top: 4px;
+      background: transparent; /* Notes cell should NOT be gray */
+      border-top: none;
+      margin-top: 4px; /* Space between header block and notes */
+      border-bottom: 1px solid var(--border); /* Keep bottom separator */
   }
 
 
