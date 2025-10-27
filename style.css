@@ -1186,7 +1186,7 @@ html, body { overflow-x:hidden; }
       align-items: center;
       background: transparent; 
       padding: 0; 
-      margin-bottom: 8px; 
+      margin-bottom: 8px; /* Space between items */
       border-radius: 0; 
   }
 
@@ -1228,7 +1228,7 @@ html, body { overflow-x:hidden; }
       padding: .5rem .75rem;
       background: transparent; /* Notes cell is transparent */
       border-top: none; 
-      border-bottom: 1px solid var(--border);
+      border-bottom: none; /* <-- הוסר הקו התחתון */
    }
 
   /* טיפוגרפיה */
@@ -1258,7 +1258,7 @@ html, body { overflow-x:hidden; }
   #view-journal .expenses-table td.header.date{ grid-area:date; }
   #view-journal .expenses-table td.header.time{ grid-area:time; }
   #view-journal .expenses-table td.header.location{ grid-area:location; }
-  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
 
   /* --- Journal: Notes Row (tr4) --- */
   #view-journal .expenses-table tr.exp-item:has(td.notes) {
@@ -1272,7 +1272,7 @@ html, body { overflow-x:hidden; }
       padding: .5rem .75rem;
       background: transparent; 
       border-top: none;
-      border-bottom: 1px solid var(--border);
+      border-bottom: none; /* <-- הוסר הקו התחתון */
   }
 
 
@@ -1330,7 +1330,7 @@ html, body { height:100%; }
 
 
 /* Ensure long/raw links show as blue icon inside editor as well */
-#jrText a.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
+#jrText a.link-chip{ color:#1E88E5; font-weight:77; text-decoration:none; }
 #jrText a{ word-break: break-all; }
 
 /* Bubble interaction tweaks */
