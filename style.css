@@ -1192,6 +1192,20 @@ html, body { overflow-x:hidden; }
                          "amount currency menu";
   }
   #view-expenses .expenses-table.stacked td.cell{ border:none; padding:0; background:transparent; }
+/* === FIX: Ensure gray background appears on mobile for header rows === */
+#view-expenses .expenses-table.stacked td.cell.header,
+#view-expenses .expenses-table.stacked td.header,
+#view-expenses .expenses-table.stacked td.menu-cell {
+  background: rgba(0,0,0,.06) !important; /* Fallback */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
+}
+
+#view-journal .expenses-table td.cell.header,
+#view-journal .expenses-table td.header,
+#view-journal .expenses-table td.menu-cell {
+  background: rgba(0,0,0,.06) !important; /* Fallback */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
+}
   #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
   #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
   #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
