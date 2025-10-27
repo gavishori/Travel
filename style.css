@@ -818,15 +818,18 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 /* === Stacked expenses layout === */
 #view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
 #view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
-#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked td.header { background: rgba(0,0,0,.06); /* fallback for Safari iOS */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* wide support */; }
 #view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
-#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: rgba(0,0,0,.06); /* fallback for Safari iOS */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* wide support */; }
 #view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
 #view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
 
 #view-expenses .expenses-table.stacked td.menu-cell{
   width:56px; text-align:center;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(0,0,0,.06); /* fallback for Safari iOS */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* wide support */;
 }
 #view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
   inline-size: 36px; block-size: 32px; border-radius: 10px;
@@ -1029,11 +1032,13 @@ body #view-share .cards .card{width:100% !important; max-width:100% !important}
 
 /* Journal header row (date, time, place) same look as Expenses headers */
 #view-journal .expenses-table td.header{
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(0,0,0,.06); /* fallback for Safari iOS */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* wide support */;
 }
 #view-journal .expenses-table td.menu-cell{
   width:56px; text-align:center;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(0,0,0,.06); /* fallback for Safari iOS */
+  background: color-mix(in srgb, var(--ink, #000) 6%, transparent); /* wide support */;
 }
 
 
