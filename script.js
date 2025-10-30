@@ -1160,12 +1160,16 @@ function renderJournal(t, order){
       if (!dateStr && j.date) dateStr = j.date;
       if (!timeStr && j.time) timeStr = j.time;
       const cat = j.category || '';
-            // Build compact place display: "Name, City, Country"
-      const parts = [j.placeName, j.city, j.country].filter(Boolean);
-      const placeCompact = parts.join(', ');
-      const locStr = placeCompact
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeCompact)}" target="_blank">${placeCompact}</a>`
-        : '';
+      
+      // --- *** התיקון נמצא כאן *** ---
+      // השתמש ישירות בטקסט המיקום כפי שנשמר
+      const placeText = j.placeName || '';
+      
+      // צור קישור רק אם זה נראה כמו URL, אחרת הצג טקסט רגיל
+      const locStr = /^(?:https?:\/\/|www\.)/.test(placeText)
+        ? `<a href="${placeText.startsWith('http') ? placeText : 'http://' + placeText}" target="_blank">${placeText}</a>`
+        : placeText;
+      // --- *** סוף התיקון *** ---
 
       const text = (j.html && /(<a|link-icon)/i.test(j.html)) ? j.html : linkifyToIcons(j.html || j.text || '');
 
@@ -1214,7 +1218,6 @@ function renderJournal(t, order){
     console.error('renderJournal failed', e);
   }
 }
-
 
 $('#tripCancel').addEventListener('click', ()=> $('#tripModal').close());
 $('#tripSave').addEventListener('click', async ()=>{

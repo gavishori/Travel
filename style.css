@@ -1172,6 +1172,32 @@ html.share-open [style*="overflow:scroll"]{
 html, body { overflow-x:hidden; }
 
 
+
+/* === Journal header layout: desktop one-line, mobile two-lines === */
+/* Desktop: single row — Date | Time | Location | Menu */
+@media (min-width: 481px){
+  #view-journal .expenses-table tr.exp-item:has(td.header){
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "date time location menu";
+    align-items: center;
+    gap: 0;
+  }
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell{
+    background: transparent !important;
+  }
+  #view-journal .expenses-table td.header.location{ 
+    min-width: 0; 
+  }
+  #view-journal .expenses-table td.header.location .val{
+    display: block;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow: ellipsis; /* in case the name is very long */
+    max-width: 100%;
+  }
+}
+/* Mobile rules (<=480px) already exist below: 1st row date+time, 2nd row location. */
 /* ======== Mobile-only compact headers for Expenses & Journal ======== */
 @media (max-width: 480px){
 
