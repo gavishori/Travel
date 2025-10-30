@@ -1182,6 +1182,7 @@ html, body { overflow-x:hidden; }
     grid-template-areas: "date time location menu";
     align-items: center;
     gap: 0;
+    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important; /* <-- שורה זו נוספה */
   }
   #view-journal .expenses-table tr.exp-item:has(td.header) td.cell{
     background: transparent !important;
