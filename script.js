@@ -1880,21 +1880,31 @@ $('#selectMapSave').addEventListener('click', async () => {
       $('#expLat').value = lat;
       $('#expLng').value = lng;
       try{
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`);
         const data = await res.json();
         const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
         $('#expLocationName').value = displayName;
       }catch(e){
         $('#expLocationName').value = '';
       }
+    // --- קוד חדש (לאחר התיקון) ---
     } else if (state.maps.currentModal === 'journal') {
       $('#jrLat').value = lat;
       $('#jrLng').value = lng;
       try{
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
         const data = await res.json();
-        const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
+        
+        // --- התיקון כאן ---
+        // שולפים רק את שם העיר/יישוב/כפר במקום הכתובת המלאה
+        const addr = data.address || {};
+        const cityName = addr.city || addr.town || addr.village || addr.suburb || addr.hamlet;
+        
+        // אם אין שם עיר, נשתמש בשם המדינה או בשם המלא כגיבוי
+        const displayName = cityName || addr.country || data.display_name || '';
         $('#jrLocationName').value = displayName;
+        // --- סוף התיקון ---
+
       }catch(e){
         $('#jrLocationName').value = '';
       }
@@ -1984,7 +1994,8 @@ async function saveJournal() {
   t.journal[id] = {
     text: (document.getElementById('jrText').innerText || '').trim(),
     html: (document.getElementById('jrText').innerHTML || '').trim(),
-    placeName: formatPlace($('#jrLocationName').value.trim()),
+    // --- קוד חדש (לאחר התיקון) ---
+    placeName: ($('#jrLocationName').value.trim()),
     placeUrl: (function(){ 
       const v=$('#jrLocationName').value.trim(); 
       return /^(?:https?:\/\/|www\.)/.test(v) ? (v.startsWith('http')? v : 'http://' + v) : ''; 
