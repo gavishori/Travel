@@ -373,27 +373,40 @@ function focusItemInTab(type, id){
   }, 150);
 }
 
+// מצא את הפונקציה הישנה attachMapPopup בקובץ script.js והחלף אותה בקוד הבא:
+
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
     const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
-    const place = placeLinkHtml(dataObj);
+    
+    // בחר את השדה הנכון (locationName להוצאה, placeName ליומן)
+    const placeRaw = isExp ? (dataObj.locationName || '') : (dataObj.placeName || '');
+    
+    // --- התיקון: הסרת כפילויות לפני ההצגה ---
+    const placeParts = (placeRaw || '').split(',').map(s => s.trim()).filter(Boolean);
+    const uniqueParts = [...new Set(placeParts)]; // הופך [ "חדרה", "חדרה" ] ל- [ "חדרה" ]
+    const place = esc(uniqueParts.join(', '));
+    // --- סוף התיקון ---
+
     const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
     const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
     const textLine = !isExp ? `<div class="muted">${linkifyText(dataObj.text||'')}</div>` : '';
+    
     const html = `
-      <div class="map-popup">
+      <div class="map-popup" style="direction: rtl; text-align: right;">
         <div><strong>${isExp?'הוצאה':'יומן'}</strong></div>
         <div><strong>תאריך:</strong> ${esc(date||'')}</div>
         ${amountLine}
         ${catLine}
         <div><strong>מקום:</strong> ${place}</div>
         ${textLine}
-        <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem; justify-content: flex-end;">
           <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">הצג</button>
           ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">ערוך</button>`}
         </div>
       </div>`;
+
     marker.bindPopup(html);
     marker.on('popupopen', (ev)=>{
       const root = ev.popup.getElement();
@@ -420,8 +433,7 @@ function attachMapPopup(marker, type, id, dataObj){
       }
     });
   }catch(e){}
-}
-// === End map popup helpers ===
+}// === End map popup helpers ===
 
 // === Filter modal helpers ===
 function seedExpenseCategoriesSelect(sel){
@@ -1219,17 +1231,64 @@ function renderJournal(t, order){
   }
 }
 
+// הפעלת הכפתור לפתיחת חלון "נסיעה חדשה"
+$('#btnNewTrip').addEventListener('click', () => {
+  const modal = $('#tripModal');
+  if (modal) {
+    // איפוס שדות לפני פתיחה
+    $('#tripDest').value = '';
+    $('#tripStart').value = '';
+    $('#tripEnd').value = '';
+    modal.showModal();
+  }
+});
+
+// השורה הקיימת (להשוואה):
 $('#tripCancel').addEventListener('click', ()=> $('#tripModal').close());
 $('#tripSave').addEventListener('click', async ()=>{
-  const dest = $('#tripDest').value.trim(); const start = $('#tripStart').value; const end = $('#tripEnd').value;
-  if(!dest||!start||!end) return showToast('אנא מלא יעד ותאריכים');
-  const id = crypto.randomUUID();
-  await FB.setDoc(FB.doc(db, 'trips', id), {
-    ownerUid: state.user.uid, destination: dest, start, end,
-    createdAt: new Date().toISOString(), expenses:{}, journal:{},
-    budget:{USD:0,EUR:0,ILS:0}, rates:{...state.rates}, share:{enabled:false}
-  });
-  $('#tripModal').close(); showToast('נוצרה נסיעה');
+  // הוספנו בלוק try...catch כדי למנוע קריסה שקטה
+  try {
+    const dest = $('#tripDest').value.trim(); 
+    const start = $('#tripStart').value; 
+    const end = $('#tripEnd').value;
+
+    if(!dest||!start||!end) {
+      showToast('אנא מלא יעד ותאריכים');
+      return; // עצירה אם חסרים נתונים
+    }
+
+    // בדיקה קריטית: ודא שפרטי המשתמש נטענו
+    if (!state.user || !state.user.uid) {
+      console.error("Save failed: state.user.uid is missing.", state.user);
+      showToast('שגיאה: המשתמש לא מחובר כראוי. נסה לרענן.');
+      return;
+    }
+
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : ('id-' + Date.now() + '-' + Math.floor(Math.random() * 1e6));
+
+    await FB.setDoc(FB.doc(db, 'trips', id), {
+      ownerUid: state.user.uid, // עכשיו בטוח לגשת ל-uid
+      destination: dest, 
+      start, 
+      end,
+      createdAt: new Date().toISOString(), 
+      expenses:{}, 
+      journal:{},
+      budget:{USD:0,EUR:0,ILS:0}, 
+      rates:{...(state.rates || { USDEUR: 0.92, USDILS: 3.7 })}, // גיבוי למקרה שגם state.rates חסר
+      share:{enabled:false}
+    });
+
+    $('#tripModal').close(); 
+    showToast('נוצרה נסיעה');
+
+  } catch (err) {
+    // הצג הודעת שגיאה במקום לקרוס בשקט
+    console.error("Error saving trip:", err);
+    showToast('שגיאה בשמירת הנסיעה: ' + err.message);
+  }
 });
 
 // Sidebar actions
@@ -4191,3 +4250,41 @@ function renderCategoryBreakdownNode(targetId){
     document.addEventListener('DOMContentLoaded', attachLogout, { once: true });
   }
 })();
+// === Journal Expand/Collapse All ===
+(function(){
+  function wireJournalCollapseButtons(){
+    const btnCollapse = document.getElementById('btnCollapseAllJournal');
+    const btnExpand = document.getElementById('btnExpandAllJournal');
+    const journalBody = document.getElementById('tblJournal');
+
+    if (btnCollapse && !btnCollapse.dataset.wired) {
+      btnCollapse.dataset.wired = '1';
+      btnCollapse.addEventListener('click', () => {
+        if (!journalBody) return;
+        // מצא את כל שורות התוכן (אלו שמכילות תא מסוג 'notes') והסתר אותן
+        journalBody.querySelectorAll('tr.exp-item:has(td.notes)').forEach(tr => {
+          tr.style.display = 'none';
+        });
+      });
+    }
+
+    if (btnExpand && !btnExpand.dataset.wired) {
+      btnExpand.dataset.wired = '1';
+      btnExpand.addEventListener('click', () => {
+        if (!journalBody) return;
+        // אפס את התצוגה לכל שורות התוכן. הדפדפן ישתמש ב-CSS הקיים.
+        journalBody.querySelectorAll('tr.exp-item:has(td.notes)').forEach(tr => {
+          tr.style.display = ''; 
+        });
+      });
+    }
+  }
+
+  // הפעל את הלוגיקה כשהעמוד נטען
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireJournalCollapseButtons);
+  } else {
+    wireJournalCollapseButtons(); // הפעל מיד אם כבר נטען
+  }
+})();
+// === End Journal Expand/Collapse All ===

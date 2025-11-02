@@ -28,8 +28,8 @@ textarea{min-height:80px}
 .row{display:flex;gap:10px}
 .row > *{flex:1}
 
-.list-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);padding-bottom:8px;z-index:4}
+.list-actions{display:flex;gap:8px;align-items:center;padding: 12px 0;}
+.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);padding-bottom:0;z-index:4}
 .tabs button{padding:10px 12px;border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--card)}
 .tabs button.active{outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent)}
 
