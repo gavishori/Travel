@@ -520,9 +520,21 @@ function initMiniMap(t){
         L.circleMarker([e.lat,e.lng], { radius:4, color:'#1a73e8' }).addTo(group);
       }
     });
-    // Journal markers
+   // Journal markers (and paths)
     Object.entries(t.journal||{}).forEach(([id,j])=>{
-      if(typeof j.lat==='number' && typeof j.lng==='number'){
+      if (j.path && Array.isArray(j.path) && j.path.length > 1) {
+          // --- התיקון: המרה של מבנה הנקודות עבור Leaflet ---
+          const leafletPath = j.path.map(p => [p.lat, p.lng]);
+          L.polyline(leafletPath, { color: '#007bff', weight: 3 }).addTo(group);
+          pts.push(...leafletPath); // הוסף את כל הנקודות לחישוב ה-bounds
+          // --- סוף התיקון ---
+          
+          // הוסף מרקר בנקודת ההתחלה עם פופאפ
+          if (typeof j.lat === 'number' && typeof j.lng === 'number') {
+              ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
+          }
+      } else if (typeof j.lat==='number' && typeof j.lng==='number') {
+        // התנהגות רגילה עבור נקודות יומן בודדות
         pts.push([j.lat, j.lng]);
         ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
       }
@@ -570,10 +582,23 @@ function initBigMap() {
         }
       });
 
-      const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}));
+const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}));
+
       let jourIndex = 1;
       jourEntries.forEach(([id,j])=>{
-        if(typeof j.lat==='number' && typeof j.lng==='number'){
+        if (j.path && Array.isArray(j.path) && j.path.length > 1) {
+            // --- התיקון: המרה של מבנה הנקודות עבור Leaflet ---
+            const leafletPath = j.path.map(p => [p.lat, p.lng]);
+            L.polyline(leafletPath, { color: '#007bff', weight: 3 }).addTo(journalLG);
+            pts.push(...leafletPath);
+            // --- סוף התיקון ---
+
+            // הוסף מרקר ממוספר בנקודת ההתחלה עם פופאפ
+            if (typeof j.lat === 'number' && typeof j.lng === 'number') {
+                 ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(journalLG);})(_numberedMarker(j.lat, j.lng, jourIndex++, 'journal')));
+            }
+        } else if (typeof j.lat==='number' && typeof j.lng==='number') {
+          // התנהגות רגילה עבור נקודות בודדות
           pts.push([j.lat,j.lng]);
           ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(journalLG);})(_numberedMarker(j.lat, j.lng, jourIndex++, 'journal')));
         }
@@ -1905,6 +1930,30 @@ async function searchLocationByName(name, callback, isHebrew) {
   }
 }
 
+// === Reverse Geocode (Coords -> Name) ===
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he,en&zoom=14`);
+    const data = await res.json();
+    if (data && data.address) {
+      const addr = data.address;
+      // נסה למצוא את שם היישוב או העיר
+      const name = addr.city || addr.town || addr.village || addr.suburb || addr.hamlet || addr.county || addr.state;
+      const country = addr.country;
+      
+      if (name && country && name.toLowerCase() !== country.toLowerCase()) return `${name}, ${country}`;
+      if (name) return name;
+      if (country) return country;
+      
+      return data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`; // גיבוי לשם המלא
+    }
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; // גיבוי לקואורדינטות
+  } catch (e) {
+    console.warn('Reverse geocode failed', e);
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; // גיבוי במקרה של שגיאת רשת
+  }
+}
+
 // Map modal functionality for both expenses and journal
 function openMapSelectModal(lat, lng) {
   const modal = $('#mapSelectModal');
@@ -3086,7 +3135,8 @@ function renderExpenseSummary(t){
   `;
 }
 
-// === GPX Import (to Journal) ===
+
+// === GPX Import (to Journal) [FIXED for Namespaces, v2] ===
 async function importGPXFromFile(file){
   try{
     if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
@@ -3095,18 +3145,39 @@ async function importGPXFromFile(file){
     const xmlText = await file.text();
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, 'application/xml');
-    const wpts = Array.from(xml.getElementsByTagName('wpt'));
-    const trkpts = Array.from(xml.getElementsByTagName('trkpt'));
+    const gpxNamespace = 'http://www.topografix.com/GPX/1/1';
+    
+    // Check for parser errors
+    const parserError = xml.getElementsByTagName('parsererror');
+    if (parserError.length > 0) {
+      console.error('GPX XML Parse Error:', parserError[0].textContent);
+      throw new Error('קובץ GPX לא תקין');
+    }
+
+    let wpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'wpt'));
+    if (wpts.length === 0) wpts = Array.from(xml.getElementsByTagName('wpt'));
+    
+    let trkpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'trkpt'));
+    if (trkpts.length === 0) trkpts = Array.from(xml.getElementsByTagName('trkpt'));
+
     const points = [];
 
+    // --- פונקציית עזר מתוקנת v2 ---
     function getTag(el, name){
-      const t = el.getElementsByTagName(name)[0];
+      if (!el) return '';
+      let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
+      if (!t) t = el.getElementsByTagName(name)[0]; // Fallback
       return t ? (t.textContent || '').trim() : '';
     }
+    // --- פונקציית עזר מתוקנת v2 ---
     function getExt(el, name){
-      const exts = el.getElementsByTagName('extensions')[0];
+      let exts = el.getElementsByTagNameNS(gpxNamespace, 'extensions')[0];
+      if (!exts) exts = el.getElementsByTagName('extensions')[0];
       if(!exts) return '';
-      const found = exts.getElementsByTagName(name)[0];
+      
+      let found = exts.getElementsByTagNameNS(gpxNamespace, name)[0];
+      if (!found) found = exts.getElementsByTagName(name)[0];
+      
       return found ? (found.textContent || '').trim() : '';
     }
 
@@ -3147,16 +3218,25 @@ async function importGPXFromFile(file){
     let added = 0;
     points.forEach(p=>{
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+      
+      const _point_dateIso = p._time ? new Date(p._time).toISOString() : new Date().toISOString();
+      const __dt = new Date(_point_dateIso);
+      const pad2 = n => String(n).padStart(2, '0');
+      const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
+      const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
+
       t.journal[id] = {
         text: p._desc || '',
-        placeName: p._name || '',
+        placeName: p._name || 'נקודת מסלול',
         placeUrl: '',
-        lat: p.lat, lng: p.lng,
-        createdAt: p._time ? new Date(p._time).toISOString() : new Date().toISOString()
-      ,
-    dateIso: _jr_dateIso,
-    date: __jr_dateStr,
-    time: __jr_timeStr};
+        lat: p.lat, 
+        lng: p.lng,
+        createdAt: _point_dateIso,
+        dateIso: _point_dateIso,
+        date: __dateStr,
+        time: __timeStr
+      };
+      
       added++;
     });
 
@@ -3170,20 +3250,108 @@ async function importGPXFromFile(file){
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btnImportGPX');
-  const file = document.getElementById('importGPXFile');
-  if(btn && file){
-    btn.addEventListener('click', ()=> file.click());
-    file.addEventListener('change', () => {
-      if(!file.files || !file.files[0]) return;
-      importGPXFromFile(file.files[0]);
-      file.value = '';
-    });
+/// === GPX Import (as single Trek) [FIXED for Firestore Nested Arrays] ===
+async function importGPXAsTrek(file){
+  try{
+    if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
+    const tid = state.currentTripId;
+    if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
+
+    const xmlText = await file.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(xmlText, 'application/xml');
+    const gpxNamespace = 'http://www.topografix.com/GPX/1/1';
+
+    // Check for parser errors
+    const parserError = xml.getElementsByTagName('parsererror');
+    if (parserError.length > 0) {
+      console.error('GPX XML Parse Error:', parserError[0].textContent);
+      throw new Error('קובץ GPX לא תקין');
+    }
+    
+    // --- Robustly find track points ---
+    let trkpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'trkpt'));
+    if (trkpts.length === 0) {
+      trkpts = Array.from(xml.getElementsByTagName('trkpt')); // Fallback
+    }
+    
+    // --- התיקון: שמירה כמערך של אובייקטים ---
+    const path = trkpts.map(el => ({
+      lat: Number(el.getAttribute('lat')), 
+      lng: Number(el.getAttribute('lon'))
+    })).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    // --- סוף התיקון ---
+
+    if(path.length < 2){ if(typeof toast==='function') toast('לא נמצא מסלול (לפחות 2 נקודות) בקובץ'); return; }
+
+    // --- פונקציית עזר מתוקנת v2 ---
+    function getTag(el, name){
+      if (!el) return '';
+      let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
+      if (!t) t = el.getElementsByTagName(name)[0]; // Fallback
+      return t ? (t.textContent || '').trim() : '';
+    }
+
+    // נתוני נקודות קצה ושם
+    const firstPtEl = trkpts[0];
+    const lastPtEl = trkpts[trkpts.length - 1];
+    
+    // --- התיקון: קריאה ממבנה אובייקט ---
+    const firstPt = path[0]; // {lat: ..., lng: ...}
+    const lastPt = path[path.length - 1]; // {lat: ..., lng: ...}
+    
+    // --- שליפת שם מתוקנת v2 ---
+    let trackNameEl = xml.getElementsByTagNameNS(gpxNamespace, 'name')[0];
+    if (!trackNameEl) trackNameEl = xml.getElementsByTagName('name')[0]; // Fallback
+    const trackName = (trackNameEl?.textContent || 'מסלול GPX').trim();
+    
+    // --- שליפת זמן מתוקנת v2 ---
+    const startTime = getTag(firstPtEl, 'time') || new Date().toISOString();
+
+    // (rest of the function is the same)
+    const ref = FB.doc(db, 'trips', state.currentTripId);
+    const snap = await FB.getDoc(ref);
+    const t = snap.exists() ? (snap.data() || {}) : {};
+    t.journal = t.journal || {};
+    const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+    const __dt = new Date(startTime);
+    const pad2 = n => String(n).padStart(2, '0');
+    const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
+    const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
+    
+    // --- התיקון: קבלת שמות מקומות במקום קואורדינטות ---
+    const [startPlace, endPlace] = await Promise.all([
+      reverseGeocode(firstPt.lat, firstPt.lng),
+      reverseGeocode(lastPt.lat, lastPt.lng)
+    ]);
+
+    const text = `מסלול: ${trackName}\nתאריך: ${__dateStr} ${__timeStr}\nנקודת התחלה: ${startPlace}\nנקודת סיום: ${endPlace}`;
+    // --- סוף התיקון ---
+    
+    t.journal[id] = {
+      text: text,
+      html: text.replace(/\n/g, '<br>'),
+      placeName: trackName,
+      // --- התיקון: שמירת lat/lng מנקודת ההתחלה ---
+      lat: firstPt.lat,
+      lng: firstPt.lng,
+      createdAt: startTime,
+      dateIso: startTime,
+      date: __dateStr,
+      time: __timeStr,
+      path: path // <-- נשמר כמערך של אובייקטים
+    };
+    
+    await FB.updateDoc(ref, { journal: t.journal });
+    if(typeof toast==='function') toast(`מסלול GPX יובא בהצלחה כרשומה אחת`);
+    await loadTrip();
+    switchToTab('map');
+
+  }catch(e){
+    console.error('GPX Trek import failed', e);
+    if(typeof toast==='function') toast('שגיאה בייבוא מסלול GPX');
   }
-});
-
-
+}
 // --- delegated handler: works even if button is injected later ---
 document.addEventListener('click', async (e)=>{
   const btn = e.target && e.target.closest && e.target.closest('#btnDeleteSelectedJournal');
@@ -3433,6 +3601,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     gpxFile.addEventListener('change', ()=>{ const f=gpxFile.files?.[0]; if(f) importGPXFromFile(f); gpxFile.value=''; });
   }
 
+// Import Trek GPX (New)
+  const trekBtn = document.getElementById('btnImportTrekGPX');
+  const trekFile = document.getElementById('importTrekGPXFile');
+  if(trekBtn && trekFile){
+    trekBtn.addEventListener('click', ()=> trekFile.click());
+    trekFile.addEventListener('change', ()=>{ const f=trekFile.files?.[0]; if(f) importGPXAsTrek(f); trekFile.value=''; });
+  }
   // Import KML
   const kmlBtn = document.getElementById('btnImportKML');
   const kmlFile = document.getElementById('importKMLFile');
@@ -3633,13 +3808,29 @@ async function importKMLFromFile(file){
     let added = 0;
     points.forEach(p=>{
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+      
+      // --- התחלת התיקון ---
+      // 1. הגדרת משתני התאריך והשעה על בסיס הזמן מהקובץ
+      const _point_dateIso = p._time ? new Date(p._time).toISOString() : new Date().toISOString();
+      const __dt = new Date(_point_dateIso);
+      const pad2 = n => String(n).padStart(2, '0');
+      const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
+      const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
+
+      // 2. בניית אובייקט היומן
       t.journal[id] = {
         text: p._desc || '',
         placeName: p._name || '',
         placeUrl: '',
-        lat: p.lat, lng: p.lng,
-        createdAt: new Date().toISOString()
+        lat: p.lat, 
+        lng: p.lng,
+        createdAt: _point_dateIso, // 3. הוסר הפסיק המיותר
+        dateIso: _point_dateIso,   // 4. שימוש במשתנה החדש
+        date: __dateStr,         // 5. שימוש במשתנה החדש
+        time: __timeStr          // 6. שימוש במשתנה החדש
       };
+      // --- סוף התיקון ---
+      
       added++;
     });
 
