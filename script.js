@@ -145,26 +145,45 @@ window.safeInitMap = function(containerId, opts){
     // bindAutoResize skipped for contenteditable jrText
   });
 
-  // Enter behavior inside modals:
-  //  - Enter never saves by accident
-  //  - Ctrl/Cmd + Enter triggers save
-  document.addEventListener('keydown', (e)=>{
-    const anyOpen = (m)=>{ const d=document.getElementById(m); return d && d.open; };
-    if(!(anyOpen('expenseModal')||anyOpen('journalModal'))) return;
-    const tag = (document.activeElement && document.activeElement.tagName)||'';
-    const isTextarea = tag.toLowerCase()==='textarea';
-    if(e.key === 'Enter' && !e.shiftKey){
-      if(e.ctrlKey || e.metaKey){
-        // commit explicitly
-        if(anyOpen('expenseModal')) document.getElementById('expSave')?.click();
-        if(anyOpen('journalModal')) document.getElementById('jrSave')?.click();
-        e.preventDefault();
-      }else if(!isTextarea){
-        // prevent accidental submit
-        e.preventDefault();
-      }
-    }
-  });
+ // Enter behavior inside modals (desktop + mobile):
+document.addEventListener('keydown', (e)=>{
+  const anyOpen = (m)=>{ const d=document.getElementById(m); return d && d.open; };
+  if(!(anyOpen('expenseModal') || anyOpen('journalModal'))) return;
+
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  const isTextarea = tag.toLowerCase() === 'textarea' ||
+                     document.activeElement?.isContentEditable;
+
+  // Ctrl/Cmd + Enter → שמירה
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if (anyOpen('expenseModal')) document.getElementById('expSave')?.click();
+    if (anyOpen('journalModal')) document.getElementById('jrSave')?.click();
+    e.preventDefault();
+    return;
+  }
+
+  // Enter רגיל → ירידת שורה רק ב־textarea או contenteditable
+  if (e.key === 'Enter' && isTextarea) {
+    // לא נוגעים — הדפדפן כבר מוריד שורה
+    return;
+  }
+
+  // מניעת שליחה/שמירה בטעות בכל מקום אחר
+  if (e.key === 'Enter' && !isTextarea) {
+    e.preventDefault();
+  }
+});
+
+// תיקון למובייל – מאזין ל־input למקרה שה־keydown לא נורה
+document.addEventListener('input', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag.toLowerCase() === 'textarea') {
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 420) + 'px';
+  }
+});
+
+;
 
   // Expose to modal openers to (re)bind
   window._bindTextareasForModals = function(){
@@ -1006,7 +1025,7 @@ async function openTrip(id){
 
 // Function to map country to currency
 const localCurrencyMap = {
-  "תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD", "סין": "CNY"};
+  "תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "פולין": "PLN", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD", "סין": "CNY"};
 function getLocalCurrency(destination){
   if (!destination) return null;
   const destinations = destination.split(',').map(d=>d.trim());
@@ -4479,3 +4498,210 @@ function renderCategoryBreakdownNode(targetId){
   }
 })();
 // === End Journal Expand/Collapse All ===
+// --- הוספה: לוגיקה חסרה לייבוא קובץ JSON (מטפל בפורמט פולין 2018 + רומניה 2016) ---
+// *** גרסה 2: תומך בקואורדינטות ושמות מקומות מהקובץ ***
+(function() {
+    /**
+     * פונקציית עזר לניתוח תאריך במבנה DD/MM/YYYY
+     */
+    function parseDMY(dmyStr) {
+        if (!dmyStr) return new Date();
+        const parts = String(dmyStr).split('/');
+        if (parts.length === 3) {
+            // new Date(year, monthIndex, day)
+            const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]), 9, 0, 0);
+            if (!isNaN(d)) return d;
+        }
+        return new Date(); // גיבוי
+    }
+
+    /**
+     * פונקציית עזר לביצוע Geocoding (עבור קובץ פולין)
+     */
+    async function geocodePlaceName(name) {
+        if (!name) return null;
+        const lang = 'he';
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&accept-language=${lang}&limit=1`);
+            const data = await res.json();
+            if (data.length > 0) {
+                return {
+                    lat: Number(data[0].lat),
+                    lng: Number(data[0].lon)
+                };
+            }
+            return null;
+        } catch (e) {
+            console.error('Geocoding network error for:', name, e);
+            return null;
+        }
+    }
+
+    function attachJsonImportListener() {
+        const fileInput = document.getElementById('importFile');
+        const importBtn = document.getElementById('btnImport'); // הכפתור הנסתר
+
+        if (!fileInput || !importBtn || importBtn.dataset.wired) return;
+        importBtn.dataset.wired = '1';
+
+        // פונקציית ייבוא חדשה שתומכת בשני הפורמטים
+        importBtn.addEventListener('click', async () => {
+            const tid = state.currentTripId;
+            if (!tid) {
+                toast('הקובץ לא נטען. עליך לפתוח נסיעה קיימת קודם.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file) {
+                toast('הקובץ לא נטען. לא נבחר קובץ.');
+                return;
+            }
+
+            toast('מעבד קובץ, נא להמתין...'); // הודעת "מעבד"
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+
+                const ref = FB.doc(db, 'trips', tid);
+                const snap = await FB.getDoc(ref);
+                if (!snap.exists()) {
+                    throw new Error('הנסיעה הפעילה לא נמצאה.');
+                }
+                const t = snap.data() || {};
+                t.journal = t.journal || {};
+                t.expenses = t.expenses || {};
+
+                let expensesAdded = 0;
+                let journalAdded = 0;
+                const pad = n => String(n).padStart(2, '0');
+
+                // --- זיהוי מבנה הקובץ ---
+
+                // פורמט 1: פולין 2018 (מערך של ימים)
+                if (Array.isArray(data)) {
+                    for (const day of data) {
+                        const dayDate = new Date(day.date);
+                        if (isNaN(dayDate)) continue;
+                        
+                        const dayIso = dayDate.toISOString();
+                        const dateStr = `${pad(dayDate.getDate())}/${pad(dayDate.getMonth() + 1)}/${dayDate.getFullYear()}`;
+                        const timeStr = '09:00';
+                        
+                        const placeName = day.title || null;
+                        let coords = null;
+                        if (placeName) {
+                            coords = await geocodePlaceName(placeName);
+                            await new Promise(resolve => setTimeout(resolve, 500)); // מניעת חסימת API
+                        }
+                        
+                        const journalId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+                        t.journal[journalId] = {
+                            text: day.content || '',
+                            html: (day.content || '').replace(/\n/g, '<br>'),
+                            placeName: placeName || (day.locations ? day.locations.join(', ') : 'מתוך ייבוא'),
+                            createdAt: dayIso, dateIso: dayIso, date: dateStr, time: timeStr,
+                            lat: coords ? coords.lat : null,
+                            lng: coords ? coords.lng : null 
+                        };
+                        journalAdded++;
+
+                        if (Array.isArray(day.expenses)) {
+                            for (const exp of day.expenses) {
+                                const expId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+                                let currency = 'ILS'; 
+                                if (exp.currency === '₪') currency = 'ILS';
+                                if (exp.currency === 'זלוטי') currency = 'PLN';
+                                if (exp.currency === 'יורו' || exp.currency === 'אירו') currency = 'EUR';
+
+                                t.expenses[expId] = {
+                                    desc: exp.type || 'ייבוא מ-JSON',
+                                    descHtml: exp.type || 'ייבוא מ-JSON',
+                                    category: exp.type || 'אחר',
+                                    amount: Number(exp.amount) || 0,
+                                    currency: currency,
+                                    locationName: placeName || '',
+                                    lat: coords ? coords.lat : null,
+                                    lng: coords ? coords.lng : null,
+                                    createdAt: dayIso, dateIso: dayIso, date: dateStr, time: timeStr,
+                                    rates: { ...(state.rates || {}) }
+                                };
+                                expensesAdded++;
+                            }
+                        }
+                    }
+                }
+                // פורמט 2: רומניה 2016 (אובייקט עם {journal, expenses}) - *** עם תמיכה בקואורדינטות ***
+                else if (typeof data === 'object' && data.journal && Array.isArray(data.journal) && data.expenses && Array.isArray(data.expenses)) {
+                    
+                    for (const j of data.journal) {
+                        const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+                        const d = parseDMY(j.date);
+                        const iso = d.toISOString();
+                        const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+                        const timeStr = '09:00';
+
+                        t.journal[id] = { 
+                            text: j.text || '', 
+                            html: (j.text || '').replace(/\n/g, '<br>'), 
+                            placeName: j.placeName || '', // <-- תמיכה חדשה
+                            lat: j.lat || null,           // <-- תמיכה חדשה
+                            lng: j.lng || null,           // <-- תמיכה חדשה
+                            createdAt: iso, dateIso: iso, date: dateStr, time: timeStr 
+                        };
+                        journalAdded++;
+                    }
+
+                    for (const e of data.expenses) {
+                        const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+                        const d = parseDMY(e.date);
+                        const iso = d.toISOString();
+                        const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+                        const timeStr = '09:00';
+
+                        t.expenses[id] = {
+                            desc: e.desc || 'ייבוא מ-JSON', 
+                            descHtml: e.desc || 'ייבוא מ-JSON', 
+                            category: e.category || 'אחר', // <-- תמיכה חדשה
+                            amount: Number(e.amount) || 0, 
+                            currency: e.currency || 'ILS', 
+                            locationName: e.locationName || e.placeName || '', // <-- תמיכה חדשה
+                            lat: e.lat || null,           // <-- תמיכה חדשה
+                            lng: e.lng || null,           // <-- תמיכה חדשה
+                            createdAt: iso, dateIso: iso, date: dateStr, time: timeStr, 
+                            rates: { ...(state.rates || {}) } 
+                        };
+                        expensesAdded++;
+                    }
+                }
+                // פורמט לא מזוהה
+                else {
+                    throw new Error('מבנה הקובץ אינו נתמך.');
+                }
+
+                // שמירה והודעת הצלחה
+                await FB.updateDoc(ref, {
+                    journal: t.journal,
+                    expenses: t.expenses
+                });
+
+                toast(`הקובץ נטען בהצלחה! (נוספו ${journalAdded} יומן ו-${expensesAdded} הוצאות)`);
+                await loadTrip(); 
+
+            } catch (err) {
+                console.error('JSON import error:', err);
+                toast('הקובץ לא נטען: ' + err.message); // הודעת כישלון
+            } finally {
+                fileInput.value = '';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachJsonImportListener);
+    } else {
+        attachJsonImportListener();
+    }
+})();
+// --- סוף הקוד החסר ---

@@ -1503,3 +1503,29 @@ html, body { height:100%; }
 .rtf a.link-icon, .rtf a.mail-icon{ position:relative; display:inline-flex; }
 .rtf a .link-x{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; line-height:16px; font-size:11px; text-align:center; border-radius:50%; background:#e53935; color:#fff; cursor:pointer; display:none; z-index: 5; }
 .rtf a:hover .link-x{ display:block; }
+
+/* === FIX: Redesign Share Tab Button Layout === */
+
+/* 1. Target the button rows in Import & Export cards */
+#view-share #card-import .row,
+#view-share #card-export .row {
+  display: grid !important; /* Override inline style */
+  grid-template-columns: 1fr 1fr; /* 2 buttons per row */
+  gap: 10px; /* A clean gap */
+  flex-wrap: normal !important; /* Disable inline flex-wrap */
+}
+
+/* 2. Remove min-width on buttons *only* inside these cards */
+#view-share #card-import .btn,
+#view-share #card-export .btn {
+  min-width: 0; /* Allow buttons to fit the grid cell */
+  width: 100%; /* Make them fill their cell */
+  margin: 0; /* Reset any rogue margins */
+}
+
+/* 3. Ensure the Share card (which is fine) keeps its layout */
+#view-share #card-share .row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+/* === END FIX === */
