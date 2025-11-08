@@ -9,8 +9,7 @@
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden;direction:rtl}
 a{color:var(--brand);text-decoration:none}
-.app{display:grid;grid-template-rows:auto 1fr}
-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
+.app{display:grid;grid-template-rows:auto 1fr;height:100%;width:100%}header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
 header .brand{font-weight:700;letter-spacing:.5px}
 header .spacer{flex:1}
 header button, .btn{background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer}
@@ -18,9 +17,9 @@ header button, .btn{background:transparent;border:1px solid var(--border);color:
 .btn.danger{border-color:var(--danger);color:var(--danger)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
-.container{display:grid;grid-template-columns:320px 1fr;height:calc(100dvh - 56px)}
+.container{display:grid;grid-template-columns:320px 1fr;height:100%;min-height:0;overflow:hidden}
 .sidebar{border-inline-start:1px solid var(--border);background:var(--card);padding:16px;overflow:auto}
-.content{padding:16px;overflow:auto}
+.content{display:flex;flex-direction:column;padding:0;overflow:hidden}
 
 .section-title{display:flex;align-items:center;gap:10px;margin:8px 0 12px}
 .input, select, textarea{width:100%;background:transparent;border:1px solid var(--border);color:var(--ink);padding:10px 12px;border-radius:10px;outline:none}
@@ -29,7 +28,7 @@ textarea{min-height:80px}
 .row > *{flex:1}
 
 .list-actions{display:flex;gap:8px;align-items:center;padding: 12px 0;}
-.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);padding-bottom:0;z-index:4}
+.tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);padding:16px 16px 0;flex-shrink:0;z-index:4}
 .tabs button{padding:10px 12px;border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--card)}
 .tabs button.active{outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent)}
 
@@ -602,8 +601,8 @@ header :is(#userBadge, #userEmail, .user-pill, .email-pill) { order: 20 !importa
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  height:calc(100dvh - 0px);
-  overflow:auto;
+  height:100dvh;              /* גובה מסך מלא נקי */
+  overflow:hidden;            /* ביטול גלילה חיצונית */
   gap:0;
 }
 .mobile-preview-controls{
@@ -1109,9 +1108,9 @@ html.share-open [style*="overflow:scroll"]{
 
 #currentUserEmail{font-size:14px; opacity:.8;}
 
-/* Robust tab visibility */
+/* Robust tab visibility & scrolling */
 .tabview{ display:none !important; }
-.tabview[data-active="1"]{ display:block !important; }
+.tabview[data-active="1"]{ display:block !important; flex:1; overflow:auto; padding:16px; min-height:0; }
 
 /* map-toolbar-spent */
 .map-toolbar #btnToggleSpent { border:2px solid #e53935; color:#e53935; background:transparent; }

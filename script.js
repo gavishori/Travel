@@ -1428,6 +1428,7 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
   enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
+  updateLocLabelState('exp'); // <--- שורה חדשה שנוספה
   $('#expDelete').style.display = e? 'inline-block':'none';
   // Prefill expDate/expTime (enrich)
   try {
@@ -1452,19 +1453,23 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
 
   document.dispatchEvent(new Event('openExpenseModal')); $('#expenseModal').showModal();
 }
+
 async function saveExpense(){
+  // בדיקה כפויה של מיקום לפני שמירה
+  if ($('#expLocationName').value.trim() && !$('#expLat').value) {
+      if(typeof showToast === 'function') showToast('משלים נתוני מיקום...');
+      await autoFetchCoords('exp');
+  }
+
   const ref  = FB.doc(db,'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t    = snap.exists() ? (snap.data()||{}) : {};
 
-  // Lock fresh rates at input-time
   const live = await fetchRatesOnce();
   const currentExpense = t.expenses?.[$('#expenseModal').dataset.id] || {};
-  
-  // if rates don't exist, set them. otherwise, keep them.
   const expenseRates = currentExpense.rates || { USDILS: live.USDILS, USDEUR: live.USDEUR, lockedAt: live.lockedAt };
   if(live.USDLocal) expenseRates.USDLocal = live.USDLocal;
-  /*__EXP_DT_BLOCK__*/
+
   const $expD = document.getElementById('expDate');
   const $expT = document.getElementById('expTime');
   let _exp_dateIso;
@@ -1494,14 +1499,16 @@ async function saveExpense(){
     dateIso: _exp_dateIso,
     date: __exp_dateStr,
     time: __exp_timeStr,
-    rates: expenseRates // save the specific rates for this expense
+    rates: expenseRates
   };
 
   await FB.updateDoc(ref, { expenses: t.expenses, rates: t.rates });
   $('#expenseModal').close();
-  showToast('ההוצאה נשמרה (שער ננעל לרגע ההזנה)');
+  showToast('ההוצאה נשמרה');
   await loadTrip();
 }
+
+ 
 $('#lsSignUp').addEventListener('click', async ()=>{
   try{
     await FB.createUserWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
@@ -2081,6 +2088,7 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
   document.getElementById('jrText').innerHTML = (j?.html || j?.text || '').trim();
   enableLinkRemoval(document.getElementById('jrText'));
   $('#jrLocationName').value = j?.placeName || '';
+  updateLocLabelState('jr'); // <--- שורה חדשה שנוספה
   $('#jrLat').value = j?.lat || '';
   $('#jrLng').value = j?.lng || '';
   $('#jrDelete').style.display = j ? 'inline-block' : 'none';
@@ -2109,8 +2117,16 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
 }
 
 async function saveJournal() {
+  // בדיקה כפויה של מיקום לפני שמירה
+  if ($('#jrLocationName').value.trim() && !$('#jrLat').value) {
+      if(typeof showToast === 'function') showToast('משלים נתוני מיקום...');
+      await autoFetchCoords('jr');
+  }
+
+  
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
+// ---------------------------------------
   const t = snap.exists() ? (snap.data() || {}) : {};
 
   const id = $('#journalModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
@@ -2121,7 +2137,6 @@ async function saveJournal() {
   t.journal[id] = {
     text: (document.getElementById('jrText').innerText || '').trim(),
     html: (document.getElementById('jrText').innerHTML || '').trim(),
-    // --- קוד חדש (לאחר התיקון) ---
     placeName: ($('#jrLocationName').value.trim()),
     placeUrl: (function(){ 
       const v=$('#jrLocationName').value.trim(); 
@@ -2132,7 +2147,6 @@ async function saveJournal() {
     createdAt: prev.createdAt || new Date().toISOString()
   };
 
-  // --- align with Expenses: persist dateIso/date/time from inputs ---
   const $jrD = $('#jrDate');
   const $jrT = $('#jrTime');
   let _jr_dateIso;
@@ -2153,7 +2167,6 @@ async function saveJournal() {
   showToast('רישום יומן נשמר');
   await loadTrip();
 }
-
 
 $('#btnUseCurrentJr').addEventListener('click', () => {
   getCurrentLocation((lat, lng) => {
@@ -4705,3 +4718,72 @@ function renderCategoryBreakdownNode(targetId){
     }
 })();
 // --- סוף הקוד החסר ---
+
+// ======================================================
+// תוספות חדשות: הסתרת תווית "מיקום" + מציאת קואורדינטות אוטומטית
+// ======================================================
+
+// 1. פונקציה להסתרת/הצגת התווית "מיקום"
+function updateLocLabelState(prefix) {
+  const inputId = prefix + 'LocationName';
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const labelSpan = el.parentElement ? el.parentElement.querySelector('.loc-label') : null;
+  if (labelSpan) {
+    // אם יש טקסט בשדה, הסתר את המילה "מיקום"
+    labelSpan.style.display = (el.value && el.value.trim() !== '') ? 'none' : '';
+  }
+}
+
+// 2. פונקציה לסריקת קואורדינטות אוטומטית לפי שם
+async function autoFetchCoords(prefix) {
+  const nameInput = document.getElementById(prefix + 'LocationName');
+  const latInput = document.getElementById(prefix + 'Lat');
+  const lngInput = document.getElementById(prefix + 'Lng');
+
+  if (!nameInput || !nameInput.value.trim()) return; // אל תחפש אם השדה ריק
+
+  // --- חיווי התחלה ---
+  if (typeof showToast === 'function') showToast('מחפש נתוני מיקום...');
+
+  try {
+    // שימוש ב-Nominatim של OpenStreetMap לחיפוש
+    const query = encodeURIComponent(nameInput.value.trim());
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&accept-language=he`);
+    const data = await res.json();
+
+    if (data && data.length > 0) {
+      // עדכון השדות הנסתרים אם נמצאה תוצאה
+      latInput.value = data[0].lat;
+      lngInput.value = data[0].lon;
+      // --- חיווי הצלחה ---
+      if (typeof showToast === 'function') showToast('נתוני מיקום נמצאו');
+      console.log(`Auto-fetched coords for ${prefix}:`, data[0].lat, data[0].lon);
+    } else {
+       // אופציונלי: ניתן להוסיף גם הודעה אם לא נמצא כלום
+       // if (typeof showToast === 'function') showToast('לא נמצא מיקום אוטומטי');
+    }
+  } catch (e) {
+    console.warn('Auto-fetch coords failed silently:', e);
+  }
+}
+// 3. הפעלת המאזינים בטעינה
+document.addEventListener('DOMContentLoaded', () => {
+  ['exp', 'jr'].forEach(prefix => {
+    const el = document.getElementById(prefix + 'LocationName');
+    if (el) {
+      // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות קודמות כדי לכפות חיפוש מחדש
+      el.addEventListener('input', () => {
+          updateLocLabelState(prefix);
+          // ניקוי קואורדינטות כדי להבטיח השלמה מחדש בשינוי טקסט (גם בעריכה)
+          document.getElementById(prefix + 'Lat').value = '';
+          document.getElementById(prefix + 'Lng').value = '';
+      });
+      // בעת יציאה מהשדה (Blur): בצע סריקת קואורדינטות
+      
+      // בדיקה ראשונית
+      updateLocLabelState(prefix);
+    }
+  });
+});
+// ======================================================
