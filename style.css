@@ -1787,77 +1787,90 @@ html, body { height:100%; }
     }
     */
 }
+
 /* =========================================
-   תיקונים ייעודיים למובייל (FLYMILY Mobile Fixes)
+   תיקונים אגרסיביים למובייל (FLYMILY Mobile Fixes V2)
    ========================================= */
 
-/* 1. תיקון מסך הנסיעות (Home Mode) - תצוגה על מסך מלא */
+/* --- תיקון 1: מסך הבית (רשימת נסיעות) על מסך מלא --- */
 @media (max-width: 900px) {
-    /* ביטול הגבלת הגובה שהייתה גורמת לתצוגת חצי מסך */
-    .container.home-mode .sidebar {
-        height: 100% !important;
+    /* דורס את הגדרת הגובה 40vh שקיימת ב-CSS המקורי לסרגל צד במובייל */
+    body .container.home-mode .sidebar {
+        height: auto !important;
+        min-height: 100% !important;
         max-height: none !important;
-        flex: 1 !important;
-        order: unset !important; /* ביטול שינוי סדר האלמנטים */
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        order: unset !important;
+        display: block !important;
+    }
+
+    /* מעלים לחלוטין את אזור התוכן במסך הבית במובייל */
+    body .container.home-mode .content {
+        display: none !important;
     }
     
-    /* הבטחת גובה מלא לקונטיינר הראשי */
-    .container.home-mode {
-        height: calc(100dvh - 60px) !important; /* גובה מסך פחות ההדר */
+    /* מכריח את הקונטיינר לתפוס את כל הגובה הזמין פחות ההדר */
+    body .container.home-mode {
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100dvh - 57px) !important;
+        grid-template-columns: 1fr !important;
         grid-template-rows: 1fr !important;
     }
 }
 
-/* 2. סידור לשונית נתוני נסיעה (Meta Tab) במובייל */
+/* --- תיקון 2: סידור מחדש של לשונית "נתוני נסיעה" במסכים קטנים --- */
 @media (max-width: 600px) {
-    /* הפיכת השורות לטור אנכי מרווח */
+    /* הופך את כל השורות בטאב הזה לטורים אנכיים */
+    #view-meta .card .row,
     #view-meta .date-row,
     #view-meta .dest-row,
-    #view-meta .budget-block,
-    #view-meta .budget-row {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 15px !important; /* ריווח נדיב בין השדות */
-    }
-
-    /* הגדרת רוחב מלא לכל שדות הקלט והתוויות */
-    #view-meta .date-row label,
-    #view-meta .people-input,
-    #view-meta .multi-types,
-    #view-meta .budget-row label,
-    #view-meta .input {
-        width: 100% !important;
-        max-width: none !important;
-    }
-
-    /* כפתור "בדוק במפה" ברוחב מלא */
-    #view-meta .dest-row .btn.map-btn {
-        width: 100% !important;
-        margin-top: 4px;
-    }
-
-    /* ריווח טוב יותר לצ'יפים של סוגי טיול */
-    #view-meta .chips {
-        gap: 8px !important;
-        justify-content: flex-start; /* יישור לימין */
-    }
-    
-    #view-meta .chips .chip {
-        padding: 8px 12px !important; /* כפתורים קצת יותר גדולים ללחיצה נוחה */
-        font-size: 0.95rem;
-    }
-
-    /* סידור כפתורי התקציב בשורה רחבה */
+    #view-meta .budget-row,
     #view-meta .budget-actions-row {
         display: flex !important;
-        flex-direction: row !important;
-        gap: 12px !important;
-        margin-top: 16px !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 12px !important; /* ריווח אחיד בין כל האלמנטים */
+        margin: 0 !important;
     }
     
-    #view-meta .budget-actions-row .btn {
-        flex: 1 !important; /* כפתורים ברוחב שווה */
+    /* ריווח נוסף בין בלוקים */
+    #view-meta .row + .row,
+    #view-meta .budget-block {
+        margin-top: 20px !important;
+    }
+
+    /* מתיחת כל שדות הקלט, התוויות והכפתורים לרוחב מלא */
+    #view-meta .input,
+    #view-meta select,
+    #view-meta label,
+    #view-meta .btn,
+    #view-meta .people-input {
+        width: 100% !important;
+        max-width: none !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* תיקון ספציפי לכפתור המפה שיהיה בגובה אחיד לשאר השדות */
+    #view-meta .map-btn {
+        margin-top: 0 !important;
         height: 44px !important;
-        justify-content: center;
+    }
+
+    /* סידור הצ'יפים (סוגי טיול) שיראו נורמלי גם בטור */
+    #view-meta .multi-types {
+        width: 100% !important;
+        margin-top: 10px !important;
+    }
+    #view-meta .chips {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    #view-meta .chips .chip {
+        flex: 1 0 auto !important; /* נותן לצ'יפים לגדול אם יש מקום */
+        text-align: center !important;
+        padding: 10px !important;
     }
 }
