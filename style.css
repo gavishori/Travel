@@ -1787,3 +1787,77 @@ html, body { height:100%; }
     }
     */
 }
+/* =========================================
+   תיקונים ייעודיים למובייל (FLYMILY Mobile Fixes)
+   ========================================= */
+
+/* 1. תיקון מסך הנסיעות (Home Mode) - תצוגה על מסך מלא */
+@media (max-width: 900px) {
+    /* ביטול הגבלת הגובה שהייתה גורמת לתצוגת חצי מסך */
+    .container.home-mode .sidebar {
+        height: 100% !important;
+        max-height: none !important;
+        flex: 1 !important;
+        order: unset !important; /* ביטול שינוי סדר האלמנטים */
+    }
+    
+    /* הבטחת גובה מלא לקונטיינר הראשי */
+    .container.home-mode {
+        height: calc(100dvh - 60px) !important; /* גובה מסך פחות ההדר */
+        grid-template-rows: 1fr !important;
+    }
+}
+
+/* 2. סידור לשונית נתוני נסיעה (Meta Tab) במובייל */
+@media (max-width: 600px) {
+    /* הפיכת השורות לטור אנכי מרווח */
+    #view-meta .date-row,
+    #view-meta .dest-row,
+    #view-meta .budget-block,
+    #view-meta .budget-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important; /* ריווח נדיב בין השדות */
+    }
+
+    /* הגדרת רוחב מלא לכל שדות הקלט והתוויות */
+    #view-meta .date-row label,
+    #view-meta .people-input,
+    #view-meta .multi-types,
+    #view-meta .budget-row label,
+    #view-meta .input {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    /* כפתור "בדוק במפה" ברוחב מלא */
+    #view-meta .dest-row .btn.map-btn {
+        width: 100% !important;
+        margin-top: 4px;
+    }
+
+    /* ריווח טוב יותר לצ'יפים של סוגי טיול */
+    #view-meta .chips {
+        gap: 8px !important;
+        justify-content: flex-start; /* יישור לימין */
+    }
+    
+    #view-meta .chips .chip {
+        padding: 8px 12px !important; /* כפתורים קצת יותר גדולים ללחיצה נוחה */
+        font-size: 0.95rem;
+    }
+
+    /* סידור כפתורי התקציב בשורה רחבה */
+    #view-meta .budget-actions-row {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 12px !important;
+        margin-top: 16px !important;
+    }
+    
+    #view-meta .budget-actions-row .btn {
+        flex: 1 !important; /* כפתורים ברוחב שווה */
+        height: 44px !important;
+        justify-content: center;
+    }
+}
