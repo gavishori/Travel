@@ -11,21 +11,22 @@
   --shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* Light mode */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f7f8fb;
-    --card: #ffffff;
-    --ink: #0e1116;
-    --muted: #415266;
-    --brand: #0077ff;
-    --accent: #faad14;
-    --ok: #089e71;
-    --danger: #d9363e;
-    --border: #e6e9ef;
-    --shadow: 0 10px 20px rgba(0,0,0,.06);
-  }
+[data-theme="light"] {
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --ink: #0e1116;
+  --muted: #415266;
+  --brand: #0077ff;
+  --accent: #faad14;
+  --ok: #089e71;
+  --danger: #d9363e;
+  --border: #e6e9ef;
+  --shadow: 0 10px 20px rgba(0,0,0,.06);
 }
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
 
 body {
   margin: 0;
@@ -36,86 +37,108 @@ body {
   direction: rtl;
 }
 
-/* --- Mobile Enhancements --- */
+/* ---------- HEADER CLEANUP ---------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+header .top-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+header .top-bar button,
+header .top-bar .btn {
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+header img.logo {
+  width: 32px;
+  height: auto;
+}
+
+/* ---------- TRIP ROW FIX ---------- */
+.trip-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.trip-row .menu-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
+.trip-row h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.trip-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- MOBILE ONLY ---------- */
 @media (max-width: 820px) {
-  /* Full height for "My Trips" */
-  .container.home-mode,
-  #tripList,
-  .home-mode .sidebar {
-    height: 100vh !important;
-    max-height: none !important;
-    overflow-y: auto !important;
-    padding-bottom: 80px !important;
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
-  /* Trip data tab cleanup */
-  #view-trip-data,
-  .trip-data-tab,
-  [id*="tripData"],
-  [data-tab="trip-data"] {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 14px !important;
-    padding: 14px 16px !important;
-    overflow-y: auto !important;
-    background: var(--bg);
+  header .brand {
+    justify-content: flex-start;
   }
 
-  #view-trip-data .row {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
+  header .top-bar {
+    width: 100%;
+    justify-content: space-between;
   }
 
-  #view-trip-data label,
-  #view-trip-data h3,
-  #view-trip-data h4 {
-    font-size: 1rem !important;
-    margin-bottom: 4px !important;
+  .trip-row {
+    gap: 8px;
+    padding: 14px;
   }
 
-  #view-trip-data input,
-  #view-trip-data select,
-  #view-trip-data textarea {
-    font-size: 1rem !important;
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    border: 1px solid var(--border) !important;
-    background: var(--card);
-    color: var(--ink);
-  }
+  .trip-row h3 { font-size: 1rem; }
+  .trip-row p { font-size: 0.85rem; }
 
-  /* Align trip type buttons */
-  #view-trip-data .trip-type-buttons,
-  .trip-type-container {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  /* Budget box styling */
-  #view-trip-data .budget-section {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
-    gap: 8px !important;
-    background: var(--card);
-    border-radius: 12px;
-    padding: 10px;
-    border: 1px solid var(--border);
-  }
-
-  /* Smooth scrolling and spacing */
-  .content {
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 60px;
-  }
-
-  /* Button and pill improvements */
-  button, .btn, .pill {
-    font-size: 0.95rem !important;
-    border-radius: 999px !important;
-    padding: 8px 14px !important;
-    white-space: nowrap;
+  .trip-row .menu-btn {
+    right: 10px;
+    top: 10px;
   }
 }
