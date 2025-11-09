@@ -95,7 +95,13 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 
 .container.trip-mode{ grid-template-columns: 1fr; }
 .container.trip-mode .sidebar{ display: none; }
-.container.trip-mode .content{ display: block; }
+/* תיקון לגלילה אנכית בטאבים - מכריח מבנה גמיש שתופס את כל הגובה */
+.container.trip-mode .content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
 
 .brand-text{font-weight:700;letter-spacing:.5px}
 
@@ -1113,7 +1119,15 @@ html.share-open [style*="overflow:scroll"]{
 
 /* Robust tab visibility & scrolling */
 .tabview{ display:none !important; }
-.tabview[data-active="1"]{ display:block !important; flex:1; overflow:auto; padding:16px; min-height:0; }
+.tabview[data-active="1"] {
+  display: block !important;
+  flex: 1;
+  overflow-y: auto !important; /* גלילה אנכית חובה */
+  overflow-x: hidden;
+  padding: 16px;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch; /* גלילה חלקה במכשירי iOS */
+}{ display:block !important; flex:1; overflow:auto; padding:16px; min-height:0; }
 
 /* map-toolbar-spent */
 .map-toolbar #btnToggleSpent { border:2px solid #e53935; color:#e53935; background:transparent; }
