@@ -392,8 +392,6 @@ function focusItemInTab(type, id){
   }, 150);
 }
 
-// מצא את הפונקציה הישנה attachMapPopup בקובץ script.js והחלף אותה בקוד הבא:
-
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
@@ -402,16 +400,19 @@ function attachMapPopup(marker, type, id, dataObj){
     // בחר את השדה הנכון (locationName להוצאה, placeName ליומן)
     const placeRaw = isExp ? (dataObj.locationName || '') : (dataObj.placeName || '');
     
-    // --- התיקון: הסרת כפילויות לפני ההצגה ---
+    // הסרת כפילויות בשם המקום
     const placeParts = (placeRaw || '').split(',').map(s => s.trim()).filter(Boolean);
-    const uniqueParts = [...new Set(placeParts)]; // הופך [ "חדרה", "חדרה" ] ל- [ "חדרה" ]
+    const uniqueParts = [...new Set(placeParts)];
     const place = esc(uniqueParts.join(', '));
-    // --- סוף התיקון ---
 
+    // הגדרת שורות סכום וקטגוריה (רק להוצאות)
     const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
     const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
-    const textLine = !isExp ? `<div class="muted">${linkifyText(dataObj.text||'')}</div>` : '';
     
+    // הכנת שורת תיאור (בין אם זה יומן או הוצאה)
+    const rawDesc = isExp ? (dataObj.desc || '') : (dataObj.text || '');
+    const descLine = rawDesc ? `<div style="margin-top:4px; word-break: break-word;"><strong>תיאור:</strong> <span class="muted">${linkifyText(rawDesc)}</span></div>` : '';
+
     const html = `
       <div class="map-popup" style="direction: rtl; text-align: right;">
         <div><strong>${isExp?'הוצאה':'יומן'}</strong></div>
@@ -419,7 +420,7 @@ function attachMapPopup(marker, type, id, dataObj){
         ${amountLine}
         ${catLine}
         <div><strong>מקום:</strong> ${place}</div>
-        ${textLine}
+        ${descLine}
         <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem; justify-content: flex-end;">
           <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">הצג</button>
           ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">ערוך</button>`}
@@ -451,9 +452,8 @@ function attachMapPopup(marker, type, id, dataObj){
         });
       }
     });
-  }catch(e){}
-}// === End map popup helpers ===
-
+  }catch(e){ console.error('Error in attachMapPopup', e); }
+}
 // === Filter modal helpers ===
 function seedExpenseCategoriesSelect(sel){
   try{
@@ -1428,6 +1428,9 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
   enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   $('#expCurr').value = e?.currency||'USD';
   $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
+document.getElementById('expLocationName').value = e?.locationName || ''; // <--- תיקון: טעינת שם המקום
+  if (typeof updateLocLabelState === 'function') updateLocLabelState('exp'); // <--- תיקון: עדכון תצוגת התווית
+$('#expLocationName').value = e?.locationName || '';
   updateLocLabelState('exp'); // <--- שורה חדשה שנוספה
   $('#expDelete').style.display = e? 'inline-block':'none';
   // Prefill expDate/expTime (enrich)
@@ -1492,7 +1495,7 @@ async function saveExpense(){
     category: $('#expCat').value.trim(),
     amount: Number($('#expAmount').value||0),
     currency: $('#expCurr').value,
-    locationName: formatPlace(($('#expLocationName') ? $('#expLocationName').value.trim() : '')),
+    locationName: $('#expLocationName').value.trim(),
     lat: numOrNull($('#expLat').value),
     lng: numOrNull($('#expLng').value),
     createdAt: (t.expenses[id] && t.expenses[id].createdAt) ? t.expenses[id].createdAt : new Date().toISOString(),
@@ -4735,52 +4738,64 @@ function updateLocLabelState(prefix) {
   }
 }
 
-// 2. פונקציה לסריקת קואורדינטות אוטומטית לפי שם
+// 2. פונקציה משודרגת לסריקת קואורדינטות (מנסה עברית ואז אנגלית)
 async function autoFetchCoords(prefix) {
   const nameInput = document.getElementById(prefix + 'LocationName');
   const latInput = document.getElementById(prefix + 'Lat');
   const lngInput = document.getElementById(prefix + 'Lng');
 
-  if (!nameInput || !nameInput.value.trim()) return; // אל תחפש אם השדה ריק
+  if (!nameInput || !nameInput.value.trim()) return;
+  // אם כבר יש קואורדינטות (כי נבחרו ידנית או נמצאו כבר), לא נחפש שוב
+  if (latInput.value && lngInput.value) return;
 
-  // --- חיווי התחלה ---
-  if (typeof showToast === 'function') showToast('מחפש נתוני מיקום...');
+  if (typeof showToast === 'function') showToast('🔎 מחפש מיקום...');
 
-  try {
-    // שימוש ב-Nominatim של OpenStreetMap לחיפוש
-    const query = encodeURIComponent(nameInput.value.trim());
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&accept-language=he`);
-    const data = await res.json();
+  // פונקציית עזר לביצוע fetch עם timeout
+  const fetchWithTimeout = async (lang) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 5000);
+      try {
+          const q = encodeURIComponent(nameInput.value.trim());
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&accept-language=${lang}`, { signal: controller.signal });
+          clearTimeout(id);
+          return await res.json();
+      } catch (e) { return []; }
+  };
 
-    if (data && data.length > 0) {
-      // עדכון השדות הנסתרים אם נמצאה תוצאה
-      latInput.value = data[0].lat;
-      lngInput.value = data[0].lon;
-      // --- חיווי הצלחה ---
-      if (typeof showToast === 'function') showToast('נתוני מיקום נמצאו');
-      console.log(`Auto-fetched coords for ${prefix}:`, data[0].lat, data[0].lon);
-    } else {
-       // אופציונלי: ניתן להוסיף גם הודעה אם לא נמצא כלום
-       // if (typeof showToast === 'function') showToast('לא נמצא מיקום אוטומטי');
-    }
-  } catch (e) {
-    console.warn('Auto-fetch coords failed silently:', e);
+  // נסיון ראשון: עברית
+  let data = await fetchWithTimeout('he');
+
+  // נסיון שני: אם לא נמצא, נסה אנגלית (עוזר מאוד בחו"ל)
+  if (!data || data.length === 0) {
+      console.log('Retrying search in English...');
+      data = await fetchWithTimeout('en');
+  }
+
+  if (data && data.length > 0) {
+    latInput.value = data[0].lat;
+    lngInput.value = data[0].lon;
+    if (typeof showToast === 'function') showToast('✅ מיקום אותר בהצלחה!');
+  } else {
+     if (typeof showToast === 'function') showToast('⚠️ לא אותר מיקום אוטומטי. נסה שם עיר/מדינה.');
   }
 }
+
 // 3. הפעלת המאזינים בטעינה
 document.addEventListener('DOMContentLoaded', () => {
   ['exp', 'jr'].forEach(prefix => {
     const el = document.getElementById(prefix + 'LocationName');
     if (el) {
-      // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות קודמות כדי לכפות חיפוש מחדש
+      // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות כדי לכפות חיפוש מחדש
       el.addEventListener('input', () => {
           updateLocLabelState(prefix);
-          // ניקוי קואורדינטות כדי להבטיח השלמה מחדש בשינוי טקסט (גם בעריכה)
           document.getElementById(prefix + 'Lat').value = '';
           document.getElementById(prefix + 'Lng').value = '';
       });
-      // בעת יציאה מהשדה (Blur): בצע סריקת קואורדינטות
       
+      // --- התיקון הקריטי: הפעלת חיפוש ביציאה מהשדה ---
+      el.addEventListener('blur', () => autoFetchCoords(prefix));
+      // -----------------------------------------------
+
       // בדיקה ראשונית
       updateLocLabelState(prefix);
     }
