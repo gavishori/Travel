@@ -335,7 +335,7 @@ id="expenseModal" class="modal">
           <option>אחר</option>
         </select>
       </label>
-      <div class="row"><label>סכום<input id="expAmount" type="text" class="input money" inputmode="decimal" enterkeyhint="done" pattern="[0-9]*([.,][0-9]{0,2})?" autocomplete="off"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
+      <div class="row"><label>סכום<input id="expAmount" type="number" class="input money" inputmode="decimal" enterkeyhint="done" step="0.01" autocomplete="off"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
       <div class="row">
         <label>תאריך
           <input type="date" id="expDate" class="input">

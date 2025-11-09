@@ -477,6 +477,9 @@ mark {
     line-height:22px;
     font-size:14px;
 }
+.location-row {
+  margin-top: 14px;
+}
 
 /* New styling for inline links */
 .external-link {
@@ -1528,3 +1531,245 @@ html, body { height:100%; }
   flex-wrap: wrap !important;
 }
 /* === END FIX === */
+/* === Compact & Solid Share View === */
+
+/* 1. Container: Center content and limit width for a 'solid' look on large screens */
+#view-share {
+    padding: 16px !important;
+    height: 100%;
+    overflow-y: auto; /* Scroll only if absolutely necessary on very small screens */
+    box-sizing: border-box;
+}
+
+/* 2. Main Grid Layout: 3 columns on Desktop, 1 on Mobile */
+#view-share .cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Force 3 equal columns */
+    gap: 12px !important;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: stretch; /* Make all cards same height */
+}
+
+@media (max-width: 850px) {
+    #view-share .cards {
+        grid-template-columns: 1fr !important; /* Stack on tablets/mobile */
+        gap: 16px !important;
+    }
+}
+
+/* 3. Card Styling: Tighter padding, solid look */
+#view-share .card {
+    padding: 16px !important;
+    gap: 12px !important;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);     /* Ensure solid background color */
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    height: 100%; /* Fill grid height */
+}
+
+/* 4. Headings: Compact and clear */
+#view-share .card h3 {
+    margin: 0 0 4px 0 !important;
+    font-size: 1.15rem !important;
+    border-bottom: 2px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    padding-bottom: 8px;
+    color: var(--brand);
+}
+
+/* 5. Inner Button Grids (Import/Export): Uniform 2-column grid for buttons */
+/* This is key for the "solid" look - aligned buttons instead of random wrapping */
+#view-share #card-import .row,
+#view-share #card-export .row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 buttons per row always */
+    gap: 10px !important;
+    margin: 0 !important; /* Remove default row margins */
+    flex-grow: 1; /* Let it fill space */
+    align-content: start;
+}
+
+/* 6. Share Card Specifics: Stack controls vertically for solidity */
+#view-share #card-share .row {
+    display: flex !important;
+    flex-direction: column !important; /* Stack elements */
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+/* 7. Control Sizing: Uniform height and width for a clean look */
+#view-share .btn,
+#view-share .input,
+#view-share select {
+    height: 40px !important;         /* Fixed, compact height */
+    min-height: 40px !important;
+    min-width: 0 !important;         /* Allow shrinking to grid cell */
+    width: 100% !important;          /* Full width of their grid cell/container */
+    margin: 0 !important;
+    padding: 0 12px !important;
+    font-size: 0.95rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Special tweak for labels in Share card to sit nicely above inputs if needed,
+   or just be compact next to them if we want row-based (let's stick to column for solidity on small width) */
+#view-share #card-share label.label {
+    margin-bottom: -8px; /* Pull label closer to its input */
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+/* 8. Mobile Specific Tweaks for "One Screen" feel */
+@media (max-width: 600px) {
+    #view-share {
+        padding: 12px !important;
+    }
+    /* On very small screens, make import/export buttons full width for easier tapping,
+       OR keep them 2-col if vertical space is more important.
+       Let's keep 2-col to save vertical space as requested. */
+    #view-share .card {
+        padding: 12px !important;
+    }
+}
+
+/* === RADICAL COMPACT DASHBOARD FOR SHARE TAB === */
+
+/* 1. LOCK THE CONTAINER NO MATTER WHAT */
+#view-share[data-active="1"] {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 8px !important;               /* Minimal padding around edge */
+    height: calc(100dvh - 60px) !important; /* Force it to exactly fill screen minus header */
+    max-height: 100% !important;
+    overflow: hidden !important;           /* Ban scrolling globally for this view */
+    box-sizing: border-box !important;
+}
+
+/* 2. DASHBOARD GRID LAYOUT */
+#view-share .cards {
+    display: grid !important;
+    /* Desktop: 3 equal columns side-by-side */
+    grid-template-columns: 1fr 1fr 1fr !important;
+    grid-template-rows: 1fr !important;    /* One single row that stretches to fill height */
+    gap: 8px !important;                   /* Tiny gap between panels */
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+/* 3. PANEL (CARD) STYLING - SOLID LOOK */
+#view-share .card {
+    margin: 0 !important;
+    padding: 8px 8px 0 8px !important;    /* Very tight padding inside */
+    border: 2px solid var(--border) !important; /* Thicker border for "solid" feel */
+    box-shadow: none !important;           /* Flat look saves space */
+    background: var(--bg) !important;      /* Slightly different background if possible to look like a 'slot' */
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;              /* Crucial for nested scrolling if absolutely needed */
+    overflow: hidden !important;           /* Never let card itself scroll nicely, force fit */
+}
+
+/* 4. COMPACT HEADERS */
+#view-share .card h3 {
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    text-align: center !important;
+    opacity: 0.7 !important;
+    margin: 0 0 8px 0 !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid var(--border) !important;
+    flex-shrink: 0 !important;
+}
+
+/* 5. ULTRA-COMPACT BUTTON GRIDS (Import/Export) */
+#view-share #card-import .row,
+#view-share #card-export .row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Always 2 columns of buttons */
+    grid-auto-rows: min-content !important;    /* Rows only as tall as needed */
+    gap: 6px !important;                       /* Tiny gap between buttons */
+    margin: 0 !important;
+    padding: 0 !important;
+    align-content: start !important;           /* Pack buttons to the top */
+    overflow-y: auto !important;               /* Allow internal scroll only if absolutely desperate */
+}
+
+/* 6. SHARE PANEL - VERTICAL STACK */
+#view-share #card-share .row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin: 0 !important;
+}
+
+/* 7. TINY CONTROLS (Buttons & Inputs) */
+#view-share .btn,
+#view-share .input,
+#view-share select {
+    height: 34px !important;         /* Drastically reduced height */
+    min-height: 34px !important;
+    font-size: 0.85rem !important;   /* Smaller text to fit */
+    padding: 0 4px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+/* Hide file inputs completely to save space, they are triggered by buttons anyway */
+#view-share input[type="file"] {
+    display: none !important;
+}
+#view-share label.label {
+    font-size: 0.8rem !important;
+    margin-bottom: -4px !important;
+    opacity: 0.8 !important;
+}
+
+
+/* === MOBILE PORTRAIT RE-LAYOUT (The real challenge for 1 screen) === */
+@media (max-width: 768px) {
+    #view-share {
+        height: auto !important;      /* On mobile allow auto height to avoid squashing too much */
+        min-height: calc(100dvh - 70px) !important;
+        padding: 6px !important;
+        overflow-y: auto !important;  /* Allow scroll on mobile if it really doesn't fit */
+    }
+
+    #view-share .cards {
+        /* Switch to a dense vertical stack, or a 2x2 grid */
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto auto !important; /* Let heights fit content */
+        gap: 6px !important;
+        display: grid !important;
+        height: auto !important;
+    }
+
+    /* Make the Share card take full width at the bottom */
+    #view-share #card-share {
+        grid-column: 1 / -1 !important; /* Span both columns */
+    }
+    
+    /* Ensure buttons are still tap-able on mobile */
+    #view-share .btn,
+    #view-share .input,
+    #view-share select {
+        height: 40px !important; /* Slightly larger on mobile for touch */
+        font-size: 0.9rem !important;
+    }
+
+    /* If Import/Export have too many buttons for half-width, 
+       uncomment below to stack EVERYTHING vertically on very small screens */
+    /*
+    @media (max-width: 400px) {
+         #view-share .cards { grid-template-columns: 1fr !important; }
+         #view-share #card-share { grid-column: auto !important; }
+    }
+    */
+}
