@@ -4105,6 +4105,7 @@ function renderCategoryBreakdownNode(targetId){
     // save on most selection changes
     editor.addEventListener('keyup', remember);
     editor.addEventListener('mouseup', remember);
+    editor.addEventListener('touchend', remember); /* <--- תיקון למובייל */
     document.addEventListener('selectionchange', ()=>{
       const sel = window.getSelection();
       if(!sel || sel.rangeCount===0) return;

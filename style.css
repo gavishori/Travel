@@ -1873,3 +1873,19 @@ html, body { height:100%; }
         padding: 10px !important;
     }
 }
+/* === תיקון אחידות צבע טקסט במובייל === */
+@media (max-width: 480px) {
+  /* וידוא שצבע הטקסט הבסיסי זהה למחשב (ללא שקיפות) */
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-journal .expenses-table td.notes,
+  .journal-card .text {
+      color: var(--ink) !important;
+      opacity: 1 !important;
+  }
+  
+  /* וידוא שטקסט שנצבע ע"י המשתמש (RTF) בולט ולא מקבל שקיפות */
+  .cell.notes span[style*="color"],
+  .journal-card .text span[style*="color"] {
+      opacity: 1 !important;
+  }
+}
