@@ -19,8 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"></script>
 </head>
 <body data-theme="light">
-    <button id="logoutBtn" aria-label="התנתקות">התנתקות</button>
-
+    
   <div id="previewRoot">
 <div class="app">
     <header>
@@ -28,14 +27,9 @@
       <div class="spacer"></div>
       <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
       <!-- Auth Compact -->
-      <div id="authArea" class="menu">
+      <div id="authArea" class="menu" style="display: flex; align-items: center; gap: 8px;">
+        <span id="currentUserEmail" style="display:none; color: white; font-size: 14px; opacity: .85;"></span>
         <button id="btnLogin" class="btn primary">התחברות</button>
-        <button id="userBadge" class="menu-btn" style="display:none">
-          <span id="currentUserEmail"></span>
-        </button>
-        <div id="userMenuList" class="menu-list">
-          <button id="btnLogout" class="btn" style="display:block;width:100%">התנתקות</button>
-        </div>
       </div>
 
       <button id="btnTheme" class="btn">מצב כהה/בהיר</button>

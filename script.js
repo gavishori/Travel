@@ -2642,37 +2642,51 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     console.log('auth state', !!user, user?.uid);
     if((user?.uid||null)===__lastAuthUid){ return; }
     __lastAuthUid = user?.uid||null;
-    const emailSpan = document.getElementById('currentUserEmail');
-    const btnLogin = document.getElementById('btnLogin');
-    const btnLogout = document.getElementById('btnLogout');
+    
+    const emailSpan = document.getElementById('currentUserEmail'); // הספאן שהוספנו ב-index.html
     const loginScreen = document.getElementById('loginScreen');
-    const appContainer = document.querySelector('.container'); // Select the actual content wrapper
-    const appEl = document.querySelector('.app'); // Main app wrapper (should usually stay visible)
+    const appContainer = document.querySelector('.container');
+    const appEl = document.querySelector('.app');
+    const authModal = document.getElementById('authModal'); // מודל ההתחברות
 
-    // Ensure .app is visible, unless in share/readOnly mode logic handles it
-    if (appEl) appEl.style.display = 'grid'; // Restore the display setting if it was hidden globally
+    if (appEl) appEl.style.display = 'grid'; 
 
     if (user) {
-      if(emailSpan){ emailSpan.textContent = user.email || ''; emailSpan.style.display='inline-block'; }
-      if(btnLogin) btnLogin.style.display='none';
-      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='inline-flex';
-      // User is logged in: Hide login, show app content
+      // --- משתמש מחובר ---
+      if(emailSpan){ 
+        emailSpan.textContent = user.email || ''; 
+        emailSpan.style.display='inline-block'; 
+      }
+      // קרא לפונקציה שמחליפה את הכפתור ל"ניתוק"
+      if (typeof window.__authPrimarySwap === 'function') {
+        window.__authPrimarySwap(true);
+      }
+      
       if (loginScreen) loginScreen.style.display = 'none';
-      if (appContainer) appContainer.style.display = 'grid'; // Show the main app content
+      if (appContainer) appContainer.style.display = 'grid'; 
+      if (authModal) authModal.close(); // סגור את מודל ההתחברות אם פתוח
+      
       state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
+    
     } else {
-      if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
-      if(btnLogin) btnLogin.style.display='inline-block';
-      const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
-      // User is logged out: Show login, hide app content
-      if (authModal?.showModal) authModal.showModal(); if(loginScreen) loginScreen.style.display='none'; // Show the login screen
-      if (appContainer) appContainer.style.display = 'none'; // Hide the main app content
+      // --- משתמש מנותק ---
+      if(emailSpan){ 
+        emailSpan.textContent=''; 
+        emailSpan.style.display='none'; 
+      }
+      // קרא לפונקציה שמחליפה את הכפתור ל"התחברות"
+      if (typeof window.__authPrimarySwap === 'function') {
+        window.__authPrimarySwap(false);
+      }
+
+      if (authModal && !authModal.open) authModal.showModal(); // הצג את מודל ההתחברות
+      if (appContainer) appContainer.style.display = 'none'; 
+      
       state.user = null;
     }
   });
-}
-try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){}
+}try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){}
 
 
 // === Mobile Preview Presets & Rotation ===

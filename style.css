@@ -1451,7 +1451,7 @@ html, body { height:100%; }
   content:'';
   display:inline-block;
   width:30px; height:30px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g fill='none' stroke='%231a73e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(35 8 12)'><rect x='1' y='6' width='14' height='6' rx='3' ry='3'/></g><g transform='rotate(35 16 12)'><rect x='9' y='12' width='14' height='6' rx='3' ry='3'/></g></g></svg>);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g fill='none' stroke='%231a73e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(35 8 12)'><rect x='1' y='6' width='14' height='6' rx='3' ry='3'/></g><g transform='rotate(35 16 12)'><rect x='9' y='12' width='14' height='6' rx='3' ry='3'/></g></g></svg>");
   background-repeat:no-repeat;
   background-position:center;
   background-size:30px 30px;
@@ -1888,4 +1888,289 @@ html, body { height:100%; }
   .journal-card .text span[style*="color"] {
       opacity: 1 !important;
   }
+}
+
+/* === רענון עיצוב מקצועי (בהשראת Tello) === */
+
+/* 1. פלטת צבעים ורדיוסים אחידים */
+:root {
+  /* הגדרת צבעי המותג החדשים */
+  --tello-blue: #0077ff;
+  --tello-green: #00b74a;
+  --tello-green-dark: #00913c;
+  --tello-light-blue: #8bd3ff;
+  --tello-light-green: #06d6a0;
+
+  /* רדיוס גבולות אחיד */
+  --radius: 10px;
+  --radius-lg: 12px;
+}
+
+/* 2. עדכון פלטת צבעים (מצב בהיר) */
+[data-theme="light"] {
+  --brand: var(--tello-blue);    /* כחול ראשי (כמו בתמונה) */
+  --accent: var(--tello-green);   /* ירוק לפעולות מרכזיות (כמו הכפתור בתמונה) */
+  --ok: var(--tello-green);       /* ירוק להצלחה (אחידות) */
+  --ink: #0e1116;                /* טקסט כהה וברור */
+  --muted: #415266;              /* טקסט משני */
+  --card: #ffffff;
+  --bg: #f7f8fb;                 /* רקע כללי נקי */
+  --border: #dde2e8;            /* גבול מעט יותר ברור */
+  --shadow: 0 4px 12px rgba(0, 119, 255, 0.08); /* הצללה קלה בגוון כחול */
+}
+
+/* 3. עדכון פלטת צבעים (מצב כהה - מותאם) */
+[data-theme="dark"] {
+  --brand: var(--tello-light-blue);   /* כחול בהיר למצב כהה */
+  --accent: var(--tello-light-green); /* ירוק בהיר למצב כהה */
+  --ok: var(--tello-light-green);     /* אחידות */
+  --bg: #0a1018;                   /* כחול עמוק יותר */
+  --card: #121a24;                  /* כחול עמוק יותר */
+  --border: #273142;
+  --shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 4. עיצוב ה-Header מחדש */
+body header {
+  background: var(--brand); /* רקע כחול מלא */
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+header .brand,
+header .brand-text {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* צל קל ללוגו */
+}
+
+/* כפתורים רגילים בהדר (כמו "מצב כהה") */
+header button, 
+header .btn {
+  color: #ffffff;
+  /* שונה: גבול לבן מלא יותר וצורה עגולה */
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease;
+  border-radius: 999px; /* שינוי לרדיוס גלולה */
+  padding: 8px 16px;   /* ריווח פנימי רחב יותר */
+}
+
+header button:hover, 
+header .btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
+}
+
+/* כפתור כניסה (ראשי) בהדר */
+header .btn.primary {
+  background: #ffffff;
+  color: var(--tello-blue);
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  /* border-radius and padding יורשים מהכלל שלמעלה */
+}
+
+header .btn.primary:hover {
+  background: #f0f4f8;
+  color: var(--tello-blue);
+}
+
+/* === הוספה חדשה: עיצוב כפתור התנתקות (.danger) בהדר === */
+/* זה דורס את העיצוב האדום הכללי של .btn.danger רק בהדר */
+header .btn.danger {
+  background: #ffffff !important;
+  color: #000000 !important; /* טקסט שחור כמו בתמונה */
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header .btn.danger:hover {
+  background: #f0f4f8 !important;
+  color: #000000 !important;
+}
+/* === סוף הוספה === */
+
+/* תג משתמש ורשימה נפתחת */
+header #userBadge {
+  border-color: rgba(255, 255, 255, 0.8); /* התאמה לגבול הלבן */
+  /* border-radius and padding יורשים מהכלל שלמעלה */
+}
+header #userBadge span {
+  color: #ffffff;
+}
+header #userMenuList {
+  background: var(--card); /* רקע לבן/כהה רגיל */
+  color: var(--ink);
+}
+header #userMenuList button {
+  color: var(--ink); /* צבע טקסט רגיל */
+  border: none;
+}
+header #userMenuList button:hover {
+  background: var(--bg);
+}
+
+/* 5. מסגרות אחידות (Border Radius) ופוקוס */
+.btn,
+.input, 
+select, 
+textarea,
+.menu-btn,
+.login-card {
+  border-radius: var(--radius); /* 10px */
+}
+
+.trip-card,
+.card,
+.menu-list,
+.leaflet-container,
+dialog.modal,
+.toast {
+  border-radius: var(--radius-lg, 12px); /* 12px לכרטיסים ומודלים */
+}
+
+.trip-row {
+  border-radius: var(--radius); /* 10px */
+}
+
+/* עיצוב פוקוס מודרני ואחיד */
+.input:focus, 
+select:focus, 
+textarea:focus,
+.btn:focus-visible,
+button:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 25%, transparent);
+}
+
+/* 6. עיצוב כפתורים מחדש (גוף העמוד) */
+
+/* כפתור ברירת מחדל (אפור, כמו "מיין", "ביטול") */
+.btn {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--bg);
+  border-color: var(--muted);
+  color: var(--ink);
+}
+
+/* כפתור ראשי (ירוק, כמו "שמור", "הוסף") */
+.btn.primary {
+  background: var(--accent); /* שימוש בירוק שהגדרנו */
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.btn.primary:hover {
+  background: var(--tello-green-dark, #00913c);
+  filter: brightness(1.1); /* גיבוי אם המשתנה לא קיים */
+  color: #ffffff;
+}
+
+.btn:disabled {
+  background: var(--border);
+  border-color: var(--border);
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* כפתור סכנה (אדום) */
+.btn.danger {
+  background: var(--card);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.btn.danger:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+/* כפתור פעיל (טאבים, בחירת תצוגה) - כחול */
+.tabs button.active,
+.list-actions .btn.active {
+  background: var(--brand); /* שימוש בכחול שהגדרנו */
+  color: #ffffff;
+  border-color: var(--brand);
+  font-weight: 600;
+  outline: none;
+  box-shadow: none;
+}
+
+.tabs button {
+  border-bottom: 1px solid var(--border);
+}
+.tabs button.active {
+  border-bottom: 1px solid var(--brand);
+}
+
+/* 7. ליטוש כללי */
+h1, h2, h3 {
+  color: var(--ink);
+  font-weight: 600; /* הדגשת כותרות */
+}
+
+/* כרטיסים וכרטיסיות נסיעה */
+.card, .trip-card, .trip-row {
+   box-shadow: var(--shadow); /* שימוש בצל המותאם */
+}
+
+/* לינקים מודגשים */
+a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/*
+נמחק מכאן חוק שהסתיר את כפתור מצב כהה
+*/
+
+/* תיקון עיצוב כפתור התנתקות (לפי התמונה)
+  ודא שכפתור ההתנתקות (שהופך מ"התחברות")
+  מקבל את עיצוב הגלולה הלבנה.
+*/
+header #btnLogin.danger {
+  background: #ffffff !important;
+  color: #000000 !important; /* טקסט שחור כמו בתמונה */
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 999px !important; /* ודא שהוא גלולה */
+  padding: 8px 16px !important;
+}
+
+/* תיקון עיצוב כפתור התנתקות (הכפתור הקבוע) 
+  כדי שיראה כמו שאר הכפתורים בהדר
+*/
+#logoutBtn {
+  position: static !important; /* הסר מיקום קבוע */
+  order: 21; /* הצב אותו אחרי האימייל */
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 999px !important;
+  padding: 8px 16px !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  height: auto;
+}
+#logoutBtn:hover {
+  background: #f0f4f8 !important;
+  color: #000000 !important;
 }
