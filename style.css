@@ -1187,7 +1187,43 @@ html.share-open [style*="overflow:scroll"]{
 /* Global overflow guard */
 html, body { overflow-x:hidden; }
 
+/* --- תיקון: עיצוב מודל פילוח הוצאות (Breakdown) במובייל --- */
+  
+  /* הקטנת הריווח הפנימי בגוף המודל */
+  .modal#breakdownDialog .body {
+    padding: 8px;
+  }
 
+  /* התאמת הטבלה למובייל */
+  .breakdown-table th,
+  .breakdown-table td {
+    padding: 8px 5px; /* ריווח פנימי קטן יותר */
+    white-space: nowrap; /* מנע שבירת שורות בכותרות */
+    vertical-align: middle;
+  }
+
+  /* זהו התיקון המרכזי: 
+    ביטול הרוחב המינימלי הכפוי מה-JS (שהיה 180px) 
+    וגירום לתא האחוזים ולסרגל הגרפי להישבר לשתי שורות.
+  */
+  .breakdown-table td[style*="min-width"] {
+    min-width: auto !important; /* בטל את ה-180px */
+    width: 90px; /* תן לו רוחב סביר, אבל לא כפוי */
+    white-space: normal; /* אפשר לו להישבר */
+  }
+  
+  /* סדר מחדש את הסרגל והאחוזים (אחד מעל השני) */
+  .breakdown-table td[style*="min-width"] .breakdown-row-bar {
+     width: 100%; /* הסרגל יתפוס רוחב מלא של התא */
+     margin-bottom: 4px;
+  }
+  .breakdown-table td[style*="min-width"] .muted {
+     display: block; /* האחוז יופיע בשורה נפרדת מתחת לסרגל */
+     text-align: right;
+     width: 100%;
+     font-size: 0.9em;
+  }
+  /* --- סוף התיקון --- */
 
 /* === Journal header layout: desktop one-line, mobile two-lines === */
 /* Desktop: single row — Date | Time | Location | Menu */
