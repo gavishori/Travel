@@ -91,31 +91,13 @@
         </nav>
 
         <section id="view-overview" class="tabview" data-active="1">
-          <h2>סקירה כללית</h2>
-          <div class="cards">
-            <div class="card">
-              <h3>נתוני נסיעה</h3>
-              <div id="metaSummary" class="muted"></div>
-            </div>
-            <div class="card">
-              <h3>הוצאות — הכל</h3>
-              <table>
-                <thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום</th><th>תאריך</th></tr></thead>
-                <tbody id="tblRecentExpenses"></tbody>
-              </table>
-            </div>
-            <div class="card">
-              <h3>יומן יומי — הכל</h3>
-              <table>
-                <thead><tr><th>תאריך</th><th>מקום</th><th>תיאור</th></tr></thead>
-                <tbody id="tblRecentJournal"></tbody>
-  ...
-</table>
-            </div>
-            <div class="card">
-              <h3 class="center-title">הטיול שלי - תאילנד</h3>
-              <div id="miniMap" style="height:280px" class="leaflet-container"></div>
-            </div>
+          <div class="list-actions">
+            <button id="btnAllSort" class="btn sort-icon-btn" aria-label="שינוי כיוון מיון"><span class="sort-icon">⇅</span></button>
+          </div>
+          <div class="card expenses-table-container">
+            <table class="expenses-table stacked" dir="rtl" aria-label="כל האירועים">
+              <tbody id="tblAllTimeline"></tbody>
+            </table>
           </div>
         </section>
 

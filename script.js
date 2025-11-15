@@ -723,7 +723,8 @@ state = {
   rates: { USDEUR: 0.92, USDILS: 3.7 },
   maps: { mini: null, big: null, layers: { expenses: null, journal: null }, select: null, selectMarker: null, currentModal: null },
   shared: { enabled: false, token: null, readOnly: false },
-  isDirty: false
+  isDirty: false,
+  allSort: "desc"
 };
 
 const $ = sel => document.querySelector(sel);
@@ -1059,8 +1060,11 @@ async function loadTrip(){
   state.current.localCurrency = getLocalCurrency(t.destination);
   ensureExpenseCurrencyOption();
 
-  // Overview meta
-  $('#metaSummary').innerHTML = `
+  // Overview meta (optional – only if element exists)
+  (function(){
+    const metaEl = document.getElementById('metaSummary');
+    if(!metaEl) return;
+    metaEl.innerHTML = `
     <div><strong>${esc(t.destination||'')}</strong></div>
     <div class="muted">${fmtDate(t.start)} – ${fmtDate(t.end)}</div>
     <div>משתתפים: ${esc((t.people||[]).join(', '))}</div>
@@ -1073,6 +1077,7 @@ async function loadTrip(){
       return `<div>תקציב: ${line}</div>`;
     })()}
   `;
+  })();
   // Populate meta form
   $('#metaDestination').value = t.destination||'';
   $('#metaStart').value = t.start||'';
@@ -1086,7 +1091,14 @@ async function loadTrip(){
 
   renderExpenses(t);
   renderJournal(t);
-  initMiniMap(t); setTimeout(()=> invalidateMap(state.maps?.mini), 80);
+  if (typeof renderAllTimeline === 'function') {
+    try { renderAllTimeline(t, state.allSort || 'desc'); } catch(_) {}
+  }
+  const miniEl = document.getElementById('miniMap');
+  if (miniEl && typeof initMiniMap === 'function') {
+    initMiniMap(t);
+    setTimeout(()=> invalidateMap(state.maps?.mini), 80);
+  }
   renderExpenseSummary(t);
   
   // Reset dirty state on successful load
@@ -1274,6 +1286,179 @@ function renderJournal(t, order){
     console.error('renderJournal failed', e);
   }
 }
+
+function renderAllTimeline(t, order){
+  try{
+    order = order || state.allSort || 'desc';
+    state.allSort = order;
+    const dir = (order === 'asc') ? 1 : -1;
+    const body = document.getElementById('tblAllTimeline');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const expenses = Object.entries(t.expenses || {}).map(([id,e]) => ({ __kind: 'expense', id, ...e }));
+    const journal  = Object.entries(t.journal  || {}).map(([id,j]) => ({ __kind: 'journal', id, ...j }));
+    const combined = expenses.concat(journal)
+      .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
+
+    combined.forEach(item=>{
+      if(item.__kind === 'expense'){
+        appendExpenseRowToTimeline(body, item);
+      }else{
+        appendJournalRowToTimeline(body, item);
+      }
+    });
+
+    const btn = document.getElementById('btnAllSort');
+    if (btn){
+      // Update state + classes for icon-only button
+      btn.dataset.order = order;
+      btn.classList.toggle('asc', order === 'asc');
+      btn.classList.toggle('desc', order === 'desc');
+    }
+  }catch(e){}
+}
+
+function appendExpenseRowToTimeline(body, e){
+  try{
+    const d = dayjs(e.dateIso || e.createdAt);
+    let dateStr = '', timeStr = '';
+    if (d.isValid()){
+      dateStr = d.format('DD/MM/YYYY');
+      timeStr = d.format('HH:mm');
+    }else{
+      dateStr = e.date || '';
+      timeStr = e.time || '';
+    }
+
+    const amountNum = Number(e.amount || 0);
+    const amount = amountNum.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const curr   = e.currency || '';
+
+    let rateToILS = null;
+    let rateStr = '';
+    const localRates = e.rates || state.rates || {};
+    try{
+      const M = rateMatrix(localRates);
+      if (M && curr && M[curr] && M[curr].ILS){
+        rateToILS = M[curr].ILS;
+        rateStr = rateToILS.toLocaleString('he-IL',{minimumFractionDigits:4, maximumFractionDigits:4});
+      }
+    }catch(_){}
+
+    const convertedAmountILS = (rateToILS != null) ? (amountNum * rateToILS) : null;
+    const convertedAmountStr = (convertedAmountILS != null)
+      ? convertedAmountILS.toLocaleString('he-IL',{minimumFractionDigits:2, maximumFractionDigits:2})
+      : '';
+
+    const cat    = esc(e.category || '');
+    const desc = (e.descHtml && /(<a|link-icon)/i.test(e.descHtml))
+      ? e.descHtml
+      : linkifyToIcons(e.descHtml || e.desc || '');
+    const locStr = placeLinkHtml(e) || '';
+
+    const tr1 = document.createElement('tr');
+    tr1.className = 'exp-item';
+    tr1.dataset.id = e.id;
+    tr1.dataset.kind = 'expense';
+    tr1.innerHTML = `
+      <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
+      <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
+      <td class="cell header category"><span class="lbl">קטגוריה:</span> ${cat}</td>
+      <td class="cell header amount">
+        <div class="amt-main"><span class="code">${curr}</span> <span class="val">${amount}</span></div>
+        ${rateStr ? `<div class="amt-sub muted" dir="rtl">1 ${curr} = ₪ ${rateStr}</div>` : ''}
+      </td>
+      <td class="cell header currency" dir="rtl">
+        ${convertedAmountStr ? `<div class="ils-total">₪ ${convertedAmountStr}</div>` : ''}
+        ${locStr ? `<div class="muted small-loc">${locStr}</div>` : ''}
+      </td>
+      <td class="cell header menu-cell">
+        <button class="menu-btn" aria-label="פעולות" data-kind="expense" data-id="${e.id}">...</button>
+      </td>
+    `;
+
+    const tr2 = document.createElement('tr');
+    tr2.className = 'exp-item';
+    tr2.innerHTML = `<td class="cell notes" colspan="6">${desc || ''}</td>`;
+
+    body.appendChild(tr1);
+    body.appendChild(tr2);
+
+    const menuBtn = tr1.querySelector('.menu-btn');
+    if (menuBtn){
+      menuBtn.addEventListener('click', ()=>{
+        _rowActionExpense = e;
+        const dlg = document.getElementById('rowMenuModal');
+        if (dlg && dlg.showModal) dlg.showModal();
+      });
+    }
+  }catch(e){}
+}
+
+function appendJournalRowToTimeline(body, j){
+  try{
+    const baseIso = j.dateIso || j.createdAt;
+    let dateStr = '', timeStr = '';
+    if (baseIso){
+      const d = dayjs(baseIso);
+      if (d.isValid()){
+        dateStr = d.format('DD/MM/YYYY');
+        timeStr = d.format('HH:mm');
+      }
+    }
+    if (!dateStr && j.date) dateStr = j.date;
+    if (!timeStr && j.time) timeStr = j.time;
+
+    const placeText = j.placeName || '';
+    const locStr = /^(?:https?:\/\/|www\.)/.test(placeText)
+      ? `<a href="${placeText.startsWith('http') ? placeText : 'http://' + placeText}" target="_blank">${placeText}</a>`
+      : placeText;
+
+    const text = (j.html && /(<a|link-icon)/i.test(j.html))
+      ? j.html
+      : linkifyToIcons(j.html || j.text || '');
+
+    const tr1 = document.createElement('tr');
+    tr1.className = 'exp-item';
+    tr1.dataset.id = j.id;
+    tr1.dataset.kind = 'journal';
+    tr1.innerHTML = `
+      <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
+      <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
+      <td class="cell header location" colspan="3"><span class="lbl">מקום:</span> ${locStr || ''}</td>
+      <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות" data-kind="journal" data-id="${j.id}">...</button></td>
+    `;
+
+    const tr2 = document.createElement('tr');
+    tr2.className = 'exp-item';
+    tr2.innerHTML = `<td class="cell notes" colspan="6">${text}</td>`;
+
+    body.appendChild(tr1);
+    body.appendChild(tr2);
+
+    const menuBtn = tr1.querySelector('.menu-btn');
+    if (menuBtn){
+      menuBtn.addEventListener('click', ()=>{
+        _rowActionJournal = j;
+        const dlg = document.getElementById('rowMenuModal');
+        if (dlg && dlg.showModal) dlg.showModal();
+      });
+    }
+  }catch(e){}
+}
+
+// Sort toggle for "הצג הכל"
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('btnAllSort');
+  if (!btn) return;
+  btn.addEventListener('click', ()=>{
+    const current = state.allSort || 'desc';
+    const next = (current === 'desc') ? 'asc' : 'desc';
+    state.allSort = next;
+    if (state.current) renderAllTimeline(state.current, next);
+  });
+});
 
 // הפעלת הכפתור לפתיחת חלון "נסיעה חדשה"
 $('#btnNewTrip').addEventListener('click', () => {
