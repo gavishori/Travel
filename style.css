@@ -2234,3 +2234,46 @@ header #btnLogin.danger {
 #view-overview .expenses-table .small-loc{
   font-size:0.8rem;
 }
+
+
+
+/* === Overview tab ("הצג הכל") color coding === */
+#view-overview .expenses-table tr.exp-item[data-kind="expense"] .cell.header {
+  background: rgba(255, 120, 120, 0.20) !important; /* light red */
+}
+#view-overview .expenses-table tr.exp-item[data-kind="journal"] .cell.header {
+  background: rgba(140, 255, 140, 0.20) !important; /* light green */
+}
+
+/* Mobile layout for Overview: mimic Expenses/Journal stacked layout */
+@media (max-width: 720px){
+  #view-overview .expenses-table tr.exp-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas:
+      "date time menu"
+      "location location menu"
+      "amount currency menu";
+    align-items: center;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 8px;
+    border-radius: 8px;
+  }
+
+  #view-overview .expenses-table td.header.date     { grid-area: date; }
+  #view-overview .expenses-table td.header.time     { grid-area: time; }
+  #view-overview .expenses-table td.header.location { grid-area: location; }
+  #view-overview .expenses-table td.header.amount   { grid-area: amount; }
+  #view-overview .expenses-table td.header.currency { grid-area: currency; }
+  #view-overview .expenses-table td.menu-cell       { grid-area: menu; text-align: left; }
+}
+
+
+/* Preserve line breaks in Overview */
+#view-overview .cell.notes,
+#view-overview td.notes,
+#view-overview .expenses-table .cell.notes {
+    white-space: break-spaces;
+    word-break: break-word;
+}
