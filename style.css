@@ -2245,31 +2245,34 @@ header #btnLogin.danger {
   background: rgba(140, 255, 140, 0.20) !important; /* light green */
 }
 
-/* Mobile layout for Overview: mimic Expenses/Journal stacked layout */
+/* Mobile layout for Overview: keep simple table on mobile */
 @media (max-width: 720px){
-  #view-overview .expenses-table tr.exp-item {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas:
-      "date time menu"
-      "location location menu"
-      "amount currency menu";
-    align-items: center;
-    background: transparent;
-    padding: 0;
-    margin-bottom: 8px;
-    border-radius: 8px;
+  /* Use regular table rows so nothing breaks visually */
+  #view-overview .expenses-table{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
-  #view-overview .expenses-table td.header.date     { grid-area: date; }
-  #view-overview .expenses-table td.header.time     { grid-area: time; }
-  #view-overview .expenses-table td.header.location { grid-area: location; }
-  #view-overview .expenses-table td.header.amount   { grid-area: amount; }
-  #view-overview .expenses-table td.header.currency { grid-area: currency; }
-  #view-overview .expenses-table td.menu-cell       { grid-area: menu; text-align: left; }
+  #view-overview .expenses-table tr.exp-item{
+    display: table-row;
+    margin: 0;
+    padding: 0;
+  }
+
+  #view-overview .expenses-table td.cell{
+    padding: 8px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
+
+  /* Make notes span full width and breathe a bit */
+  #view-overview .expenses-table td.notes{
+    display: table-cell;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
 }
-
-
 /* Preserve line breaks in Overview */
 #view-overview .cell.notes,
 #view-overview td.notes,
