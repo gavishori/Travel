@@ -726,6 +726,259 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   .journal-card{ grid-template-columns: 1fr auto; }
 }
 
+/* --- Link / Mail icon badges inside journal/expenses text --- */
+
+
+
+
+/* --- Blue link/mail chips --- */
+:root{ --link-blue:#1a73e8; }
+
+
+
+
+
+
+/* === Override: link/mail display as blue icons only === */
+
+
+
+
+
+
+:root { --link-blue: #1a73e8; }
+
+
+
+
+
+
+/* === Link/Mail icons: emoji-only, blue (requested) === */
+:root{ --link-blue: #1a73e8; }
+
+
+
+
+/* === Single source of truth: link/mail icons === */
+:root{ --link-blue: #1a73e8; }
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px; height:26px; /* bigger icon */
+  margin: 0 6px;
+  text-decoration:none;
+  background: transparent;
+  border:none;
+  box-shadow:none;
+  color: var(--link-blue);
+}
+
+.mail-icon::before{ content:"✉️"; font-size:18px; line-height:1; }
+
+/* Force link icon as blue SVG (not emoji) */
+.link-icon{
+  color:#1a73e8 !important;
+}
+
+
+/* Force blue link icon and 50% larger size */
+.link-icon{
+  width:30px !important;
+  height:30px !important;
+}
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g transform='rotate(-18 12 12)' fill='none' stroke='%231a73e8' stroke-width='2'><ellipse cx='12' cy='8' rx='5' ry='3.8'/><ellipse cx='12' cy='16' rx='5' ry='3.8'/></g></svg>\");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+/* --- Align link/mail icons with text baseline --- */
+.link-icon, .mail-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align: middle;   /* center on line box */
+  line-height: 1;           /* avoid extra ascent */
+  position: relative;
+  top: -1px;                 /* nudge down a touch for optical alignment */
+}
+.link-icon::before, .mail-icon::before{
+  display:block;            /* no inline extra baseline */
+}
+
+/* Make yellow mark clickable */
+.hl-pill, .hl-pill mark{ cursor: pointer; }
+
+
+/* === Expenses table (custom) === */
+#view-expenses .expenses-table-container{ overflow-x:auto; }
+#view-expenses .expenses-table{ width:100%; border-collapse:separate; border-spacing:0; direction:rtl; }
+#view-expenses .expenses-table th, #view-expenses .expenses-table td{ border-bottom:1px solid var(--border); padding:10px; text-align:right; }
+#view-expenses .expenses-table th{ background:var(--card); position:sticky; top:0; z-index:1; }
+#view-expenses .expenses-table th.narrow{ width:56px; }
+
+
+/* === Stacked expenses layout === */
+#view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
+#view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
+#view-expenses .expenses-table.stacked td.header { background: rgba(255, 120, 120, 0.20) !important; /* light red */ }
+#view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
+#view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
+#view-expenses .expenses-table.stacked td.notes { color: var(--ink); }
+
+#view-expenses .expenses-table.stacked td.menu-cell{
+  width:56px; text-align:center;
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+#view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
+  inline-size: 36px; block-size: 32px; border-radius: 10px;
+}
+
+/* Balance widths when using 6 columns on first row */
+#view-expenses .expenses-table.stacked td.header.date,
+#view-expenses .expenses-table.stacked td.header.time,
+#view-expenses .expenses-table.stacked td.header.category,
+#view-expenses .expenses-table.stacked td.header.amount,
+#view-expenses .expenses-table.stacked td.header.currency { min-inline-size: 10ch; }
+#view-expenses .expenses-table.stacked td.menu-cell{ width:56px; text-align:center; }
+
+/* Dual amount display */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:600; margin-inline-start:.3ch; opacity:.9; }
+#view-expenses .expenses-table.stacked .amount .amt-ils{ font-size:.9em; margin-top:.2rem; }
+
+/* Amount + ILS split */
+#view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; line-height:1.1; }
+#view-expenses .expenses-table.stacked .amount .amt-main .code{ font-weight:700; margin-inline-end:.3ch; }
+#view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:600; }
+
+
+/* === One-line actions + budget bar === */
+#view-expenses .list-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  justify-content:space-between;
+  flex-wrap:nowrap;
+}
+#view-expenses .list-actions #expenseSummary{
+  margin-inline-start:auto;
+}
+#view-expenses .budget-bar{ flex-wrap:nowrap; }
+#view-expenses .budget-progress{ min-width:160px; }
+
+
+/* === Responsive: stack actions & budget on small screens === */
+@media (max-width: 720px){
+  #view-expenses .list-actions{
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .list-actions #expenseSummary{
+    order: 3;            /* push summary below buttons */
+    width: 100%;
+  }
+  #view-expenses .budget-bar{
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(33% - 10px);
+    min-width: 120px;
+  }
+  #view-expenses .budget-progress{
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+@media (max-width: 480px){
+  #view-expenses .budget-bar .kpi{
+    flex: 1 1 calc(50% - 10px); /* two per row if very narrow */
+    min-width: 140px;
+  }
+}
+
+
+/* rate-line styling to match heading weight */
+.rate-line{display:flex;align-items:baseline;gap:.35rem;font-weight:800;color:#0B1320}
+.rate-line .rate-code{letter-spacing:.5px}
+.rate-line{direction:ltr;unicode-bidi:plaintext}
+
+.cell.header.amount .amt-sub{display:block!important}
+
+
+/* Amount sub-line: small, non-bold ILS rate under main amount */
+#view-expenses .expenses-table.stacked .amount .amt-sub{
+  margin-top: .25rem;
+  font-size: .85em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+
+
+/* Left cell now shows converted ILS total */
+#view-expenses .expenses-table .converted-ils{
+  font-weight: 500;
+}
+
+
+#view-expenses .expenses-table .currency .ils-total{font-weight:600;}
+
+
+/* --- Journal adopts the stacked expenses visual --- */
+.journal-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  width:100%;
+}
+.journal-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1fr auto; /* text + menu */
+  gap: 8px;
+  overflow-wrap: anywhere;       /* long words/links won't cause horizontal scroll */
+  word-break: break-word;
+}
+.journal-card .meta{
+  display:flex;
+  flex-wrap: wrap;
+  gap:8px;
+  color: var(--muted);
+  font-size: .95rem;
+}
+.journal-card .title{
+  font-weight: 600;
+}
+.journal-card .text{
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+.journal-card .menu-btn{
+  justify-self: end;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.content{ overflow-x: hidden; } /* never horizontal scroll */
+/* Mobile: keep same stacking */
+@media (max-width: 720px){
+  .journal-card{ grid-template-columns: 1fr auto; }
+}
+
 /* explicit text link used when a journal line is a single URL */
 .text-link{ text-decoration: underline; color: var(--primary); font-weight: 500; }
 
@@ -961,301 +1214,1195 @@ html, body { overflow-x:hidden; }
     max-width: 100%;
   }
 }
+/* Mobile rules (<=480px) already exist below: 1st row date+time, 2nd row location. */
+/* ======== Mobile-only compact headers for Expenses & Journal ======== */
+@media (max-width: 480px){
 
-/* ==========================================================================
-  MOBILE STYLES (<= 480px) - START
-==========================================================================
-*/
-@media (max-width: 480px) {
-
-  /* === General Layout Fixes === */
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    overscroll-behavior-x: none;
-  }
-
-  body {
-    overflow-y: auto;
-    touch-action: manipulation;
-  }
-
-  .app, .container, .content, .sidebar, .section, .card, .panel, .sheet, .modal, .tabs, header, nav {
-    max-width: 100%;
-    min-width: 0;
-  }
-
-  .row, .flex, header, nav, .tabs, .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    min-width: 0;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  img, svg, video, canvas, iframe {
-    max-width: 100%;
-    height: auto;
-  }
-
-  .leaflet-container, #map, .map, .map-container {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .leaflet-container {
-    height: 60vh !important;
-  }
-
-  table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-  }
-
-  th,
-  td {
-    word-break: break-word;
-    min-width: 0;
-  }
-
-  input,
-  select,
-  textarea,
-  button {
-    max-width: 100%;
-  }
-
-  [style*="width:"] {
-    max-width: 100%;
-  }
-
-  /* === Budget Bar Stack === */
-  #view-expenses .budget-bar .kpi {
-    flex: 1 1 calc(50% - 10px); /* two per row */
-    min-width: 140px;
-  }
-
-  /* === Common rules for ALL stacked items in mobile === */
-
-  /* Shared table settings */
-  #view-expenses .expenses-table,
-  #view-journal .expenses-table {
-    border-spacing: 0;
-    width: 100%;
-  }
-
+  /* Shared */
+  #view-expenses .expenses-table, 
+  #view-journal .expenses-table { border-spacing:0; width:100%; }
+  
   /* Base item styles */
   #view-expenses .expenses-table tr.exp-item,
   #view-journal .expenses-table tr.exp-item {
-    display: grid;
-    align-items: center;
-    background: transparent;
-    padding: 0;
-    margin-bottom: 8px; /* Space between items */
-    border-radius: 0;
+      display: grid; /* Use grid for both, but different templates */
+      align-items: center;
+      background: transparent; 
+      padding: 0; 
+      margin-bottom: 8px; /* Space between items */
+      border-radius: 0; 
   }
 
-  /* This is the TR for the header row */
-  #view-overview .expenses-table tr.exp-item:has(td.header),
+  /* --- Expenses: Header Row (tr1) --- */
   #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
-  #view-journal .expenses-table tr.exp-item:has(td.header) {
-    display: grid;
-    gap: 0 8px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-bottom: 0; /* Notes row handles bottom margin */
-  }
-
-  /* This is the TR for the notes row */
-  #view-overview .expenses-table tr.exp-item:has(td.notes),
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
-  #view-journal .expenses-table tr.exp-item:has(td.notes) {
-    display: block; /* Notes row is just a block */
-    margin-top: -4px; /* Pull it closer */
-    margin-bottom: 8px; /* Space to next item */
-  }
-
-  /* ALL cells inside the header row TR must be transparent */
-  #view-overview .expenses-table tr.exp-item:has(td.header) td.cell,
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
-  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
-    background: transparent !important;
-    border: none;
-    padding: 2px;
-    display: block;
-  }
-
-  /* ALL notes cells */
-  #view-overview .expenses-table tr.exp-item td.notes,
-  #view-expenses .expenses-table.stacked td.notes,
-  #view-journal .expenses-table td.notes {
-    grid-column: 1 / -1;
-    padding: .5rem .75rem;
-    background: transparent;
-    border: none;
-  }
-
-  /* --- Journal Specifics (Green) --- */
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header),
-  #view-journal .expenses-table tr.exp-item:has(td.header) {
-    grid-template-columns: 1fr auto auto; /* 3 columns */
-    grid-template-areas:
-      "location location location"
-      /* Location spans all 3 columns */
-      "date     time     menu";
-    background: rgba(140, 255, 140, 0.20) !important;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date,
-  #view-journal .expenses-table td.header.date {
-    grid-area: date;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time,
-  #view-journal .expenses-table td.header.time {
-    grid-area: time;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location,
-  #view-journal .expenses-table td.header.location {
-    grid-area: location;
-    font-weight: 700;
-    font-size: 1.1em;
-    white-space: normal;
-    word-break: break-word;
-    padding-bottom: 6px !important;
-    line-height: 1.4;
-    /* Colspan is ignored by grid, but we make it span all 3 columns with the area */
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.menu-cell,
-  #view-journal .expenses-table td.menu-cell {
-    grid-area: menu;
-    justify-self: end;
-  }
-
-  /* --- Expense Specifics (Red) --- */
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header),
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) {
-    grid-template-columns: 1fr 1fr auto; /* 3 columns */
-    grid-template-areas:
-      "category amount   menu"
-      "date     time     currency";
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "amount currency menu";
+    gap: 0;
+    /* Add the grey background to the header row itself */
     background: rgba(255, 120, 120, 0.20) !important;
+    border-radius: 8px; /* Round the corners of the header block */
+  }
+  
+  /* Cells inside the header row */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+      border: none;
+      padding: .5rem .75rem;
+      background: transparent !important; /* Cells are transparent, TR has color */
   }
 
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date,
-  #view-expenses .expenses-table.stacked td.header.date {
-    grid-area: date;
+  /* Area assignments for header cells */
+  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-expenses .expenses-table.stacked td.header.category{ display:none; }
+
+  /* --- Expenses: Notes Row (tr4) --- */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes) {
+      display: block; /* Revert to block display for the notes row */
+      margin-top: -4px; /* Pull it closer to the header row */
+      margin-bottom: 8px; /* Keep space to next item */
+  }
+  
+  #view-expenses .expenses-table.stacked td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; /* Notes cell is transparent */
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
+   }
+
+  /* טיפוגרפיה */
+  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+
+  /* --- Journal: Header Row (tr1) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "location location menu";
+    gap: 0; 
+    background: rgba(140, 255, 140, 0.20) !important;
+    padding: 0;
+    margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
+    border-radius: 8px;
+  }
+  
+  /* Cells inside journal header row */
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
+      border:none;
+      padding: .5rem .75rem;
+      background: transparent !important;
+  }
+  
+  #view-journal .expenses-table td.header.date{ grid-area:date; }
+  #view-journal .expenses-table td.header.time{ grid-area:time; }
+  #view-journal .expenses-table td.header.location{ grid-area:location; }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+
+  /* --- Journal: Notes Row (tr4) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes) {
+      display: block; /* Revert to block display */
+      margin-top: -4px; /* Pull it closer */
+      margin-bottom: 8px; /* Space to next item */
+  }
+  
+  #view-journal .expenses-table td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; 
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
   }
 
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time,
-  #view-expenses .expenses-table.stacked td.header.time {
-    grid-area: time;
-  }
 
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category,
-  #view-expenses .expenses-table.stacked td.header.category {
-    grid-area: category;
-    font-weight: 700;
-    font-size: 1.1em;
-    white-space: normal;
-    word-break: break-word;
-    display: block !important;
-    /* Override desktop 'display:none' */
-    padding-bottom: 6px !important;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount,
-  #view-expenses .expenses-table.stacked td.header.amount {
-    grid-area: amount;
-    text-align: left;
-    padding-left: 0 !important;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency,
-  #view-expenses .expenses-table.stacked td.header.currency {
-    grid-area: currency;
-    text-align: left;
-    padding-left: 0 !important;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.menu-cell,
-  #view-expenses .expenses-table.stacked td.menu-cell {
-    grid-area: menu;
-    justify-self: end;
-    text-align: left;
-  }
-
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency .small-loc,
-  #view-expenses .expenses-table.stacked td.header.currency .small-loc {
-    display: none; /* Hide location from currency cell in mobile */
-  }
-
-  /* Typography for expense/overview cards */
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amount .amt-main,
-  #view-expenses .expenses-table.stacked .amount .amt-main {
-    font-weight: 700;
-  }
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .currency .ils-total,
-  #view-expenses .expenses-table.stacked .currency .ils-total {
-    font-weight: 700;
-  }
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amt-sub,
-  #view-expenses .expenses-table.stacked .amt-sub {
-    font-size: .85em;
-    opacity: .8;
-  }
-
-
-  /* Hide checkbox cells by default in mobile */
+  /* הסתרת תאי בחירה במובייל ברירת מחדל (כשאין מצב בחירה) */
   #view-journal .expenses-table td.select-cell,
-  #view-expenses .expenses-table td.select-cell {
-    display: none;
-  }
+  #view-expenses .expenses-table td.select-cell{ display:none; }
 
-  /* Trip meta (נתוני נסיעה) readable layout */
+  /* --- Trip meta (נתוני נסיעה): קריא ונוח --- */
   #view-meta .section .row,
   #view-meta .budget-row,
-  #view-meta .budget-actions-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: .6rem;
-  }
-
-  #view-meta .chips,
-  #view-meta .pill-group,
-  #view-meta .tag-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .4rem;
-  }
-
-  #view-meta input,
-  #view-meta select,
-  #view-meta textarea {
-    width: 100%;
-  }
-
-  #view-meta .budget-block {
-    padding: 1rem;
-  }
-
-  #view-meta .budget-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  #view-meta .budget-row label {
-    width: 100%;
-  }
+  #view-meta .budget-actions-row{ display:grid; grid-template-columns: 1fr; gap:.6rem; }
+  #view-meta .chips, #view-meta .pill-group, #view-meta .tag-row{ display:flex; flex-wrap:wrap; gap:.4rem; }
+  #view-meta input, #view-meta select, #view-meta textarea{ width:100%; }
+  #view-meta .budget-block{ padding:1rem; }
+  #view-meta .budget-row{ grid-template-columns: repeat(2, 1fr); }
+  #view-meta .budget-row label{ width:100%; }
 
 }
-/* ==========================================================================
-  MOBILE STYLES (<= 480px) - END
-==========================================================================
+
+/* --- Mobile-only Logout Button --- */
+.btn-logout-mobile{ display:none; }
+@media (max-width: 768px){
+  .btn-logout-mobile{ display:inline-flex; align-items:center; padding:.6rem .9rem; font-weight:600; border-radius:12px; }
+  .btn-logout-mobile.btn.danger{ background:#ffe8e8; border:1px solid #ffb3b3; }
+}
+
+/* iOS viewport fix */
+html, body { height:100%; }
+:root{ --vh: 1dvh; }
+.app, .container, .page, .main { min-height: 100svh; min-height: 100dvh; min-height: -webkit-fill-available;}
+
+
+/* URLs in journal outputs wrap cleanly */
+#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
+
+/* === RTF editor === */
+.input.rtf{ min-height:120px; overflow:auto; white-space:pre-wrap; }
+.input.rtf *{ font-family: inherit; }
+.input.rtf:focus{ outline:2px solid color-mix(in oklab, var(--brand) 40%, transparent); }
+.rtf-bubble{ position:absolute; z-index:1000; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:6px 8px; display:flex; gap:10px; box-shadow:var(--shadow); transform:translate(-50%,-100%); }
+.rtf-bubble .colors,.rtf-bubble .styles{ display:flex; gap:6px; align-items:center; }
+.rtf-bubble .dot{ width:16px; height:16px; border-radius:50%; border:1px solid var(--border); cursor:pointer; padding:0; }
+.rtf-bubble .dot[data-color="#FFD60A"]{ background:#FFD60A; }
+.rtf-bubble .dot[data-color="#E53935"]{ background:#E53935; }
+.rtf-bubble .dot[data-color="#1E88E5"]{ background:#1E88E5; }
+.rtf-bubble .dot[data-color="#34A853"]{ background:#34A853; }
+.rtf-bubble .dot[data-color="#000000"]{ background:#000000; }
+.rtf-bubble .fmt{ border:1px solid var(--border); background:transparent; border-radius:10px; padding:2px 8px; cursor:pointer; font-weight:700; }
+#journalModal .body{ position:relative; }
+#tblJournal a, #tblRecentJournal a { word-break: break-all; display:inline; }
+
+
+/* Blue link icon for long/raw links */
+.link-chip{ color:#1E88E5; font-weight:700; text-decoration:none; }
+
+
+/* Ensure long/raw links show as blue icon inside editor as well */
+#jrText a.link-chip{ color:#1E88E5; font-weight:77; text-decoration:none; }
+#jrText a{ word-break: break-all; }
+
+/* Bubble interaction tweaks */
+.rtf-bubble{ pointer-events:auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+
+
+/* === RTF bubble -> docked toolbar (sticky, bottom-centered) === */
+#journalModal .body{ position: relative; }
+#journalModal .input.rtf{ padding-bottom: 72px; } /* space so toolbar won't overlap text */
+#journalModal .rtf-bubble{
+  position: sticky;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  transform: none;
+  margin-inline: auto;
+  z-index: 1100;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+#journalModal .rtf-bubble .colors,
+#journalModal .rtf-bubble .styles{
+  display:flex; gap:8px; align-items:center; flex-wrap:nowrap;
+}
+#journalModal .rtf-bubble.hidden{ display: none !important; }
+
+#expenseModal .body{ position: relative; }
+#expenseModal .input.rtf{ padding-bottom: 72px; }
+#expenseModal .rtf-bubble{ position: sticky; bottom: 8px; left:0; right:0; transform:none; margin-inline:auto; z-index:1100; display:flex; justify-content:center; gap:10px; max-width:calc(100% - 16px); overflow-x:auto; pointer-events:auto; }
+#expenseModal .rtf-bubble .colors, #expenseModal .rtf-bubble .styles{ display:flex; gap:8px; align-items:center; }
+#expenseModal .rtf-bubble.hidden{ display:none!important; }
+
+
+/* === Notes line-break fidelity (expenses + journal) === */
+#view-expenses .cell.notes,
+#view-journal  .cell.notes,
+#tblRecentExpenses td:first-child,
+#tblRecentJournal  td:nth-child(3){
+  white-space: pre-wrap;     /* preserve \n from editor */
+  word-break: break-word;
+}
+/* Remove default margins from contentEditable output */
+#view-expenses .cell.notes div,
+#view-journal  .cell.notes div,
+#view-expenses .cell.notes p,
+#view-journal  .cell.notes p{
+  margin: 0;
+  padding: 0;
+}
+
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g transform='rotate(-20 12 12)' stroke='%231a73e8' stroke-width='2' fill='none' stroke-linecap='round'><circle cx='12' cy='8' r='4'/><circle cx='12' cy='16' r='4'/></g></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+
+/* === Exact line-break preservation in notes cells (expenses + journal) === */
+#view-expenses .cell.notes,
+#view-journal  .cell.notes {
+  white-space: break-spaces;   /* preserve spaces and newlines 1:1 */
+  word-break: break-word;      /* avoid horizontal scroll */
+}
+
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:30px; height:30px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><g fill='none' stroke='%231a73e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(35 8 12)'><rect x='1' y='6' width='14' height='6' rx='3' ry='3'/></g><g transform='rotate(35 16 12)'><rect x='9' y='12' width='14' height='6' rx='3' ry='3'/></g></g></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:30px 30px;
+}
+
+.link-icon::before{
+  content:'';
+  display:inline-block;
+  width:24px; height:24px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g transform='rotate(30 12 12)' fill='none' stroke='%231a73e8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='9' width='10' height='6' rx='3' ry='3'/><rect x='12' y='9' width='10' height='6' rx='3' ry='3'/><path d='M10 12h4'/></g></svg>");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:24px 24px;
+}
+
+/* std link-icon sizing */
+.link-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:24px; height:24px;
+  margin: 0 6px;
+  vertical-align: middle;
+  text-decoration:none;
+}
+.link-icon:hover::before{
+  filter: brightness(0.85);
+}
+
+/* center only the requested title */
+.center-title{ text-align:center; }
+
+/* --- Ensure blue link icon renders correctly in Journal (list + editor) --- */
+#tblJournal a.link-icon,
+#tblRecentJournal a.link-icon,
+#jrText a.link-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align:middle;
+  text-decoration:none;
+}
+
+/* --- Logout button (fixed) --- */
+#logoutBtn{
+  position: fixed;
+  top: 14px;
+  inset-inline-end: 14px; /* RTL/LTR aware */
+  z-index: 9999;
+  padding: 10px 14px;
+  border: 1px solid #0000001a;
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 14px;
+  line-height: 1;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  cursor: pointer;
+}
+#logoutBtn:active{ transform: translateY(1px); }
+@media (max-width: 768px){
+  #logoutBtn{ top: 10px; inset-inline-end: 10px; padding: 10px 12px; font-size: 15px; }
+}
+
+/* Removable link X inside editors */
+.rtf a.link-icon, .rtf a.mail-icon{ position:relative; display:inline-flex; }
+.rtf a .link-x{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; line-height:16px; font-size:11px; text-align:center; border-radius:50%; background:#e53935; color:#fff; cursor:pointer; display:none; z-index: 5; }
+.rtf a:hover .link-x{ display:block; }
+
+/* === FIX: Redesign Share Tab Button Layout === */
+
+/* 1. Target the button rows in Import & Export cards */
+#view-share #card-import .row,
+#view-share #card-export .row {
+  display: grid !important; /* Override inline style */
+  grid-template-columns: 1fr 1fr; /* 2 buttons per row */
+  gap: 10px; /* A clean gap */
+  flex-wrap: normal !important; /* Disable inline flex-wrap */
+}
+
+/* 2. Remove min-width on buttons *only* inside these cards */
+#view-share #card-import .btn,
+#view-share #card-export .btn {
+  min-width: 0; /* Allow buttons to fit the grid cell */
+  width: 100%; /* Make them fill their cell */
+  margin: 0; /* Reset any rogue margins */
+}
+
+/* 3. Ensure the Share card (which is fine) keeps its layout */
+#view-share #card-share .row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+/* === END FIX === */
+/* === Compact & Solid Share View === */
+
+/* 1. Container: Center content and limit width for a 'solid' look on large screens */
+#view-share {
+    padding: 16px !important;
+    height: 100%;
+    overflow-y: auto; /* Scroll only if absolutely necessary on very small screens */
+    box-sizing: border-box;
+}
+
+/* 2. Main Grid Layout: 3 columns on Desktop, 1 on Mobile */
+#view-share .cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Force 3 equal columns */
+    gap: 12px !important;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: stretch; /* Make all cards same height */
+}
+
+@media (max-width: 850px) {
+    #view-share .cards {
+        grid-template-columns: 1fr !important; /* Stack on tablets/mobile */
+        gap: 16px !important;
+    }
+}
+
+/* 3. Card Styling: Tighter padding, solid look */
+#view-share .card {
+    padding: 16px !important;
+    gap: 12px !important;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);     /* Ensure solid background color */
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    height: 100%; /* Fill grid height */
+}
+
+/* 4. Headings: Compact and clear */
+#view-share .card h3 {
+    margin: 0 0 4px 0 !important;
+    font-size: 1.15rem !important;
+    border-bottom: 2px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    padding-bottom: 8px;
+    color: var(--brand);
+}
+
+/* 5. Inner Button Grids (Import/Export): Uniform 2-column grid for buttons */
+/* This is key for the "solid" look - aligned buttons instead of random wrapping */
+#view-share #card-import .row,
+#view-share #card-export .row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 buttons per row always */
+    gap: 10px !important;
+    margin: 0 !important; /* Remove default row margins */
+    flex-grow: 1; /* Let it fill space */
+    align-content: start;
+}
+
+/* 6. Share Card Specifics: Stack controls vertically for solidity */
+#view-share #card-share .row {
+    display: flex !important;
+    flex-direction: column !important; /* Stack elements */
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+/* 7. Control Sizing: Uniform height and width for a clean look */
+#view-share .btn,
+#view-share .input,
+#view-share select {
+    height: 40px !important;         /* Fixed, compact height */
+    min-height: 40px !important;
+    min-width: 0 !important;         /* Allow shrinking to grid cell */
+    width: 100% !important;          /* Full width of their grid cell/container */
+    margin: 0 !important;
+    padding: 0 12px !important;
+    font-size: 0.95rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Special tweak for labels in Share card to sit nicely above inputs if needed,
+   or just be compact next to them if we want row-based (let's stick to column for solidity on small width) */
+#view-share #card-share label.label {
+    margin-bottom: -8px; /* Pull label closer to its input */
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+/* 8. Mobile Specific Tweaks for "One Screen" feel */
+@media (max-width: 600px) {
+    #view-share {
+        padding: 12px !important;
+    }
+    /* On very small screens, make import/export buttons full width for easier tapping,
+       OR keep them 2-col if vertical space is more important.
+       Let's keep 2-col to save vertical space as requested. */
+    #view-share .card {
+        padding: 12px !important;
+    }
+}
+
+/* === RADICAL COMPACT DASHBOARD FOR SHARE TAB === */
+
+/* 1. LOCK THE CONTAINER NO MATTER WHAT */
+#view-share[data-active="1"] {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 8px !important;               /* Minimal padding around edge */
+    height: calc(100dvh - 60px) !important; /* Force it to exactly fill screen minus header */
+    max-height: 100% !important;
+    overflow: hidden !important;           /* Ban scrolling globally for this view */
+    box-sizing: border-box !important;
+}
+
+/* 2. DASHBOARD GRID LAYOUT */
+#view-share .cards {
+    display: grid !important;
+    /* Desktop: 3 equal columns side-by-side */
+    grid-template-columns: 1fr 1fr 1fr !important;
+    grid-template-rows: 1fr !important;    /* One single row that stretches to fill height */
+    gap: 8px !important;                   /* Tiny gap between panels */
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+/* 3. PANEL (CARD) STYLING - SOLID LOOK */
+#view-share .card {
+    margin: 0 !important;
+    padding: 8px 8px 0 8px !important;    /* Very tight padding inside */
+    border: 2px solid var(--border) !important; /* Thicker border for "solid" feel */
+    box-shadow: none !important;           /* Flat look saves space */
+    background: var(--bg) !important;      /* Slightly different background if possible to look like a 'slot' */
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;              /* Crucial for nested scrolling if absolutely needed */
+    overflow: hidden !important;           /* Never let card itself scroll nicely, force fit */
+}
+
+/* 4. COMPACT HEADERS */
+#view-share .card h3 {
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    text-align: center !important;
+    opacity: 0.7 !important;
+    margin: 0 0 8px 0 !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid var(--border) !important;
+    flex-shrink: 0 !important;
+}
+
+/* 5. ULTRA-COMPACT BUTTON GRIDS (Import/Export) */
+#view-share #card-import .row,
+#view-share #card-export .row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Always 2 columns of buttons */
+    grid-auto-rows: min-content !important;    /* Rows only as tall as needed */
+    gap: 6px !important;                       /* Tiny gap between buttons */
+    margin: 0 !important;
+    padding: 0 !important;
+    align-content: start !important;           /* Pack buttons to the top */
+    overflow-y: auto !important;               /* Allow internal scroll only if absolutely desperate */
+}
+
+/* 6. SHARE PANEL - VERTICAL STACK */
+#view-share #card-share .row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin: 0 !important;
+}
+
+/* 7. TINY CONTROLS (Buttons & Inputs) */
+#view-share .btn,
+#view-share .input,
+#view-share select {
+    height: 34px !important;         /* Drastically reduced height */
+    min-height: 34px !important;
+    font-size: 0.85rem !important;   /* Smaller text to fit */
+    padding: 0 4px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+/* Hide file inputs completely to save space, they are triggered by buttons anyway */
+#view-share input[type="file"] {
+    display: none !important;
+}
+#view-share label.label {
+    font-size: 0.8rem !important;
+    margin-bottom: -4px !important;
+    opacity: 0.8 !important;
+}
+
+
+/* === MOBILE PORTRAIT RE-LAYOUT (The real challenge for 1 screen) === */
+@media (max-width: 768px) {
+    #view-share {
+        height: auto !important;      /* On mobile allow auto height to avoid squashing too much */
+        min-height: calc(100dvh - 70px) !important;
+        padding: 6px !important;
+        overflow-y: auto !important;  /* Allow scroll on mobile if it really doesn't fit */
+    }
+
+    #view-share .cards {
+        /* Switch to a dense vertical stack, or a 2x2 grid */
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto auto !important; /* Let heights fit content */
+        gap: 6px !important;
+        display: grid !important;
+        height: auto !important;
+    }
+
+    /* Make the Share card take full width at the bottom */
+    #view-share #card-share {
+        grid-column: 1 / -1 !important; /* Span both columns */
+    }
+    
+    /* Ensure buttons are still tap-able on mobile */
+    #view-share .btn,
+    #view-share .input,
+    #view-share select {
+        height: 40px !important; /* Slightly larger on mobile for touch */
+        font-size: 0.9rem !important;
+    }
+
+    /* If Import/Export have too many buttons for half-width, 
+       uncomment below to stack EVERYTHING vertically on very small screens */
+    /*
+    @media (max-width: 400px) {
+         #view-share .cards { grid-template-columns: 1fr !important; }
+         #view-share #card-share { grid-column: auto !important; }
+    }
+    */
+}
+/* =========================================
+   תיקונים אגרסיביים למובייל (FLYMILY Mobile Fixes V2)
+   ========================================= */
+
+/* --- תיקון 1: מסך הבית (רשימת נסיעות) על מסך מלא --- */
+@media (max-width: 900px) {
+    /* דורס את הגדרת הגובה 40vh שקיימת ב-CSS המקורי לסרגל צד במובייל */
+    body .container.home-mode .sidebar {
+        height: auto !important;
+        min-height: 100% !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        order: unset !important;
+        display: block !important;
+    }
+
+    /* מעלים לחלוטין את אזור התוכן במסך הבית במובייל */
+    body .container.home-mode .content {
+        display: none !important;
+    }
+    
+    /* מכריח את הקונטיינר לתפוס את כל הגובה הזמין פחות ההדר */
+    body .container.home-mode {
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100dvh - 57px) !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr !important;
+    }
+}
+
+/* --- תיקון 2: סידור מחדש של לשונית "נתוני נסיעה" במסכים קטנים --- */
+@media (max-width: 600px) {
+    /* הופך את כל השורות בטאב הזה לטורים אנכיים */
+    #view-meta .card .row,
+    #view-meta .date-row,
+    #view-meta .dest-row,
+    #view-meta .budget-row,
+    #view-meta .budget-actions-row {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 12px !important; /* ריווח אחיד בין כל האלמנטים */
+        margin: 0 !important;
+    }
+    
+    /* ריווח נוסף בין בלוקים */
+    #view-meta .row + .row,
+    #view-meta .budget-block {
+        margin-top: 20px !important;
+    }
+
+    /* מתיחת כל שדות הקלט, התוויות והכפתורים לרוחב מלא */
+    #view-meta .input,
+    #view-meta select,
+    #view-meta label,
+    #view-meta .btn,
+    #view-meta .people-input {
+        width: 100% !important;
+        max-width: none !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* תיקון ספציפי לכפתור המפה שיהיה בגובה אחיד לשאר השדות */
+    #view-meta .map-btn {
+        margin-top: 0 !important;
+        height: 44px !important;
+    }
+
+    /* סידור הצ'יפים (סוגי טיול) שיראו נורמלי גם בטור */
+    #view-meta .multi-types {
+        width: 100% !important;
+        margin-top: 10px !important;
+    }
+    #view-meta .chips {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    #view-meta .chips .chip {
+        flex: 1 0 auto !important; /* נותן לצ'יפים לגדול אם יש מקום */
+        text-align: center !important;
+        padding: 10px !important;
+    }
+}
+/* === תיקון אחידות צבע טקסט במובייל === */
+@media (max-width: 480px) {
+  /* וידוא שצבע הטקסט הבסיסי זהה למחשב (ללא שקיפות) */
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-journal .expenses-table td.notes,
+  .journal-card .text {
+      color: var(--ink) !important;
+      opacity: 1 !important;
+  }
+  
+  /* וידוא שטקסט שנצבע ע"י המשתמש (RTF) בולט ולא מקבל שקיפות */
+  .cell.notes span[style*="color"],
+  .journal-card .text span[style*="color"] {
+      opacity: 1 !important;
+  }
+}
+
+/* === רענון עיצוב מקצועי (בהשראת Tello) === */
+
+/* 1. פלטת צבעים ורדיוסים אחידים */
+:root {
+  /* הגדרת צבעי המותג החדשים */
+  --tello-blue: #0077ff;
+  --tello-green: #00b74a;
+  --tello-green-dark: #00913c;
+  --tello-light-blue: #8bd3ff;
+  --tello-light-green: #06d6a0;
+
+  /* רדיוס גבולות אחיד */
+  --radius: 10px;
+  --radius-lg: 12px;
+}
+
+/* 2. עדכון פלטת צבעים (מצב בהיר) */
+[data-theme="light"] {
+  --brand: var(--tello-blue);    /* כחול ראשי (כמו בתמונה) */
+  --accent: var(--tello-green);   /* ירוק לפעולות מרכזיות (כמו הכפתור בתמונה) */
+  --ok: var(--tello-green);       /* ירוק להצלחה (אחידות) */
+  --ink: #0e1116;                /* טקסט כהה וברור */
+  --muted: #415266;              /* טקסט משני */
+  --card: #ffffff;
+  --bg: #f7f8fb;                 /* רקע כללי נקי */
+  --border: #dde2e8;            /* גבול מעט יותר ברור */
+  --shadow: 0 4px 12px rgba(0, 119, 255, 0.08); /* הצללה קלה בגוון כחול */
+}
+
+/* 3. עדכון פלטת צבעים (מצב כהה - מותאם) */
+[data-theme="dark"] {
+  --brand: var(--tello-light-blue);   /* כחול בהיר למצב כהה */
+  --accent: var(--tello-light-green); /* ירוק בהיר למצב כהה */
+  --ok: var(--tello-light-green);     /* אחידות */
+  --bg: #0a1018;                   /* כחול עמוק יותר */
+  --card: #121a24;                  /* כחול עמוק יותר */
+  --border: #273142;
+  --shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 4. עיצוב ה-Header מחדש */
+body header {
+  background: var(--brand); /* רקע כחול מלא */
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+header .brand,
+header .brand-text {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* צל קל ללוגו */
+}
+
+/* כפתורים רגילים בהדר (כמו "מצב כהה") */
+header button, 
+header .btn {
+  color: #ffffff;
+  /* שונה: גבול לבן מלא יותר וצורה עגולה */
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease;
+  border-radius: 999px; /* שינוי לרדיוס גלולה */
+  padding: 8px 16px;   /* ריווח פנימי רחב יותר */
+}
+
+header button:hover, 
+header .btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
+}
+
+/* כפתור כניסה (ראשי) בהדר */
+header .btn.primary {
+  background: #ffffff;
+  color: var(--tello-blue);
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  /* border-radius and padding יורשים מהכלל שלמעלה */
+}
+
+header .btn.primary:hover {
+  background: #f0f4f8;
+  color: var(--tello-blue);
+}
+
+/* === הוספה חדשה: עיצוב כפתור התנתקות (.danger) בהדר === */
+/* זה דורס את העיצוב האדום הכללי של .btn.danger רק בהדר */
+header .btn.danger {
+  background: #ffffff !important;
+  color: #000000 !important; /* טקסט שחור כמו בתמונה */
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header .btn.danger:hover {
+  background: #f0f4f8 !important;
+  color: #000000 !important;
+}
+/* === סוף הוספה === */
+
+/* תג משתמש ורשימה נפתחת */
+header #userBadge {
+  border-color: rgba(255, 255, 255, 0.8); /* התאמה לגבול הלבן */
+  /* border-radius and padding יורשים מהכלל שלמעלה */
+}
+header #userBadge span {
+  color: #ffffff;
+}
+header #userMenuList {
+  background: var(--card); /* רקע לבן/כהה רגיל */
+  color: var(--ink);
+}
+header #userMenuList button {
+  color: var(--ink); /* צבע טקסט רגיל */
+  border: none;
+}
+header #userMenuList button:hover {
+  background: var(--bg);
+}
+
+/* 5. מסגרות אחידות (Border Radius) ופוקוס */
+.btn,
+.input, 
+select, 
+textarea,
+.menu-btn,
+.login-card {
+  border-radius: var(--radius); /* 10px */
+}
+
+.trip-card,
+.card,
+.menu-list,
+.leaflet-container,
+dialog.modal,
+.toast {
+  border-radius: var(--radius-lg, 12px); /* 12px לכרטיסים ומודלים */
+}
+
+.trip-row {
+  border-radius: var(--radius); /* 10px */
+}
+
+/* עיצוב פוקוס מודרני ואחיד */
+.input:focus, 
+select:focus, 
+textarea:focus,
+.btn:focus-visible,
+button:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 25%, transparent);
+}
+
+/* 6. עיצוב כפתורים מחדש (גוף העמוד) */
+
+/* כפתור ברירת מחדל (אפור, כמו "מיין", "ביטול") */
+.btn {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--bg);
+  border-color: var(--muted);
+  color: var(--ink);
+}
+
+/* כפתור ראשי (ירוק, כמו "שמור", "הוסף") */
+.btn.primary {
+  background: var(--accent); /* שימוש בירוק שהגדרנו */
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.btn.primary:hover {
+  background: var(--tello-green-dark, #00913c);
+  filter: brightness(1.1); /* גיבוי אם המשתנה לא קיים */
+  color: #ffffff;
+}
+
+.btn:disabled {
+  background: var(--border);
+  border-color: var(--border);
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* כפתור סכנה (אדום) */
+.btn.danger {
+  background: var(--card);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.btn.danger:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+/* כפתור פעיל (טאבים, בחירת תצוגה) - כחול */
+.tabs button.active,
+.list-actions .btn.active {
+  background: var(--brand); /* שימוש בכחול שהגדרנו */
+  color: #ffffff;
+  border-color: var(--brand);
+  font-weight: 600;
+  outline: none;
+  box-shadow: none;
+}
+
+.tabs button {
+  border-bottom: 1px solid var(--border);
+}
+.tabs button.active {
+  border-bottom: 1px solid var(--brand);
+}
+
+/* 7. ליטוש כללי */
+h1, h2, h3 {
+  color: var(--ink);
+  font-weight: 600; /* הדגשת כותרות */
+}
+
+/* כרטיסים וכרטיסיות נסיעה */
+.card, .trip-card, .trip-row {
+   box-shadow: var(--shadow); /* שימוש בצל המותאם */
+}
+
+/* לינקים מודגשים */
+a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/*
+נמחק מכאן חוק שהסתיר את כפתור מצב כהה
 */
+
+/* תיקון עיצוב כפתור התנתקות (לפי התמונה)
+  ודא שכפתור ההתנתקות (שהופך מ"התחברות")
+  מקבל את עיצוב הגלולה הלבנה.
+*/
+header #btnLogin.danger {
+  background: #ffffff !important;
+  color: #000000 !important; /* טקסט שחור כמו בתמונה */
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 999px !important; /* ודא שהוא גלולה */
+  padding: 8px 16px !important;
+}
+
+/* תיקון עיצוב כפתור התנתקות (הכפתור הקבוע) 
+  כדי שיראה כמו שאר הכפתורים בהדר
+*/
+#logoutBtn {
+  position: static !important; /* הסר מיקום קבוע */
+  order: 21; /* הצב אותו אחרי האימייל */
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 999px !important;
+  padding: 8px 16px !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  height: auto;
+}
+#logoutBtn:hover {
+  background: #f0f4f8 !important;
+  color: #000000 !important;
+}
+/* === Overview "הצג הכל" merged list === */
+#view-overview .list-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:10px;
+}
+#view-overview .expenses-table-container{
+  overflow-x:auto;
+}
+#view-overview .expenses-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  direction:rtl;
+}
+#view-overview .expenses-table td{
+  border-bottom:1px solid var(--border);
+  padding:10px;
+  text-align:right;
+}
+#view-overview .list-actions{
+  display:flex;
+  justify-content:flex-start;
+  margin-bottom:12px;
+}
+
+#view-overview #btnAllSort.sort-icon-btn{
+  width:auto;
+  min-width:40px;
+  padding:6px 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1rem;
+}
+
+#view-overview #btnAllSort .sort-icon{
+  display:inline-block;
+  transition:transform .15s ease-in-out;
+}
+
+#view-overview #btnAllSort.asc .sort-icon{
+  transform:rotate(180deg);
+}
+
+#view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) .cell.header{
+  background:color-mix(in oklab, var(--brand) 10%, var(--card));
+}
+
+#view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header) .cell.header{
+  background:color-mix(in oklab, var(--accent) 10%, var(--card));
+}
+
+#view-overview .expenses-table .cell.notes{
+  background:var(--bg);
+}
+
+#view-overview .expenses-table .small-loc{
+  font-size:0.8rem;
+}
+
+
+
+/* === Overview tab ("הצג הכל") color coding === */
+#view-overview .expenses-table tr.exp-item[data-kind="expense"] .cell.header {
+  background: rgba(255, 120, 120, 0.20) !important; /* light red */
+}
+#view-overview .expenses-table tr.exp-item[data-kind="journal"] .cell.header {
+  background: rgba(140, 255, 140, 0.20) !important; /* light green */
+}
+
+/* Mobile layout for Overview: keep simple table on mobile */
+@media (max-width: 720px){
+  /* Use regular table rows so nothing breaks visually */
+  #view-overview .expenses-table{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #view-overview .expenses-table tr.exp-item{
+    display: table-row;
+    margin: 0;
+    padding: 0;
+  }
+
+  #view-overview .expenses-table td.cell{
+    padding: 8px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
+
+  /* Make notes span full width and breathe a bit */
+  #view-overview .expenses-table td.notes{
+    display: table-cell;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+}
+/* Preserve line breaks in Overview */
+#view-overview .cell.notes,
+#view-overview td.notes,
+#view-overview .expenses-table .cell.notes {
+    white-space: break-spaces;
+    word-break: break-word;
+}
+
+/* ======== Mobile-only compact headers for Expenses & Journal ======== */
+@media (max-width: 480px){
+
+  /* Shared */
+  #view-expenses .expenses-table, 
+  #view-journal .expenses-table { border-spacing:0; width:100%; }
+  
+  /* Base item styles */
+  #view-expenses .expenses-table tr.exp-item,
+  #view-journal .expenses-table tr.exp-item {
+      display: grid; /* Use grid for both, but different templates */
+      align-items: center;
+      background: transparent; 
+      padding: 0; 
+      margin-bottom: 8px; /* Space between items */
+      border-radius: 0; 
+  }
+
+  /* --- Expenses: Header Row (tr1) --- */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "amount currency menu";
+    gap: 0;
+    /* Add the grey background to the header row itself */
+    background: rgba(255, 120, 120, 0.20) !important;
+    border-radius: 8px; /* Round the corners of the header block */
+  }
+  
+  /* Cells inside the header row */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+      border: none;
+      padding: .5rem .75rem;
+      background: transparent !important; /* Cells are transparent, TR has color */
+  }
+
+  /* Area assignments for header cells */
+  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-expenses .expenses-table.stacked td.header.category{ display:none; }
+
+  /* --- Expenses: Notes Row (tr4) --- */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes) {
+      display: block; /* Revert to block display for the notes row */
+      margin-top: -4px; /* Pull it closer to the header row */
+      margin-bottom: 8px; /* Keep space to next item */
+  }
+  
+  #view-expenses .expenses-table.stacked td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; /* Notes cell is transparent */
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
+   }
+
+  /* טיפוגרפיה */
+  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+
+  /* --- Journal: Header Row (tr1) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "location location menu";
+    gap: 0; 
+    background: rgba(140, 255, 140, 0.20) !important;
+    padding: 0;
+    margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
+    border-radius: 8px;
+  }
+  
+  /* Cells inside journal header row */
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
+      border:none;
+      padding: .5rem .75rem;
+      background: transparent !important;
+  }
+  
+  #view-journal .expenses-table td.header.date{ grid-area:date; }
+  #view-journal .expenses-table td.header.time{ grid-area:time; }
+  #view-journal .expenses-table td.header.location{ grid-area:location; }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+
+  /* --- Journal: Notes Row (tr4) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes) {
+      display: block; /* Revert to block display */
+      margin-top: -4px; /* Pull it closer */
+      margin-bottom: 8px; /* Space to next item */
+  }
+  
+  #view-journal .expenses-table td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; 
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
+  }
+
+
+  /* הסתרת תאי בחירה במובייל ברירת מחדל (כשאין מצב בחירה) */
+  #view-journal .expenses-table td.select-cell,
+  #view-expenses .expenses-table td.select-cell{ display:none; }
+
+  /* --- Trip meta (נתוני נסיעה): קריא ונוח --- */
+  #view-meta .section .row,
+  #view-meta .budget-row,
+  #view-meta .budget-actions-row{ display:grid; grid-template-columns: 1fr; gap:.6rem; }
+  #view-meta .chips, #view-meta .pill-group, #view-meta .tag-row{ display:flex; flex-wrap:wrap; gap:.4rem; }
+  #view-meta input, #view-meta select, #view-meta textarea{ width:100%; }
+  #view-meta .budget-block{ padding:1rem; }
+  #view-meta .budget-row{ grid-template-columns: repeat(2, 1fr); }
+  #view-meta .budget-row label{ width:100%; }
+
+}
