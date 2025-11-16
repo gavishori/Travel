@@ -834,7 +834,7 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 
 #view-expenses .expenses-table.stacked td.menu-cell{
   width:56px; text-align:center;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(255, 120, 120, 0.20) !important; /* light red */
 }
 #view-expenses .expenses-table.stacked td.menu-cell .menu-btn{
   inline-size: 36px; block-size: 32px; border-radius: 10px;
@@ -1246,19 +1246,26 @@ html, body { overflow-x:hidden; }
   }
   
   /* Cells inside the header row */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) td.cell {
       border: none;
       padding: .5rem .75rem;
       background: transparent !important; /* Cells are transparent, TR has color */
   }
 
   /* Area assignments for header cells */
-  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
-  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
-  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
-  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
-  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
-  #view-expenses .expenses-table.stacked td.header.category{ display:none; }
+  #view-expenses .expenses-table.stacked td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date { grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time { grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount { grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency { grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-expenses .expenses-table.stacked td.header.category,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category { display:none; }
 
   /* --- Expenses: Notes Row (tr4) --- */
   #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
@@ -1268,7 +1275,8 @@ html, body { overflow-x:hidden; }
       margin-bottom: 8px; /* Keep space to next item */
   }
   
-  #view-expenses .expenses-table.stacked td.notes {
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; /* Notes cell is transparent */
@@ -1276,9 +1284,12 @@ html, body { overflow-x:hidden; }
    }
 
   /* טיפוגרפיה */
-  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+  #view-expenses .expenses-table.stacked .amount .amt-main,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amount .amt-main { font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .currency .ils-total { font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amt-sub { font-size:.85em; opacity:.8; }
 
   /* --- Journal: Header Row (tr1) --- */
   #view-journal .expenses-table tr.exp-item:has(td.header),
@@ -1294,16 +1305,21 @@ html, body { overflow-x:hidden; }
   }
   
   /* Cells inside journal header row */
-  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header) td.cell {
       border:none;
       padding: .5rem .75rem;
       background: transparent !important;
   }
   
-  #view-journal .expenses-table td.header.date{ grid-area:date; }
-  #view-journal .expenses-table td.header.time{ grid-area:time; }
-  #view-journal .expenses-table td.header.location{ grid-area:location; }
-  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+  #view-journal .expenses-table td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date { grid-area:date; }
+  #view-journal .expenses-table td.header.time,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time { grid-area:time; }
+  #view-journal .expenses-table td.header.location,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location { grid-area:location; }
+  #view-journal .expenses-table td.menu-cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
 
   /* --- Journal: Notes Row (tr4) --- */
   #view-journal .expenses-table tr.exp-item:has(td.notes),
@@ -1313,7 +1329,8 @@ html, body { overflow-x:hidden; }
       margin-bottom: 8px; /* Space to next item */
   }
   
-  #view-journal .expenses-table td.notes {
+  #view-journal .expenses-table td.notes,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; 
@@ -2316,19 +2333,26 @@ header #btnLogin.danger {
   }
   
   /* Cells inside the header row */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) td.cell {
       border: none;
       padding: .5rem .75rem;
       background: transparent !important; /* Cells are transparent, TR has color */
   }
 
   /* Area assignments for header cells */
-  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
-  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
-  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
-  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
-  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
-  #view-expenses .expenses-table.stacked td.header.category{ display:none; }
+  #view-expenses .expenses-table.stacked td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date { grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time { grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount { grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency { grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-expenses .expenses-table.stacked td.header.category,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category { display:none; }
 
   /* --- Expenses: Notes Row (tr4) --- */
   #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
@@ -2338,7 +2362,8 @@ header #btnLogin.danger {
       margin-bottom: 8px; /* Keep space to next item */
   }
   
-  #view-expenses .expenses-table.stacked td.notes {
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; /* Notes cell is transparent */
@@ -2346,9 +2371,12 @@ header #btnLogin.danger {
    }
 
   /* טיפוגרפיה */
-  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
-  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+  #view-expenses .expenses-table.stacked .amount .amt-main,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amount .amt-main { font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .currency .ils-total { font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amt-sub { font-size:.85em; opacity:.8; }
 
   /* --- Journal: Header Row (tr1) --- */
   #view-journal .expenses-table tr.exp-item:has(td.header),
@@ -2364,16 +2392,21 @@ header #btnLogin.danger {
   }
   
   /* Cells inside journal header row */
-  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header) td.cell {
       border:none;
       padding: .5rem .75rem;
       background: transparent !important;
   }
   
-  #view-journal .expenses-table td.header.date{ grid-area:date; }
-  #view-journal .expenses-table td.header.time{ grid-area:time; }
-  #view-journal .expenses-table td.header.location{ grid-area:location; }
-  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+  #view-journal .expenses-table td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date { grid-area:date; }
+  #view-journal .expenses-table td.header.time,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time { grid-area:time; }
+  #view-journal .expenses-table td.header.location,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location { grid-area:location; }
+  #view-journal .expenses-table td.menu-cell,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
 
   /* --- Journal: Notes Row (tr4) --- */
   #view-journal .expenses-table tr.exp-item:has(td.notes),
@@ -2383,7 +2416,8 @@ header #btnLogin.danger {
       margin-bottom: 8px; /* Space to next item */
   }
   
-  #view-journal .expenses-table td.notes {
+  #view-journal .expenses-table td.notes,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; 
