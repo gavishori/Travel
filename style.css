@@ -826,7 +826,7 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 /* === Stacked expenses layout === */
 #view-expenses .expenses-table.stacked { width:100%; border-collapse:separate; border-spacing:0; }
 #view-expenses .expenses-table.stacked td.cell { border:1px solid var(--border); padding:10px; vertical-align:middle; }
-#view-expenses .expenses-table.stacked td.header { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+#view-expenses .expenses-table.stacked td.header { background: rgba(255, 120, 120, 0.20) !important; /* light red */ }
 #view-expenses .expenses-table.stacked td.header .lbl { font-weight:700; margin-inline-end:6px; }
 #view-expenses .expenses-table.stacked td.menu { width:56px; text-align:center; background: color-mix(in oklab, var(--ink) 6%, transparent); }
 #view-expenses .expenses-table.stacked tr.exp-item + tr.exp-item td { border-top:none; } /* merge look */
@@ -1037,11 +1037,11 @@ body #view-share .cards .card{width:100% !important; max-width:100% !important}
 
 /* Journal header row (date, time, place) same look as Expenses headers */
 #view-journal .expenses-table td.header{
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(140, 255, 140, 0.20) !important; /* light green */
 }
 #view-journal .expenses-table td.menu-cell{
   width:56px; text-align:center;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: rgba(140, 255, 140, 0.20) !important; /* light green */
 }
 
 
@@ -1198,7 +1198,7 @@ html, body { overflow-x:hidden; }
     grid-template-areas: "date time location menu";
     align-items: center;
     gap: 0;
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important; /* <-- שורה זו נוספה */
+    background: rgba(140, 255, 140, 0.20) !important; /* <-- שורה זו שונתה */
   }
   #view-journal .expenses-table tr.exp-item:has(td.header) td.cell{
     background: transparent !important;
@@ -1234,13 +1234,14 @@ html, body { overflow-x:hidden; }
   }
 
   /* --- Expenses: Header Row (tr1) --- */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) {
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
     grid-template-columns: 1fr 1fr auto;
     grid-template-areas: "date time menu"
                          "amount currency menu";
     gap: 0;
     /* Add the grey background to the header row itself */
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
+    background: rgba(255, 120, 120, 0.20) !important;
     border-radius: 8px; /* Round the corners of the header block */
   }
   
@@ -1260,7 +1261,8 @@ html, body { overflow-x:hidden; }
   #view-expenses .expenses-table.stacked td.header.category{ display:none; }
 
   /* --- Expenses: Notes Row (tr4) --- */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes) {
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes) {
       display: block; /* Revert to block display for the notes row */
       margin-top: -4px; /* Pull it closer to the header row */
       margin-bottom: 8px; /* Keep space to next item */
@@ -1279,12 +1281,13 @@ html, body { overflow-x:hidden; }
   #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
 
   /* --- Journal: Header Row (tr1) --- */
-  #view-journal .expenses-table tr.exp-item:has(td.header){ 
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
     grid-template-columns: 1fr 1fr auto;
     grid-template-areas: "date time menu"
                          "location location menu";
     gap: 0; 
-    background: color-mix(in srgb, var(--ink, #000) 6%, transparent) !important;
+    background: rgba(140, 255, 140, 0.20) !important;
     padding: 0;
     margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
     border-radius: 8px;
@@ -1303,7 +1306,8 @@ html, body { overflow-x:hidden; }
   #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
 
   /* --- Journal: Notes Row (tr4) --- */
-  #view-journal .expenses-table tr.exp-item:has(td.notes) {
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes) {
       display: block; /* Revert to block display */
       margin-top: -4px; /* Pull it closer */
       margin-bottom: 8px; /* Space to next item */
@@ -2279,4 +2283,126 @@ header #btnLogin.danger {
 #view-overview .expenses-table .cell.notes {
     white-space: break-spaces;
     word-break: break-word;
+}
+
+/* ======== Mobile-only compact headers for Expenses & Journal ======== */
+@media (max-width: 480px){
+
+  /* Shared */
+  #view-expenses .expenses-table, 
+  #view-journal .expenses-table { border-spacing:0; width:100%; }
+  
+  /* Base item styles */
+  #view-expenses .expenses-table tr.exp-item,
+  #view-journal .expenses-table tr.exp-item {
+      display: grid; /* Use grid for both, but different templates */
+      align-items: center;
+      background: transparent; 
+      padding: 0; 
+      margin-bottom: 8px; /* Space between items */
+      border-radius: 0; 
+  }
+
+  /* --- Expenses: Header Row (tr1) --- */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "amount currency menu";
+    gap: 0;
+    /* Add the grey background to the header row itself */
+    background: rgba(255, 120, 120, 0.20) !important;
+    border-radius: 8px; /* Round the corners of the header block */
+  }
+  
+  /* Cells inside the header row */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+      border: none;
+      padding: .5rem .75rem;
+      background: transparent !important; /* Cells are transparent, TR has color */
+  }
+
+  /* Area assignments for header cells */
+  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
+  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
+  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
+  #view-expenses .expenses-table.stacked td.header.currency{ grid-area:currency; }
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
+  #view-expenses .expenses-table.stacked td.header.category{ display:none; }
+
+  /* --- Expenses: Notes Row (tr4) --- */
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes) {
+      display: block; /* Revert to block display for the notes row */
+      margin-top: -4px; /* Pull it closer to the header row */
+      margin-bottom: 8px; /* Keep space to next item */
+  }
+  
+  #view-expenses .expenses-table.stacked td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; /* Notes cell is transparent */
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
+   }
+
+  /* טיפוגרפיה */
+  #view-expenses .expenses-table.stacked .amount .amt-main{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .currency .ils-total{ font-weight:700; }
+  #view-expenses .expenses-table.stacked .amt-sub{ font-size:.85em; opacity:.8; }
+
+  /* --- Journal: Header Row (tr1) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas: "date time menu"
+                         "location location menu";
+    gap: 0; 
+    background: rgba(140, 255, 140, 0.20) !important;
+    padding: 0;
+    margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
+    border-radius: 8px;
+  }
+  
+  /* Cells inside journal header row */
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
+      border:none;
+      padding: .5rem .75rem;
+      background: transparent !important;
+  }
+  
+  #view-journal .expenses-table td.header.date{ grid-area:date; }
+  #view-journal .expenses-table td.header.time{ grid-area:time; }
+  #view-journal .expenses-table td.header.location{ grid-area:location; }
+  #view-journal .expenses-table td.menu-cell{ grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+
+  /* --- Journal: Notes Row (tr4) --- */
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes) {
+      display: block; /* Revert to block display */
+      margin-top: -4px; /* Pull it closer */
+      margin-bottom: 8px; /* Space to next item */
+  }
+  
+  #view-journal .expenses-table td.notes {
+      grid-column: 1 / -1;
+      padding: .5rem .75rem;
+      background: transparent; 
+      border: none; /* <-- הוסר כל הקו (עליון ותחתון) */
+  }
+
+
+  /* הסתרת תאי בחירה במובייל ברירת מחדל (כשאין מצב בחירה) */
+  #view-journal .expenses-table td.select-cell,
+  #view-expenses .expenses-table td.select-cell{ display:none; }
+
+  /* --- Trip meta (נתוני נסיעה): קריא ונוח --- */
+  #view-meta .section .row,
+  #view-meta .budget-row,
+  #view-meta .budget-actions-row{ display:grid; grid-template-columns: 1fr; gap:.6rem; }
+  #view-meta .chips, #view-meta .pill-group, #view-meta .tag-row{ display:flex; flex-wrap:wrap; gap:.4rem; }
+  #view-meta input, #view-meta select, #view-meta textarea{ width:100%; }
+  #view-meta .budget-block{ padding:1rem; }
+  #view-meta .budget-row{ grid-template-columns: repeat(2, 1fr); }
+  #view-meta .budget-row label{ width:100%; }
+
 }
