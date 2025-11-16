@@ -1234,49 +1234,88 @@ html, body { overflow-x:hidden; }
   }
 
   /* --- Expenses: Header Row (tr1) --- */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas: "date time menu"
-                         "amount currency menu";
-    gap: 0;
-    /* Add the grey background to the header row itself */
-    background: rgba(255, 120, 120, 0.20) !important;
-    border-radius: 8px; /* Round the corners of the header block */
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto; /* 3 עמודות גמישות */
+    grid-template-areas:
+      "category amount   menu"
+      "date     time     currency";
+    gap: 0 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 0;
+    background: rgba(255, 120, 120, 0.20) !important; /* שמירה על הרקע האדום */
   }
   
   /* Cells inside the header row */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) td.cell {
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.cell,
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell {
+      background: transparent !important;
       border: none;
-      padding: .5rem .75rem;
-      background: transparent !important; /* Cells are transparent, TR has color */
+      padding: 2px;
+      display: block;
   }
 
   /* Area assignments for header cells */
-  #view-expenses .expenses-table.stacked td.header.date,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date { grid-area:date; }
-  #view-expenses .expenses-table.stacked td.header.time,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time { grid-area:time; }
-  #view-expenses .expenses-table.stacked td.header.amount,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount { grid-area:amount; }
-  #view-expenses .expenses-table.stacked td.header.currency,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency { grid-area:currency; }
-  #view-expenses .expenses-table.stacked td.menu-cell,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; }
-  #view-expenses .expenses-table.stacked td.header.category,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category { display:none; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category,
+  #view-expenses .expenses-table.stacked td.header.category {
+    grid-area: category;
+    font-weight: 700;
+    font-size: 1.1em;
+    white-space: normal;
+    word-break: break-word;
+    display: block !important; /* בטל את ה-display:none הקיים */
+    padding-bottom: 6px !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount,
+  #view-expenses .expenses-table.stacked td.header.amount {
+    grid-area: amount;
+    text-align: left; /* יישור הסכום לשמאל */
+    padding-left: 0 !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.menu-cell,
+  #view-expenses .expenses-table.stacked td.menu-cell {
+    grid-area: menu;
+    justify-self: end;
+    text-align: left;
+  }
+  
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date,
+  #view-expenses .expenses-table.stacked td.header.date {
+    grid-area: date;
+  }
+  
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time,
+  #view-expenses .expenses-table.stacked td.header.time {
+    grid-area: time;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency,
+  #view-expenses .expenses-table.stacked td.header.currency {
+    grid-area: currency;
+    text-align: left; /* יישור הסכום בש"ח לשמאל */
+    padding-left: 0 !important;
+  }
+
+  /* הסתר את המיקום הקטן שמופיע בתא הש"ח במובייל, זה צפוף מדי */
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency .small-loc,
+  #view-expenses .expenses-table.stacked td.header.currency .small-loc {
+    display: none;
+  }
 
   /* --- Expenses: Notes Row (tr4) --- */
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes) {
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.notes),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes) {
       display: block; /* Revert to block display for the notes row */
       margin-top: -4px; /* Pull it closer to the header row */
       margin-bottom: 8px; /* Keep space to next item */
   }
   
-  #view-expenses .expenses-table.stacked td.notes,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.notes {
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.notes,
+  #view-expenses .expenses-table.stacked td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; /* Notes cell is transparent */
@@ -1284,53 +1323,74 @@ html, body { overflow-x:hidden; }
    }
 
   /* טיפוגרפיה */
-  #view-expenses .expenses-table.stacked .amount .amt-main,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amount .amt-main { font-weight:700; }
-  #view-expenses .expenses-table.stacked .currency .ils-total,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .currency .ils-total { font-weight:700; }
-  #view-expenses .expenses-table.stacked .amt-sub,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amt-sub { font-size:.85em; opacity:.8; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amount .amt-main,
+  #view-expenses .expenses-table.stacked .amount .amt-main { font-weight:700; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .currency .ils-total,
+  #view-expenses .expenses-table.stacked .currency .ils-total { font-weight:700; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] .amt-sub,
+  #view-expenses .expenses-table.stacked .amt-sub { font-size:.85em; opacity:.8; }
 
   /* --- Journal: Header Row (tr1) --- */
-  #view-journal .expenses-table tr.exp-item:has(td.header),
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas: "date time menu"
-                         "location location menu";
-    gap: 0; 
-    background: rgba(140, 255, 140, 0.20) !important;
-    padding: 0;
-    margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header) { 
+    display: grid;
+    grid-template-columns: 1fr auto auto; /* עמודות גמישות עבור תאריך, שעה ותפריט */
+    grid-template-areas:
+      "location location location"
+      "date     time     menu";
+    gap: 0 8px; /* רווח קל בין עמודות שורה 2 */
+    padding: 8px 12px;
     border-radius: 8px;
+    margin-bottom: 0; /* השורה הבאה (notes) תיתן את המרווח */
+    background: rgba(140, 255, 140, 0.20) !important; /* שמירה על הרקע הירוק */
   }
   
   /* Cells inside journal header row */
-  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header) td.cell {
-      border:none;
-      padding: .5rem .75rem;
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.cell,
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell {
       background: transparent !important;
+      border: none;
+      padding: 2px;
+      display: block; /* ודא שהם מתנהגים כבלוקים בתוך הגריד */
   }
   
-  #view-journal .expenses-table td.header.date,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date { grid-area:date; }
-  #view-journal .expenses-table td.header.time,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time { grid-area:time; }
-  #view-journal .expenses-table td.header.location,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location { grid-area:location; }
-  #view-journal .expenses-table td.menu-cell,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.menu-cell { grid-area:menu; text-align:left; padding: .5rem 0 .5rem .75rem; /* Adjust menu padding */ }
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location,
+  #view-journal .expenses-table td.header.location {
+    grid-area: location;
+    font-weight: 700;
+    font-size: 1.1em;
+    white-space: normal; /* אפשר גלישת שורות */
+    word-break: break-word;
+    padding-bottom: 6px !important;
+    line-height: 1.4;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date,
+  #view-journal .expenses-table td.header.date {
+    grid-area: date;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time,
+  #view-journal .expenses-table td.header.time {
+    grid-area: time;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.menu-cell,
+  #view-journal .expenses-table td.menu-cell {
+    grid-area: menu;
+    justify-self: end; /* יישור התפריט לשמאל (סוף השורה ב-RTL) */
+  }
 
   /* --- Journal: Notes Row (tr4) --- */
-  #view-journal .expenses-table tr.exp-item:has(td.notes),
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes) {
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.notes),
+  #view-journal .expenses-table tr.exp-item:has(td.notes) {
       display: block; /* Revert to block display */
       margin-top: -4px; /* Pull it closer */
       margin-bottom: 8px; /* Space to next item */
   }
   
-  #view-journal .expenses-table td.notes,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.notes {
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.notes,
+  #view-journal .expenses-table td.notes {
       grid-column: 1 / -1;
       padding: .5rem .75rem;
       background: transparent; 
