@@ -83,27 +83,14 @@ document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 
 async function loadJournalOnly(){
   const tid = state.currentTripId;
-  if(!tid) return;
+  if (!tid) return;
   const ref = FB.doc(db, 'trips', tid);
   const snap = await FB.getDoc(ref);
-  if(!snap.exists()) return;
+  if (!snap.exists()) return;
   const t = snap.data() || {};
-  if(!state.current) state.current = { id: tid };
-  state.current.journal = t.journal || {};  /*__JR_DT_BLOCK__*/
-  const $jrD = document.getElementById('jrDate');
-  const $jrT = document.getElementById('jrTime');
-  let _jr_dateIso;
-  if ($jrD && $jrT && $jrD.value && $jrT.value) {
-    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
-  } else {
-    const curJ = (t.journal && t.journal[id]) || {};
-    _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
-  }
-  const __jr_dt = new Date(_jr_dateIso);
-  const __pad2 = n=>String(n).padStart(2,'0');
-  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__pad2(__jr_dt.getFullYear())}`;
-  const __jr_timeStr = `${__pad2(__jr_dt.getHours())}:${__pad2(__jr_dt.getMinutes())}`;
-
+  if (!state.current) state.current = { id: tid };
+  // טוען רק את היומן בלי לשחק עם אזורי זמן
+  state.current.journal = t.journal || {};
   renderJournal(state.current, state.journalSort);
 }
 
@@ -1131,9 +1118,18 @@ function renderExpenses(t, order){
     }
   })();
 arr.forEach(e=>{
-    const d = dayjs(e.dateIso || e.createdAt);
-    const dateStr = d.isValid() ? d.format('DD/MM/YYYY') : '';
-    const timeStr = d.isValid() ? d.format('HH:mm') : '';
+    // קודם כל משתמשים בשדות הטקסט שנשמרו (תאריך/שעה כפי שהוזנו)
+    let dateStr = (e.date || '').trim();
+    let timeStr = (e.time || '').trim();
+
+    if (!dateStr || !timeStr) {
+      const d = dayjs(e.dateIso || e.createdAt);
+      if (d.isValid()) {
+        if (!dateStr) dateStr = d.format('DD/MM/YYYY');
+        if (!timeStr) timeStr = d.format('HH:mm');
+      }
+    }
+
     const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const curr   = e.currency||'';
     
@@ -1219,14 +1215,18 @@ function renderJournal(t, order){
 
     arr.forEach(j=>{
       const baseIso = j.dateIso || j.createdAt;
-      let dateStr = '', timeStr = '';
-      if (baseIso) {
+      // תמיד נעדיף את השדות שנשמרו ידנית (תאריך/שעה) ורק אם חסר נשתמש ב-dateIso/createdAt
+      let dateStr = (j.date || '').trim();
+      let timeStr = (j.time || '').trim();
+
+      if ((!dateStr || !timeStr) && baseIso) {
         const d = dayjs(baseIso);
-        if (d.isValid()) { dateStr = d.format('DD/MM/YYYY'); timeStr = d.format('HH:mm'); }
+        if (d.isValid()) {
+          if (!dateStr) dateStr = d.format('DD/MM/YYYY');
+          if (!timeStr) timeStr = d.format('HH:mm');
+        }
       }
-      // fallback to stored strings if exist
-      if (!dateStr && j.date) dateStr = j.date;
-      if (!timeStr && j.time) timeStr = j.time;
+
       const cat = j.category || '';
       
       // --- *** התיקון נמצא כאן *** ---
@@ -1660,17 +1660,39 @@ async function saveExpense(){
 
   const $expD = document.getElementById('expDate');
   const $expT = document.getElementById('expTime');
-  let _exp_dateIso;
+  // שמירת תאריך/שעה כהזנת המשתמש, בלי המרה ל־UTC
+  const pad2 = n => String(n).padStart(2, '0');
+  let __exp_dateStr = '';
+  let __exp_timeStr = '';
+  let _exp_dateIso = '';
+
+  const curE = (t.expenses && t.expenses[$('#expenseModal')?.dataset?.id || '']) || {};
+
   if ($expD && $expT && $expD.value && $expT.value) {
-    _exp_dateIso = new Date(`${$expD.value}T${$expT.value}:00`).toISOString();
+    // expDate הוא yyyy-mm-dd
+    const [yy, mm, dd] = $expD.value.split('-').map(Number);
+    const [hh, mi] = $expT.value.split(':').map(Number);
+    __exp_dateStr = `${pad2(dd)}/${pad2(mm)}/${yy}`;
+    __exp_timeStr = `${pad2(hh)}:${pad2(mi)}`;
+    _exp_dateIso = `${yy}-${pad2(mm)}-${pad2(dd)}T${pad2(hh)}:${pad2(mi)}:00`;
+  } else if (curE.date && curE.time) {
+    // קיימים ערכים קודמים – משתמשים בהם כמות־שהם
+    __exp_dateStr = curE.date;
+    __exp_timeStr = curE.time;
+    try {
+      const [dd, mm, yy] = String(curE.date).split('/').map(Number);
+      const [hh, mi] = String(curE.time || '00:00').split(':').map(Number);
+      _exp_dateIso = `${yy}-${pad2(mm)}-${pad2(dd)}T${pad2(hh)}:${pad2(mi)}:00`;
+    } catch (_) {
+      _exp_dateIso = curE.dateIso || curE.createdAt || '';
+    }
   } else {
-    const curE = (t.expenses && t.expenses[$('#expenseModal')?.dataset?.id || '']) || {};
-    _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
+    // ברירת מחדל: זמן נוכחי מקומי
+    const d = curE.dateIso || curE.createdAt ? new Date(curE.dateIso || curE.createdAt) : new Date();
+    __exp_dateStr = `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+    __exp_timeStr = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    _exp_dateIso = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:00`;
   }
-  const __exp_dt = new Date(_exp_dateIso);
-  const __pad = n=>String(n).padStart(2,'0');
-  const __exp_dateStr = `${__pad(__exp_dt.getDate())}/${__pad(__exp_dt.getMonth()+1)}/${__exp_dt.getFullYear()}`;
-  const __exp_timeStr = `${__pad(__exp_dt.getHours())}:${__pad(__exp_dt.getMinutes())}`;
   
   const id = $('#expenseModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.expenses = t.expenses || {};
@@ -2337,18 +2359,39 @@ async function saveJournal() {
 
   const $jrD = $('#jrDate');
   const $jrT = $('#jrTime');
-  let _jr_dateIso;
-  if ($jrD && $jrT && $jrD.value && $jrT.value) {
-    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
-  } else {
-    _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
-  }
-  const __dt = new Date(_jr_dateIso);
   const pad2 = n => String(n).padStart(2, '0');
+  let _jr_dateIso = '';
+  let __dateStr = '';
+  let __timeStr = '';
+
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    // jrDate הוא yyyy-mm-dd
+    const [yy, mm, dd] = $jrD.value.split('-').map(Number);
+    const [hh, mi] = $jrT.value.split(':').map(Number);
+    __dateStr = `${pad2(dd)}/${pad2(mm)}/${yy}`;
+    __timeStr = `${pad2(hh)}:${pad2(mi)}`;
+    _jr_dateIso = `${yy}-${pad2(mm)}-${pad2(dd)}T${pad2(hh)}:${pad2(mi)}:00`;
+  } else if (prev.date && prev.time) {
+    __dateStr = prev.date;
+    __timeStr = prev.time;
+    try {
+      const [dd, mm, yy] = String(prev.date).split('/').map(Number);
+      const [hh, mi] = String(prev.time || '00:00').split(':').map(Number);
+      _jr_dateIso = `${yy}-${pad2(mm)}-${pad2(dd)}T${pad2(hh)}:${pad2(mi)}:00`;
+    } catch (_) {
+      _jr_dateIso = prev.dateIso || prev.createdAt || '';
+    }
+  } else {
+    const base = prev.dateIso || prev.createdAt || new Date().toISOString();
+    const d = new Date(base);
+    __dateStr = `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+    __timeStr = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    _jr_dateIso = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:00`;
+  }
 
   t.journal[id].dateIso = _jr_dateIso;
-  t.journal[id].date    = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
-  t.journal[id].time    = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
+  t.journal[id].date    = __dateStr;
+  t.journal[id].time    = __timeStr;
 
   await FB.updateDoc(ref, { journal: t.journal });
   $('#journalModal').close();
@@ -3453,7 +3496,7 @@ async function importGPXFromFile(file){
     points.forEach(p=>{
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       
-      const _point_dateIso = p._time ? new Date(p._time).toISOString() : new Date().toISOString();
+      const _point_dateIso = p._time || new Date().toISOString();
       const __dt = new Date(_point_dateIso);
       const pad2 = n => String(n).padStart(2, '0');
       const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
@@ -4045,7 +4088,7 @@ async function importKMLFromFile(file){
       
       // --- התחלת התיקון ---
       // 1. הגדרת משתני התאריך והשעה על בסיס הזמן מהקובץ
-      const _point_dateIso = p._time ? new Date(p._time).toISOString() : new Date().toISOString();
+      const _point_dateIso = p._time || new Date().toISOString();
       const __dt = new Date(_point_dateIso);
       const pad2 = n => String(n).padStart(2, '0');
       const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
@@ -4676,41 +4719,85 @@ function renderCategoryBreakdownNode(targetId){
     document.addEventListener('DOMContentLoaded', attachLogout, { once: true });
   }
 })();
-// === Journal Expand/Collapse All ===
+// === Journal Expand/Collapse All (single toggle + per-row open) ===
 (function(){
-  function wireJournalCollapseButtons(){
-    const btnCollapse = document.getElementById('btnCollapseAllJournal');
-    const btnExpand = document.getElementById('btnExpandAllJournal');
+  function wireJournalToggle(){
+    const btn = document.getElementById('btnToggleJournalDetails');
     const journalBody = document.getElementById('tblJournal');
+    if (!btn || !journalBody || btn.dataset.wired === '1') return;
+    btn.dataset.wired = '1';
 
-    if (btnCollapse && !btnCollapse.dataset.wired) {
-      btnCollapse.dataset.wired = '1';
-      btnCollapse.addEventListener('click', () => {
-        if (!journalBody) return;
-        // מצא את כל שורות התוכן (אלו שמכילות תא מסוג 'notes') והסתר אותן
-        journalBody.querySelectorAll('tr.exp-item:has(td.notes)').forEach(tr => {
-          tr.style.display = 'none';
-        });
+    function getNotesRows(){
+      return journalBody.querySelectorAll('tr.exp-item:has(td.notes)');
+    }
+
+    function areAllCollapsed(){
+      const rows = getNotesRows();
+      if (!rows.length) return false;
+      return Array.from(rows).every(tr => {
+        const styleDisplay = tr.style.display;
+        if (styleDisplay === 'none') return true;
+        if (styleDisplay === '') {
+          try {
+            return window.getComputedStyle(tr).display === 'none';
+          } catch(e){
+            return false;
+          }
+        }
+        return false;
       });
     }
 
-    if (btnExpand && !btnExpand.dataset.wired) {
-      btnExpand.dataset.wired = '1';
-      btnExpand.addEventListener('click', () => {
-        if (!journalBody) return;
-        // אפס את התצוגה לכל שורות התוכן. הדפדפן ישתמש ב-CSS הקיים.
-        journalBody.querySelectorAll('tr.exp-item:has(td.notes)').forEach(tr => {
-          tr.style.display = ''; 
-        });
-      });
+    function updateLabel(){
+      btn.textContent = areAllCollapsed() ? 'פתח הכל' : 'צמצם הכל';
     }
+
+    function setAllCollapsed(collapsed){
+      getNotesRows().forEach(tr => {
+        tr.style.display = collapsed ? 'none' : '';
+      });
+      updateLabel();
+    }
+
+    // Toggle all on button click
+    btn.addEventListener('click', () => {
+      const collapsed = areAllCollapsed();
+      setAllCollapsed(!collapsed);
+    });
+
+    // Per-row toggle: when list is collapsed, אפשר לפתוח רק שורה אחת
+    journalBody.addEventListener('click', (ev) => {
+      const row = ev.target && ev.target.closest && ev.target.closest('tr.exp-item');
+      if (!row || !journalBody.contains(row)) return;
+      // אל תטפל בשורת ההערות עצמה
+      if (row.querySelector('td.notes')) return;
+      // התעלם מלחיצות על תפריט, קישורים ותיבות סימון בחירה
+      if (ev.target.closest('.menu-btn') || ev.target.closest('a') || ev.target.closest('input[type="checkbox"]')) return;
+
+      const notesRow = row.nextElementSibling;
+      if (!notesRow || !notesRow.matches('tr.exp-item') || !notesRow.querySelector('td.notes')) return;
+
+      const currentlyHidden = (notesRow.style.display === 'none' || window.getComputedStyle(notesRow).display === 'none');
+
+      // אם הכול כרגע מצומצם, נפתח רק את השורה הזאת ונסגור את כל השאר
+      if (areAllCollapsed() && currentlyHidden) {
+        getNotesRows().forEach(tr => { tr.style.display = 'none'; });
+        notesRow.style.display = '';
+      } else {
+        // אחרת: פשוט טוגל רגיל לשורה הזאת
+        notesRow.style.display = currentlyHidden ? '' : 'none';
+      }
+      updateLabel();
+    });
+
+    // קבע טקסט התחלתי לפי מצב הטבלה
+    updateLabel();
   }
 
-  // הפעל את הלוגיקה כשהעמוד נטען
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wireJournalCollapseButtons);
+    document.addEventListener('DOMContentLoaded', wireJournalToggle);
   } else {
-    wireJournalCollapseButtons(); // הפעל מיד אם כבר נטען
+    wireJournalToggle();
   }
 })();
 // === End Journal Expand/Collapse All ===
@@ -4801,7 +4888,7 @@ function renderCategoryBreakdownNode(targetId){
                         const dayDate = new Date(day.date);
                         if (isNaN(dayDate)) continue;
                         
-                        const dayIso = dayDate.toISOString();
+                        const dayIso = `${dayDate.getFullYear()}-${pad(dayDate.getMonth() + 1)}-${pad(dayDate.getDate())}T09:00:00`;
                         const dateStr = `${pad(dayDate.getDate())}/${pad(dayDate.getMonth() + 1)}/${dayDate.getFullYear()}`;
                         const timeStr = '09:00';
                         
@@ -4854,7 +4941,7 @@ function renderCategoryBreakdownNode(targetId){
                     for (const j of data.journal) {
                         const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
                         const d = parseDMY(j.date);
-                        const iso = d.toISOString();
+                        const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T09:00:00`;
                         const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
                         const timeStr = '09:00';
 
@@ -4872,7 +4959,7 @@ function renderCategoryBreakdownNode(targetId){
                     for (const e of data.expenses) {
                         const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
                         const d = parseDMY(e.date);
-                        const iso = d.toISOString();
+                        const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T09:00:00`;
                         const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
                         const timeStr = '09:00';
 
