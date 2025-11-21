@@ -439,16 +439,69 @@ function attachMapPopup(marker, type, id, dataObj){
         });
       }
       const editBtn = root.querySelector('button[data-act="edit"]');
-      if(editBtn){
-        editBtn.addEventListener('click', (e)=>{
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
           e.preventDefault();
+
           const tid = state.currentTripId;
-          if(!tid) return;
-          const obj = (editBtn.dataset.type==='expense')
-            ? (state._lastTripObj?.expenses?.[id])
-            : (state._lastTripObj?.journal?.[id]);
-          if(editBtn.dataset.type==='expense') openExpenseModal({...obj, id});
-          else openJournalModal({...obj, id});
+          if (!tid) {
+            console.warn('[map-popup] Edit clicked but state.currentTripId is missing', {
+              type: editBtn.dataset.type,
+              id
+            });
+            try { toast('שגיאה: אין נסיעה פעילה לעריכה'); } catch (_) {}
+            return;
+          }
+
+          if (!state._lastTripObj) {
+            console.warn('[map-popup] Edit clicked but state._lastTripObj is missing', {
+              tripId: tid,
+              type: editBtn.dataset.type,
+              id
+            });
+            try { toast('שגיאה: הנתונים של הנסיעה לא נטענו'); } catch (_) {}
+            return;
+          }
+
+          const isExpense = (editBtn.dataset.type === 'expense');
+          const srcCollection = isExpense ? state._lastTripObj.expenses : state._lastTripObj.journal;
+
+          if (!srcCollection || typeof srcCollection !== 'object') {
+            console.warn('[map-popup] Edit clicked but source collection is empty/invalid', {
+              tripId: tid,
+              type: editBtn.dataset.type,
+              id,
+              srcCollection
+            });
+            try { toast('לא נמצא פריט לעריכה'); } catch (_) {}
+            return;
+          }
+
+          const obj = srcCollection[id];
+
+          if (!obj) {
+            console.warn('[map-popup] Edit clicked but object not found in _lastTripObj', {
+              tripId: tid,
+              type: isExpense ? 'expense' : 'journal',
+              id,
+              keys: Object.keys(srcCollection || {})
+            });
+            try { toast('לא נמצא פריט לעריכה (אולי נמחק או עודכן)'); } catch (_) {}
+            return;
+          }
+
+          console.debug('[map-popup] Opening edit modal from map', {
+            tripId: tid,
+            type: isExpense ? 'expense' : 'journal',
+            id,
+            obj
+          });
+
+          if (isExpense) {
+            openExpenseModal({ ...obj, id });
+          } else {
+            openJournalModal({ ...obj, id });
+          }
         });
       }
     });
