@@ -1109,7 +1109,9 @@ async function loadTrip(){
   if(!snap.exists()) return;
   const t = { id: snap.id, ...snap.data() }; state._lastTripObj = t;
   state.current = t;
-  try{ const _r = await fetchRatesOnce(); if(_r) state.rates = _r; }catch(e){}
+  if (t.rates && Object.keys(t.rates).length) {
+    state.rates = t.rates;
+  }
   state.current.localCurrency = getLocalCurrency(t.destination);
   ensureExpenseCurrencyOption();
 
@@ -1702,10 +1704,10 @@ $('#expLocationName').value = e?.locationName || '';
 }
 
 async function saveExpense(){
-  // בדיקה כפויה של מיקום לפני שמירה
+  // בדיקה אופציונלית של מיקום ברקע לפני שמירה (לא חוסם את התהליך)
   if ($('#expLocationName').value.trim() && !$('#expLat').value) {
-      if(typeof showToast === 'function') showToast('משלים נתוני מיקום...');
-      await autoFetchCoords('exp');
+      if(typeof showToast === 'function') showToast('מחפש מיקום ברקע...');
+      autoFetchCoords('exp');
   }
 
   const ref  = FB.doc(db,'trips', state.currentTripId);
@@ -1750,9 +1752,26 @@ async function saveExpense(){
   };
 
   await FB.updateDoc(ref, { expenses: t.expenses, rates: t.rates });
+
+  // עדכון סטייט לוקאלי ורינדור נקודתי במקום טעינה מלאה מהשרת
+  state.current = state.current || {};
+  state.current.expenses = t.expenses;
+  if (t.rates) {
+    state.rates = t.rates;
+  }
+
   $('#expenseModal').close();
   showToast('ההוצאה נשמרה');
-  await loadTrip();
+
+  if (typeof renderExpenses === 'function') {
+    renderExpenses(state.current);
+  }
+  if (typeof renderExpenseSummary === 'function') {
+    renderExpenseSummary(state.current);
+  }
+  if (typeof renderAllTimeline === 'function') {
+    renderAllTimeline(state.current, state.allSort || 'desc');
+  }
 }
 
  
@@ -2364,13 +2383,13 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
 }
 
 async function saveJournal() {
-  // בדיקה כפויה של מיקום לפני שמירה
+  // בדיקה אופציונלית של מיקום ברקע לפני שמירה (לא חוסם את התהליך)
   if ($('#jrLocationName').value.trim() && !$('#jrLat').value) {
-      if(typeof showToast === 'function') showToast('משלים נתוני מיקום...');
-      await autoFetchCoords('jr');
+      if(typeof showToast === 'function') showToast('מחפש מיקום ברקע...');
+      autoFetchCoords('jr');
   }
 
-  
+
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
 // ---------------------------------------
@@ -2410,9 +2429,20 @@ async function saveJournal() {
   t.journal[id].time    = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
   await FB.updateDoc(ref, { journal: t.journal });
+
+  // עדכון סטייט לוקאלי ורינדור נקודתי במקום טעינה מלאה מהשרת
+  state.current = state.current || {};
+  state.current.journal = t.journal;
+
   $('#journalModal').close();
   showToast('רישום יומן נשמר');
-  await loadTrip();
+
+  if (typeof renderJournal === 'function') {
+    renderJournal(state.current);
+  }
+  if (typeof renderAllTimeline === 'function') {
+    renderAllTimeline(state.current, state.allSort || 'desc');
+  }
 }
 
 $('#btnUseCurrentJr').addEventListener('click', () => {

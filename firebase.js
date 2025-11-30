@@ -28,7 +28,8 @@ import {
   addDoc,
   getDocs,
   enableNetwork,
-  disableNetwork
+  disableNetwork,
+  enableIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- CONFIG ---
@@ -42,7 +43,13 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true });
+export const db  = initializeFirestore(app, { ignoreUndefinedProperties: true });
+
+// Enable offline persistence (cache) so the app works offline and syncs when back online
+enableIndexedDbPersistence(db).catch((err) => {
+  console.warn('offline persistence error', err?.code || err);
+});
+
 setLogLevel("error");
 
 // --- AUTH ---
