@@ -2406,3 +2406,14 @@ header #btnLogin.danger {
   #view-meta .budget-row label{ width:100%; }
 
 }
+/* GPX button + manager */
+.btn-gpx{background:#0b5ed7;color:#fff;border-color:#084298}
+.btn-gpx.active{background:#084298}
+.gpx-panel{position:absolute;left:16px;top:90px;z-index:900;max-width:min(720px, calc(100% - 32px));background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.15);padding:14px}
+.gpx-panel .gpx-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.gpx-panel .gpx-count{margin-inline-start:auto;color:#6b7280;font-weight:600}
+.gpx-panel .gpx-list{display:flex;flex-direction:column;gap:10px;max-height:min(420px, calc(100vh - 240px));overflow:auto;padding-right:6px}
+.gpx-panel .gpx-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border-top:1px solid #eef2f7;padding-top:10px}
+.gpx-panel .gpx-row:first-child{border-top:none;padding-top:0}
+.gpx-panel .gpx-name{font-weight:700}
+.gpx-panel .gpx-actions{display:flex;gap:8px}

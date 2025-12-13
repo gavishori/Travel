@@ -12,6 +12,7 @@ function stripLinks(text){
   }catch(e){ return (text||''); }
 }
 
+var importGPXFromFile, importGPXAsTrek;
 // === Auth Button Toggle (Login <-> Logout) ===
 function wireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
@@ -1109,9 +1110,7 @@ async function loadTrip(){
   if(!snap.exists()) return;
   const t = { id: snap.id, ...snap.data() }; state._lastTripObj = t;
   state.current = t;
-  if (t.rates && Object.keys(t.rates).length) {
-    state.rates = t.rates;
-  }
+  try{ const _r = await fetchRatesOnce(); if(_r) state.rates = _r; }catch(e){}
   state.current.localCurrency = getLocalCurrency(t.destination);
   ensureExpenseCurrencyOption();
 
@@ -1306,7 +1305,7 @@ function renderJournal(t, order){
         ${selectCell}
         <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
         <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
-        <td class="cell header location" colspan="2"><span class="lbl">מקום:</span> ${locStr||''}</td>
+        <td class="cell header location" colspan="2"><span class="lbl">כותרת:</span> ${locStr||''}</td>
         <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות" data-id="${j.id}">...</button></td>
       `;
       const tr4 = document.createElement('tr');
@@ -1487,7 +1486,7 @@ function appendJournalRowToTimeline(body, j){
     tr1.innerHTML = `
       <td class="cell header date"><span class="lbl">תאריך:</span> ${dateStr}</td>
       <td class="cell header time"><span class="lbl">שעה:</span> ${timeStr}</td>
-      <td class="cell header location" colspan="3"><span class="lbl">מקום:</span> ${locStr || ''}</td>
+      <td class="cell header location" colspan="3"><span class="lbl">כותרת:</span> ${locStr || ''}</td>
       <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות" data-kind="journal" data-id="${j.id}">...</button></td>
     `;
 
@@ -1704,13 +1703,8 @@ $('#expLocationName').value = e?.locationName || '';
 }
 
 async function saveExpense(){
-  // בדיקה אופציונלית של מיקום ברקע לפני שמירה (לא חוסם את התהליך)
-  if ($('#expLocationName').value.trim() && !$('#expLat').value) {
-      if(typeof showToast === 'function') showToast('מחפש מיקום ברקע...');
-      autoFetchCoords('exp');
-  }
-
-  const ref  = FB.doc(db,'trips', state.currentTripId);
+  // מיקום נקבע רק דרך 'בחר ע\"ג מפה' או 'בחר מיקום נוכחי' — אין חיפוש אוטומטי לפי כותרת.
+const ref  = FB.doc(db,'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t    = snap.exists() ? (snap.data()||{}) : {};
 
@@ -1752,26 +1746,9 @@ async function saveExpense(){
   };
 
   await FB.updateDoc(ref, { expenses: t.expenses, rates: t.rates });
-
-  // עדכון סטייט לוקאלי ורינדור נקודתי במקום טעינה מלאה מהשרת
-  state.current = state.current || {};
-  state.current.expenses = t.expenses;
-  if (t.rates) {
-    state.rates = t.rates;
-  }
-
   $('#expenseModal').close();
   showToast('ההוצאה נשמרה');
-
-  if (typeof renderExpenses === 'function') {
-    renderExpenses(state.current);
-  }
-  if (typeof renderExpenseSummary === 'function') {
-    renderExpenseSummary(state.current);
-  }
-  if (typeof renderAllTimeline === 'function') {
-    renderAllTimeline(state.current, state.allSort || 'desc');
-  }
+  await loadTrip();
 }
 
  
@@ -2098,7 +2075,7 @@ async function deleteJournal(id){
   const t = snap.data() || {};
   if(t.journal && t.journal[id]){
     delete t.journal[id];
-    await FB.updateDoc(ref, { journal: t.journal });
+    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
     showToast('רישום יומן נמחק');
     await loadTrip();
   }
@@ -2279,35 +2256,14 @@ $('#selectMapSave').addEventListener('click', async () => {
     if (state.maps.currentModal === 'expense') {
       $('#expLat').value = lat;
       $('#expLng').value = lng;
-      try{
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`);
-        const data = await res.json();
-        const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
-        $('#expLocationName').value = displayName;
-      }catch(e){
-        $('#expLocationName').value = '';
-      }
+      // לא נוגעים בכותרת (טקסט חופשי). המיקום נקבע רק בקואורדינטות.
+      try{ const nm = await reverseGeocode(lat, lng); if(typeof showToast==='function' && nm) showToast('מיקום נבחר: ' + nm); }catch(_){ }
     // --- קוד חדש (לאחר התיקון) ---
     } else if (state.maps.currentModal === 'journal') {
       $('#jrLat').value = lat;
       $('#jrLng').value = lng;
-      try{
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
-        const data = await res.json();
-        
-        // --- התיקון כאן ---
-        // שולפים רק את שם העיר/יישוב/כפר במקום הכתובת המלאה
-        const addr = data.address || {};
-        const cityName = addr.city || addr.town || addr.village || addr.suburb || addr.hamlet;
-        
-        // אם אין שם עיר, נשתמש בשם המדינה או בשם המלא כגיבוי
-        const displayName = cityName || addr.country || data.display_name || '';
-        $('#jrLocationName').value = displayName;
-        // --- סוף התיקון ---
-
-      }catch(e){
-        $('#jrLocationName').value = '';
-      }
+      // לא נוגעים בכותרת (טקסט חופשי). המיקום נקבע רק בקואורדינטות.
+      try{ const nm = await reverseGeocode(lat, lng); if(typeof showToast==='function' && nm) showToast('מיקום נבחר: ' + nm); }catch(_){ }
     }
   }
   $('#mapSelectModal').close();
@@ -2383,14 +2339,8 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
 }
 
 async function saveJournal() {
-  // בדיקה אופציונלית של מיקום ברקע לפני שמירה (לא חוסם את התהליך)
-  if ($('#jrLocationName').value.trim() && !$('#jrLat').value) {
-      if(typeof showToast === 'function') showToast('מחפש מיקום ברקע...');
-      autoFetchCoords('jr');
-  }
-
-
-  const ref = FB.doc(db, 'trips', state.currentTripId);
+  // מיקום נקבע רק דרך 'בחר ע\"ג מפה' או 'בחר מיקום נוכחי' — אין חיפוש אוטומטי לפי כותרת.
+const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
 // ---------------------------------------
   const t = snap.exists() ? (snap.data() || {}) : {};
@@ -2428,21 +2378,10 @@ async function saveJournal() {
   t.journal[id].date    = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
   t.journal[id].time    = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
-  await FB.updateDoc(ref, { journal: t.journal });
-
-  // עדכון סטייט לוקאלי ורינדור נקודתי במקום טעינה מלאה מהשרת
-  state.current = state.current || {};
-  state.current.journal = t.journal;
-
+  await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
   $('#journalModal').close();
   showToast('רישום יומן נשמר');
-
-  if (typeof renderJournal === 'function') {
-    renderJournal(state.current);
-  }
-  if (typeof renderAllTimeline === 'function') {
-    renderAllTimeline(state.current, state.allSort || 'desc');
-  }
+  await loadTrip();
 }
 
 $('#btnUseCurrentJr').addEventListener('click', () => {
@@ -2487,7 +2426,9 @@ metaInputs.forEach(sel => {
   const el = $(sel);
   if (el) {
     el.addEventListener('input', () => {
-      state.isDirty = true;
+      
+          updateLocLabelState(prefix);
+       
     });
   }
 });
@@ -2693,7 +2634,7 @@ async function exportExcel(){
   const s0 = XLSX.utils.json_to_sheet(meta);
   XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
 
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), מקום:j.placeName||'', תיאור:j.text||'' }));
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), כותרת:j.placeName||'', תיאור:j.text||'' }));
   const s1 = XLSX.utils.json_to_sheet(jr);
   XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
 
@@ -2739,7 +2680,7 @@ async function exportWord(){
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [ new TableRow({ children:[
       new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'מקום', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'כותרת', alignment: AlignmentType.CENTER})]}),
       new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
     ]}), ...journalRows ]
   });
@@ -3460,7 +3401,7 @@ function renderExpenseSummary(t){
 
 
 // === GPX Import (to Journal) [FIXED for Namespaces, v2] ===
-async function importGPXFromFile(file){
+importGPXFromFile = async function(file, opts={}){
   try{
     if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
@@ -3563,10 +3504,12 @@ async function importGPXFromFile(file){
       added++;
     });
 
-    await FB.updateDoc(ref, { journal: t.journal });
+    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
     if(typeof toast==='function') toast(`ייבוא GPX הושלם — נוספו ${added} נקודות ליומן`);
-    await loadTrip();
-    switchToTab('map');
+    if(!opts.suppressReload){
+      await loadTrip();
+      switchToTab('map');
+    }
   }catch(e){
     console.error('GPX import failed', e);
     if(typeof toast==='function') toast('שגיאה בייבוא GPX');
@@ -3574,7 +3517,8 @@ async function importGPXFromFile(file){
 }
 
 /// === GPX Import (as single Trek) [FIXED for Firestore Nested Arrays] ===
-async function importGPXAsTrek(file){
+importGPXAsTrek = async function(file, opts){
+  opts = opts || {};
   try{
     if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
@@ -3662,13 +3606,15 @@ async function importGPXAsTrek(file){
       dateIso: startTime,
       date: __dateStr,
       time: __timeStr,
-      path: path // <-- נשמר כמערך של אובייקטים
+      path: __downsamplePath(path, 800) // <-- מדולל כדי לא לעבור מגבלת גודל
     };
     
-    await FB.updateDoc(ref, { journal: t.journal });
+    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
     if(typeof toast==='function') toast(`מסלול GPX יובא בהצלחה כרשומה אחת`);
-    await loadTrip();
-    switchToTab('map');
+    if(!opts.suppressReload){
+      await loadTrip();
+      switchToTab('map');
+    }
 
   }catch(e){
     console.error('GPX Trek import failed', e);
@@ -3921,7 +3867,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const gpxFile = document.getElementById('importGPXFile');
   if(gpxBtn && gpxFile){
     gpxBtn.addEventListener('click', ()=> gpxFile.click());
-    gpxFile.addEventListener('change', ()=>{ const f=gpxFile.files?.[0]; if(f) importGPXFromFile(f); gpxFile.value=''; });
+    gpxFile.addEventListener('change', async ()=>{
+      const list = Array.from(gpxFile.files||[]);
+      if(!list.length){ gpxFile.value=''; return; }
+      let ok=0, fail=0;
+      for(const f of list){
+        try{ await importGPXFromFile(f, {suppressReload:true}); ok++; }
+        catch(e){ console.error('Import GPX failed', f?.name, e); fail++; if(typeof toast==='function') toast(`שגיאה בטעינת GPX: ${f?.name||''}`); }
+      }
+      gpxFile.value='';
+      if(ok && typeof toast==='function') toast(`יובאו ${ok} קבצי GPX${fail?` (נכשלו ${fail})`:''}`);
+      if(ok){ await loadTrip(); switchToTab('map'); }
+    });
   }
 
 // Import Trek GPX (New)
@@ -3929,7 +3886,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const trekFile = document.getElementById('importTrekGPXFile');
   if(trekBtn && trekFile){
     trekBtn.addEventListener('click', ()=> trekFile.click());
-    trekFile.addEventListener('change', ()=>{ const f=trekFile.files?.[0]; if(f) importGPXAsTrek(f); trekFile.value=''; });
+    trekFile.addEventListener('change', async ()=>{
+      const list = Array.from(trekFile.files||[]);
+      if(!list.length){ trekFile.value=''; return; }
+      let ok=0, fail=0;
+      for(const f of list){
+        try{ await importGPXAsTrek(f, {suppressReload:true}); ok++; }
+        catch(e){ console.error(e); fail++; }
+      }
+      trekFile.value='';
+      if(typeof toast==='function') toast(`ייבוא GPX: ${ok} הצליחו${fail?` · ${fail} נכשלו`:''}`);
+      try{ await loadTrip(); }catch(_){ }
+      try{ switchToTab('map'); }catch(_){ }
+    });
   }
   // Import KML
   const kmlBtn = document.getElementById('btnImportKML');
@@ -4157,10 +4126,12 @@ async function importKMLFromFile(file){
       added++;
     });
 
-    await FB.updateDoc(ref, { journal: t.journal });
+    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
     if(typeof toast==='function') toast(`ייבוא KML הושלם — נוספו ${added} נקודות ליומן`);
-    await loadTrip();
-    switchToTab('map');
+    if(!opts.suppressReload){
+      await loadTrip();
+      switchToTab('map');
+    }
   }catch(e){
     console.error('KML import failed', e);
     if(typeof toast==='function') toast('שגיאה בייבוא KML');
@@ -5204,45 +5175,10 @@ function updateLocLabelState(prefix) {
 
 // 2. פונקציה משודרגת לסריקת קואורדינטות (מנסה עברית ואז אנגלית)
 async function autoFetchCoords(prefix) {
-  const nameInput = document.getElementById(prefix + 'LocationName');
-  const latInput = document.getElementById(prefix + 'Lat');
-  const lngInput = document.getElementById(prefix + 'Lng');
-
-  if (!nameInput || !nameInput.value.trim()) return;
-  // אם כבר יש קואורדינטות (כי נבחרו ידנית או נמצאו כבר), לא נחפש שוב
-  if (latInput.value && lngInput.value) return;
-
-  if (typeof showToast === 'function') showToast('🔎 מחפש מיקום...');
-
-  // פונקציית עזר לביצוע fetch עם timeout
-  const fetchWithTimeout = async (lang) => {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 5000);
-      try {
-          const q = encodeURIComponent(nameInput.value.trim());
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&accept-language=${lang}`, { signal: controller.signal });
-          clearTimeout(id);
-          return await res.json();
-      } catch (e) { return []; }
-  };
-
-  // נסיון ראשון: עברית
-  let data = await fetchWithTimeout('he');
-
-  // נסיון שני: אם לא נמצא, נסה אנגלית (עוזר מאוד בחו"ל)
-  if (!data || data.length === 0) {
-      console.log('Retrying search in English...');
-      data = await fetchWithTimeout('en');
-  }
-
-  if (data && data.length > 0) {
-    latInput.value = data[0].lat;
-    lngInput.value = data[0].lon;
-    if (typeof showToast === 'function') showToast('✅ מיקום אותר בהצלחה!');
-  } else {
-     if (typeof showToast === 'function') showToast('⚠️ לא אותר מיקום אוטומטי. נסה שם עיר/מדינה.');
-  }
+  // פונקציה מנוטרלת: שדה הכותרת הוא טקסט חופשי בלבד, לא מחפשים מיקום לפי הטקסט.
+  return;
 }
+
 
 // 3. הפעלת המאזינים בטעינה
 document.addEventListener('DOMContentLoaded', () => {
@@ -5252,13 +5188,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות כדי לכפות חיפוש מחדש
       el.addEventListener('input', () => {
           updateLocLabelState(prefix);
-          document.getElementById(prefix + 'Lat').value = '';
-          document.getElementById(prefix + 'Lng').value = '';
-      });
+});
       
-      // --- התיקון הקריטי: הפעלת חיפוש ביציאה מהשדה ---
-      el.addEventListener('blur', () => autoFetchCoords(prefix));
-      // -----------------------------------------------
+      // בוטל: אין יותר חיפוש אוטומטי על blur – השדה הוא כותרת טקסט בלבד
 
       // בדיקה ראשונית
       updateLocLabelState(prefix);
@@ -5266,3 +5198,223 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 // ======================================================
+function __downsamplePath(path, maxPoints){
+  try{
+    const p = Array.isArray(path) ? path : [];
+    const n = p.length;
+    const maxN = Math.max(50, Number(maxPoints)||800);
+    if(n <= maxN) return p;
+    const step = n / maxN;
+    const out = [];
+    for(let i=0;i<maxN;i++){
+      const idx = Math.floor(i * step);
+      const pt = p[idx];
+      if(pt && Number.isFinite(+pt.lat) && Number.isFinite(+pt.lng)) out.push({lat:+pt.lat, lng:+pt.lng});
+    }
+    const last = p[n-1];
+    if(last && Number.isFinite(+last.lat) && Number.isFinite(+last.lng)){
+      const tail = {lat:+last.lat, lng:+last.lng};
+      const prev = out[out.length-1];
+      if(!prev || prev.lat!==tail.lat || prev.lng!==tail.lng) out.push(tail);
+    }
+    return out;
+  }catch(_){
+    return Array.isArray(path) ? path : [];
+  }
+}
+
+function __initGpxManager(){
+  state.gpx = state.gpx || { files:new Map(), order:[], enabled:false };
+  const btn = document.getElementById('btnToggleGPX');
+  const panel = document.getElementById('gpxManagerPanel');
+  if(!btn || !panel) return;
+
+  btn.addEventListener('click', ()=>{
+    state.gpx.enabled = !state.gpx.enabled;
+    btn.classList.toggle('active', state.gpx.enabled);
+    panel.hidden = !state.gpx.enabled;
+    if(state.gpx.enabled){
+      __refreshGpxFromCurrent();
+      __renderGpxPanel();
+    }
+  });
+}
+
+function __refreshGpxFromCurrent(){
+  const map = state.maps && state.maps.big;
+  if(!map) return;
+
+  // clear old layers
+  try{
+    for(const f of state.gpx.files.values()){
+      if(map.hasLayer(f.layer)) map.removeLayer(f.layer);
+      try{ f.layer.clearLayers(); }catch(_){}
+    }
+  }catch(_){}
+
+  state.gpx.files.clear();
+  state.gpx.order = [];
+
+  const t = state.current || {};
+  const journal = t.journal || {};
+
+  for(const id of Object.keys(journal)){
+    const j = journal[id] || {};
+    const path = Array.isArray(j.path) ? j.path : null;
+    if(!path || path.length < 2) continue;
+
+    const name = (j.placeName || j.text || 'GPX').toString().split('\n')[0].slice(0,80);
+    const layer = L.featureGroup();
+    const latlngs = [];
+    for(const pt of path){
+      const lat = +pt.lat, lng = +pt.lng;
+      if(Number.isFinite(lat) && Number.isFinite(lng)) latlngs.push([lat,lng]);
+    }
+    if(latlngs.length < 2) continue;
+
+    L.polyline(latlngs, {weight:4}).addTo(layer);
+    layer.addTo(map);
+
+    let bounds = null;
+    try{
+      const b = layer.getBounds();
+      if(b && b.isValid && b.isValid()) bounds = b;
+    }catch(_){}
+
+    state.gpx.files.set(id, { id, name, layer, bounds, visible:true });
+    state.gpx.order.push(id);
+  }
+}
+
+function __renderGpxPanel(){
+  const panel = document.getElementById('gpxManagerPanel');
+  if(!panel) return;
+  const ids = state.gpx.order.filter(id=> state.gpx.files.has(id));
+  const count = ids.length;
+
+  panel.innerHTML = `
+    <div class="gpx-head">
+      <button class="btn small" id="gpxShowAll">הצג הכל</button>
+      <button class="btn small" id="gpxHideAll">הסתר הכל</button>
+      <button class="btn small" id="gpxFitAll">זום להכל</button>
+      <button class="btn small danger" id="gpxClearAll">מחק הכל</button>
+      <div class="gpx-count">${count} מסלולים</div>
+    </div>
+    <div class="gpx-list">
+      ${ids.map(id=>{
+        const f = state.gpx.files.get(id);
+        return `
+          <div class="gpx-row" data-id="${id}">
+            <label>
+              <input type="checkbox" class="gpx-toggle" ${f.visible?'checked':''}/>
+              <span class="gpx-name">${__escapeHtml(f.name)}</span>
+            </label>
+            <div class="gpx-actions">
+              <button class="btn small danger" data-act="del">מחק</button>
+              <button class="btn small" data-act="fit">Fit</button>
+              <button class="btn small" data-act="solo">Solo</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  panel.querySelector('#gpxShowAll')?.addEventListener('click', ()=>{ __setAllGpx(true); __renderGpxPanel(); });
+  panel.querySelector('#gpxHideAll')?.addEventListener('click', ()=>{ __setAllGpx(false); __renderGpxPanel(); });
+  panel.querySelector('#gpxFitAll')?.addEventListener('click', ()=>{ __fitAllGpx(); });
+  panel.querySelector('#gpxClearAll')?.addEventListener('click', async ()=>{ await __deleteAllGpx(); });
+
+  panel.querySelectorAll('.gpx-row').forEach(row=>{
+    const id = row.dataset.id;
+    row.querySelector('.gpx-toggle')?.addEventListener('change', (e)=>{ __setGpxVisible(id, e.target.checked); });
+    row.querySelectorAll('button[data-act]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const act = btn.dataset.act;
+        if(act==='solo'){ __soloGpx(id); __renderGpxPanel(); }
+        if(act==='fit'){ __fitGpx(id); }
+        if(act==='del'){ await __deleteGpx(id); }
+      });
+    });
+  });
+}
+
+function __setGpxVisible(id, on){
+  const map = state.maps && state.maps.big;
+  if(!map) return;
+  const f = state.gpx.files.get(id);
+  if(!f) return;
+  f.visible = !!on;
+  if(f.visible){
+    if(!map.hasLayer(f.layer)) map.addLayer(f.layer);
+  }else{
+    if(map.hasLayer(f.layer)) map.removeLayer(f.layer);
+  }
+}
+
+function __setAllGpx(on){
+  for(const id of state.gpx.order) __setGpxVisible(id, on);
+}
+
+function __soloGpx(id){
+  for(const fid of state.gpx.order) __setGpxVisible(fid, fid===id);
+  __fitGpx(id);
+}
+
+function __fitGpx(id){
+  const map = state.maps && state.maps.big;
+  if(!map) return;
+  const f = state.gpx.files.get(id);
+  if(!f) return;
+  const b = f.bounds || (f.layer.getBounds && f.layer.getBounds());
+  if(b && b.isValid && b.isValid()) map.fitBounds(b.pad(0.15));
+}
+
+function __fitAllGpx(){
+  const map = state.maps && state.maps.big;
+  if(!map) return;
+  let merged = null;
+  for(const id of state.gpx.order){
+    const f = state.gpx.files.get(id);
+    if(!f || !f.visible) continue;
+    const b = f.bounds || (f.layer.getBounds && f.layer.getBounds());
+    if(b && b.isValid && b.isValid()){
+      merged = merged ? merged.extend(b) : b;
+    }
+  }
+  if(merged && merged.isValid && merged.isValid()) map.fitBounds(merged.pad(0.15));
+}
+
+async function __deleteGpx(id){
+  const map = state.maps && state.maps.big;
+  const f = state.gpx.files.get(id);
+  if(!f) return;
+  try{ if(map && map.hasLayer(f.layer)) map.removeLayer(f.layer); }catch(_){}
+  try{ f.layer.clearLayers(); }catch(_){}
+
+  try{
+    const ref = FB.doc(db, 'trips', state.currentTripId);
+    await FB.updateDoc(ref, { [`journal.${id}`]: FB.deleteField() });
+  }catch(e){
+    console.error('delete gpx failed', e);
+  }
+
+  state.gpx.files.delete(id);
+  state.gpx.order = state.gpx.order.filter(x=>x!==id);
+  try{ if(state.current && state.current.journal) delete state.current.journal[id]; }catch(_){}
+  if(typeof toast==='function') toast('נמחק');
+  __renderGpxPanel();
+}
+
+async function __deleteAllGpx(){
+  const ids = [...state.gpx.order];
+  for(const id of ids) await __deleteGpx(id);
+  __renderGpxPanel();
+}
+
+function __escapeHtml(s){
+  return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;");
+}
+
+
+document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }catch(e){ console.error(e); } });

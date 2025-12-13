@@ -178,7 +178,9 @@
             <div class="map-toolbar">
               <button id="btnToggleSpent" class="btn">איפה ביזבזתי</button>
               <button id="btnToggleVisited" class="btn">איפה טיילתי</button>
+              <button id="btnToggleGPX" class="btn btn-gpx">GPX</button>
             </div>
+            <div id="gpxManagerPanel" class="gpx-panel" hidden></div>
             <div id="bigMap" class="leaflet-container"></div>
           </div>
         </section>
@@ -193,10 +195,10 @@
       <button id="btnImport" class="btn" style="display:none">ייבא</button>
       <button id="btnImportJSON" class="btn">ייבא JSON</button>
 
-      <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none"/>
+      <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
       <button id="btnImportGPX" class="btn">ייבא Point - GPX</button>
 
-     <input type="file" id="importTrekGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none"/>
+     <input type="file" id="importTrekGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
       <button id="btnImportTrekGPX" class="btn">ייבא Trek - GPX</button>
 
  <input type="file" id="importKMLFile" accept=".kml,application/vnd.google-earth.kml+xml,application/xml" style="display:none"/>
@@ -323,7 +325,7 @@ id="expenseModal" class="modal">
       </div>
 
       <div class="row location-row">
-        <label><span class="loc-label">מיקום</span><input id="expLocationName" autocomplete="off" class="input" placeholder="שם מקום, עיר, ארץ"/></label>
+        <label><span class="loc-label">כותרת</span><input id="expLocationName" autocomplete="off" class="input" placeholder="כותרת (טקסט חופשי)"/></label>
         <button id="btnSelectExpLocation" class="btn location-btn">בחר ע"ג מפה</button>
         <button id="btnUseCurrentExp" class="btn location-btn">בחר מיקום נוכחי</button>
         <input type="hidden" id="expLat" />
@@ -382,7 +384,7 @@ id="expenseModal" class="modal">
       </div>
 
       <div class="row location-row">
-        <label><span class="loc-label">מיקום</span><input id="jrLocationName" autocomplete="off" class="input" placeholder="שם מקום, עיר, ארץ"/></label>
+        <label><span class="loc-label">כותרת</span><input id="jrLocationName" autocomplete="off" class="input" placeholder="כותרת (טקסט חופשי)"/></label>
         <button id="btnSelectJrLocation" class="btn location-btn">בחר ע"ג מפה</button>
         <button id="btnUseCurrentJr" class="btn location-btn">בחר מיקום נוכחי</button>
         <input type="hidden" id="jrLat" />
