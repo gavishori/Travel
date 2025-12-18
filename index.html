@@ -76,23 +76,46 @@
       <main class="content" id="main">
         <nav class="tabs" id="tabs" style="display:none">
           
-          <button data-tab="overview" class="active">הצג הכל</button>
+          <!-- Overview tab as dropdown: All / Expenses / Journal -->
+          <div class="tab-select-wrap active" data-tab="overview" aria-label="בחירת תצוגת הצג הכל">
+            <select id="overviewTabSelect" class="tab-select" dir="rtl" aria-label="בחירת תצוגה">
+              <option value="all">הצג הכל</option>
+              <option value="expenses">הצג הוצאות</option>
+              <option value="journal">הצג יומן</option>
+            </select>
+          </div>
           
           <button data-tab="meta">נתוני נסיעה</button>
-          
-          <button data-tab="expenses">הוצאות</button>
-          
-          <button data-tab="journal">יומן יומי</button>
           
           <button data-tab="map">מפה</button>
           
           <button data-tab="share">ייבוא / ייצוא / שיתוף</button>
           
-        </nav>
-
-        <section id="view-overview" class="tabview" data-active="1">
-          <div class="list-actions">
+        
+          <div id="overviewHeaderBar" class="overview-headerbar" hidden aria-label="סרגל פעולות להצג הכל">
             <button id="btnAllSort" class="btn sort-icon-btn" aria-label="שינוי כיוון מיון"><span class="sort-icon">⇅</span></button>
+            <button id="btnAllToggle" class="btn" type="button">צמצם הכל</button>
+            <span id="allHitCount" class="muted hits">0/0</span>
+            <button id="btnAllPrev" class="btn nav-btn" type="button" aria-label="תוצאה קודמת">↑</button>
+            <button id="btnAllNext" class="btn nav-btn" type="button" aria-label="תוצאה הבאה">↓</button>
+            <!-- mode selector moved into the Overview tab dropdown (overviewTabSelect) -->
+            <select id="overviewMode" class="input mode-select" dir="rtl" aria-label="סינון להצג הכל" hidden>
+              <option value="all">הצג הכל</option>
+              <option value="expenses">הצג הוצאות</option>
+              <option value="journal">הצג יומן</option>
+            </select>
+            <input id="searchAll" class="input search-input" type="search" placeholder="חיפוש בכל ההצג הכל" dir="rtl" autocomplete="off">
+            <div class="overview-quick">
+              <button id="btnQuickAddExpense" class="btn primary" type="button">+ הוצאה</button>
+              <button id="btnQuickAddJournal" class="btn" type="button">+ רישום</button>
+              <button id="btnQuickBreakdown" class="btn" type="button">פילוח</button>
+            </div>
+          </div>
+</nav>
+<section id="view-overview" class="tabview" data-active="1">
+          <!-- Command bar moved to top tabs (next to ייבוא / ייצוא / שיתוף) -->
+          <div class="overview-budget-wrap">
+            <div id="expenseSummary" class="budget-bar" aria-live="polite"></div>
           </div>
           <div class="card expenses-table-container">
             <table class="expenses-table stacked" dir="rtl" aria-label="כל האירועים">
@@ -151,7 +174,7 @@
             <button id="btnFilterExpenses" class="btn">סנן</button>
             <button id="btnToggleExpenseDetails" class="btn">צמצם הכל</button>
 
-            <div id="expenseSummary" class="budget-bar" aria-live="polite"></div>
+            <!-- Budget bar moved to "הצג הכל" -->
 </div>
 <div class="card expenses-table-container">
   <table class="expenses-table stacked" dir="rtl" aria-label="רשימת הוצאות">
@@ -186,53 +209,70 @@
         </section>
 
         <section id="view-share" class="tabview" hidden>
+          <div class="share-page">
+            <div class="share-head">
+              <h2>ייבוא / ייצוא / שיתוף</h2>
+              <p class="muted">כל הפעולות במקום אחד. אין שינוי בפונקציונליות — רק ארגון ועיצוב מחדש.</p>
+            </div>
 
-<div class="cards share-grid">
-  <div class="card" id="card-import">
-    <h3>ייבוא</h3>
-    <div class="row" style="gap:12px;flex-wrap:wrap">
-      <input type="file" id="importFile" accept=".json,application/json" style="display:none"/>
-      <button id="btnImport" class="btn" style="display:none">ייבא</button>
-      <button id="btnImportJSON" class="btn">ייבא JSON</button>
+            <div class="share-grid">
+              <article class="share-card" id="card-import">
+                <header class="share-card-head">
+                  <h3>ייבוא</h3>
+                  <span class="share-badge">Data</span>
+                </header>
 
-      <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
-      <button id="btnImportGPX" class="btn">ייבא Point - GPX</button>
+                <!-- hidden inputs stay as-is for existing JS handlers -->
+                <input type="file" id="importFile" accept=".json,application/json" style="display:none"/>
+                <button id="btnImport" class="btn" style="display:none">ייבא</button>
+                <input type="file" id="importGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
+                <input type="file" id="importTrekGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
+                <input type="file" id="importKMLFile" accept=".kml,application/vnd.google-earth.kml+xml,application/xml" style="display:none"/>
 
-     <input type="file" id="importTrekGPXFile" accept=".gpx,application/gpx+xml,application/xml" style="display:none" multiple/>
-      <button id="btnImportTrekGPX" class="btn">ייבא Trek - GPX</button>
+                <div class="share-actions">
+                  <button id="btnImportJSON" class="btn">ייבא JSON</button>
+                  <button id="btnImportKML" class="btn">ייבא KML</button>
+                  <button id="btnImportGPX" class="btn">ייבא Point GPX</button>
+                  <button id="btnImportTrekGPX" class="btn">ייבא Trek GPX</button>
+                </div>
+              </article>
 
- <input type="file" id="importKMLFile" accept=".kml,application/vnd.google-earth.kml+xml,application/xml" style="display:none"/>
-      <button id="btnImportKML" class="btn">ייבא KML</button>
-      
-      </div>
-  </div>
+              <article class="share-card" id="card-export">
+                <header class="share-card-head">
+                  <h3>ייצוא</h3>
+                  <span class="share-badge">Docs</span>
+                </header>
+                <div class="share-actions">
+                  <button id="btnExportExcel" class="btn">ייצוא יומן ל־Excel</button>
+                  <button id="btnExportWord" class="btn">ייצוא יומן ל־Word</button>
+                  <button id="btnExportTripSchedule" class="btn">ייצוא הוצאות ל־Word</button>
+                  <button id="btnExportGPX" class="btn">ייצוא GPX</button>
+                </div>
+              </article>
 
-  <div class="card" id="card-export">
-    <h3>ייצוא</h3>
-    <div class="row" style="gap:12px;flex-wrap:wrap">
-      <button id="btnExportExcel" class="btn">ייצוא יומן ל EXCEL</button>
-      <button id="btnExportWord" class="btn">ייצוא יומן ל WORD</button>
-<button id="btnExportTripSchedule" class="btn">ייצא הוצאות ל WORD</button>
-      <button id="btnExportGPX" class="btn">GPX</button>
-    </div>
-  </div>
+              <article class="share-card" id="card-share">
+                <header class="share-card-head">
+                  <h3>שיתוף</h3>
+                  <span class="share-badge">Link</span>
+                </header>
 
-  <div class="card" id="card-share">
-    <h3>שיתוף</h3>
-    <div class="row" style="gap:12px;flex-wrap:wrap">
-      <button id="btnShareStart" class="btn btn-danger">הפעל שיתוף</button>
-      <button id="btnShareStop" class="btn btn-outline">בטל שיתוף</button>
-      <label for="shareDuration" class="label">זמן שיתוף</label>
-      <select id="shareDuration" class="input" style="width:160px">
-        <option value="1d">יום</option>
-        <option value="1w">שבוע</option>
-        <option value="1m">חודש</option>
-      </select>
-    </div>
-  </div>
-</div>
+                <div class="share-actions share-actions-wide">
+                  <button id="btnShareStart" class="btn btn-danger">הפעל שיתוף</button>
+                  <button id="btnShareStop" class="btn btn-outline">בטל שיתוף</button>
+                </div>
 
-</section>
+                <div class="share-inline">
+                  <label for="shareDuration" class="label">זמן שיתוף</label>
+                  <select id="shareDuration" class="input">
+                    <option value="1d">יום</option>
+                    <option value="1w">שבוע</option>
+                    <option value="1m">חודש</option>
+                  </select>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
 
         <section id="view-welcome" class="tabview">
           <div class="trip-card">

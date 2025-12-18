@@ -212,7 +212,7 @@ document.addEventListener('input', (e) => {
         });
         if (!exists) sel.add(new Option(lc, lc, false, false));
       });
-    } catch (e) { console.debug('ensureExpenseCurrencyOption guard:', e); }
+    } catch (e) { /*log removed*/ }
   }
   root.ensureExpenseCurrencyOption = ensureExpenseCurrencyOption;
 })();
@@ -308,7 +308,7 @@ async function fetchRatesOnce(){
       if(USDLocal) rates.USDLocal = USDLocal;
       return rates;
     }
-  }catch(e){ console.warn('fetchRatesOnce failed', e); }
+  }catch(e){ /*log removed*/ }
   // Fallback to current state rates, still stamp time
   return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
 }
@@ -323,29 +323,33 @@ function invalidateMap(m){
 // === Map popup helpers ===
 function switchToTab(tab){
   try{
-    const btn = document.querySelector(`#tabs button[data-tab="${tab}"]`);
+    const btn = document.querySelector(`#tabs [data-tab="${tab}"]`);
     if(!btn) return;
     // emulate click
-    const currentTab = document.querySelector('#tabs button.active');
+    const currentTab = document.querySelector('#tabs [data-tab].active');
     if(currentTab && currentTab.dataset.tab === 'meta' && state.isDirty){
       // if blocked by unsaved modal, just fallback to click which will trigger modal logic
       btn.click();
       return;
     }
     if (btn.dataset.tab !== 'all') { // If switching to a single view, hide others
-      document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       document.querySelectorAll('.tabview').forEach(v=> v.hidden = true);
       const v = document.querySelector('#view-'+tab);
       if(v) v.hidden = false;
     }
     if(tab==='map') setTimeout(initBigMap,50);
+    try{
+      const hb = document.getElementById('overviewHeaderBar');
+      if(hb) hb.hidden = (tab !== 'overview');
+    }catch(e){}
 /* patched switchToTab */
 try{
   const views = document.querySelectorAll('.tabview');
   views.forEach(v=>{ v.removeAttribute('data-active'); v.hidden = true; });
   const cur = document.getElementById('view-'+tab);
-  if(!cur){ console.warn('View not found:', tab); }
+  if(!cur){ /*log removed*/ }
   else { cur.setAttribute('data-active','1'); cur.hidden = false; }
 }catch(e){ console.error(e); }
 /* end patched switchToTab */
@@ -446,20 +450,13 @@ function attachMapPopup(marker, type, id, dataObj){
 
           const tid = state.currentTripId;
           if (!tid) {
-            console.warn('[map-popup] Edit clicked but state.currentTripId is missing', {
-              type: editBtn.dataset.type,
-              id
-            });
+            /*log removed*/
             try { toast('שגיאה: אין נסיעה פעילה לעריכה'); } catch (_) {}
             return;
           }
 
           if (!state._lastTripObj) {
-            console.warn('[map-popup] Edit clicked but state._lastTripObj is missing', {
-              tripId: tid,
-              type: editBtn.dataset.type,
-              id
-            });
+            /*log removed*/
             try { toast('שגיאה: הנתונים של הנסיעה לא נטענו'); } catch (_) {}
             return;
           }
@@ -468,12 +465,7 @@ function attachMapPopup(marker, type, id, dataObj){
           const srcCollection = isExpense ? state._lastTripObj.expenses : state._lastTripObj.journal;
 
           if (!srcCollection || typeof srcCollection !== 'object') {
-            console.warn('[map-popup] Edit clicked but source collection is empty/invalid', {
-              tripId: tid,
-              type: editBtn.dataset.type,
-              id,
-              srcCollection
-            });
+            /*log removed*/
             try { toast('לא נמצא פריט לעריכה'); } catch (_) {}
             return;
           }
@@ -481,22 +473,12 @@ function attachMapPopup(marker, type, id, dataObj){
           const obj = srcCollection[id];
 
           if (!obj) {
-            console.warn('[map-popup] Edit clicked but object not found in _lastTripObj', {
-              tripId: tid,
-              type: isExpense ? 'expense' : 'journal',
-              id,
-              keys: Object.keys(srcCollection || {})
-            });
+            /*log removed*/
             try { toast('לא נמצא פריט לעריכה (אולי נמחק או עודכן)'); } catch (_) {}
             return;
           }
 
-          console.debug('[map-popup] Opening edit modal from map', {
-            tripId: tid,
-            type: isExpense ? 'expense' : 'journal',
-            id,
-            obj
-          });
+          /*log removed*/
 
           if (isExpense) {
             openExpenseModal({ ...obj, id });
@@ -863,24 +845,74 @@ $('#btnTheme').addEventListener('click', () => {
   document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
 });
 
-// Tabs logic
-$$('#tabs button').forEach(btn => btn.addEventListener('click', (e) => {
-  const currentTab = $('#tabs button.active');
-  const nextTab = btn.dataset.tab;
+// Tabs logic (supports non-button tab widgets like the Overview dropdown)
+function getActiveTabEl(){
+  return document.querySelector('#tabs [data-tab].active');
+}
+function setActiveTab(nextEl){
+  document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
+  nextEl.classList.add('active');
+}
+
+document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener('click', (e) => {
+  const currentTab = getActiveTabEl();
+  const nextTab = el.dataset.tab;
   
-  if (currentTab.dataset.tab === 'meta' && state.isDirty) {
+    if(!nextTab){ return; }
+  if (currentTab && currentTab.dataset.tab === 'meta' && state.isDirty) {
     e.preventDefault();
     showUnsavedChangesAlert(nextTab);
     return;
   }
 
-  if (btn.classList.contains('active')) return;
-  $$('#tabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  showView(btn.dataset.tab);
-  if(btn.dataset.tab==='map') setTimeout(initBigMap, 50);
-  if(btn.dataset.tab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
+  if (el.classList.contains('active')) return;
+  setActiveTab(el);
+  showView(nextTab);
+  if(nextTab==='map') setTimeout(initBigMap, 50);
+  if(nextTab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
+
+// Overview tab dropdown (All / Expenses / Journal)
+(function bindOverviewTabSelect(){
+  const sel = document.getElementById('overviewTabSelect');
+  const wrap = document.querySelector('#tabs .tab-select-wrap[data-tab="overview"]');
+  if (!sel || !wrap) return;
+
+  // Load saved mode
+  try{
+    const stored = localStorage.getItem('overviewMode');
+    if (stored) state.overviewMode = stored;
+  }catch(_){ }
+  if (!state.overviewMode) state.overviewMode = 'all';
+  sel.value = String(state.overviewMode);
+
+  if (!sel.dataset.bound){
+    sel.addEventListener('change', ()=>{
+      const v = sel.value || 'all';
+      state.overviewMode = v;
+      try{ localStorage.setItem('overviewMode', v); }catch(_){ }
+
+      // Ensure we're on the overview view
+      if (!wrap.classList.contains('active')){
+        const currentTab = getActiveTabEl();
+        if (currentTab && currentTab.dataset.tab === 'meta' && state.isDirty) {
+          showUnsavedChangesAlert('overview');
+          return;
+        }
+        setActiveTab(wrap);
+        showView('overview');
+      }
+
+      // Keep legacy hidden selector in sync, if still present
+      try{ const legacy = document.getElementById('overviewMode'); if (legacy) legacy.value = v; }catch(_){ }
+
+      // Re-render with new filter and reapply search/collapse UI
+      try{ if (state.current) renderAllTimeline(state.current, state.allSort); }catch(_){ }
+      try{ if (typeof window.__overviewApplyAfterRender === 'function') window.__overviewApplyAfterRender(); }catch(_){ }
+    });
+    sel.dataset.bound = '1';
+  }
+})();
 
 // (old Auth UI block removed – using unified handler below)
 
@@ -899,7 +931,7 @@ if (token && tripId) {
   const container = document.querySelector('.container');
   container.classList.remove('home-mode'); container.classList.add('trip-mode');
   // Only journal + map
-  $$('#tabs button').forEach(b=>{ if(!['journal','map'].includes(b.dataset.tab)) b.style.display='none'; });
+  $$('#tabs button[data-tab]').forEach(b=>{ if(!['journal','map'].includes(b.dataset.tab)) b.style.display='none'; });
   showView('journal');
   await loadSharedTrip(tripId, token);
 }
@@ -963,7 +995,6 @@ let __subTripsTimer=null;
 function subscribeTrips(){
   if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
-    console.warn('subscribeTrips: user not ready; skipping');
     return;
   }
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
@@ -975,11 +1006,9 @@ function subscribeTrips(){
     try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     // If permissions missing, wait a bit and retry once auth is stable
     if(String(err).includes('Missing or insufficient permissions')){
-      console.warn('subscribeTrips PERM error – will retry shortly');
       __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
       return;
     }
-    console.warn('subscribeTrips error', err);
     showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
   });
 }
@@ -1062,16 +1091,23 @@ function showView(view){
       el.setAttribute('data-active','1');
       el.removeAttribute('hidden');
     } else {
-      console.warn('View not found:', view);
     }
-  } catch(e){ console.warn('showView error', e); }
+
+    // Show the Overview toolbar (header bar) only when the Overview tab is active.
+    // The toolbar itself lives next to the "ייבוא / ייצוא / שיתוף" tab button,
+    // but we do not want it visible in other tabs.
+    try {
+      const hb = document.getElementById('overviewHeaderBar');
+      if (hb) hb.hidden = (view !== 'overview');
+    } catch(_e){}
+  } catch(e){ /*log removed*/ }
 }
 
 // Open a trip -> Overview tab
 async function openTrip(id){
   state.currentTripId = id;
   enterTripMode();
-  $$('#tabs button').forEach(b=>b.classList.remove('active'));
+  $$('#tabs button[data-tab]').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
   first.classList.add('active');
   showView('overview');
@@ -1101,7 +1137,7 @@ function ensureExpenseCurrencyOption() {
       opt.textContent = cur;
       sel.appendChild(opt);
     }
-  }catch(e){ console.warn('ensureExpenseCurrencyOption failed', e); }
+  }catch(e){ /*log removed*/ }
 }
 
 async function loadTrip(){
@@ -1358,8 +1394,11 @@ function renderAllTimeline(t, order){
 
     const expenses = Object.entries(t.expenses || {}).map(([id,e]) => ({ __kind: 'expense', id, ...e }));
     const journal  = Object.entries(t.journal  || {}).map(([id,j]) => ({ __kind: 'journal', id, ...j }));
-    const combined = expenses.concat(journal)
+    const mode = (state && state.overviewMode) ? String(state.overviewMode) : 'all';
+    let combined = expenses.concat(journal)
       .sort((a,b)=> dir * (expenseSortKey(a) - expenseSortKey(b)));
+    if (mode === 'expenses') combined = combined.filter(x=>x.__kind==='expense');
+    if (mode === 'journal') combined = combined.filter(x=>x.__kind==='journal');
 
     combined.forEach(item=>{
       if(item.__kind === 'expense'){
@@ -1377,6 +1416,8 @@ function renderAllTimeline(t, order){
       btn.classList.toggle('desc', order === 'desc');
     }
   }catch(e){}
+
+    try{ if (typeof window.__overviewApplyAfterRender === 'function') window.__overviewApplyAfterRender(); }catch(_){ }
 }
 
 function appendExpenseRowToTimeline(body, e){
@@ -1439,7 +1480,8 @@ function appendExpenseRowToTimeline(body, e){
     `;
 
     const tr2 = document.createElement('tr');
-    tr2.className = 'exp-item';
+    // Details row (notes). "צמצם הכל" should hide only these rows and keep the green/red header rows visible.
+    tr2.className = 'exp-item exp-details';
     tr2.innerHTML = `<td class="cell notes" colspan="6">${desc || ''}</td>`;
 
     body.appendChild(tr1);
@@ -1491,7 +1533,8 @@ function appendJournalRowToTimeline(body, j){
     `;
 
     const tr2 = document.createElement('tr');
-    tr2.className = 'exp-item';
+    // Details row (notes). "צמצם הכל" should hide only these rows and keep the header row visible.
+    tr2.className = 'exp-item exp-details';
     tr2.innerHTML = `<td class="cell notes" colspan="6">${text}</td>`;
 
     body.appendChild(tr1);
@@ -1703,8 +1746,13 @@ $('#expLocationName').value = e?.locationName || '';
 }
 
 async function saveExpense(){
-  // מיקום נקבע רק דרך 'בחר ע\"ג מפה' או 'בחר מיקום נוכחי' — אין חיפוש אוטומטי לפי כותרת.
-const ref  = FB.doc(db,'trips', state.currentTripId);
+  // בדיקה כפויה של מיקום לפני שמירה
+  if ($('#expLocationName').value.trim() && !$('#expLat').value) {
+      if(typeof showToast === 'function') // showToast בוטל: לא מחפשים מיקום אוטומטית יותר;
+      await autoFetchCoords('exp');
+  }
+
+  const ref  = FB.doc(db,'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   const t    = snap.exists() ? (snap.data()||{}) : {};
 
@@ -1850,15 +1898,16 @@ function highlightAndScroll(element, s){
 function searchAndNavigate(tripId, query, type, itemId){
   openTrip(tripId).then(()=>{
     if(type === 'expense'){
-      document.querySelector('#tabs button[data-tab="expenses"]').click();
+      // "הוצאות" ו"יומן" הוסרו מהטאבים; הכל מופיע ב"הצג הכל"
+      document.querySelector('#tabs button[data-tab="overview"]')?.click();
       setTimeout(()=>{
-        const cont = document.querySelector(`#view-expenses`) || document.querySelector(`#tblExpenses`);
+        const cont = document.querySelector(`#view-overview`) || document.querySelector(`#tblAllTimeline`);
         if(cont) highlightAllInContainer(cont, query);
       }, 300);
     } else if(type === 'journal'){
-      document.querySelector('#tabs button[data-tab="journal"]').click();
+      document.querySelector('#tabs button[data-tab="overview"]')?.click();
       setTimeout(()=>{
-        const cont = document.querySelector(`#view-journal`) || document.querySelector(`#tblJournal`);
+        const cont = document.querySelector(`#view-overview`) || document.querySelector(`#tblAllTimeline`);
         if(cont) highlightAllInContainer(cont, query);
       }, 300);
     } else if (type === 'meta') {
@@ -1920,7 +1969,7 @@ function routeDelete(opts){
       if (type === 'journal') return deleteJournal(id);
       if (type === 'trip')    return deleteTrip(id);
     });
-  } catch(e){ console.warn('routeDelete error', e); }
+  } catch(e){ /*log removed*/ }
 }
 
 /* Delegation: any element with [data-delete="expense|journal|trip"] and [data-id] */
@@ -2064,7 +2113,6 @@ async function deleteJournalBulkLocal(ids){
     const ref = FB.doc(db,'trips', tid);
     await FB.updateDoc(ref, { journal: state.current.journal });
   }catch(e){
-    console.warn('background sync failed', e);
   }
 }
 async function deleteJournal(id){
@@ -2218,7 +2266,6 @@ async function reverseGeocode(lat, lng) {
     }
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; // גיבוי לקואורדינטות
   } catch (e) {
-    console.warn('Reverse geocode failed', e);
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; // גיבוי במקרה של שגיאת רשת
   }
 }
@@ -2256,14 +2303,35 @@ $('#selectMapSave').addEventListener('click', async () => {
     if (state.maps.currentModal === 'expense') {
       $('#expLat').value = lat;
       $('#expLng').value = lng;
-      // לא נוגעים בכותרת (טקסט חופשי). המיקום נקבע רק בקואורדינטות.
-      try{ const nm = await reverseGeocode(lat, lng); if(typeof showToast==='function' && nm) showToast('מיקום נבחר: ' + nm); }catch(_){ }
+      try{
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`);
+        const data = await res.json();
+        const displayName = data.address.country === 'ישראל' ? data.display_name : data.address.country || data.display_name;
+        $('#expLocationName').value = displayName;
+      }catch(e){
+        $('#expLocationName').value = '';
+      }
     // --- קוד חדש (לאחר התיקון) ---
     } else if (state.maps.currentModal === 'journal') {
       $('#jrLat').value = lat;
       $('#jrLng').value = lng;
-      // לא נוגעים בכותרת (טקסט חופשי). המיקום נקבע רק בקואורדינטות.
-      try{ const nm = await reverseGeocode(lat, lng); if(typeof showToast==='function' && nm) showToast('מיקום נבחר: ' + nm); }catch(_){ }
+      try{
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=he`);
+        const data = await res.json();
+        
+        // --- התיקון כאן ---
+        // שולפים רק את שם העיר/יישוב/כפר במקום הכתובת המלאה
+        const addr = data.address || {};
+        const cityName = addr.city || addr.town || addr.village || addr.suburb || addr.hamlet;
+        
+        // אם אין שם עיר, נשתמש בשם המדינה או בשם המלא כגיבוי
+        const displayName = cityName || addr.country || data.display_name || '';
+        $('#jrLocationName').value = displayName;
+        // --- סוף התיקון ---
+
+      }catch(e){
+        $('#jrLocationName').value = '';
+      }
     }
   }
   $('#mapSelectModal').close();
@@ -2339,8 +2407,14 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
 }
 
 async function saveJournal() {
-  // מיקום נקבע רק דרך 'בחר ע\"ג מפה' או 'בחר מיקום נוכחי' — אין חיפוש אוטומטי לפי כותרת.
-const ref = FB.doc(db, 'trips', state.currentTripId);
+  // בדיקה כפויה של מיקום לפני שמירה
+  if ($('#jrLocationName').value.trim() && !$('#jrLat').value) {
+      if(typeof showToast === 'function') // showToast בוטל: לא מחפשים מיקום אוטומטית יותר;
+      await autoFetchCoords('jr');
+  }
+
+  
+  const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
 // ---------------------------------------
   const t = snap.exists() ? (snap.data() || {}) : {};
@@ -2426,9 +2500,7 @@ metaInputs.forEach(sel => {
   const el = $(sel);
   if (el) {
     el.addEventListener('input', () => {
-      
-          updateLocLabelState(prefix);
-       
+      state.isDirty = true;
     });
   }
 });
@@ -2854,7 +2926,6 @@ document.addEventListener('click', (ev)=>{
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
   let __lastAuthUid = null;
   FB.onAuthStateChanged(FB.auth, (user) => {
-    console.log('auth state', !!user, user?.uid);
     if((user?.uid||null)===__lastAuthUid){ return; }
     __lastAuthUid = user?.uid||null;
     
@@ -2882,7 +2953,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       if (authModal) authModal.close(); // סגור את מודל ההתחברות אם פתוח
       
       state.user = user;
-      try { subscribeTrips(user.uid); } catch(e){ console.warn('subscribeTrips error', e); }
+      try { subscribeTrips(user.uid); } catch(e){ /*log removed*/ }
     
     } else {
       // --- משתמש מנותק ---
@@ -2901,7 +2972,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       state.user = null;
     }
   });
-}try { console.log('firebase project', FB?.auth?.app?.options?.projectId); } catch(e){}
+}try { /*log removed*/ } catch(e){}
 
 
 // === Mobile Preview Presets & Rotation ===
@@ -3004,11 +3075,45 @@ function clearMarks(root){
     });
   }catch(e){ /* ignore */ }
 }
+
+// Small Set wrapper with safe fallback (older environments)
+function hookupSet(arr){
+  try { return new Set(arr); } catch(e){
+    // Fallback: array "set"
+    return { has: (x)=> arr.indexOf(x) !== -1 };
+  }
+}
+
+// Escape a string for safe use inside a RegExp, without regex literals.
+// This prevents edge-case parse errors in some environments when code is bundled/edited.
+function escapeRegExpString(str){
+  if(str == null) return '';
+  const s = String(str);
+  const specials = hookupSet(['\\', '^', '$', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|']);
+  let out = '';
+  for(let i=0;i<s.length;i++){
+    const ch = s[i];
+    out += specials.has(ch) ? ('\\' + ch) : ch;
+  }
+  return out;
+}
 function highlightAllInContainer(container, s){
   if(!container || !s) return null;
   clearMarks(container);
-  const rx = new RegExp('(' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-  container.innerHTML = container.innerHTML.replace(rx, '<mark>$1</mark>');
+  let rx;
+  try{
+    const esc = escapeRegExpString(s);
+    rx = new RegExp('(' + esc + ')', 'gi');
+  }catch(e){
+    // If something still goes wrong, do not break the app.
+    return null;
+  }
+  try{
+    container.innerHTML = container.innerHTML.replace(rx, '<mark>$1</mark>');
+  }catch(e){
+    // Last-resort: skip highlighting if container is not safe to rewrite.
+    return null;
+  }
   const first = container.querySelector('mark');
   if(first){ first.scrollIntoView({behavior:'smooth', block:'center'}); }
   return first;
@@ -3316,7 +3421,7 @@ function enableLinkRemoval(container){
       }
     });
     container.addEventListener('input', function(){ setTimeout(ensureButtons,0); });
-  }catch(e){ console.warn('enableLinkRemoval failed', e); }
+  }catch(e){ /*log removed*/ }
 }
 
 
@@ -3654,154 +3759,19 @@ document.addEventListener('click', async (e)=>{
 // --- end delegated handler ---
 
 
-// --- Journal selection: MutationObserver to ensure checkboxes appear ---
-(function(){
-  const list = document.getElementById('journalList');
-  if(!list) return;
-  function decorate(){
-    if(!state.journalSelectionMode) return;
-    const cards = list.querySelectorAll('.journal-card');
-    state._jrRenderOrder = Array.from(cards).map((el, idx)=>{ el.dataset.idx = idx; return el.dataset.id; });
-    cards.forEach(card=>{
-      card.classList.add('select-mode');
-      let box = card.querySelector('.jr-select-box');
-      if(!box){
-        box = document.createElement('div');
-        box.className = 'jr-select-box';
-        box.innerHTML = `<input type="checkbox" class="jr-select" />`;
-        card.appendChild(box);
-      }
-      const cb = box.querySelector('input');
-      cb.checked = state.journalSelectedIds?.has(card.dataset.id) || false;
-      cb.addEventListener('click', (ev)=>{
-        ev.stopPropagation();
-        const id = card.dataset.id;
-        const idx = Number(card.dataset.idx||0);
-        if(ev.shiftKey && state._jrLastIndex!=null){
-          const a = Math.min(state._jrLastIndex, idx);
-          const b = Math.max(state._jrLastIndex, idx);
-          for(let i=a;i<=b;i++){
-            const idAt = state._jrRenderOrder[i];
-            state.journalSelectedIds.add(idAt);
-            const el = list.querySelector(`.journal-card[data-id="${idAt}"] input.jr-select`);
-            if(el) el.checked = true;
-          }
-        }else{
-          if(cb.checked) state.journalSelectedIds.add(id);
-          else state.journalSelectedIds.delete(id);
-          state._jrLastIndex = idx;
-        }
-        const delBtn = document.getElementById('btnDeleteSelectedJournal');
-        if(delBtn) delBtn.textContent = `מחק (${state.journalSelectedIds.size||0})`;
-      });
-      card.addEventListener('click', (e)=>{
-        if(!state.journalSelectionMode) return;
-        if(e.target.closest('.menu-btn') || e.target.closest('a')) return;
-        const cb = card.querySelector('input.jr-select');
-        if(cb) cb.click();
-      });
-    });
-  }
-  const mo = new MutationObserver(()=> decorate());
-  mo.observe(list, { childList:true, subtree:true });
-  setTimeout(decorate, 0);
-})();
-// --- end MutationObserver block ---
-
-// --- cancel selection handler (delegated) ---
-document.addEventListener('click', (e)=>{
-  const c = e.target && e.target.closest && e.target.closest('#btnCancelSelectionJournal');
-  if(!c) return;
-  e.preventDefault();
-  state.journalSelectionMode = false;
-  state.journalSelectedIds = new Set();
-  state._jrLastIndex = null;
-  const btn = document.getElementById('btnDeleteSelectedJournal');
-  if(btn) btn.textContent = 'מחק נבחרים';
-  const cancelBtn = document.getElementById('btnCancelSelectionJournal');
-  if(cancelBtn) cancelBtn.style.display = 'none';
-  if(state.current) renderJournal(state.current, state.journalSort);
-});
-// --- end cancel selection handler ---
 
 
-// --- ESC to exit selection mode ---
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && state.journalSelectionMode){
-    state.journalSelectionMode = false;
-    state.journalSelectedIds = new Set();
-    state._jrLastIndex = null;
-    const btn = document.getElementById('btnDeleteSelectedJournal');
-    if(btn) btn.textContent = 'מחק נבחרים';
-    const cancelBtn = document.getElementById('btnCancelSelectionJournal');
-    if(cancelBtn) cancelBtn.style.display = 'none';
-    if(state.current) renderJournal(state.current, state.journalSort);
-  }
-});
-// --- end ESC ---
+/* removed legacy code */
 
 
-// --- click on blank area inside the journal list cancels selection ---
-document.addEventListener('click', (e)=>{
-  if(!state.journalSelectionMode) return;
-  const list = document.getElementById('journalList');
-  if(!list) return;
-  const inList = e.target && e.target.closest && e.target.closest('#journalList');
-  const onCard = e.target && e.target.closest && e.target.closest('.journal-card');
-  const interactive = e.target && e.target.closest && (e.target.closest('input,button,a,textarea,select,.menu-btn'));
-  // If clicked inside the list but NOT on a card or interactive element => cancel selection
-  if(inList && !onCard && !interactive){
-    state.journalSelectionMode = false;
-    state.journalSelectedIds = new Set();
-    state._jrLastIndex = null;
-    const btn = document.getElementById('btnDeleteSelectedJournal');
-    if(btn) btn.textContent = 'מחק נבחרים';
-    const cancelBtn = document.getElementById('btnCancelSelectionJournal');
-    if(cancelBtn) cancelBtn.style.display = 'none';
-    renderJournal(state.current, state.journalSort);
-  }
-});
-// --- end blank-click cancel ---
 
 
-// ALL TAB wiring
-document.addEventListener('DOMContentLoaded', ()=>{
-  const btnAll = document.querySelector('#tabs button[data-tab="all"]');
-  if(!btnAll) return;
-  btnAll.addEventListener('click', ()=>{
-    try{
-      // set active state
-      document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
-      btnAll.classList.add('active');
-      // show the four sections
-      const ids = ['view-overview','view-expenses','view-journal','view-map'];
-      document.querySelectorAll('.tabview').forEach(v=> v.hidden = true);
-      ids.forEach(id=>{ const el = document.getElementById(id); if(el) el.hidden = false; });
-      // render their content
-      const trip = (window.state && (state._lastTripObj || state.current)) || null;
-      try{ if(trip && typeof renderExpenses==='function') renderExpenses(trip, state.expenseSort); }catch(_){}
-      try{ if(trip && typeof renderJournal==='function') renderJournal(trip, state.journalSort); }catch(_){}
-      try{ if(trip && typeof renderExpenseSummary==='function') renderExpenseSummary(trip); }catch(_){}
-      setTimeout(()=>{ try{ if(typeof initBigMap==='function') initBigMap(); }catch(e){} }, 60);
-    }catch(e){}
-  });
-});
 
-// === JSON Import UI unify (three-button cluster) ===
-document.addEventListener('DOMContentLoaded', () => {
-  const jsonBtn = document.getElementById('btnImportJSON');
-  const legacyFile = document.getElementById('importFile'); // legacy hidden input the app already uses
-  const legacyBtn = document.getElementById('btnImport');   // legacy hidden button that performs the import
+/* removed legacy code */
 
-  if (jsonBtn && legacyFile) {
-    jsonBtn.addEventListener('click', () => legacyFile.click());
-    legacyFile.addEventListener('change', () => {
-      // If the legacy flow relies on clicking the old button, simulate it.
-      if (legacyBtn) legacyBtn.click();
-    });
-  }
-});
 
+
+/* removed legacy code */
 
 // Share duration dropdown wiring
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -4193,26 +4163,222 @@ async function importKMLFromFile(file){
 function renderCategoryBreakdownNode(targetId){
   const el = document.getElementById(targetId); if(!el) return;
   const local = 'ILS';
-  const expenses = (state && state.current && (Array.isArray(state.current.expenses) ? state.current.expenses : Object.values(state.current.expenses||{}))) || [];
+  const expenses = (state && state.current && (Array.isArray(state.current.expenses)
+    ? state.current.expenses
+    : Object.entries(state.current.expenses||{}).map(([id,e])=>({ id, ...e }))
+  )) || [];
+
   const breakdown = {}; let total = 0;
+  const byCategory = {}; // cat -> { sum:number, items:[{id, category, amount, currency, desc, date, time, ils:number|NaN}] }
+  const unconverted = []; // flat list for footer section
+
+  const toILS = (amt, fromCur, ratesObj)=>{
+    const a = Number(amt||0);
+    const cur = (fromCur||'ILS').toUpperCase();
+    if(!isFinite(a) || a===0) return 0;
+    if(cur === 'ILS') return a;
+    try{
+      const M = rateMatrix(ratesObj || {});
+      const r = (M && M[cur] && M[cur].ILS) ? Number(M[cur].ILS) : null;
+      if(r && isFinite(r)) return a * r;
+    }catch(_){/* ignore */}
+    return NaN;
+  };
+
+  // normalize expenses and build per-category lists
   expenses.forEach(e=>{
-    const cat = e?.category || 'אחר';
+    const cat = (e?.category || 'אחר').toString();
     const amt = Number(e?.amount||0);
-    const from = e?.currency || 'ILS';
-    const normalized = (typeof convertAmount==='function') ? convertAmount(amt, from, local, state?.rates) : amt;
-    breakdown[cat] = (breakdown[cat]||0) + (isFinite(normalized)?normalized:0);
-    total += (isFinite(normalized)?normalized:0);
+    const from = (e?.currency || 'ILS');
+    const rates = e?.rates || state?.rates || {};
+
+    let ils = NaN;
+    if(typeof convertAmount==='function'){
+      try{ ils = convertAmount(amt, from, local, rates); }catch(_){ ils = NaN; }
+    }
+    if(!isFinite(ils)) ils = toILS(amt, from, rates);
+
+    const item = {
+      id: e?.id,
+      category: cat,
+      amount: isFinite(amt)?amt:0,
+      currency: (from||'').toString(),
+      desc: (e?.desc || e?.descHtml || '').toString(),
+      date: (e?.date || '').toString(),
+      time: (e?.time || '').toString(),
+      ils
+    };
+
+    if(!byCategory[cat]) byCategory[cat] = { sum:0, items:[] };
+    byCategory[cat].items.push(item);
+
+    if(isFinite(ils)){
+      byCategory[cat].sum += ils;
+      breakdown[cat] = (breakdown[cat]||0) + ils;
+      total += ils;
+    }else{
+      unconverted.push({
+        category: cat,
+        amount: item.amount,
+        currency: item.currency || '???',
+        desc: item.desc.slice(0, 80)
+      });
+    }
   });
+
   const cats = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]);
-  const fmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
-  let html = `<table class="breakdown-table"><thead><tr><th>קטגוריה</th><th>סכום (ILS)</th><th>אחוז</th></tr></thead><tbody>`;
-  cats.forEach(([cat,sum])=>{
-    const pct = total? (sum/total*100):0;
-    html += `<tr><td>${cat}</td><td>${fmt(sum)}</td><td style="min-width:180px"><div class="breakdown-row-bar"><span style="width:${pct.toFixed(1)}%"></span></div><div class="muted">${pct.toFixed(1)}%</div></td></tr>`;
+  const fmtILS = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
+  const fmtAmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:2});
+
+  let html = `
+    <div class="breakdown-head" dir="rtl">
+      <div class="breakdown-note">לחיצה על קטגוריה תפתח את ההוצאות שבקטגוריה</div>
+    </div>
+    <table class="breakdown-table" dir="rtl">
+      <thead>
+        <tr>
+          <th class="bd-cat">קטגוריה</th>
+          <th class="bd-sum">סכום (ILS)</th>
+          <th class="bd-pct">אחוז</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  cats.forEach(([cat,sum], idx)=>{
+    const pct = total ? (sum/total*100) : 0;
+    const safeCat = esc(cat);
+    const rowId = `bd_${idx}`;
+
+    html += `
+      <tr class="breakdown-cat-row" data-bd-cat="${safeCat}" data-bd-row="${rowId}" role="button" tabindex="0">
+        <td class="bd-cat">
+          <span class="bd-toggle" aria-hidden="true">▸</span>
+          <span class="bd-cat-name">${safeCat}</span>
+          <span class="bd-count">(${(byCategory[cat]?.items?.length||0)})</span>
+        </td>
+        <td class="bd-sum">${fmtILS(sum)}</td>
+        <td class="bd-pct">
+          <div class="breakdown-row-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+          <div class="muted">${pct.toFixed(1)}%</div>
+        </td>
+      </tr>
+    `;
+
+    // details row (collapsed by default)
+    const items = (byCategory[cat]?.items || []);
+    const detailsRows = items.map(it=>{
+      const ilsTxt = isFinite(it.ils) ? fmtILS(it.ils) : '—';
+      const when = [it.date, it.time].filter(Boolean).join(' ');
+      const desc = esc((it.desc||'').trim());
+      const cur = esc((it.currency||'').toUpperCase());
+      return `
+        <tr>
+          <td class="bd-item-desc">
+            <div class="bd-item-title">${desc || '<span class="muted">(ללא תיאור)</span>'}</div>
+            ${when ? `<div class="muted bd-item-when">${esc(when)}</div>` : ''}
+          </td>
+          <td class="bd-item-amt">${fmtAmt(it.amount)} ${cur}</td>
+          <td class="bd-item-ils">${ilsTxt}</td>
+        </tr>
+      `;
+    }).join('');
+
+    html += `
+      <tr class="breakdown-details" data-bd-details="${rowId}" aria-hidden="true">
+        <td colspan="3">
+          <div class="bd-details-wrap">
+            <table class="bd-items">
+              <thead>
+                <tr>
+                  <th>הוצאה</th>
+                  <th>סכום</th>
+                  <th>ILS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${detailsRows || `<tr><td colspan="3" class="muted">אין הוצאות בקטגוריה.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </td>
+      </tr>
+    `;
   });
-  html += `<tr><td class="breakdown-total">סה"כ</td><td class="breakdown-total">${fmt(total)}</td><td></td></tr>`;
-  html += `</tbody></table>`;
+
+  html += `
+      <tr>
+        <td class="breakdown-total">סה"כ</td>
+        <td class="breakdown-total">${fmtILS(total)}</td>
+        <td></td>
+      </tr>
+      </tbody>
+    </table>
+  `;
+
+  if(unconverted.length){
+    const byCur = {};
+    unconverted.forEach(u=>{ byCur[u.currency] = (byCur[u.currency]||0) + Number(u.amount||0); });
+    const parts = Object.entries(byCur).map(([c,s])=>`${c}: ${fmtAmt(s)}`);
+    html += `
+      <div class="breakdown-warning" dir="rtl">
+        <div>שימו לב: יש ${unconverted.length} הוצאות ללא שער המרה ל-ILS. הן מוצגות כאן כדי ששום הוצאה לא תיעלם.</div>
+        <div class="muted">סיכום לפי מטבע: ${parts.join(' , ')}</div>
+      </div>
+      <div class="breakdown-missing" dir="rtl">
+        <div class="breakdown-missing-title">הוצאות ללא המרה</div>
+        <table class="breakdown-missing-table">
+          <thead><tr><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תיאור</th></tr></thead>
+          <tbody>
+            ${unconverted.map(u=>`
+              <tr>
+                <td>${esc(u.category||'')}</td>
+                <td>${fmtAmt(u.amount)}</td>
+                <td>${esc(u.currency||'')}</td>
+                <td class="muted">${esc(u.desc||'')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   el.innerHTML = html;
+
+  // One-time delegation: toggle category details on click/Enter/Space
+  if(!el.dataset.bdBound){
+    const toggleRow = (row)=>{
+      const rowId = row?.dataset?.bdRow;
+      if(!rowId) return;
+      // Robust: rely on DOM adjacency instead of CSS.escape/querySelector
+      // (some layouts/tables can make querySelector brittle).
+      const details = row.nextElementSibling;
+      if(!details || !details.classList.contains('breakdown-details')) return;
+      const isOpen = details.classList.contains('open');
+      details.classList.toggle('open', !isOpen);
+      details.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+      row.classList.toggle('open', !isOpen);
+      const icon = row.querySelector('.bd-toggle');
+      if(icon) icon.textContent = isOpen ? '▸' : '▾';
+    };
+
+    el.addEventListener('click', (ev)=>{
+      const row = ev.target?.closest?.('.breakdown-cat-row');
+      if(row && el.contains(row)) toggleRow(row);
+    });
+
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key !== 'Enter' && ev.key !== ' ') return;
+      const row = ev.target?.closest?.('.breakdown-cat-row');
+      if(row && el.contains(row)){
+        ev.preventDefault();
+        toggleRow(row);
+      }
+    });
+
+    el.dataset.bdBound = '1';
+  }
 }
 
 
@@ -4224,7 +4390,13 @@ function renderCategoryBreakdownNode(targetId){
     if (typeof renderCategoryBreakdownNode === 'function'){
       renderCategoryBreakdownNode('categoryBreakdownDialog');
     }
-    if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+    try{
+      if(dlg.open) return;
+      if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+    }catch(err){
+      // Fallback for browsers / edge cases
+      try{ dlg.setAttribute('open',''); }catch(_){ }
+    }
   }
   function closeBreakdown(){ document.getElementById('breakdownDialog')?.close(); }
 
@@ -4256,6 +4428,21 @@ function renderCategoryBreakdownNode(targetId){
 
   // Bind now + keep trying (handles dynamic DOM)
   document.addEventListener('DOMContentLoaded', ()=>{
+    // Expose for other UI entry points (e.g., Overview quick toolbar)
+    try{ window.__openBreakdownDialog = openBreakdown; }catch(_){ }
+
+    // Robust global click binding (covers cases where the toolbar is re-rendered
+    // or when the button sits inside tab containers with other delegated handlers)
+    if(!document.documentElement.dataset.bdGlobalBound){
+      document.addEventListener('click', (e)=>{
+        const t = e.target && e.target.closest ? e.target.closest('#btnQuickBreakdown') : null;
+        if(!t) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openBreakdown();
+      }, true);
+      document.documentElement.dataset.bdGlobalBound = '1';
+    }
     bindOnce();
     let tries = 0;
     const iv = setInterval(()=>{
@@ -4264,6 +4451,24 @@ function renderCategoryBreakdownNode(targetId){
       if(tries>20) clearInterval(iv); // try ~20 times (~20s)
     }, 1000);
   });
+})();
+
+// === Hard bind for Overview "פילוח" button (guards against layout refactors) ===
+// Some UI refactors moved the button into tab chrome; use capture delegation so it always works.
+(function(){
+  function handler(e){
+    const btn = e.target && (e.target.closest ? e.target.closest('#btnQuickBreakdown') : null);
+    if(!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window.__openBreakdownDialog === 'function'){
+      window.__openBreakdownDialog();
+      return;
+    }
+    const dlgBtn = document.getElementById('openBreakdownBtn');
+    if(dlgBtn) dlgBtn.click();
+  }
+  document.addEventListener('click', handler, true);
 })();
 
 // === Print Preview (Trip Schedule) ===
@@ -5188,7 +5393,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות כדי לכפות חיפוש מחדש
       el.addEventListener('input', () => {
           updateLocLabelState(prefix);
-});
+          document.getElementById(prefix + 'Lat').value = '';
+          document.getElementById(prefix + 'Lng').value = '';
+      });
       
       // בוטל: אין יותר חיפוש אוטומטי על blur – השדה הוא כותרת טקסט בלבד
 
@@ -5418,3 +5625,303 @@ function __escapeHtml(s){
 
 
 document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }catch(e){ console.error(e); } });
+
+
+
+/* ===========================
+   Overview (הצג הכל) Search + Toggle All
+   =========================== */
+(function(){
+  function $(sel, root){ return (root||document).querySelector(sel); }
+  function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+
+  const INVISIBLE = /[\u200E\u200F\u200B\u200C\u200D\u2066\u2067\u2068\u2069\u202A-\u202E\uFEFF]/g;
+
+  function escapeRegex(s){
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Allow invisible RTL/LTR control characters between letters so "עינת" matches "עי‎נת"
+  function buildLooseMatcher(q){
+    q = (q || '').trim();
+    if (!q) return null;
+    const chars = Array.from(q);
+    const between = '(?:[\\u200E\\u200F\\u200B\\u200C\\u200D\\u2066\\u2067\\u2068\\u2069\\u202A-\\u202E\\uFEFF])*';
+    const pat = chars.map(ch => escapeRegex(ch)).join(between);
+    try{
+      return new RegExp(pat, 'g');
+    }catch(e){
+      return null;
+    }
+  }
+
+  function clearMarks(root){
+    const marks = root.querySelectorAll('mark');
+    marks.forEach(m=>{
+      const txt = document.createTextNode(m.textContent);
+      m.replaceWith(txt);
+    });
+    // merge adjacent text nodes
+    root.normalize();
+  }
+
+  // highlight within text nodes (does not rewrite innerHTML; preserves listeners)
+  function highlightMatches(root, regex){
+    clearMarks(root);
+    if (!regex) return [];
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node){
+          if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          const p = node.parentElement;
+          if (!p) return NodeFilter.FILTER_REJECT;
+          const tag = p.tagName;
+          if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'OPTION' || tag === 'BUTTON' || tag === 'MARK') {
+            return NodeFilter.FILTER_REJECT;
+          }
+          // skip menu cell
+          if (p.closest && p.closest('.menu-cell')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    const allMarks = [];
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node=>{
+      const text = node.nodeValue;
+      regex.lastIndex = 0;
+      let m, last = 0;
+      const hits = [];
+      while((m = regex.exec(text)) !== null){
+        hits.push({ index: m.index, length: m[0].length });
+        // avoid infinite loops for empty
+        if (m[0].length === 0) regex.lastIndex++;
+      }
+      if (!hits.length) return;
+
+      const frag = document.createDocumentFragment();
+      hits.forEach((h, i)=>{
+        const before = text.slice(last, h.index);
+        if (before) frag.appendChild(document.createTextNode(before));
+        const marked = document.createElement('mark');
+        marked.textContent = text.slice(h.index, h.index + h.length);
+        frag.appendChild(marked);
+        allMarks.push(marked);
+        last = h.index + h.length;
+      });
+      const after = text.slice(last);
+      if (after) frag.appendChild(document.createTextNode(after));
+      node.parentNode.replaceChild(frag, node);
+    });
+
+    return allMarks;
+  }
+
+  function setCurrent(marks, idx){
+    marks.forEach(m=>m.classList.remove('current-hit'));
+    if (!marks.length) return -1;
+    const i = ((idx % marks.length) + marks.length) % marks.length;
+    const el = marks[i];
+    el.classList.add('current-hit');
+    try{ el.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){ el.scrollIntoView(); }
+    return i;
+  }
+
+  function applyCollapsedUI(){
+    const root = document.getElementById('view-overview');
+    if (!root) return;
+    const btn = document.getElementById('btnAllToggle');
+    if (!btn) return;
+    const collapsed = root.classList.contains('all-collapsed');
+    btn.textContent = collapsed ? 'פתח הכל' : 'צמצם הכל';
+  }
+
+  function setCollapsed(collapsed){
+    const root = document.getElementById('view-overview');
+    if (!root) return;
+    root.classList.toggle('all-collapsed', !!collapsed);
+    if (collapsed){
+      // Clear any per-row open state (single-item overrides)
+      const body = document.getElementById('tblAllTimeline');
+      if (body){
+        body.querySelectorAll('tr.exp-details.force-open').forEach(tr=>tr.classList.remove('force-open'));
+        body.querySelectorAll('tr.exp-item.force-open').forEach(tr=>tr.classList.remove('force-open'));
+      }
+    }
+    try{ localStorage.setItem('allDetailsCollapsed', collapsed ? '1' : '0'); }catch(_){}
+    applyCollapsedUI();
+  }
+
+  function getCollapsed(){
+    try{ return localStorage.getItem('allDetailsCollapsed') === '1'; }catch(_){ return false; }
+  }
+
+  function init(){
+    const root = document.getElementById('view-overview');
+    if (!root) return;
+
+    const input = document.getElementById('searchAll');
+    const modeSel = document.getElementById('overviewMode');
+    const count = document.getElementById('allHitCount');
+    const prev = document.getElementById('btnAllPrev');
+    const next = document.getElementById('btnAllNext');
+    const toggle = document.getElementById('btnAllToggle');
+
+    if (!input || !count || !prev || !next || !toggle) return;
+
+    // Overview filter mode (default: show all)
+    (function bindMode(){
+      if (!modeSel) return;
+      // load preference
+      try{
+        const stored = localStorage.getItem('overviewMode');
+        if (stored) state.overviewMode = stored;
+      }catch(_){ }
+      if (!state.overviewMode) state.overviewMode = 'all';
+      modeSel.value = String(state.overviewMode);
+
+      if (!modeSel.dataset.bound){
+        modeSel.addEventListener('change', ()=>{
+          const v = (modeSel.value || 'all');
+          state.overviewMode = v;
+          try{ localStorage.setItem('overviewMode', v); }catch(_){ }
+          // re-render timeline with the new filter
+          try{ if (state.current) renderAllTimeline(state.current, state.allSort); }catch(_){ }
+          // reapply collapse button text + rerun search (if any)
+          try{ applyCollapsedUI(); }catch(_){ }
+          try{ runSearch(); }catch(_){ }
+        });
+        modeSel.dataset.bound = '1';
+      }
+    })();
+
+    // In global-collapsed mode, clicking a header row should toggle ONLY its own details row
+    const tbody = document.getElementById('tblAllTimeline');
+    if (tbody && !tbody.dataset.rowToggleBound){
+      tbody.addEventListener('click', (e)=>{
+        // Ignore interactive elements (menu buttons, links, etc.)
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('select')) return;
+        if (!root.classList.contains('all-collapsed')) return;
+        const tr = e.target.closest('tr.exp-item');
+        if (!tr || tr.classList.contains('exp-details')) return;
+        const details = tr.nextElementSibling;
+        if (!details || !details.classList.contains('exp-details')) return;
+        const open = details.classList.contains('force-open');
+        details.classList.toggle('force-open', !open);
+        tr.classList.toggle('force-open', !open);
+      }, { passive:true });
+      tbody.dataset.rowToggleBound = '1';
+    }
+
+    // initial collapse state
+    setCollapsed(getCollapsed());
+
+    let marks = [];
+    let idx = -1;
+
+    function updateCounter(){
+      count.textContent = marks.length ? `${idx+1}/${marks.length}` : '0/0';
+    }
+
+    function runSearch(){
+      const q = (input.value || '').trim();
+      // If searching, expand all so results are visible.
+      if (q) setCollapsed(false);
+
+      const regex = buildLooseMatcher(q);
+      // Search in the whole overview table (headers + notes)
+      const container = document.getElementById('tblAllTimeline') || root;
+
+      marks = highlightMatches(container, regex);
+      idx = marks.length ? 0 : -1;
+      if (marks.length) idx = setCurrent(marks, idx);
+      updateCounter();
+    }
+
+    input.addEventListener('input', runSearch);
+    input.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        if (!marks.length) return;
+        idx = setCurrent(marks, idx + (e.shiftKey ? -1 : 1));
+        updateCounter();
+      }
+    });
+
+    prev.addEventListener('click', ()=>{
+      if (!marks.length) return;
+      idx = setCurrent(marks, idx - 1);
+      updateCounter();
+    });
+    next.addEventListener('click', ()=>{
+      if (!marks.length) return;
+      idx = setCurrent(marks, idx + 1);
+      updateCounter();
+    });
+
+    // Quick actions (keep existing functionality; just expose entry points from "הצג הכל")
+    const qAddExpense = document.getElementById('btnQuickAddExpense');
+    const qAddJournal = document.getElementById('btnQuickAddJournal');
+    const qBreakdown = document.getElementById('btnQuickBreakdown');
+
+    qAddExpense?.addEventListener('click', ()=>{
+      // Prefer existing handler button if present
+      const btn = document.getElementById('btnAddExpense');
+      if (btn) btn.click();
+    });
+    qAddJournal?.addEventListener('click', ()=>{
+      const btn = document.getElementById('btnAddJournal');
+      if (btn) btn.click();
+    });
+    qBreakdown?.addEventListener('click', ()=>{
+      // Do NOT proxy through a hidden button (programmatic click may lose the user-gesture context)
+      if (typeof window.__openBreakdownDialog === 'function'){
+        window.__openBreakdownDialog();
+        return;
+      }
+      const btn = document.getElementById('openBreakdownBtn');
+      if (btn) btn.click();
+    });
+
+    toggle.addEventListener('click', ()=>{
+      const root = document.getElementById('view-overview');
+      const collapsed = root.classList.contains('all-collapsed');
+      setCollapsed(!collapsed);
+    });
+
+    // expose so renderAllTimeline can re-apply after rerender
+    window.__overviewApplyAfterRender = function(){
+      applyCollapsedUI();
+      // re-run search to re-create marks after DOM changes
+      runSearch();
+    };
+
+    // initial
+    runSearch();
+  }
+
+  // init after DOM ready
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+
+
+// --- Row toggle open/close on click (minimal, isolated) ---
+document.addEventListener('click', function (e) {
+  const row = e.target.closest('.list-row');
+  if (!row) return;
+
+  // ignore clicks on interactive elements
+  if (e.target.closest('button, a, input, select')) return;
+
+  row.classList.toggle('open');
+});
