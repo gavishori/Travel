@@ -2118,16 +2118,27 @@ async function deleteJournalBulkLocal(ids){
 async function deleteJournal(id){
   const tid = state.currentTripId;
   if(!tid || !id) return;
+
+  // Update local state immediately so the row disappears now
+  try{
+    if(state.current && state.current.journal && state.current.journal[id]){
+      delete state.current.journal[id];
+      renderJournal(state.current, state.journalSort);
+    }
+  }catch(_){}
+
+  // Persist: overwrite the journal map (Firestore ignores undefined field updates)
   const ref = FB.doc(db,'trips', tid);
   const snap = await FB.getDoc(ref);
   const t = snap.data() || {};
   if(t.journal && t.journal[id]){
     delete t.journal[id];
-    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
+    await FB.updateDoc(ref, { journal: t.journal });
     showToast('רישום יומן נמחק');
     await loadTrip();
   }
 }
+
 
 function handleGlobalCurrencyClick(e){
   const btn = e.target.closest && e.target.closest('#barCurrency');
@@ -5913,15 +5924,3 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     init();
   }
 })();
-
-
-// --- Row toggle open/close on click (minimal, isolated) ---
-document.addEventListener('click', function (e) {
-  const row = e.target.closest('.list-row');
-  if (!row) return;
-
-  // ignore clicks on interactive elements
-  if (e.target.closest('button, a, input, select')) return;
-
-  row.classList.toggle('open');
-});
