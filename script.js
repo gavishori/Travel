@@ -1115,13 +1115,29 @@ async function openTrip(id){
 }
 
 // Function to map country to currency
-const localCurrencyMap = {
-  "תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "פולין": "PLN", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD", "סין": "CNY"};
+const localCurrencyMap = {  "בולגריה": "BGN", "Bulgaria": "BGN", "Sofia": "BGN", "סופיה": "BGN",
+"תאילנד": "THB", "צרפת": "EUR", "יפן": "JPY", "בריטניה": "GBP", "גרמניה": "EUR", "פולין": "PLN", "אוסטרליה": "AUD", "קנדה": "CAD", "מקסיקו": "MXN", "טורקיה": "TRY", "שווייץ": "CHF", "סינגפור": "SGD", "סין": "CNY"};
 function getLocalCurrency(destination){
   if (!destination) return null;
-  const destinations = destination.split(',').map(d=>d.trim());
-  const localCurrencies = destinations.map(d=>localCurrencyMap[d]).filter(Boolean);
-  return localCurrencies.length ? localCurrencies[0] : null;
+  const parts = String(destination).split(',').map(d=>d.trim()).filter(Boolean);
+  // Try exact match first (as-is)
+  for (const p of parts){
+    if (localCurrencyMap[p]) return localCurrencyMap[p];
+  }
+  // Try case-insensitive match
+  const keys = Object.keys(localCurrencyMap);
+  for (const p of parts){
+    const pl = p.toLowerCase();
+    const k = keys.find(k=>k.toLowerCase()===pl);
+    if (k) return localCurrencyMap[k];
+  }
+  // Try contains (handles "Sofia Bulgaria" etc.)
+  for (const p of parts){
+    const pl = p.toLowerCase();
+    const k = keys.find(k=>pl.includes(k.toLowerCase()));
+    if (k) return localCurrencyMap[k];
+  }
+  return null;
 }
 
 function ensureExpenseCurrencyOption() {
@@ -1137,6 +1153,11 @@ function ensureExpenseCurrencyOption() {
       opt.textContent = cur;
       sel.appendChild(opt);
     }
+    // If nothing selected or default is USD, auto-select local currency
+    try{
+      const curVal = (sel.value||'').trim();
+      if(!curVal || curVal==='USD') sel.value = cur;
+    }catch(_e){}
   }catch(e){ /*log removed*/ }
 }
 
