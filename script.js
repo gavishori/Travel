@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 })();
 // --- end ensure button ---
 
-async function loadJournalOnly(){
+async function loadJournalOnly(journalId = null){
   const tid = state.currentTripId;
   if(!tid) return;
   const ref = FB.doc(db, 'trips', tid);
@@ -90,20 +90,18 @@ async function loadJournalOnly(){
   if(!snap.exists()) return;
   const t = snap.data() || {};
   if(!state.current) state.current = { id: tid };
-  state.current.journal = t.journal || {};  /*__JR_DT_BLOCK__*/
+  state.current.journal = t.journal || {};
+
   const $jrD = document.getElementById('jrDate');
   const $jrT = document.getElementById('jrTime');
+  const curJ = (journalId && t.journal && t.journal[journalId]) || {};
+
   let _jr_dateIso;
   if ($jrD && $jrT && $jrD.value && $jrT.value) {
     _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
   } else {
-    const curJ = (t.journal && t.journal[id]) || {};
     _jr_dateIso = curJ.dateIso || curJ.createdAt || new Date().toISOString();
   }
-  const __jr_dt = new Date(_jr_dateIso);
-  const __pad2 = n=>String(n).padStart(2,'0');
-  const __jr_dateStr = `${__pad2(__jr_dt.getDate())}/${__pad2(__jr_dt.getMonth()+1)}/${__pad2(__jr_dt.getFullYear())}`;
-  const __jr_timeStr = `${__pad2(__jr_dt.getHours())}:${__pad2(__jr_dt.getMinutes())}`;
 
   renderJournal(state.current, state.journalSort);
 }
@@ -293,24 +291,62 @@ function convertAmount(amount, from, to, rates){
   return a * M[from][to];
 }
 // === Fetch live USD rates once and lock ===
-async function fetchRatesOnce(){
+async function fetchRatesOnce(force){
+  const CACHE_KEY = 'flymily_usd_rates_v1';
+  const TTL_MS = 1000 * 60 * 60 * 6;
   try{
+    if (!force && fetchRatesOnce._pending) return await fetchRatesOnce._pending;
+
     const localCur = state.current?.localCurrency;
-    const to = ['ILS', 'EUR'];
-    if (localCur) to.push(localCur);
-    const r = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${to.join(',')}`);
-    const d = await r.json();
-    const USDILS = Number(d && d.rates && d.rates.ILS);
-    const USDEUR = Number(d && d.rates && d.rates.EUR);
-    const USDLocal = (localCur) ? Number(d && d.rates && d.rates[localCur]) : null;
-    if(USDILS && USDEUR){
-      const rates = { USDILS, USDEUR, lockedAt: new Date().toISOString() };
-      if(USDLocal) rates.USDLocal = USDLocal;
-      return rates;
+    const cachedRaw = (!force) ? localStorage.getItem(CACHE_KEY) : null;
+    if (cachedRaw){
+      try{
+        const cached = JSON.parse(cachedRaw);
+        const age = Date.now() - Number(cached.savedAt || 0);
+        const cachedLocal = cached.localCurrency || null;
+        if (age >= 0 && age < TTL_MS && cached.USDILS && cached.USDEUR && cachedLocal === (localCur || null)) {
+          return {
+            USDILS: Number(cached.USDILS),
+            USDEUR: Number(cached.USDEUR),
+            ...(cached.USDLocal ? { USDLocal: Number(cached.USDLocal) } : {}),
+            lockedAt: cached.lockedAt || new Date().toISOString()
+          };
+        }
+      }catch(_){ }
     }
-  }catch(e){ /*log removed*/ }
-  // Fallback to current state rates, still stamp time
-  return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
+
+    fetchRatesOnce._pending = (async()=>{
+      try{
+        const to = ['ILS', 'EUR'];
+        if (localCur) to.push(localCur);
+        const ctrl = new AbortController();
+        const timer = setTimeout(()=>ctrl.abort(), 3500);
+        const r = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${to.join(',')}`, { signal: ctrl.signal, cache: 'force-cache' });
+        clearTimeout(timer);
+        const d = await r.json();
+        const USDILS = Number(d && d.rates && d.rates.ILS);
+        const USDEUR = Number(d && d.rates && d.rates.EUR);
+        const USDLocal = (localCur) ? Number(d && d.rates && d.rates[localCur]) : null;
+        if(USDILS && USDEUR){
+          const rates = { USDILS, USDEUR, lockedAt: new Date().toISOString() };
+          if(USDLocal) rates.USDLocal = USDLocal;
+          try{
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              ...rates,
+              savedAt: Date.now(),
+              localCurrency: localCur || null
+            }));
+          }catch(_){ }
+          return rates;
+        }
+      }catch(e){ /*log removed*/ }
+      return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
+    })();
+
+    return await fetchRatesOnce._pending;
+  } finally {
+    fetchRatesOnce._pending = null;
+  }
 }
 
 var state = state || {};
@@ -318,6 +354,56 @@ var state = state || {};
 
 function invalidateMap(m){
   try{ if(m && m.invalidateSize){ m.invalidateSize(); } }catch(e){}
+}
+
+function wireMapToolbarOnce(){
+  const btnSpent = document.getElementById('btnToggleSpent');
+  const btnVisited = document.getElementById('btnToggleVisited');
+
+  if(btnSpent && !btnSpent.dataset.wired){
+    btnSpent.dataset.wired = '1';
+    btnSpent.addEventListener('click', ()=>{
+      btnSpent.classList.toggle('active');
+      applyMapToolbarVisibility();
+    });
+  }
+
+  if(btnVisited && !btnVisited.dataset.wired){
+    btnVisited.dataset.wired = '1';
+    btnVisited.addEventListener('click', ()=>{
+      btnVisited.classList.toggle('active');
+      applyMapToolbarVisibility();
+    });
+  }
+}
+
+function applyMapToolbarVisibility(){
+  const bigMap = state?.maps?.big;
+  const layers = state?.maps?.layers || {};
+  const btnSpent = document.getElementById('btnToggleSpent');
+  const btnVisited = document.getElementById('btnToggleVisited');
+
+  if(!bigMap) return;
+
+  if(layers.expenses){
+    const shouldShowExpenses = !btnSpent || btnSpent.classList.contains('active');
+    if(shouldShowExpenses){
+      if(!bigMap.hasLayer(layers.expenses)) bigMap.addLayer(layers.expenses);
+    } else if(bigMap.hasLayer(layers.expenses)) {
+      bigMap.removeLayer(layers.expenses);
+    }
+  }
+
+  if(layers.journal){
+    const shouldShowJournal = !btnVisited || btnVisited.classList.contains('active');
+    if(shouldShowJournal){
+      if(!bigMap.hasLayer(layers.journal)) bigMap.addLayer(layers.journal);
+    } else if(bigMap.hasLayer(layers.journal)) {
+      bigMap.removeLayer(layers.journal);
+    }
+  }
+
+  invalidateMap(bigMap);
 }
 
 // === Map popup helpers ===
@@ -674,28 +760,8 @@ const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}
     state.maps.big.addLayer(journalLG);
     document.getElementById('btnToggleSpent')?.classList.add('active');
     document.getElementById('btnToggleVisited')?.classList.add('active');
-    // --- Map toolbar: toggle visibility of layers + button state ---
-    const btnSpent   = document.getElementById('btnToggleSpent');
-    const btnVisited = document.getElementById('btnToggleVisited');
-
-    function applyMapToolbarVisibility(){
-      if(btnSpent && btnSpent.classList.contains('active')){
-        if(!state.maps.big.hasLayer(expensesLG)) state.maps.big.addLayer(expensesLG);
-      } else {
-        if(state.maps.big.hasLayer(expensesLG)) state.maps.big.removeLayer(expensesLG);
-      }
-      if(btnVisited && btnVisited.classList.contains('active')){
-        if(!state.maps.big.hasLayer(journalLG)) state.maps.big.addLayer(journalLG);
-      } else {
-        if(state.maps.big.hasLayer(journalLG)) state.maps.big.removeLayer(journalLG);
-      }
-      invalidateMap(state.maps.big);
-    }
-    btnSpent?.addEventListener('click', ()=>{ btnSpent.classList.toggle('active'); applyMapToolbarVisibility(); });
-    btnVisited?.addEventListener('click', ()=>{ btnVisited.classList.toggle('active'); applyMapToolbarVisibility(); });
-    // ensure initial visibility matches default state
+    wireMapToolbarOnce();
     applyMapToolbarVisibility();
-    
 
     invalidateMap(state.maps.big);
   }catch(e){ console.error('initBigMap error', e); }
@@ -734,11 +800,11 @@ function _sortByCreated(entries){
 function esc(s){
   if (s === null || s === undefined) return '';
   return String(s)
-    .replace(/&/g,'&')
-    .replace(/</g,'<')
-    .replace(/>/g,'>')
-    .replace(/"/g,'"')
-    .replace(/'/g,'\'');
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
 }
 
 
@@ -1337,9 +1403,23 @@ async function loadTrip(){
   state.current = t;
   updateHeaderDestination();
   state.current.localCurrency = (t.localCurrency || getLocalCurrency(t.destination) || null);
-  try{ const _r = await fetchRatesOnce(); if(_r) state.rates = _r; }catch(e){}
   ensureExpenseCurrencyOption();
-  try{ await enrichLegacyExpenses(t); }catch(_){ }
+  // Do not block initial paint on network-bound rates.
+  try{
+    const cachedRaw = localStorage.getItem('flymily_usd_rates_v1');
+    if (cachedRaw){
+      const cached = JSON.parse(cachedRaw);
+      if (cached && cached.USDILS && cached.USDEUR) {
+        state.rates = {
+          USDILS: Number(cached.USDILS),
+          USDEUR: Number(cached.USDEUR),
+          ...(cached.USDLocal ? { USDLocal: Number(cached.USDLocal) } : {}),
+          lockedAt: cached.lockedAt || new Date().toISOString()
+        };
+      }
+    }
+  }catch(_){ }
+  try{ enrichLegacyExpenses(t); }catch(_){ }
 
   // Overview meta (optional – only if element exists)
   (function(){
@@ -1381,6 +1461,20 @@ async function loadTrip(){
     setTimeout(()=> invalidateMap(state.maps?.mini), 80);
   }
   renderExpenseSummary(t);
+
+  // Refresh live rates in background and rerender only if values changed.
+  try{
+    fetchRatesOnce().then(_r=>{
+      if(!_r) return;
+      const changed = !state.rates || Number(state.rates.USDILS)!==Number(_r.USDILS) || Number(state.rates.USDEUR)!==Number(_r.USDEUR) || Number(state.rates.USDLocal||0)!==Number(_r.USDLocal||0);
+      state.rates = _r;
+      if(changed && state.current){
+        try{ renderExpenses(state.current, state.expenseSort); }catch(_){ }
+        try{ renderAllTimeline(state.current, state.allSort || 'desc'); }catch(_){ }
+        try{ renderExpenseSummary(state.current); }catch(_){ }
+      }
+    }).catch(()=>{});
+  }catch(_){ }
 
   // If trip dates overlap "today" on open → show quick actions popup
   try{ maybeShowTripTodayPrompt(t); }catch(_){ }
@@ -1591,7 +1685,7 @@ arr.forEach(e=>{
             const tt = snap.exists() ? (snap.data()||{}) : {};
             if(tt.expenses && tt.expenses[e.id]){
               tt.expenses[e.id].locationName = String(name).trim();
-              if(!(tt.expenses[e.id].title||'').toString().trim()) tt.expenses[e.id].title = head;
+              if(!(tt.expenses[e.id].titleRaw||'').toString().trim() && !(tt.expenses[e.id].title||'').toString().trim()) tt.expenses[e.id].title = head;
               await FB.updateDoc(ref, { expenses: tt.expenses });
             }
           }catch(_){ }
@@ -2038,7 +2132,7 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
   });
 
    $('#expenseModal').dataset.id = e?.id||'';
-  try{ const tEl=document.getElementById("expTitle"); if(tEl) tEl.value = e?.title || ""; }catch(_){ }
+  try{ const tEl=document.getElementById("expTitle"); if(tEl) tEl.value = e?.titleRaw || e?.title || ""; }catch(_){ }
   $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc,'קישור') : '')) || '';
   enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   const __defCur = (e && e.currency) ? e.currency : (state.current?.localCurrency || 'USD');
@@ -2147,6 +2241,7 @@ async function saveExpense(){
   const _finalTitle = _titleInput || _nameFromLoc || _fromDesc || _destCity || '';
 
   t.expenses[id] = {
+    titleRaw: _titleInput,
     title: _finalTitle,
     desc: (document.getElementById('expText')?.textContent||'').trim(),
     descHtml: sanitizeExpenseNoLinks(document.getElementById('expText')?.innerHTML||'').trim(),
@@ -2907,6 +3002,8 @@ function migrateBadExpenseTitles(trip){
 }
 
 function deriveTitleCandidate(exp, trip){
+  const tRaw = (exp?.titleRaw||'').toString().trim();
+  if(tRaw) return tRaw;
   const t0 = (exp?.title||'').toString().trim();
   if(t0 && !isProbablyAmountTitle(t0, exp)) return t0;
   const loc = (exp?.locationName||'').toString().trim();
@@ -6495,17 +6592,28 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     btn.textContent = collapsed ? 'פתח הכל' : 'צמצם הכל';
   }
 
+  function syncOverviewDetailRows(){
+    const root = document.getElementById('view-overview');
+    const body = document.getElementById('tblAllTimeline');
+    if (!root || !body) return;
+    const collapsed = root.classList.contains('all-collapsed');
+    body.querySelectorAll('tr.exp-details').forEach(tr=>{
+      const forceOpen = tr.classList.contains('force-open');
+      tr.style.display = (collapsed && !forceOpen) ? 'none' : 'block';
+    });
+  }
+
   function setCollapsed(collapsed){
     const root = document.getElementById('view-overview');
     if (!root) return;
     root.classList.toggle('all-collapsed', !!collapsed);
-    if (collapsed){
-      // Clear any per-row open state (single-item overrides)
-      const body = document.getElementById('tblAllTimeline');
-      if (body){
+    const body = document.getElementById('tblAllTimeline');
+    if (body){
+      if (collapsed){
         body.querySelectorAll('tr.exp-details.force-open').forEach(tr=>tr.classList.remove('force-open'));
         body.querySelectorAll('tr.exp-item.force-open').forEach(tr=>tr.classList.remove('force-open'));
       }
+      syncOverviewDetailRows();
     }
     try{ localStorage.setItem('allDetailsCollapsed', collapsed ? '1' : '0'); }catch(_){}
     applyCollapsedUI();
@@ -6568,6 +6676,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
         const open = details.classList.contains('force-open');
         details.classList.toggle('force-open', !open);
         tr.classList.toggle('force-open', !open);
+        details.style.display = open ? 'none' : 'block';
       }, { passive:true });
       tbody.dataset.rowToggleBound = '1';
     }
@@ -6650,6 +6759,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
 
     // expose so renderAllTimeline can re-apply after rerender
     window.__overviewApplyAfterRender = function(){
+      syncOverviewDetailRows();
       applyCollapsedUI();
       // re-run search to re-create marks after DOM changes
       runSearch();

@@ -82,14 +82,23 @@ window.addEventListener("online",  () => enableNetwork(db).catch(()=>{}));
 export async function hardSignOut() {
   try { await signOut(auth); } catch(e) { console.warn('signOut err', e); }
   try {
-    // Remove Firebase Auth localStorage shards
+    // Remove Firebase Auth localStorage shards safely.
     if (typeof localStorage !== 'undefined') {
-      for (let i=0; i<localStorage.length; i++) {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('firebase:authUser:')) { try { localStorage.removeItem(key); } catch(_){} }
-        if (key && key.startsWith('firebase:storedPersistence:')) { try { localStorage.removeItem(key); } catch(_){} }
-        if (key && key.startsWith('firebase-heartbeat')) { try { localStorage.removeItem(key); } catch(_){} }
+        if (!key) continue;
+        if (
+          key.startsWith('firebase:authUser:') ||
+          key.startsWith('firebase:storedPersistence:') ||
+          key.startsWith('firebase-heartbeat')
+        ) {
+          keysToRemove.push(key);
+        }
       }
+      keysToRemove.forEach((key) => {
+        try { localStorage.removeItem(key); } catch (_) {}
+      });
     }
   } catch(e) { console.warn('localStorage cleanup err', e); }
   try { indexedDB && indexedDB.deleteDatabase && indexedDB.deleteDatabase('firebaseLocalStorageDb'); } catch(e) {}

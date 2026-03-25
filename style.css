@@ -24,7 +24,7 @@ body::before{
   opacity:.9;
 }
 a{color:var(--brand);text-decoration:none}
-.app{display:grid;grid-template-rows:auto 1fr;height:100%;width:100%}header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5     flex-direction: row; }
+.app{display:grid;grid-template-rows:auto 1fr;height:100%;width:100%}header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:5;flex-direction: row; }
 header .brand{font-weight:700;letter-spacing:.5px}
 header .spacer{flex:1}
 header button, .btn{background:transparent;border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer}
@@ -1362,7 +1362,7 @@ html.share-open [style*="overflow:scroll"]{
   padding: 16px;
   min-height: 0;
   -webkit-overflow-scrolling: touch; /* גלילה חלקה במכשירי iOS */
-}{ display:block !important; flex:1; overflow:auto; padding:16px; min-height:0; }
+
 
 /* map-toolbar-spent */
 .map-toolbar #btnToggleSpent { border:2px solid #e53935; color:#e53935; background:transparent; }
@@ -2829,3 +2829,327 @@ header #btnLogin.danger {
 .header-dest{color:#fff;font-weight:600;opacity:.95;margin-inline:12px;white-space:nowrap;max-width:40vw;overflow:hidden;text-overflow:ellipsis;}
 
   #view-expenses .expenses-table.stacked td.header.title{ min-inline-size: 16ch; }
+
+
+/* === Final mobile row-layout overrides: valid grid + equal widths === */
+@media (max-width: 480px){
+  #view-journal .expenses-table,
+  #view-expenses .expenses-table,
+  #view-overview .expenses-table {
+    width: 100%;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item:has(td.header) {
+    width: 100%;
+    margin-inline: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header) {
+    grid-template-columns: 88px 88px minmax(0,1fr) 64px;
+    grid-template-areas:
+      "date time menu menu"
+      "location location location location";
+    background: rgba(140, 255, 140, 0.20) !important;
+  }
+
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header) {
+    grid-template-columns: 100px 100px minmax(0,1fr) 64px;
+    grid-template-areas:
+      "date time title menu"
+      "amount currency title menu";
+    background: rgba(255, 120, 120, 0.20) !important;
+  }
+
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item:has(td.header) td.cell {
+    min-width: 0;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 12px 14px;
+  }
+
+  #view-journal .expenses-table td.header.location,
+  #view-expenses .expenses-table.stacked td.header.title,
+  #view-overview .expenses-table td.header.location,
+  #view-overview .expenses-table td.header.title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  #view-journal .expenses-table td.menu-cell,
+  #view-expenses .expenses-table.stacked td.menu-cell,
+  #view-overview .expenses-table td.menu-cell {
+    justify-self: start;
+    align-self: center;
+    padding-inline-start: 10px;
+  }
+
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item:has(td.notes) {
+    display: block;
+    width: 100%;
+    margin: -2px 0 12px;
+  }
+
+  #view-journal .expenses-table td.notes,
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-overview .expenses-table td.notes {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 0 !important;
+    background: transparent !important;
+  }
+}
+
+
+/* === Stability overrides v5: equal row widths + lighter initial paint === */
+#view-overview .expenses-table-container,
+#view-journal .expenses-table-container,
+#view-expenses .expenses-table-container{
+  overflow-x: hidden;
+}
+
+/* Desktop/tablet: force the red and green header rows to use the same full-width grid */
+@media (min-width: 721px){
+  #view-overview .expenses-table,
+  #view-journal .expenses-table{
+    width:100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #view-overview .expenses-table tr.exp-item:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header){
+    display:grid;
+    width:100%;
+    grid-template-columns: 56px minmax(150px,1.15fr) minmax(130px,.9fr) minmax(160px,1fr) minmax(220px,1.5fr);
+    align-items:stretch;
+    gap:0;
+    margin:0;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header){
+    grid-template-areas: "menu amount category time date";
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header){
+    grid-template-areas: "menu title title time date";
+  }
+
+  #view-overview .expenses-table tr.exp-item:has(td.header) > td,
+  #view-journal .expenses-table tr.exp-item:has(td.header) > td,
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td{
+    min-width:0;
+    width:auto !important;
+    margin:0;
+    border-radius:0 !important;
+    box-sizing:border-box;
+  }
+
+  #view-overview .expenses-table td.menu-cell,
+  #view-journal .expenses-table td.menu-cell,
+  #view-expenses .expenses-table.stacked td.menu-cell{ grid-area:menu; }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount,
+  #view-expenses .expenses-table.stacked td.header.amount{ grid-area:amount; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category,
+  #view-expenses .expenses-table.stacked td.header.category{ grid-area:category; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time,
+  #view-journal .expenses-table td.header.time,
+  #view-expenses .expenses-table.stacked td.header.time{ grid-area:time; }
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date,
+  #view-journal .expenses-table td.header.date,
+  #view-expenses .expenses-table.stacked td.header.date{ grid-area:date; }
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location,
+  #view-journal .expenses-table td.header.location,
+  #view-expenses .expenses-table.stacked td.header.title{ grid-area:title; }
+
+  #view-overview .expenses-table tr.exp-item:has(td.header) > td:first-child,
+  #view-journal .expenses-table tr.exp-item:has(td.header) > td:first-child,
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td:first-child{
+    border-start-start-radius:18px !important;
+    border-end-start-radius:18px !important;
+  }
+  #view-overview .expenses-table tr.exp-item:has(td.header) > td:last-child,
+  #view-journal .expenses-table tr.exp-item:has(td.header) > td:last-child,
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td:last-child{
+    border-start-end-radius:18px !important;
+    border-end-end-radius:18px !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item:has(td.notes),
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes){
+    display:block;
+    width:100%;
+    margin:0 0 14px 0;
+  }
+
+  #view-overview .expenses-table td.notes,
+  #view-journal .expenses-table td.notes,
+  #view-expenses .expenses-table.stacked td.notes{
+    display:block;
+    width:100%;
+    box-sizing:border-box;
+  }
+}
+
+/* Mobile: both green and red rows must use the exact same outer width */
+@media (max-width: 720px){
+  #view-overview .expenses-table tr.exp-item:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header){
+    width:100%;
+    box-sizing:border-box;
+    margin-inline:0 !important;
+  }
+}
+
+/* === FINAL OVERVIEW/JOURNAL ROW STABILITY OVERRIDE === */
+#view-overview .expenses-table,
+#view-journal .expenses-table,
+#view-expenses .expenses-table.stacked{
+  width:100% !important;
+  table-layout:fixed;
+  border-collapse:separate;
+  border-spacing:0 0;
+}
+
+#view-overview .expenses-table tr.exp-item:has(td.header),
+#view-journal .expenses-table tr.exp-item:has(td.header),
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.header){
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  border-radius:18px !important;
+}
+
+#view-overview .expenses-table tr.exp-item:has(td.header) > td,
+#view-journal .expenses-table tr.exp-item:has(td.header) > td,
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td{
+  border-radius:0 !important;
+  margin:0 !important;
+  background-clip:padding-box !important;
+}
+
+#view-overview .expenses-table tr.exp-item:has(td.header) > td:first-child,
+#view-journal .expenses-table tr.exp-item:has(td.header) > td:first-child,
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td:first-child{
+  border-start-start-radius:18px !important;
+  border-end-start-radius:18px !important;
+}
+
+#view-overview .expenses-table tr.exp-item:has(td.header) > td:last-child,
+#view-journal .expenses-table tr.exp-item:has(td.header) > td:last-child,
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.header) > td:last-child{
+  border-start-end-radius:18px !important;
+  border-end-end-radius:18px !important;
+}
+
+/* Neutral notes row: never paint it red/green and never let it look like a second header row */
+#view-overview .expenses-table tr.exp-details,
+#view-journal .expenses-table tr.exp-details,
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.notes){
+  display:block;
+  width:100% !important;
+  margin:0 0 14px 0 !important;
+  background:transparent !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+}
+
+#view-overview .expenses-table tr.exp-details > td,
+#view-journal .expenses-table tr.exp-details > td,
+#view-expenses .expenses-table.stacked tr.exp-item:has(td.notes) > td,
+#view-overview .expenses-table td.notes,
+#view-journal .expenses-table td.notes,
+#view-expenses .expenses-table.stacked td.notes{
+  display:block !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  padding:12px 14px 14px !important;
+}
+
+/* Menu cell/button uniformity */
+#view-overview .expenses-table td.menu-cell,
+#view-journal .expenses-table td.menu-cell,
+#view-expenses .expenses-table.stacked td.menu-cell{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding-inline:10px !important;
+}
+
+#view-overview .expenses-table .menu-btn,
+#view-journal .expenses-table .menu-btn,
+#view-expenses .expenses-table.stacked .menu-btn{
+  width:52px !important;
+  min-width:52px !important;
+  height:52px !important;
+  border-radius:16px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 !important;
+}
+
+/* Collapsed overview must hide only notes rows, even after legacy CSS rules */
+#view-overview.all-collapsed .expenses-table tr.exp-details:not(.force-open){
+  display:none !important;
+}
+#view-overview.all-collapsed .expenses-table tr.exp-details.force-open{
+  display:block !important;
+}
+
+@media (min-width: 721px){
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header){
+    display:grid !important;
+    grid-template-columns:64px minmax(150px,1fr) minmax(150px,.9fr) minmax(170px,.9fr) minmax(250px,1.4fr) !important;
+    grid-template-areas:"menu amount category time date" !important;
+    align-items:stretch !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header){
+    display:grid !important;
+    grid-template-columns:64px minmax(220px,1.4fr) minmax(220px,1.4fr) minmax(170px,.9fr) minmax(250px,1.2fr) !important;
+    grid-template-areas:"menu title title time date" !important;
+    align-items:stretch !important;
+  }
+}
+
+@media (max-width: 720px){
+  #view-overview .expenses-table tr.exp-item:has(td.header),
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header){
+    display:grid !important;
+    width:100% !important;
+    margin-inline:0 !important;
+    grid-auto-rows:minmax(54px, auto);
+  }
+}
