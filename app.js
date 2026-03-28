@@ -1,4 +1,3 @@
-
 // --- Helper: strip links (for Word export) ---
 function stripLinks(text){
   try{
@@ -275,12 +274,14 @@ function rateMatrix(r){
   const USDILS = Number((r && r.USDILS) ?? (state?.rates?.USDILS) ?? 3.7);
   const USDLocal = Number((r && r.USDLocal) ?? (state?.rates?.USDLocal) ?? 1);
   const LC = state.current?.localCurrency;
+  const lcSpread = (LC && !['USD', 'EUR', 'ILS'].includes(LC)) ? { [LC]: USDLocal } : {};
   const M = {
-    USD: { USD:1, EUR:USDEUR, ILS:USDILS, ...(LC ? { [LC]: USDLocal } : {}) },
-    EUR: { USD:1/USDEUR, EUR:1, ILS:USDILS/USDEUR, ...(LC ? { [LC]: USDLocal/USDEUR } : {}) },
-    ILS: { USD:1/USDILS, EUR:USDEUR/USDILS, ILS:1, ...(LC ? { [LC]: USDLocal/USDILS } : {}) }
+    USD: { USD:1, EUR:USDEUR, ILS:USDILS, ...lcSpread },
+    EUR: { USD:1/USDEUR, EUR:1, ILS:USDILS/USDEUR, ...(lcSpread[LC] ? { [LC]: USDLocal/USDEUR } : {}) },
+    ILS: { USD:1/USDILS, EUR:USDEUR/USDILS, ILS:1, ...(lcSpread[LC] ? { [LC]: USDLocal/USDILS } : {}) }
   };
-  if (LC) {
+  // If the local currency is already USD/EUR/ILS, do not overwrite the base matrices.
+  if (LC && !['USD', 'EUR', 'ILS'].includes(LC)) {
     M[LC] = { 
       USD: USDLocal ? 1/USDLocal : 1,
       EUR: USDLocal && USDEUR ? USDEUR/USDLocal : 1,
@@ -301,23 +302,23 @@ function convertAmount(amount, from, to, rates){
 async function fetchRatesOnce(){
   try{
     const localCur = state.current?.localCurrency;
-    const to = ['ILS', 'EUR'];
-    if (localCur) to.push(localCur);
+    // סינון כפילויות ומניעת שליחת USD כערך יעד כדי למנוע שגיאה 400
+    const to = [...new Set(['ILS', 'EUR', localCur].filter(c => c && c !== 'USD'))];
     const r = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${to.join(',')}`);
     const d = await r.json();
-    const USDILS = Number(d && d.rates && d.rates.ILS);
-    const USDEUR = Number(d && d.rates && d.rates.EUR);
-    const USDLocal = (localCur) ? Number(d && d.rates && d.rates[localCur]) : null;
+    
+    const USDILS = Number(d?.rates?.ILS);
+    const USDEUR = Number(d?.rates?.EUR);
+    const USDLocal = (localCur) ? Number(d?.rates?.[localCur]) : null;
+    
     if(USDILS && USDEUR){
       const rates = { USDILS, USDEUR, lockedAt: new Date().toISOString() };
       if(USDLocal) rates.USDLocal = USDLocal;
       return rates;
     }
-  }catch(e){ /*log removed*/ }
-  // Fallback to current state rates, still stamp time
-  return { USDILS: (state.rates?.USDILS)||3.7, USDEUR: (state.rates?.USDEUR)||0.92, lockedAt: new Date().toISOString() };
+  }catch(e){ console.error("Rates fetch failed:", e); }
+  return { USDILS: 3.7, USDEUR: 0.92, lockedAt: new Date().toISOString() };
 }
-
 var state = globalThis.state || (globalThis.state = {});
 try { window.state = state; } catch(_) {}
 // === End helpers ===
@@ -983,15 +984,24 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
     }
 
     if (v === 'breakdown') {
-      // Open the breakdown dialog
-      const btn = document.getElementById('openBreakdownBtn') || document.getElementById('btnQuickBreakdown');
-      if (btn) { btn.click(); return; }
-      try {
-        const dlg = document.getElementById('breakdownDialog');
-        if (dlg) {
-          if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+      // setTimeout(0) lets the select's click event finish propagating before the dialog
+      // opens — otherwise the document click-outside listener closes it immediately.
+      setTimeout(() => {
+        if (typeof window.__openBreakdownDialog === 'function') {
+          window.__openBreakdownDialog();
+          return;
         }
-      } catch (_) {}
+        try {
+          const dlg = document.getElementById('breakdownDialog');
+          if (dlg) {
+            if (typeof renderCategoryBreakdownNode === 'function')
+              renderCategoryBreakdownNode('categoryBreakdownDialog');
+            if (!dlg.open) {
+              if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+            }
+          }
+        } catch (_) {}
+      }, 0);
       return;
     }
 
@@ -1099,8 +1109,11 @@ function subscribeTrips(){
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
   const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   state._unsubTrips = FB.onSnapshot(q, (snap)=>{
-    state.trips = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+    state.trips = snap.docs
+      .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
+    state.trips.forEach(trip => { try{ backfillTripVersionFields(trip); }catch(_){} });
   }, (err)=>{
     try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
     // If permissions missing, wait a bit and retry once auth is stable
@@ -1252,6 +1265,24 @@ const localCurrencyMap = {
   "אוסטרליה":"AUD","Australia":"AUD","australia":"AUD"
 };
 
+Object.assign(localCurrencyMap, {
+  'ארה"ב': 'USD',
+  'ארצות הברית': 'USD',
+  'ארצות-הברית': 'USD',
+  'USA': 'USD',
+  'U.S.A': 'USD',
+  'US': 'USD',
+  'United States': 'USD',
+  'United States of America': 'USD',
+  'America': 'USD',
+  'usa': 'USD',
+  'u.s.a': 'USD',
+  'us': 'USD',
+  'united states': 'USD',
+  'united states of america': 'USD',
+  'america': 'USD'
+});
+
 // Try to infer local currency from free-text destination (match by inclusion, not exact equality)
 function getLocalCurrency(destination){
   if(!destination) return null;
@@ -1267,6 +1298,69 @@ function getLocalCurrency(destination){
     }
   }
   return null;
+}
+
+function normalizeRatesShape(rates){
+  const src = (rates && typeof rates === 'object') ? rates : {};
+  const out = {
+    USDILS: Number(src.USDILS ?? state?.rates?.USDILS ?? 3.7) || 3.7,
+    USDEUR: Number(src.USDEUR ?? state?.rates?.USDEUR ?? 0.92) || 0.92
+  };
+  const usdLocal = Number(src.USDLocal);
+  if (isFinite(usdLocal) && usdLocal > 0) out.USDLocal = usdLocal;
+  if (src.lockedAt) out.lockedAt = src.lockedAt;
+  return out;
+}
+
+function normalizeTripShape(trip){
+  const t = { ...(trip || {}) };
+  const inferredLocalCurrency = t.localCurrency || getLocalCurrency(t.destination) || null;
+  const normalizedRates = normalizeRatesShape(t.rates);
+  const rawBudget = (t.budget && typeof t.budget === 'object') ? t.budget : {};
+  const normalizedBudget = {
+    USD: Number(rawBudget.USD || 0) || 0,
+    EUR: Number(rawBudget.EUR || 0) || 0,
+    ILS: Number(rawBudget.ILS || 0) || 0
+  };
+
+  const rawExpenses = t.expenses || {};
+  const normalizedExpenses = Array.isArray(rawExpenses)
+    ? rawExpenses.map((e)=>({
+        ...e,
+        category: (e?.category || 'אחר').toString(),
+        currency: (e?.currency || inferredLocalCurrency || 'USD').toString().toUpperCase(),
+        rates: normalizeRatesShape(e?.rates || normalizedRates)
+      }))
+    : Object.fromEntries(
+        Object.entries(rawExpenses).map(([id, e])=>[id, {
+          ...e,
+          category: (e?.category || 'אחר').toString(),
+          currency: (e?.currency || inferredLocalCurrency || 'USD').toString().toUpperCase(),
+          rates: normalizeRatesShape(e?.rates || normalizedRates)
+        }])
+      );
+
+  return {
+    ...t,
+    localCurrency: inferredLocalCurrency,
+    rates: normalizedRates,
+    budget: normalizedBudget,
+    expenses: normalizedExpenses
+  };
+}
+
+async function backfillTripVersionFields(trip){
+  try{
+    if(!trip?.id) return;
+    const normalized = normalizeTripShape(trip);
+    const patch = {};
+    if (!trip.localCurrency && normalized.localCurrency) patch.localCurrency = normalized.localCurrency;
+    if (!trip.budget || typeof trip.budget !== 'object') patch.budget = normalized.budget;
+    if (!trip.rates || !Number(trip.rates?.USDILS) || !Number(trip.rates?.USDEUR)) patch.rates = normalized.rates;
+    if (!Object.keys(patch).length) return;
+    const ref = FB.doc(db, 'trips', trip.id);
+    await FB.updateDoc(ref, patch);
+  }catch(_){}
 }
 
 // Best-effort destination city (avoid showing a country name as a "title")
@@ -1358,14 +1452,34 @@ async function loadTrip(){
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
   if(!snap.exists()) return;
-  const t = { id: snap.id, ...snap.data() }; state._lastTripObj = t;
+  const rawTrip = { id: snap.id, ...snap.data() };
+  const t = normalizeTripShape(rawTrip); state._lastTripObj = t;
   state.current = t;
   try { globalThis.state = state; window.state = state; } catch(_) {}
   updateHeaderDestination();
-  state.current.localCurrency = (t.localCurrency || getLocalCurrency(t.destination) || null);
-  try{ const _r = await fetchRatesOnce(); if(_r) state.rates = _r; }catch(e){}
+  const inferredLocalCurrency = t.localCurrency;
+  state.current.localCurrency = inferredLocalCurrency;
+
+  let effectiveRates = (t.rates && typeof t.rates === 'object') ? { ...t.rates } : null;
+  const missingBaseRates = !effectiveRates || !Number(effectiveRates.USDILS) || !Number(effectiveRates.USDEUR);
+  if (missingBaseRates) {
+    try{
+      const fetchedRates = await fetchRatesOnce();
+      if(fetchedRates) effectiveRates = { ...(effectiveRates || {}), ...fetchedRates };
+    }catch(_){}
+  }
+  if (effectiveRates) state.rates = effectiveRates;
   ensureExpenseCurrencyOption();
   try{ await enrichLegacyExpenses(t); }catch(_){ }
+
+  // Backfill old trips so legacy data behaves like newly-created trips.
+  try{
+    const patch = {};
+    if (!rawTrip.localCurrency && inferredLocalCurrency) patch.localCurrency = inferredLocalCurrency;
+    if (!rawTrip.budget || typeof rawTrip.budget !== 'object') patch.budget = t.budget;
+    if (effectiveRates && missingBaseRates) patch.rates = effectiveRates;
+    if (Object.keys(patch).length) await FB.updateDoc(ref, patch);
+  }catch(_){}
 
   // Overview meta (optional – only if element exists)
   (function(){
@@ -1393,7 +1507,7 @@ async function loadTrip(){
   (function(){ const typesArr = Array.isArray(t.types)?t.types:[]; $$('.metaType').forEach(btn=>{ btn.classList.toggle('active', typesArr.includes(btn.dataset.value)); btn.onclick = ()=> btn.classList.toggle('active'); }); })();
   const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
   $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? 'ביטול נעילה' : 'קבע תקציב'; be.classList.toggle('locked', !!t.budgetLocked);}
-  if(t.rates){ state.rates = t.rates; }
+  if(t.rates && !missingBaseRates){ state.rates = t.rates; }
   const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS'); if(_r1) _r1.value = state.rates.USDEUR; if(_r2) _r2.value = state.rates.USDILS;
 
   renderExpenses(t);
@@ -1594,6 +1708,9 @@ function renderJournal(t, order){
   const d = dayjs(e.dateIso || e.createdAt);
   const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2 });
   const displayTitle = deriveExpenseTitle(e);
+  const desc = (e.descHtml && /(<a|link-icon|<br|<div|<p|<span)/i.test(e.descHtml))
+    ? e.descHtml
+    : linkifyToIcons(e.descHtml || e.desc || '');
   const tr1 = document.createElement('tr');
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'expense';
@@ -1607,7 +1724,7 @@ function renderJournal(t, order){
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
-  tr2.innerHTML = `<td class="cell notes" colspan="6">${linkifyToIcons(e.desc || '')}</td>`;
+  tr2.innerHTML = `<td class="cell notes" colspan="6">${desc}</td>`;
   body.appendChild(tr1); body.appendChild(tr2);
   tr1.querySelector('.menu-btn').onclick = () => { 
     _rowActionExpense = e; 
@@ -1617,6 +1734,9 @@ function renderJournal(t, order){
 function appendJournalRowToTimeline(body, j){
   const d = dayjs(j.dateIso || j.createdAt);
   const displayTitle = deriveJournalTitle(j);
+  const text = (j.html && /(<a|link-icon|<br|<div|<p|<span)/i.test(j.html))
+    ? j.html
+    : linkifyToIcons(j.html || j.text || '');
   const tr1 = document.createElement('tr');
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'journal';
@@ -1628,7 +1748,7 @@ function appendJournalRowToTimeline(body, j){
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
-  tr2.innerHTML = `<td class="cell notes" colspan="6">${linkifyToIcons(j.text || '')}</td>`;
+  tr2.innerHTML = `<td class="cell notes" colspan="6">${text}</td>`;
   body.appendChild(tr1); body.appendChild(tr2);
   tr1.querySelector('.menu-btn').onclick = () => { 
     _rowActionJournal = j; 
@@ -4672,9 +4792,10 @@ async function importKMLFromFile(file){
 function renderCategoryBreakdownNode(targetId){
   const el = document.getElementById(targetId); if(!el) return;
   const local = 'ILS';
-  const expenses = (state && state.current && (Array.isArray(state.current.expenses)
-    ? state.current.expenses
-    : Object.entries(state.current.expenses||{}).map(([id,e])=>({ id, ...e }))
+  const trip = normalizeTripShape(state?.current || {});
+  const expenses = (trip && (Array.isArray(trip.expenses)
+    ? trip.expenses
+    : Object.entries(trip.expenses||{}).map(([id,e])=>({ id, ...e }))
   )) || [];
 
   const breakdown = {}; let total = 0;
@@ -4738,24 +4859,29 @@ function renderCategoryBreakdownNode(targetId){
   const cats = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]);
   const fmtILS = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
   const fmtAmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:2});
+  // הפילוח חייב להיות מבוסס על מה ששולם בפועל בש"ח, ולא על התקציב.
+  const pctBase = total;
+  const pctLabel = 'אחוז מסך ששולם';
 
   let html = `
     <div class="breakdown-head" dir="rtl">
       <div class="breakdown-note">לחיצה על קטגוריה תפתח את ההוצאות שבקטגוריה</div>
+      <div class="muted">החישוב מבוסס על סך ששולם בפועל: ${fmtILS(total)} ILS</div>
     </div>
     <table class="breakdown-table" dir="rtl">
       <thead>
         <tr>
           <th class="bd-cat">קטגוריה</th>
           <th class="bd-sum">סכום (ILS)</th>
-          <th class="bd-pct">אחוז</th>
+          <th class="bd-pct">${pctLabel}</th>
         </tr>
       </thead>
       <tbody>
   `;
 
   cats.forEach(([cat,sum], idx)=>{
-    const pct = total ? (sum/total*100) : 0;
+    const pct = pctBase ? (sum/pctBase*100) : 0;
+    const barPct = Math.min(Math.max(pct, 0), 100);
     const safeCat = esc(cat);
     const rowId = `bd_${idx}`;
 
@@ -4768,7 +4894,7 @@ function renderCategoryBreakdownNode(targetId){
         </td>
         <td class="bd-sum">${fmtILS(sum)}</td>
         <td class="bd-pct">
-          <div class="breakdown-row-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+          <div class="breakdown-row-bar"><span style="width:${barPct.toFixed(1)}%"></span></div>
           <div class="muted">${pct.toFixed(1)}%</div>
         </td>
       </tr>
@@ -4927,6 +5053,8 @@ function renderCategoryBreakdownNode(targetId){
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && dlg.open) closeBreakdown(); });
       document.addEventListener('click', (e)=>{
         if(!dlg.open) return;
+        // Ignore clicks from the nav dropdown — they triggered the open and must not close it
+        if(e.target && e.target.closest && e.target.closest('#overviewTabSelect')) return;
         const r = dlg.getBoundingClientRect();
         const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
         if(!inside) closeBreakdown();
