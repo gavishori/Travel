@@ -794,10 +794,12 @@ state = Object.assign(state, {
   current: state.current ?? null,
   currentTripId: state.currentTripId ?? null,
   viewMode: state.viewMode ?? 'grid',
+  lastNonMapView: state.lastNonMapView ?? 'grid',
   rates: state.rates ?? { USDEUR: 0.92, USDILS: 3.7 },
-  maps: state.maps ?? { mini: null, big: null, layers: { expenses: null, journal: null }, select: null, selectMarker: null, currentModal: null },
+  maps: state.maps ?? { mini: null, big: null, home: null, layers: { expenses: null, journal: null }, select: null, selectMarker: null, currentModal: null },
   shared: state.shared ?? { enabled: false, token: null, readOnly: false },
   filters: state.filters ?? {},
+  homeMapSelection: state.homeMapSelection ?? null,
   categories: state.categories ?? {},
   isDirty: state.isDirty ?? false,
   allSort: state.allSort ?? 'desc'
@@ -861,12 +863,18 @@ function parseIntSafe(s){
 }
 
 const showToast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600); };
+function syncHomeMapMode(){
+  const container = document.querySelector('.container');
+  if(!container) return;
+  container.classList.toggle('home-map-mode', container.classList.contains('home-mode') && state.viewMode === 'map');
+}
 
 // Mode management: 'home' (pick a trip) vs 'trip' (focus one)
 function enterHomeMode(){
   const container = document.querySelector('.container');
   container.classList.add('home-mode');
   container.classList.remove('trip-mode');
+  syncHomeMapMode();
   $('#tabs').style.display = 'none';
   $('#btnAllTrips').style.display = 'none';
   state.currentTripId = null;
@@ -877,6 +885,7 @@ function enterTripMode(){
   const container = document.querySelector('.container');
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
+  syncHomeMapMode();
   $('#tabs').style.display = 'flex';
   $('#btnAllTrips').style.display = 'inline-block';
   updateHeaderDestination();
@@ -1124,8 +1133,9 @@ function subscribeTrips(){
     showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
   });
 }
-function renderTripList(){
+async function renderTripList(){
   const list = $('#tripList');
+  syncHomeMapMode();
   const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
   let s = null;
@@ -1135,22 +1145,27 @@ function renderTripList(){
                  .filter(t=> t.__match.hit)
                  .sort((a,b)=> b.__match.score - a.__match.score);
   }
-  list.className = state.viewMode==='grid' ? 'grid' : 'list';
-  list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
-  list.querySelectorAll('[data-trip]').forEach(el=>{
-    el.addEventListener('click', ()=> openTrip(el.dataset.trip));
-  });
-  // Update active button state
-  $$('.list-actions .btn').forEach(btn => btn.classList.remove('active'));
-  $(`#btnView${state.viewMode==='grid' ? 'Grid' : 'List'}`).classList.add('active');
-  // Bind menu buttons
-  list.querySelectorAll('.menu-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      _rowActionTrip = state.trips.find(t => t.id === btn.dataset.id);
-      $('#rowMenuModal').showModal();
+  state._tripListRenderToken = (state._tripListRenderToken || 0) + 1;
+  const renderToken = state._tripListRenderToken;
+  list.className = state.viewMode === 'map' ? 'map-view' : (state.viewMode==='grid' ? 'grid' : 'list');
+  if(state.viewMode === 'map'){
+    await renderTripMapView(items, renderToken);
+  } else {
+    list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
+    if(renderToken !== state._tripListRenderToken) return;
+    list.querySelectorAll('[data-trip]').forEach(el=>{
+      el.addEventListener('click', ()=> openTrip(el.dataset.trip));
     });
-  });
+    list.querySelectorAll('.menu-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _rowActionTrip = state.trips.find(t => t.id === btn.dataset.id);
+        $('#rowMenuModal').showModal();
+      });
+    });
+  }
+  ['btnViewGrid','btnViewList','btnViewMap'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+  document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
 }
 function cardHTML(t, s){
   const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
@@ -1912,8 +1927,9 @@ $('#searchTrips').addEventListener('input', renderTripList);
 let sortAsc = false; $('#btnSortTrips').addEventListener('click', ()=>{
   sortAsc = !sortAsc; state.trips.sort((a,b)=> sortAsc ? (a.start||'').localeCompare(b.start||'') : (b.start||'').localeCompare(a.start||'')); renderTripList();
 });
-$('#btnViewGrid').addEventListener('click', ()=>{ state.viewMode='grid'; renderTripList(); });
-$('#btnViewList').addEventListener('click', ()=>{ state.viewMode='list'; renderTripList(); });
+$('#btnViewGrid').addEventListener('click', ()=>{ state.lastNonMapView='grid'; state.viewMode='grid'; renderTripList(); });
+$('#btnViewList').addEventListener('click', ()=>{ state.lastNonMapView='list'; state.viewMode='list'; renderTripList(); });
+$('#btnViewMap').addEventListener('click', ()=>{ if(state.viewMode !== 'map') state.lastNonMapView = state.viewMode === 'list' ? 'list' : 'grid'; state.viewMode='map'; renderTripList(); });
 
 // Meta save, verify, budgets
 $('#btnSaveMeta').addEventListener('click', async ()=>{
@@ -2734,6 +2750,228 @@ async function reverseGeocodeCached(lat, lng){
   const prom = (async()=> await reverseGeocode(lat,lng))();
   __revGeoCache.set(key, prom);
   return prom;
+}
+const __countryReverseCache = new Map();
+const __placeSearchCache = new Map();
+const __countryCenterCache = new Map();
+function _cleanCountryLabel(v){
+  return String(v || '')
+    .replace(/^near\s+/i, '')
+    .replace(/^ליד\s+/, '')
+    .trim();
+}
+function _splitPlaceParts(raw){
+  return String(raw || '')
+    .split(/\s*,\s*|\s*-\s*|\s*\|\s*/)
+    .map(s=>s.trim())
+    .filter(Boolean)
+    .filter(p=>!/^\d+[A-Za-z-]*$/.test(p));
+}
+function extractCountryFromPlace(raw){
+  const parts = _splitPlaceParts(raw);
+  return _cleanCountryLabel(parts[parts.length - 1] || '');
+}
+function getTripCoordinateCandidates(trip){
+  const out = [];
+  const push = (lat, lng)=>{
+    const a = Number(lat), b = Number(lng);
+    if(Number.isFinite(a) && Number.isFinite(b)) out.push({ lat:a, lng:b });
+  };
+  Object.values(trip?.expenses || {}).forEach(e=> push(e?.lat, e?.lng));
+  Object.values(trip?.journal || {}).forEach(j=>{
+    if(Array.isArray(j?.path)){
+      j.path.forEach(p=> push(p?.lat, p?.lng));
+    }
+    push(j?.lat, j?.lng);
+  });
+  return out;
+}
+function getTripRepresentativeCoords(trip){
+  const pts = getTripCoordinateCandidates(trip);
+  if(!pts.length) return null;
+  const sum = pts.reduce((acc, pt)=>{
+    acc.lat += pt.lat;
+    acc.lng += pt.lng;
+    return acc;
+  }, { lat:0, lng:0 });
+  return { lat: sum.lat / pts.length, lng: sum.lng / pts.length };
+}
+async function reverseGeocodeCountryCached(lat, lng){
+  const key = _revKey(lat, lng);
+  if(__countryReverseCache.has(key)) return __countryReverseCache.get(key);
+  const prom = (async()=>{
+    try{
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=5&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=he,en`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return _cleanCountryLabel(data?.address?.country || '');
+    }catch(_){
+      return '';
+    }
+  })();
+  __countryReverseCache.set(key, prom);
+  return prom;
+}
+async function searchPlaceDetailsCached(name){
+  const key = String(name || '').trim().toLowerCase();
+  if(!key) return null;
+  if(__placeSearchCache.has(key)) return __placeSearchCache.get(key);
+  const prom = (async()=>{
+    try{
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=jsonv2&addressdetails=1&accept-language=he,en&limit=1`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const first = Array.isArray(data) ? data[0] : null;
+      if(!first) return null;
+      return {
+        lat: Number(first.lat),
+        lng: Number(first.lon),
+        country: _cleanCountryLabel(first?.address?.country || extractCountryFromPlace(first?.display_name || ''))
+      };
+    }catch(_){
+      return null;
+    }
+  })();
+  __placeSearchCache.set(key, prom);
+  return prom;
+}
+async function geocodeCountryCenterCached(country){
+  const label = _cleanCountryLabel(country);
+  const key = label.toLowerCase();
+  if(!key) return null;
+  if(__countryCenterCache.has(key)) return __countryCenterCache.get(key);
+  const prom = (async()=>{
+    try{
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(label)}&format=jsonv2&accept-language=he,en&limit=1`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const first = Array.isArray(data) ? data[0] : null;
+      if(!first) return null;
+      const lat = Number(first.lat);
+      const lng = Number(first.lon);
+      return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }catch(_){
+      return null;
+    }
+  })();
+  __countryCenterCache.set(key, prom);
+  return prom;
+}
+function makeCountryMarkerIcon(count){
+  return L.divIcon({
+    className: 'country-marker-wrap',
+    html: `<div class="country-marker">${esc(count)}</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -18]
+  });
+}
+async function buildTripCountryGroups(trips){
+  const groups = new Map();
+  for(const trip of trips || []){
+    let country = extractCountryFromPlace(trip?.destination || '');
+    let center = getTripRepresentativeCoords(trip);
+    if(!country && center){
+      country = await reverseGeocodeCountryCached(center.lat, center.lng);
+    }
+    if((!country || !center) && trip?.destination){
+      const details = await searchPlaceDetailsCached(trip.destination);
+      if(!country) country = details?.country || country;
+      if(!center && details && Number.isFinite(details.lat) && Number.isFinite(details.lng)){
+        center = { lat: details.lat, lng: details.lng };
+      }
+    }
+    if(!country) continue;
+    if(!center){
+      center = await geocodeCountryCenterCached(country);
+    }
+    if(!center) continue;
+    const key = country.toLowerCase();
+    if(!groups.has(key)){
+      groups.set(key, { key, country, center, trips: [] });
+    }
+    groups.get(key).trips.push(trip);
+  }
+  return Array.from(groups.values())
+    .map(group=>({
+      ...group,
+      count: group.trips.length
+    }))
+    .sort((a,b)=> b.count - a.count || a.country.localeCompare(b.country, 'he'));
+}
+function bindCountryListActions(root){
+  if(!root) return;
+  root.querySelectorAll('[data-trip-country-open]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      openTrip(btn.dataset.tripCountryOpen);
+    });
+  });
+}
+async function renderTripMapView(trips, renderToken){
+  const list = document.getElementById('tripList');
+  if(!list) return;
+  list.innerHTML = `
+    <div class="trip-map-screen">
+      <div class="trip-map-topbar">
+        <button id="btnExitTripMap" class="btn">חזרה לתצוגה רגילה</button>
+        <div class="trip-map-title">מפת המדינות שלי</div>
+      </div>
+      <div class="trip-list-map-shell">
+        <div id="tripListMap" class="trip-list-map" aria-label="מפת מדינות"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnExitTripMap')?.addEventListener('click', ()=>{
+    state.viewMode = state.lastNonMapView === 'list' ? 'list' : 'grid';
+    renderTripList();
+  });
+  const groups = await buildTripCountryGroups(trips);
+  if(renderToken !== state._tripListRenderToken) return;
+  if(!state.maps.home){
+    state.maps.home = safeInitMap('tripListMap', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.home);
+  } else {
+    const existing = document.getElementById('tripListMap');
+    if(existing && !existing._leaflet_map){
+      state.maps.home = safeInitMap('tripListMap', { zoomControl: true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.home);
+    }
+  }
+  const map = state.maps.home;
+  if(!map) return;
+  if(state.maps.layers?.homeCountries){
+    try{ map.removeLayer(state.maps.layers.homeCountries); }catch(_){}
+  }
+  state.maps.layers = state.maps.layers || {};
+  const layer = L.layerGroup().addTo(map);
+  state.maps.layers.homeCountries = layer;
+  const bounds = [];
+  groups.forEach(group=>{
+    const marker = L.marker([group.center.lat, group.center.lng], { icon: makeCountryMarkerIcon(group.count) }).addTo(layer);
+    bounds.push([group.center.lat, group.center.lng]);
+    const popupNode = document.createElement('div');
+    popupNode.className = 'country-popup';
+    popupNode.innerHTML = `
+      <div class="country-popup-title">${esc(group.country)} · ${esc(group.count)} נסיעות</div>
+      <div class="country-popup-list">
+        ${group.trips.map(trip=>`
+          <button class="btn small country-popup-item" data-trip-country-open="${esc(trip.id)}">
+            <strong>${esc(trip.destination || 'ללא יעד')}</strong>
+            <span>${esc(`${fmtDate(trip.start)} - ${fmtDate(trip.end)}`)}</span>
+            <span>${esc((Array.isArray(trip.people) && trip.people.length) ? trip.people.join(', ') : 'ללא משתתפים')}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    bindCountryListActions(popupNode);
+    marker.bindPopup(popupNode);
+  });
+  if(bounds.length){
+    map.fitBounds(L.latLngBounds(bounds).pad(0.25));
+  } else {
+    map.setView([20, 10], 2);
+  }
+  setTimeout(()=> invalidateMap(map), 80);
 }
 function firstNonEmptyLine(txt){
   try{

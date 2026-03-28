@@ -58,19 +58,20 @@
 </div>
 <div class="container home-mode">
       <aside class="sidebar" id="sidebar">
-        <div class="section-title">
+        <div class="section-title" id="homeTripsHeader">
           <h2 style="margin:0">הנסיעות שלי</h2>
           <div class="spacer"></div>
       
           <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
         </div>
-        <div class="list-actions">
+        <div class="list-actions" id="tripSearchActions">
           <input id="searchTrips" class="input" placeholder="חפש נסיעה / מילה" />
           <button id="btnSortTrips" class="btn">מיין תאריך יציאה</button>
         </div>
-        <div class="list-actions">
+        <div class="list-actions" id="tripViewActions">
           <button id="btnViewGrid" class="btn active">גלריה</button>
           <button id="btnViewList" class="btn">רשימה</button>
+          <button id="btnViewMap" class="btn">מפה</button>
         </div>
         <div id="tripList" class="grid" aria-live="polite"></div>
       </aside>

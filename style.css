@@ -300,6 +300,16 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
   height: 100% !important;
   overflow: hidden !important;
 }
+.container.home-mode.home-map-mode .sidebar{
+  padding:0;
+  overflow:hidden;
+  height:100%;
+}
+.container.home-mode.home-map-mode #homeTripsHeader,
+.container.home-mode.home-map-mode #tripSearchActions,
+.container.home-mode.home-map-mode #tripViewActions{
+  display:none;
+}
 
 .brand-text{font-weight:700;letter-spacing:.5px}
 
@@ -1289,6 +1299,92 @@ body #view-share .cards .card{width:100% !important; max-width:100% !important}
 }
 
 .app.show{display:block;}
+
+#tripList.map-view{
+  display:block;
+  height:100%;
+  min-height:calc(100dvh - 56px);
+  padding:0;
+}
+.trip-map-screen{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  min-height:calc(100dvh - 56px);
+  background:linear-gradient(180deg, #f6fbff 0%, #eef6f1 100%);
+}
+.trip-map-topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:16px 18px;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.trip-map-title{
+  font-size:1.1rem;
+  font-weight:800;
+}
+.trip-list-map-shell{
+  position:relative;
+  flex:1;
+  min-height:0;
+}
+.trip-list-map{
+  height:100%;
+  min-height:0;
+  background:var(--card);
+}
+.country-marker{
+  width:40px;
+  height:40px;
+  border-radius:999px;
+  background:#19a65a;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  font-size:15px;
+  border:3px solid rgba(255,255,255,.95);
+  box-shadow:0 10px 22px rgba(25,166,90,.34);
+}
+.country-popup{
+  direction:rtl;
+  min-width:220px;
+}
+.country-popup-title{
+  font-weight:800;
+  margin-bottom:8px;
+}
+.country-popup-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:10px;
+}
+.country-popup-item{
+  width:100%;
+  text-align:right;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+}
+.country-popup-item strong{
+  font-size:1rem;
+}
+.country-popup-item span{
+  font-size:.9rem;
+  opacity:.8;
+}
+@media (max-width: 900px){
+  #tripList.map-view{min-height:auto}
+  .trip-map-screen{min-height:calc(100dvh - 56px)}
+  .trip-map-topbar{padding:12px}
+}
 
 
 /* Import card button layout */
