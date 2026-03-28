@@ -2754,11 +2754,94 @@ async function reverseGeocodeCached(lat, lng){
 const __countryReverseCache = new Map();
 const __placeSearchCache = new Map();
 const __countryCenterCache = new Map();
+const countryCapitalMap = {
+  'israel': { label:'ישראל', capital:'Jerusalem, Israel', lat:31.7683, lng:35.2137 },
+  'france': { label:'צרפת', capital:'Paris, France', lat:48.8566, lng:2.3522 },
+  'switzerland': { label:'שווייץ', capital:'Bern, Switzerland', lat:46.9480, lng:7.4474 },
+  'italy': { label:'איטליה', capital:'Rome, Italy', lat:41.9028, lng:12.4964 },
+  'germany': { label:'גרמניה', capital:'Berlin, Germany', lat:52.5200, lng:13.4050 },
+  'spain': { label:'ספרד', capital:'Madrid, Spain', lat:40.4168, lng:-3.7038 },
+  'greece': { label:'יוון', capital:'Athens, Greece', lat:37.9838, lng:23.7275 },
+  'austria': { label:'אוסטריה', capital:'Vienna, Austria', lat:48.2082, lng:16.3738 },
+  'czechia': { label:'צ׳כיה', capital:'Prague, Czechia', lat:50.0755, lng:14.4378 },
+  'hungary': { label:'הונגריה', capital:'Budapest, Hungary', lat:47.4979, lng:19.0402 },
+  'poland': { label:'פולין', capital:'Warsaw, Poland', lat:52.2297, lng:21.0122 },
+  'romania': { label:'רומניה', capital:'Bucharest, Romania', lat:44.4268, lng:26.1025 },
+  'bulgaria': { label:'בולגריה', capital:'Sofia, Bulgaria', lat:42.6977, lng:23.3219 },
+  'croatia': { label:'קרואטיה', capital:'Zagreb, Croatia', lat:45.8150, lng:15.9819 },
+  'serbia': { label:'סרביה', capital:'Belgrade, Serbia', lat:44.7866, lng:20.4489 },
+  'denmark': { label:'דנמרק', capital:'Copenhagen, Denmark', lat:55.6761, lng:12.5683 },
+  'sweden': { label:'שוודיה', capital:'Stockholm, Sweden', lat:59.3293, lng:18.0686 },
+  'norway': { label:'נורווגיה', capital:'Oslo, Norway', lat:59.9139, lng:10.7522 },
+  'united kingdom': { label:'בריטניה', capital:'London, United Kingdom', lat:51.5072, lng:-0.1276 },
+  'thailand': { label:'תאילנד', capital:'Bangkok, Thailand', lat:13.7563, lng:100.5018 },
+  'turkey': { label:'טורקיה', capital:'Ankara, Turkey', lat:39.9334, lng:32.8597 },
+  'japan': { label:'יפן', capital:'Tokyo, Japan', lat:35.6762, lng:139.6503 },
+  'china': { label:'סין', capital:'Beijing, China', lat:39.9042, lng:116.4074 },
+  'hong kong': { label:'הונג קונג', capital:'Hong Kong', lat:22.3193, lng:114.1694 },
+  'vietnam': { label:'ויאטנם', capital:'Hanoi, Vietnam', lat:21.0278, lng:105.8342 },
+  'singapore': { label:'סינגפור', capital:'Singapore', lat:1.3521, lng:103.8198 },
+  'united arab emirates': { label:'איחוד האמירויות', capital:'Abu Dhabi, United Arab Emirates', lat:24.4539, lng:54.3773 },
+  'canada': { label:'קנדה', capital:'Ottawa, Canada', lat:45.4215, lng:-75.6972 },
+  'mexico': { label:'מקסיקו', capital:'Mexico City, Mexico', lat:19.4326, lng:-99.1332 },
+  'australia': { label:'אוסטרליה', capital:'Canberra, Australia', lat:-35.2809, lng:149.1300 },
+  'georgia': { label:'גאורגיה', capital:'Tbilisi, Georgia', lat:41.7151, lng:44.8271 },
+  'usa': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 },
+  'united states': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 }
+};
+const countryAliasMap = {
+  'ישראל':'israel','israel':'israel',
+  'צרפת':'france','france':'france',
+  'שוויץ':'switzerland','שווייץ':'switzerland','switzerland':'switzerland',
+  'איטליה':'italy','italy':'italy',
+  'גרמניה':'germany','germany':'germany',
+  'ספרד':'spain','spain':'spain',
+  'יוון':'greece','greece':'greece',
+  'אוסטריה':'austria','austria':'austria',
+  'צכיה':'czechia','צ׳כיה':'czechia','צכ׳יה':'czechia','czechia':'czechia','czech':'czechia',
+  'הונגריה':'hungary','hungary':'hungary',
+  'פולין':'poland','poland':'poland',
+  'רומניה':'romania','romania':'romania',
+  'בולגריה':'bulgaria','bulgaria':'bulgaria',
+  'קרואטיה':'croatia','croatia':'croatia',
+  'סרביה':'serbia','serbia':'serbia',
+  'דנמרק':'denmark','denmark':'denmark',
+  'שוודיה':'sweden','שבדיה':'sweden','sweden':'sweden',
+  'נורווגיה':'norway','נורבגיה':'norway','norway':'norway',
+  'בריטניה':'united kingdom','אנגליה':'united kingdom','uk':'united kingdom','united kingdom':'united kingdom','britain':'united kingdom','england':'united kingdom',
+  'תאילנד':'thailand','thailand':'thailand',
+  'טורקיה':'turkey','turkey':'turkey',
+  'יפן':'japan','japan':'japan',
+  'סין':'china','china':'china',
+  'הונג קונג':'hong kong','hong kong':'hong kong',
+  'ויאטנם':'vietnam','וייטנאם':'vietnam','vietnam':'vietnam',
+  'סינגפור':'singapore','singapore':'singapore',
+  'איחוד האמירויות':'united arab emirates','איחוד האמירויות הערביות':'united arab emirates','uae':'united arab emirates','united arab emirates':'united arab emirates',
+  'קנדה':'canada','canada':'canada',
+  'מקסיקו':'mexico','mexico':'mexico',
+  'אוסטרליה':'australia','australia':'australia',
+  'גאורגיה':'georgia','גיאורגיה':'georgia','georgia':'georgia',
+  'ארהב':'usa','ארה״ב':'usa','ארה"ב':'usa','ארצות הברית':'usa','usa':'usa','us':'usa','united states':'usa','united states of america':'usa','america':'usa'
+};
 function _cleanCountryLabel(v){
   return String(v || '')
     .replace(/^near\s+/i, '')
     .replace(/^ליד\s+/, '')
     .trim();
+}
+function normalizeCountryKey(value){
+  const raw = _cleanCountryLabel(value).toLowerCase()
+    .replace(/[׳״"'`]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  return countryAliasMap[raw] || raw;
+}
+function getCountryMeta(value){
+  const key = normalizeCountryKey(value);
+  const meta = countryCapitalMap[key];
+  if(meta) return { key, ...meta };
+  const clean = _cleanCountryLabel(value);
+  return { key, label: clean, capital: clean };
 }
 function _splitPlaceParts(raw){
   return String(raw || '')
@@ -2770,6 +2853,30 @@ function _splitPlaceParts(raw){
 function extractCountryFromPlace(raw){
   const parts = _splitPlaceParts(raw);
   return _cleanCountryLabel(parts[parts.length - 1] || '');
+}
+function extractCountriesFromDestination(raw){
+  const text = String(raw || '').trim();
+  if(!text) return [];
+  const parts = text
+    .split(/\s*,\s*|\s*-\s*|\s*\|\s*|\s*\/\s*|\s*&\s*|\s*\+\s*/)
+    .map(s=>_cleanCountryLabel(s))
+    .filter(Boolean);
+  const found = new Map();
+  const aliasEntries = Object.entries(countryAliasMap).sort((a,b)=> b[0].length - a[0].length);
+  parts.forEach(part=>{
+    const normalizedPart = part.toLowerCase().replace(/[׳״"'`]/g,'').trim();
+    for(const [alias, key] of aliasEntries){
+      if(normalizedPart === alias || normalizedPart.includes(alias)){
+        const meta = countryCapitalMap[key] || { label: part, capital: part };
+        found.set(key, { key, country: meta.label, capital: meta.capital });
+      }
+    }
+  });
+  if(found.size) return Array.from(found.values());
+  const fallback = extractCountryFromPlace(text);
+  if(!fallback) return [];
+  const meta = getCountryMeta(fallback);
+  return [{ key: meta.key, country: meta.label, capital: meta.capital }];
 }
 function getTripCoordinateCandidates(trip){
   const out = [];
@@ -2799,16 +2906,7 @@ function getTripRepresentativeCoords(trip){
 async function reverseGeocodeCountryCached(lat, lng){
   const key = _revKey(lat, lng);
   if(__countryReverseCache.has(key)) return __countryReverseCache.get(key);
-  const prom = (async()=>{
-    try{
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=5&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=he,en`;
-      const res = await fetch(url);
-      const data = await res.json();
-      return _cleanCountryLabel(data?.address?.country || '');
-    }catch(_){
-      return '';
-    }
-  })();
+  const prom = Promise.resolve('');
   __countryReverseCache.set(key, prom);
   return prom;
 }
@@ -2816,43 +2914,20 @@ async function searchPlaceDetailsCached(name){
   const key = String(name || '').trim().toLowerCase();
   if(!key) return null;
   if(__placeSearchCache.has(key)) return __placeSearchCache.get(key);
-  const prom = (async()=>{
-    try{
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=jsonv2&addressdetails=1&accept-language=he,en&limit=1`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const first = Array.isArray(data) ? data[0] : null;
-      if(!first) return null;
-      return {
-        lat: Number(first.lat),
-        lng: Number(first.lon),
-        country: _cleanCountryLabel(first?.address?.country || extractCountryFromPlace(first?.display_name || ''))
-      };
-    }catch(_){
-      return null;
-    }
-  })();
+  const prom = Promise.resolve(null);
   __placeSearchCache.set(key, prom);
   return prom;
 }
 async function geocodeCountryCenterCached(country){
-  const label = _cleanCountryLabel(country);
-  const key = label.toLowerCase();
+  const meta = getCountryMeta(country);
+  const key = meta.key.toLowerCase();
   if(!key) return null;
   if(__countryCenterCache.has(key)) return __countryCenterCache.get(key);
   const prom = (async()=>{
-    try{
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(label)}&format=jsonv2&accept-language=he,en&limit=1`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const first = Array.isArray(data) ? data[0] : null;
-      if(!first) return null;
-      const lat = Number(first.lat);
-      const lng = Number(first.lon);
-      return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-    }catch(_){
-      return null;
+    if(Number.isFinite(meta.lat) && Number.isFinite(meta.lng)){
+      return { lat:Number(meta.lat), lng:Number(meta.lng) };
     }
+    return null;
   })();
   __countryCenterCache.set(key, prom);
   return prom;
@@ -2869,28 +2944,34 @@ function makeCountryMarkerIcon(count){
 async function buildTripCountryGroups(trips){
   const groups = new Map();
   for(const trip of trips || []){
-    let country = extractCountryFromPlace(trip?.destination || '');
-    let center = getTripRepresentativeCoords(trip);
-    if(!country && center){
-      country = await reverseGeocodeCountryCached(center.lat, center.lng);
-    }
-    if((!country || !center) && trip?.destination){
-      const details = await searchPlaceDetailsCached(trip.destination);
-      if(!country) country = details?.country || country;
-      if(!center && details && Number.isFinite(details.lat) && Number.isFinite(details.lng)){
-        center = { lat: details.lat, lng: details.lng };
+    let countries = extractCountriesFromDestination(trip?.destination || '');
+    const representativeCoords = getTripRepresentativeCoords(trip);
+    if(!countries.length && representativeCoords){
+      const detected = await reverseGeocodeCountryCached(representativeCoords.lat, representativeCoords.lng);
+      if(detected){
+        const meta = getCountryMeta(detected);
+        countries = [{ key: meta.key, country: meta.label, capital: meta.capital }];
       }
     }
-    if(!country) continue;
-    if(!center){
-      center = await geocodeCountryCenterCached(country);
+    if(!countries.length && trip?.destination){
+      const details = await searchPlaceDetailsCached(trip.destination);
+      if(details?.country){
+        const meta = getCountryMeta(details.country);
+        countries = [{ key: meta.key, country: meta.label, capital: meta.capital }];
+      }
     }
-    if(!center) continue;
-    const key = country.toLowerCase();
-    if(!groups.has(key)){
-      groups.set(key, { key, country, center, trips: [] });
+    for(const countryEntry of countries){
+      const center = await geocodeCountryCenterCached(countryEntry.country);
+      if(!center) continue;
+      const key = countryEntry.key;
+      if(!groups.has(key)){
+        groups.set(key, { key, country: countryEntry.country, center, trips: [] });
+      }
+      const group = groups.get(key);
+      if(!group.trips.some(existing => existing.id === trip.id)){
+        group.trips.push(trip);
+      }
     }
-    groups.get(key).trips.push(trip);
   }
   return Array.from(groups.values())
     .map(group=>({
