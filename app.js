@@ -4039,6 +4039,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     const authModal = document.getElementById('authModal'); // ×ž×•×“×œ ×”×”×ª×—×‘×¨×•×ª
 
     if (appEl) appEl.style.display = 'grid'; 
+    document.body.classList.toggle('logged-out', !user); 
 
     if (user) {
       // --- ×ž×©×ª×ž×© ×ž×—×•×‘×¨ ---
@@ -7008,4 +7009,5 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
   else wire();
 })();
+
 
