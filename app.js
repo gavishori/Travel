@@ -1092,6 +1092,16 @@ function numOrNull(s){
   const n = Number(s);
   return isNaN(n) ? null : n;
 }
+const __baseXErr = xErr;
+xErr = function(e){
+  const msg = e?.message || String(e);
+  if (msg.includes('auth/too-many-requests')) return 'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות';
+  if (msg.includes('auth/network-request-failed')) return 'בעיית רשת. בדוק חיבור ונסה שוב';
+  if (msg.includes('auth/user-disabled')) return 'המשתמש הזה הושבת';
+  if (msg.includes('auth/operation-not-allowed')) return 'שיטת ההתחברות הזו לא פעילה ב-Firebase';
+  if (msg.includes('auth/unauthorized-domain')) return 'הדומיין הזה לא מורשה ב-Firebase Auth';
+  return __baseXErr(e);
+};
 function getActiveCurrencyFromTrip(t){
   return localStorage.getItem(`flymily_currency_${t.id}`) || 'ILS'; // Changed default to ILS to match the image
 }
@@ -2199,6 +2209,9 @@ $('#lsReset').addEventListener('click', async ()=>{
     }catch(e){
       if(errEl) errEl.textContent = xErr(e);
       console.error('mobile-safe login failed', e);
+      try{
+        if(isMobileViewport()) alert(xErr(e));
+      }catch(_){}
     }
   }
 
