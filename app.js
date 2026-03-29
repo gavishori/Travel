@@ -77,6 +77,75 @@ function wireMobileHeaderAccountMenu(){
 }
 document.addEventListener('DOMContentLoaded', wireMobileHeaderAccountMenu);
 
+function wireLandingAuthActions(){
+  const emailInput = document.getElementById('lsEmail');
+  const passInput = document.getElementById('lsPass');
+  const errEl = document.getElementById('lsError');
+  const loginBtn = document.getElementById('loginBtn');
+  const signupBtn = document.getElementById('lsSignUp');
+  const resetBtn = document.getElementById('lsReset');
+  if(!emailInput || !passInput || !loginBtn) return;
+
+  const bindFresh = (btn, handler)=>{
+    if(!btn) return null;
+    const clone = btn.cloneNode(true);
+    clone.dataset.wired = '1';
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', handler);
+    return clone;
+  };
+
+  const doLandingLogin = async ()=>{
+    const email = emailInput.value.trim();
+    const pass = passInput.value;
+    if(errEl) errEl.textContent = '';
+    if(!email || !pass){
+      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
+      return;
+    }
+    try{
+      const btn = document.getElementById('loginBtn');
+      if(btn) btn.disabled = true;
+      await FB.signInWithEmailAndPassword(auth, email, pass);
+    }catch(e){
+      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאת התחברות');
+      console.error('landing login failed', e);
+    }finally{
+      const btn = document.getElementById('loginBtn');
+      if(btn) btn.disabled = false;
+    }
+  };
+
+  bindFresh(loginBtn, doLandingLogin);
+  bindFresh(signupBtn, async ()=>{
+    try{
+      await FB.createUserWithEmailAndPassword(auth, emailInput.value.trim(), passInput.value);
+      if(errEl) errEl.textContent = '';
+    }catch(e){
+      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאה');
+    }
+  });
+  bindFresh(resetBtn, async ()=>{
+    try{
+      await FB.sendPasswordResetEmail(auth, emailInput.value.trim());
+      if(typeof showToast === 'function') showToast('נשלח מייל לאיפוס');
+      if(errEl) errEl.textContent = '';
+    }catch(e){
+      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאה');
+    }
+  });
+
+  const submitOnEnter = (ev)=>{
+    if(ev.key === 'Enter'){
+      ev.preventDefault();
+      doLandingLogin();
+    }
+  };
+  emailInput.addEventListener('keydown', submitOnEnter);
+  passInput.addEventListener('keydown', submitOnEnter);
+}
+document.addEventListener('DOMContentLoaded', wireLandingAuthActions);
+
 
 // --- ensure "×ž×—×§ × ×‘×—×¨×™×" button exists in Journal tab even if HTML not updated ---
 (function(){
@@ -3743,17 +3812,17 @@ async function ensureHtml2Canvas(){
 // Format helpers for meta
 function kvRowsFromMeta(trip){
   const rows = [];
-  rows.push({ ×©×“×”:'×™×¢×“', ×¢×¨×š: esc(trip.destination||'') });
-  rows.push({ ×©×“×”:'×ª××¨×™×›×™×', ×¢×¨×š: `${fmtDate(trip.start)} â€“ ${fmtDate(trip.end)}` });
-  if (trip.people && trip.people.length) rows.push({ ×©×“×”:'×ž×©×ª×ª×¤×™×', ×¢×¨×š: esc(trip.people.join(', ')) });
-  if (trip.types && trip.types.length) rows.push({ ×©×“×”:'×¡×•×’ ×˜×™×•×œ', ×¢×¨×š: esc(trip.types.join(', ')) });
+  rows.push({ field:'יעד', value: esc(trip.destination||'') });
+  rows.push({ field:'תאריכים', value: `${fmtDate(trip.start)} - ${fmtDate(trip.end)}` });
+  if (trip.people && trip.people.length) rows.push({ field:'משתתפים', value: esc(trip.people.join(', ')) });
+  if (trip.types && trip.types.length) rows.push({ field:'סוג טיול', value: esc(trip.types.join(', ')) });
   // Budget (flatten one level)
   if (trip.budget && typeof trip.budget === 'object'){
     const pairs = [];
     if (Number(trip.budget.USD) > 0) pairs.push(`USD: ${formatInt(trip.budget.USD)}`);
     if (Number(trip.budget.EUR) > 0) pairs.push(`EUR: ${formatInt(trip.budget.EUR)}`);
     if (Number(trip.budget.ILS) > 0) pairs.push(`ILS: ${formatInt(trip.budget.ILS)}`);
-    if (pairs.length) rows.push({ ×©×“×”:'×ª×§×¦×™×‘', ×¢×¨×š: pairs.join(' | ') });
+    if (pairs.length) rows.push({ field:'תקציב', value: pairs.join(' | ') });
   }
   // Rates
   if (trip.rates && typeof trip.rates === 'object'){
@@ -3761,7 +3830,7 @@ function kvRowsFromMeta(trip){
     if (trip.rates.USDILS) parts.push(`USDILS: ${trip.rates.USDILS}`);
     if (trip.rates.USDEUR) parts.push(`USDEUR: ${trip.rates.USDEUR}`);
     if (trip.rates.USDLocal) parts.push(`USDLocal: ${trip.rates.USDLocal}`);
-    if (parts.length) rows.push({ ×©×“×”:'×©×¢×¨×™ ×ž×˜×‘×¢', ×¢×¨×š: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
+    if (parts.length) rows.push({ field:'שערי מטבע', value: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
   }
   return rows;
 }
@@ -3809,11 +3878,25 @@ async function exportExcel(){
   const s0 = XLSX.utils.json_to_sheet(meta);
   XLSX.utils.book_append_sheet(wb, s0, '× ×ª×•× ×™ × ×¡×™×¢×”');
 
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ ×ª××¨×™×š: fmtDateTime(j.dateIso || j.createdAt), ×›×•×ª×¨×ª:(j.title||''), ×ª×™××•×¨:j.text||'' }));
+  const jr = Object.values(t.journal || {})
+    .sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''))
+    .map(j=>({
+      date: fmtDateTime(j.dateIso || j.createdAt),
+      title: (j.title || ''),
+      description: j.text || ''
+    }));
   const s1 = XLSX.utils.json_to_sheet(jr);
   XLSX.utils.book_append_sheet(wb, s1, '×™×•×ž×Ÿ ×™×•×ž×™');
 
-  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ ×ª×™××•×¨:e.desc||'', ×§×˜×’×•×¨×™×”:e.category||'', ×¡×›×•×:e.amount||'', ×ž×˜×‘×¢:e.currency||'', ×ª××¨×™×š:fmtDateTime(e.dateIso || e.createdAt)}));
+  const ex = Object.values(t.expenses || {})
+    .sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''))
+    .map(e=>({
+      description: e.desc || '',
+      category: e.category || '',
+      amount: e.amount || '',
+      currency: e.currency || '',
+      date: fmtDateTime(e.dateIso || e.createdAt)
+    }));
   const s2 = XLSX.utils.json_to_sheet(ex);
   XLSX.utils.book_append_sheet(wb, s2, '×”×•×¦××•×ª');
 
@@ -3830,8 +3913,8 @@ async function exportWord(){
 
   const metaRows = kvRowsFromMeta(t).map(r =>
     new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(r['×©×“×”'])]}),
-      new TableCell({ children:[new Paragraph(String(r['×¢×¨×š']))]}),
+      new TableCell({ children:[new Paragraph(r.field || '')]}),
+      new TableCell({ children:[new Paragraph(String(r.value || ''))]}),
     ]})
   );
   const metaTable = new Table({

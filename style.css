@@ -3882,8 +3882,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   .login-card img{
     display:block;
-    max-width:108px;
-    height:auto !important;
+    max-width:216px;
+    height:192px !important;
     margin:0 auto 4px !important;
   }
 
