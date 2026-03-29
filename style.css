@@ -118,6 +118,9 @@ textarea{min-height:80px}
   cursor: pointer;
   line-height: 1;
   height: 46px;
+  min-width: 220px;
+  width: max-content;
+  max-width: min(100%, 360px);
 }
 .tab-select-wrap::after{
   content: "▾";
@@ -1351,34 +1354,80 @@ body #view-share .cards .card{width:100% !important; max-width:100% !important}
   border:3px solid rgba(255,255,255,.95);
   box-shadow:0 10px 22px rgba(25,166,90,.34);
 }
-.country-popup{
-  direction:rtl;
-  min-width:220px;
+.country-trips-modal{
+  position:absolute;
+  inset:0;
+  z-index:1200;
 }
-.country-popup-title{
-  font-weight:800;
-  margin-bottom:8px;
+.country-trips-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15, 23, 42, .24);
 }
-.country-popup-list{
+.country-trips-dialog{
+  position:absolute;
+  top:18px;
+  right:18px;
+  width:min(430px, calc(100% - 36px));
+  max-height:min(calc(100% - 36px), 640px);
   display:flex;
   flex-direction:column;
-  gap:8px;
-  margin-top:10px;
+  gap:12px;
+  padding:18px;
+  background:rgba(255,255,255,.96);
+  border:1px solid var(--border);
+  border-radius:22px;
+  box-shadow:0 24px 50px rgba(15,23,42,.22);
+  backdrop-filter:blur(12px);
 }
-.country-popup-item{
+.country-trips-close{
+  position:absolute;
+  top:10px;
+  left:10px;
+  width:36px;
+  height:36px;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  font-size:28px;
+  line-height:1;
+  cursor:pointer;
+}
+.country-trips-title{
+  padding-inline-start:18px;
+  font-size:1.15rem;
+  font-weight:800;
+  text-align:right;
+}
+.country-trips-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-inline-end:4px;
+}
+.country-trips-item{
   width:100%;
   text-align:right;
   display:flex;
   flex-direction:column;
   align-items:flex-end;
-  gap:4px;
+  gap:6px;
+  padding:16px 18px;
+  border-radius:18px;
+  background:rgba(255,255,255,.92);
 }
-.country-popup-item strong{
+.country-trips-item strong{
+  width:100%;
   font-size:1rem;
+  overflow-wrap:anywhere;
 }
-.country-popup-item span{
-  font-size:.9rem;
-  opacity:.8;
+.country-trips-item span{
+  width:100%;
+  font-size:.95rem;
+  color:var(--muted);
+  overflow-wrap:anywhere;
 }
 @media (max-width: 900px){
   #tripList.map-view{min-height:auto}
@@ -1422,47 +1471,38 @@ body #view-share .cards .card{width:100% !important; max-width:100% !important}
     height:36px;
     font-size:14px;
   }
-  .country-popup{
-    min-width:0;
-    width:min(260px, calc(100vw - 56px));
-    max-width:calc(100vw - 56px);
+  .country-trips-dialog{
+    top:12px;
+    right:12px;
+    left:12px;
+    width:auto;
+    max-height:calc(100% - 24px);
+    padding:16px;
   }
-  .country-popup-title{
+  .country-trips-title{
     line-height:1.35;
     overflow-wrap:anywhere;
     word-break:break-word;
   }
-  .country-popup-list{
-    max-height:min(42dvh, 320px);
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding-left:2px;
+  .country-trips-list{
+    max-height:min(55dvh, 420px);
   }
-  .country-popup-item{
+  .country-trips-item{
     width:100%;
     min-width:0;
     max-width:100%;
-    padding:10px 12px !important;
+    padding:12px 14px !important;
     white-space:normal;
     overflow:hidden;
   }
-  .country-popup-item strong,
-  .country-popup-item span{
+  .country-trips-item strong,
+  .country-trips-item span{
     width:100%;
     min-width:0;
     overflow-wrap:anywhere;
     word-break:break-word;
     white-space:normal;
     text-align:right;
-  }
-  .leaflet-popup-content-wrapper{
-    max-width:calc(100vw - 32px);
-    border-radius:22px;
-  }
-  .leaflet-popup-content{
-    margin:16px 14px;
-    max-width:calc(100vw - 60px);
-    min-width:0;
   }
 }
 
@@ -1863,17 +1903,20 @@ html, body { height:100%; }
 #journalModal .rtf-bubble{
   position: sticky;
   bottom: 8px;
-  left: 0;
   right: 0;
+  left: auto;
   transform: none;
-  margin-inline: auto;
+  margin-inline-start: auto;
+  margin-inline-end: 0;
   z-index: 1100;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
+  width: max-content;
   max-width: calc(100% - 16px);
   overflow-x: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   pointer-events: auto;
 }
 #journalModal .rtf-bubble .colors,
@@ -1884,7 +1927,7 @@ html, body { height:100%; }
 
 #expenseModal .body{ position: relative; }
 #expenseModal .input.rtf{ padding-bottom: 72px; }
-#expenseModal .rtf-bubble{ position: sticky; bottom: 8px; left:0; right:0; transform:none; margin-inline:auto; z-index:1100; display:flex; justify-content:center; gap:10px; max-width:calc(100% - 16px); overflow-x:auto; pointer-events:auto; }
+#expenseModal .rtf-bubble{ position: sticky; bottom: 8px; right:0; left:auto; transform:none; margin-inline-start:auto; margin-inline-end:0; z-index:1100; display:flex; justify-content:flex-start; gap:10px; width:max-content; max-width:calc(100% - 16px); overflow-x:auto; overscroll-behavior:contain; scrollbar-gutter:stable; pointer-events:auto; }
 #expenseModal .rtf-bubble .colors, #expenseModal .rtf-bubble .styles{ display:flex; gap:8px; align-items:center; }
 #expenseModal .rtf-bubble.hidden{ display:none!important; }
 
@@ -3428,4 +3471,159 @@ button, .btn, .menu-btn, select, input, textarea {
 #view-overview .expenses-table td.header.time,
 #view-overview .expenses-table td.header.amount{
   white-space:nowrap;
+}
+
+@media (max-width: 768px){
+  html, body{
+    height:100%;
+    overflow-x:auto;
+    overflow-y:hidden !important;
+  }
+
+  .app,
+  .container,
+  .content,
+  .sidebar,
+  #main,
+  .tabview{
+    height:100%;
+    overflow-y:hidden !important;
+  }
+
+  #view-expenses .expenses-table-container,
+  #view-journal .expenses-table-container,
+  #view-overview .expenses-table-container{
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #view-expenses .expenses-table,
+  #view-journal .expenses-table,
+  #view-overview .expenses-table{
+    width:100%;
+    min-width:0;
+    border-spacing:0 10px;
+  }
+
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header){
+    display:grid !important;
+    grid-template-columns:max-content max-content minmax(0,1fr) auto;
+    grid-template-areas:
+      "date time . menu"
+      "title category amount menu";
+    align-items:center;
+    gap:0;
+    background:rgba(255,120,120,.20) !important;
+    border:1px solid color-mix(in oklab, var(--border) 76%, white 24%);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  #view-journal .expenses-table tr.exp-item:has(td.header),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){
+    display:grid !important;
+    grid-template-columns:max-content max-content minmax(0,1fr) auto;
+    grid-template-areas:
+      "date time . menu"
+      "location location location menu";
+    align-items:center;
+    gap:0;
+    background:rgba(140,255,140,.20) !important;
+    border:1px solid color-mix(in oklab, var(--border) 76%, white 24%);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
+  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.header) td.cell{
+    display:block !important;
+    min-width:0;
+    border:none !important;
+    background:transparent !important;
+    padding:10px 12px;
+    line-height:1.25;
+  }
+
+  #view-expenses .expenses-table.stacked td.header.date,
+  #view-journal .expenses-table td.header.date,
+  #view-overview .expenses-table td.header.date{ grid-area:date; direction:ltr; unicode-bidi:isolate; text-align:right; }
+
+  #view-expenses .expenses-table.stacked td.header.time,
+  #view-journal .expenses-table td.header.time,
+  #view-overview .expenses-table td.header.time{ grid-area:time; direction:ltr; unicode-bidi:isolate; text-align:right; }
+
+  #view-expenses .expenses-table.stacked td.header.title,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.title{ grid-area:title; font-weight:700; }
+
+  #view-expenses .expenses-table.stacked td.header.category,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category{ grid-area:category; display:block !important; color:var(--muted); font-size:.92em; }
+
+  #view-expenses .expenses-table.stacked td.header.amount,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount{ grid-area:amount; text-align:left; font-weight:800; white-space:nowrap; }
+
+  #view-expenses .expenses-table.stacked td.header.currency,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency{ display:none !important; }
+
+  #view-journal .expenses-table td.header.location,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location{ grid-area:location; font-weight:700; }
+
+  #view-expenses .expenses-table.stacked td.menu-cell,
+  #view-journal .expenses-table td.menu-cell,
+  #view-overview .expenses-table td.menu-cell{
+    grid-area:menu;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+    align-self:stretch;
+    padding:8px 10px;
+    border-inline-start:1px solid color-mix(in oklab, var(--border) 70%, white 30%);
+  }
+
+  #view-expenses .expenses-table.stacked td.header.title,
+  #view-expenses .expenses-table.stacked td.header.category,
+  #view-journal .expenses-table td.header.location,
+  #view-overview .expenses-table td.header.title,
+  #view-overview .expenses-table td.header.category,
+  #view-overview .expenses-table td.header.location{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
+  #view-journal .expenses-table tr.exp-item:has(td.notes),
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.notes){
+    display:block !important;
+    margin-top:-6px;
+    margin-bottom:10px;
+  }
+
+  #view-expenses .expenses-table.stacked td.notes,
+  #view-journal .expenses-table td.notes,
+  #view-overview .expenses-table td.notes{
+    display:block !important;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    white-space:nowrap;
+    text-overflow:clip;
+    padding:8px 12px 2px;
+    border:none !important;
+    background:transparent !important;
+  }
+
+  #view-expenses .expenses-table.stacked td.notes * ,
+  #view-journal .expenses-table td.notes * ,
+  #view-overview .expenses-table td.notes *{
+    white-space:nowrap !important;
+  }
+
+  .menu-btn{
+    min-width:42px;
+    min-height:42px;
+  }
 }

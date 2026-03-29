@@ -948,14 +948,8 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
   if(!sel || sel.dataset.bound) return;
   sel.dataset.bound = '1';
 
-  // Force placeholder on load
-  try{ sel.value = ''; }catch(_){}
-
   sel.addEventListener('change', ()=>{
     const v = sel.value;
-    // Reset back to placeholder immediately
-    try{ sel.value = ''; }catch(_){}
-
     if(!v) return;
 
     // If leaving meta while there are unsaved changes, use existing modal flow
@@ -993,6 +987,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
     }
 
     if (v === 'breakdown') {
+      try { sel.value = 'breakdown'; } catch (_) {}
       // setTimeout(0) lets the select's click event finish propagating before the dialog
       // opens — otherwise the document click-outside listener closes it immediately.
       setTimeout(() => {
@@ -1020,6 +1015,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
       try {
         const overviewWrap = document.querySelector('#tabs [data-tab="overview"]');
         if (overviewWrap) setActiveTab(overviewWrap);
+        sel.value = v;
       } catch (_e) {}
 
       showView(v);
@@ -2786,6 +2782,7 @@ const countryCapitalMap = {
   'mexico': { label:'מקסיקו', capital:'Mexico City, Mexico', lat:19.4326, lng:-99.1332 },
   'australia': { label:'אוסטרליה', capital:'Canberra, Australia', lat:-35.2809, lng:149.1300 },
   'georgia': { label:'גאורגיה', capital:'Tbilisi, Georgia', lat:41.7151, lng:44.8271 },
+  'cyprus': { label:'קפריסין', capital:'Nicosia, Cyprus', lat:35.1856, lng:33.3823 },
   'usa': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 },
   'united states': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 }
 };
@@ -2821,7 +2818,41 @@ const countryAliasMap = {
   'מקסיקו':'mexico','mexico':'mexico',
   'אוסטרליה':'australia','australia':'australia',
   'גאורגיה':'georgia','גיאורגיה':'georgia','georgia':'georgia',
+  'קפריסין':'cyprus','cyprus':'cyprus','cypriot':'cyprus',
   'ארהב':'usa','ארה״ב':'usa','ארה"ב':'usa','ארצות הברית':'usa','usa':'usa','us':'usa','united states':'usa','united states of america':'usa','america':'usa'
+};
+const placeAliasMap = {
+  'לרנקה':'cyprus','larnaca':'cyprus','larnaka':'cyprus','larnaca':'cyprus',
+  'ניקוסיה':'cyprus','nicosia':'cyprus',
+  'פאפוס':'cyprus','paphos':'cyprus',
+  'איה נאפה':'cyprus','איה נאפה, קפריסין':'cyprus','ayia napa':'cyprus','agia napa':'cyprus',
+  'פרוטראס':'cyprus','protaras':'cyprus',
+  'לימסול':'cyprus','limassol':'cyprus',
+  'קפריסין הצפונית':'cyprus','צפון קפריסין':'cyprus'
+};
+const usStateMap = {
+  'new york': { label:'ארה"ב - ניו יורק', center:{ lat:42.9538, lng:-75.5268 } },
+  'florida': { label:'ארה"ב - פלורידה', center:{ lat:27.6648, lng:-81.5158 } },
+  'california': { label:'ארה"ב - קליפורניה', center:{ lat:36.7783, lng:-119.4179 } },
+  'nevada': { label:'ארה"ב - נבדה', center:{ lat:38.8026, lng:-116.4194 } },
+  'new jersey': { label:'ארה"ב - ניו ג׳רזי', center:{ lat:40.0583, lng:-74.4057 } },
+  'massachusetts': { label:'ארה"ב - מסצ׳וסטס', center:{ lat:42.4072, lng:-71.3824 } },
+  'pennsylvania': { label:'ארה"ב - פנסילבניה', center:{ lat:41.2033, lng:-77.1945 } },
+  'virginia': { label:'ארה"ב - וירג׳יניה', center:{ lat:37.4316, lng:-78.6569 } },
+  'washington': { label:'ארה"ב - וושינגטון', center:{ lat:47.7511, lng:-120.7401 } },
+  'district of columbia': { label:'ארה"ב - וושינגטון די.סי.', center:{ lat:38.9072, lng:-77.0369 } }
+};
+const usStateAliasMap = {
+  'new york':'new york','ny':'new york','ניו יורק':'new york',
+  'florida':'florida','fl':'florida','פלורידה':'florida',
+  'california':'california','ca':'california','קליפורניה':'california',
+  'nevada':'nevada','nv':'nevada','נבדה':'nevada','las vegas':'nevada','לאס וגאס':'nevada',
+  'new jersey':'new jersey','nj':'new jersey','ניו ג׳רזי':'new jersey','ניו גרזי':'new jersey','newark':'new jersey',
+  'massachusetts':'massachusetts','ma':'massachusetts','מסצ׳וסטס':'massachusetts','boston':'massachusetts','בוסטון':'massachusetts',
+  'pennsylvania':'pennsylvania','pa':'pennsylvania','פנסילבניה':'pennsylvania','פילדלפיה':'pennsylvania','philadelphia':'pennsylvania',
+  'virginia':'virginia','va':'virginia','וירג׳יניה':'virginia',
+  'washington':'washington','wa':'washington','washington state':'washington','מדינת וושינגטון':'washington','וושינגטון':'washington','seattle':'washington','סיאטל':'washington',
+  'district of columbia':'district of columbia','dc':'district of columbia','washington dc':'district of columbia','washington d c':'district of columbia','washington, dc':'district of columbia','וושינגטון די סי':'district of columbia','וושינגטון די.סי.':'district of columbia','וושינגטון די סי':'district of columbia'
 };
 function _cleanCountryLabel(v){
   return String(v || '')
@@ -2836,12 +2867,27 @@ function normalizeCountryKey(value){
     .trim();
   return countryAliasMap[raw] || raw;
 }
+function normalizePlaceKey(value){
+  return _cleanCountryLabel(value).toLowerCase()
+    .replace(/[׳״"'`]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
 function getCountryMeta(value){
   const key = normalizeCountryKey(value);
   const meta = countryCapitalMap[key];
   if(meta) return { key, ...meta };
   const clean = _cleanCountryLabel(value);
   return { key, label: clean, capital: clean };
+}
+function getUsStateKeyFromText(raw){
+  const text = normalizePlaceKey(raw);
+  if(!text) return '';
+  const entries = Object.entries(usStateAliasMap).sort((a,b)=> b[0].length - a[0].length);
+  for(const [alias, key] of entries){
+    if(text === alias || text.includes(alias)) return key;
+  }
+  return '';
 }
 function _splitPlaceParts(raw){
   return String(raw || '')
@@ -2864,12 +2910,17 @@ function extractCountriesFromDestination(raw){
   const found = new Map();
   const aliasEntries = Object.entries(countryAliasMap).sort((a,b)=> b[0].length - a[0].length);
   parts.forEach(part=>{
-    const normalizedPart = part.toLowerCase().replace(/[׳״"'`]/g,'').trim();
+    const normalizedPart = normalizePlaceKey(part);
     for(const [alias, key] of aliasEntries){
       if(normalizedPart === alias || normalizedPart.includes(alias)){
         const meta = countryCapitalMap[key] || { label: part, capital: part };
         found.set(key, { key, country: meta.label, capital: meta.capital });
       }
+    }
+    const placeCountryKey = placeAliasMap[normalizedPart];
+    if(placeCountryKey){
+      const meta = countryCapitalMap[placeCountryKey] || { label: part, capital: part };
+      found.set(placeCountryKey, { key: placeCountryKey, country: meta.label, capital: meta.capital });
     }
   });
   if(found.size) return Array.from(found.values());
@@ -2877,6 +2928,19 @@ function extractCountriesFromDestination(raw){
   if(!fallback) return [];
   const meta = getCountryMeta(fallback);
   return [{ key: meta.key, country: meta.label, capital: meta.capital }];
+}
+function buildUsStateGroup(trip){
+  const destination = String(trip?.destination || '');
+  const stateKey = getUsStateKeyFromText(destination);
+  if(!stateKey) return null;
+  const stateMeta = usStateMap[stateKey];
+  if(!stateMeta) return null;
+  return {
+    key: `usa:${stateKey}`,
+    country: stateMeta.label,
+    capital: stateMeta.label,
+    center: { ...stateMeta.center }
+  };
 }
 function getTripCoordinateCandidates(trip){
   const out = [];
@@ -2944,6 +3008,17 @@ function makeCountryMarkerIcon(count){
 async function buildTripCountryGroups(trips){
   const groups = new Map();
   for(const trip of trips || []){
+    const usStateGroup = buildUsStateGroup(trip);
+    if(usStateGroup){
+      if(!groups.has(usStateGroup.key)){
+        groups.set(usStateGroup.key, { ...usStateGroup, trips: [] });
+      }
+      const usaGroup = groups.get(usStateGroup.key);
+      if(!usaGroup.trips.some(existing => existing.id === trip.id)){
+        usaGroup.trips.push(trip);
+      }
+      continue;
+    }
     let countries = extractCountriesFromDestination(trip?.destination || '');
     const representativeCoords = getTripRepresentativeCoords(trip);
     if(!countries.length && representativeCoords){
@@ -2999,6 +3074,14 @@ async function renderTripMapView(trips, renderToken){
       </div>
       <div class="trip-list-map-shell">
         <div id="tripListMap" class="trip-list-map" aria-label="מפת מדינות"></div>
+        <div id="countryTripsModal" class="country-trips-modal" hidden>
+          <div class="country-trips-backdrop" data-country-modal-close></div>
+          <div class="country-trips-dialog" role="dialog" aria-modal="true" aria-labelledby="countryTripsTitle">
+            <button type="button" class="country-trips-close" aria-label="סגור" data-country-modal-close>×</button>
+            <div id="countryTripsTitle" class="country-trips-title"></div>
+            <div id="countryTripsList" class="country-trips-list"></div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -3006,6 +3089,38 @@ async function renderTripMapView(trips, renderToken){
     state.viewMode = state.lastNonMapView === 'list' ? 'list' : 'grid';
     renderTripList();
   });
+  const countryTripsModal = document.getElementById('countryTripsModal');
+  const countryTripsTitle = document.getElementById('countryTripsTitle');
+  const countryTripsList = document.getElementById('countryTripsList');
+  const closeCountryTripsModal = ()=>{
+    if(countryTripsModal) countryTripsModal.hidden = true;
+  };
+  countryTripsModal?.querySelectorAll('[data-country-modal-close]').forEach(el=>{
+    el.addEventListener('click', closeCountryTripsModal);
+  });
+  if(state._countryTripsModalEscHandler){
+    window.removeEventListener('keydown', state._countryTripsModalEscHandler);
+  }
+  state._countryTripsModalEscHandler = (ev)=>{
+    if(ev.key === 'Escape' && !countryTripsModal?.hidden) closeCountryTripsModal();
+  };
+  window.addEventListener('keydown', state._countryTripsModalEscHandler);
+  function openCountryTripsModal(group){
+    if(!countryTripsModal || !countryTripsTitle || !countryTripsList || !group) return;
+    countryTripsTitle.textContent = `${group.country} · ${group.count} נסיעות`;
+    countryTripsList.innerHTML = group.trips.map(trip=>`
+      <button class="btn country-trips-item" data-trip-country-open="${esc(trip.id)}">
+        <strong>${esc(trip.destination || 'ללא יעד')}</strong>
+        <span>${esc(`${fmtDate(trip.start)} - ${fmtDate(trip.end)}`)}</span>
+        <span>${esc((Array.isArray(trip.people) && trip.people.length) ? trip.people.join(', ') : 'ללא משתתפים')}</span>
+      </button>
+    `).join('');
+    bindCountryListActions(countryTripsList);
+    countryTripsList.querySelectorAll('[data-trip-country-open]').forEach(btn=>{
+      btn.addEventListener('click', closeCountryTripsModal);
+    });
+    countryTripsModal.hidden = false;
+  }
   const groups = await buildTripCountryGroups(trips);
   if(renderToken !== state._tripListRenderToken) return;
   if(!state.maps.home){
@@ -3030,22 +3145,7 @@ async function renderTripMapView(trips, renderToken){
   groups.forEach(group=>{
     const marker = L.marker([group.center.lat, group.center.lng], { icon: makeCountryMarkerIcon(group.count) }).addTo(layer);
     bounds.push([group.center.lat, group.center.lng]);
-    const popupNode = document.createElement('div');
-    popupNode.className = 'country-popup';
-    popupNode.innerHTML = `
-      <div class="country-popup-title">${esc(group.country)} · ${esc(group.count)} נסיעות</div>
-      <div class="country-popup-list">
-        ${group.trips.map(trip=>`
-          <button class="btn small country-popup-item" data-trip-country-open="${esc(trip.id)}">
-            <strong>${esc(trip.destination || 'ללא יעד')}</strong>
-            <span>${esc(`${fmtDate(trip.start)} - ${fmtDate(trip.end)}`)}</span>
-            <span>${esc((Array.isArray(trip.people) && trip.people.length) ? trip.people.join(', ') : 'ללא משתתפים')}</span>
-          </button>
-        `).join('')}
-      </div>
-    `;
-    bindCountryListActions(popupNode);
-    marker.bindPopup(popupNode);
+    marker.on('click', ()=> openCountryTripsModal(group));
   });
   if(bounds.length){
     map.fitBounds(L.latLngBounds(bounds).pad(0.25));
