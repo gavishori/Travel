@@ -4075,7 +4075,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
         window.__authPrimarySwap(false);
       }
 
-      if (authModal && !authModal.open) authModal.showModal(); // ×”×¦×’ ××ª ×ž×•×“×œ ×”×”×ª×—×‘×¨×•×ª
+      if (authModal?.open) authModal.close(); // keep a single auth surface and avoid blocking the login screen
       if (appContainer) appContainer.style.display = 'none'; 
       
       state.user = null;
@@ -7009,5 +7009,6 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
   else wire();
 })();
+
 
 
