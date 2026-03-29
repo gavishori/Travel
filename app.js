@@ -2177,6 +2177,70 @@ $('#lsReset').addEventListener('click', async ()=>{
 
 // ---- end wiring ----
 
+// ---- Mobile-safe auth wiring ----
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  const isMobileViewport = ()=> /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.innerWidth <= 820;
+
+  async function doLogin(emailSel, passSel, errSel){
+    const email = $(emailSel)?.value?.trim();
+    const pass  = $(passSel)?.value;
+    const errEl = $(errSel);
+    if(errEl) errEl.textContent = '';
+    if(!email || !pass){
+      if(errEl) errEl.textContent = 'נא מלא אימייל וסיסמה';
+      return;
+    }
+    try{
+      await FB.signInWithEmailAndPassword(auth, email, pass);
+      if(errEl) errEl.textContent = '';
+      const authModal = document.getElementById('authModal');
+      if(authModal?.open) authModal.close();
+    }catch(e){
+      if(errEl) errEl.textContent = xErr(e);
+      console.error('mobile-safe login failed', e);
+    }
+  }
+
+  function bindTap(el, fn){
+    if(!el || el.dataset.mobileTapBound === '1') return;
+    el.dataset.mobileTapBound = '1';
+    let touchHandled = false;
+    el.addEventListener('touchend', (ev)=>{
+      touchHandled = true;
+      ev.preventDefault();
+      ev.stopPropagation();
+      fn();
+      setTimeout(()=>{ touchHandled = false; }, 350);
+    }, { passive:false });
+    el.addEventListener('click', (ev)=>{
+      if(touchHandled){
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+      fn();
+    });
+  }
+
+  bindTap($('#loginBtn'), ()=>doLogin('#lsEmail', '#lsPass', '#lsError'));
+  bindTap($('#authSignIn'), ()=>doLogin('#authEmail', '#authPass', '#authError'));
+
+  ['#lsEmail', '#lsPass'].forEach((sel)=>{
+    const el = $(sel);
+    if(!el || el.dataset.mobileEnterBound === '1') return;
+    el.dataset.mobileEnterBound = '1';
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter'){
+        ev.preventDefault();
+        doLogin('#lsEmail', '#lsPass', '#lsError');
+      }
+    });
+  });
+
+  window.__isMobileViewport = isMobileViewport;
+})();
+
 
 function mark(text, s){
   if(!s) return esc(text||''); const t = String(text); const i = t.toLowerCase().indexOf(s); if(i<0) return esc(t);
@@ -4014,6 +4078,9 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     const authModal = document.getElementById('authModal'); // מודל ההתחברות
 
     if (appEl) appEl.style.display = 'grid'; 
+    const isMobileAuthView = typeof window.__isMobileViewport === 'function'
+      ? window.__isMobileViewport()
+      : (window.innerWidth <= 820);
 
     if (user) {
       // --- משתמש מחובר ---
@@ -4051,6 +4118,32 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     }
   });
 }try { /*log removed*/ } catch(e){}
+
+// Force a stable auth UI on mobile: use the login screen, not the desktop modal.
+if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
+  FB.onAuthStateChanged(FB.auth, (user) => {
+    const isMobileAuthView = typeof window.__isMobileViewport === 'function'
+      ? window.__isMobileViewport()
+      : (window.innerWidth <= 820);
+    if (!isMobileAuthView) return;
+
+    const loginScreen = document.getElementById('loginScreen');
+    const appContainer = document.querySelector('.container');
+    const authModal = document.getElementById('authModal');
+
+    try{
+      if (authModal?.open) authModal.close();
+    }catch(e){ console.warn('mobile auth modal close skipped', e); }
+
+    if (user) {
+      if (loginScreen) loginScreen.style.display = 'none';
+      if (appContainer) appContainer.style.display = 'grid';
+    } else {
+      if (loginScreen) loginScreen.style.display = 'grid';
+      if (appContainer) appContainer.style.display = 'none';
+    }
+  });
+}
 
 
 // === Mobile Preview Presets & Rotation ===
