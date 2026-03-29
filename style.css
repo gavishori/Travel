@@ -3745,3 +3745,38 @@ button, .btn, .menu-btn, select, input, textarea {
 #mobileAuthDebugActions .btn{
   min-height:44px;
 }
+
+@media (max-width: 900px){
+  html,
+  body{
+    height:auto !important;
+    min-height:100% !important;
+  }
+
+  body{
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+  }
+
+  body .container.home-mode{
+    display:flex !important;
+    flex-direction:column !important;
+    height:auto !important;
+    min-height:calc(100dvh - 57px) !important;
+    overflow:visible !important;
+  }
+
+  body .container.home-mode .sidebar{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body .container.home-mode #tripList,
+  body .container.home-mode #tripList.grid{
+    max-width:100% !important;
+    overflow:visible !important;
+  }
+}
