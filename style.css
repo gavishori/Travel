@@ -3627,3 +3627,219 @@ button, .btn, .menu-btn, select, input, textarea {
     min-height:42px;
   }
 }
+
+@media (max-width: 768px){
+  body{
+    overflow-y:hidden !important;
+  }
+
+  header{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    gap:8px !important;
+    padding:8px 10px !important;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  header .brand{
+    flex:0 0 auto !important;
+    min-width:auto !important;
+    font-size:.95rem !important;
+  }
+
+  header .brand img{
+    height:24px !important;
+  }
+
+  #headerDest{
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:.9rem;
+  }
+
+  #authArea{
+    position:relative;
+    flex:0 0 auto;
+  }
+
+  #currentUserEmail{
+    position:absolute;
+    top:calc(100% + 8px);
+    inset-inline-end:0;
+    min-width:180px;
+    max-width:min(78vw, 260px);
+    padding:10px 12px;
+    border-radius:14px;
+    background:#ffffff !important;
+    color:#17324d !important;
+    box-shadow:0 12px 28px rgba(0,0,0,.18);
+    border:1px solid rgba(18,43,70,.14);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    z-index:50;
+    display:none !important;
+  }
+
+  #authArea.account-open #currentUserEmail{
+    display:block !important;
+  }
+
+  #btnAllTrips,
+  #btnAccount,
+  #btnLogin,
+  #btnTheme{
+    flex:0 0 auto;
+    width:40px;
+    min-width:40px;
+    height:40px;
+    min-height:40px;
+    padding:0 !important;
+    border-radius:12px !important;
+    font-size:0 !important;
+    line-height:1;
+  }
+
+  #btnAllTrips::before,
+  #btnAccount::before,
+  #btnLogin::before,
+  #btnTheme::before{
+    font-size:20px;
+    line-height:1;
+  }
+
+  #btnAllTrips::before{
+    content:"\2261";
+  }
+
+  #btnAccount::before{
+    content:"@";
+    font-size:18px;
+    font-weight:700;
+  }
+
+  #btnLogin::before{
+    content:"\21AA";
+  }
+
+  #btnLogin.danger::before{
+    content:"\238B";
+  }
+
+  #btnTheme::before{
+    content:"\25D0";
+  }
+
+  #userBadge,
+  header > .btn.success{
+    display:none !important;
+  }
+
+  .tabs{
+    gap:8px;
+    padding:8px 10px;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+  }
+
+  .tab-select-wrap{
+    flex:0 0 auto;
+  }
+
+  .tab-select{
+    min-width:170px !important;
+    max-width:170px !important;
+    padding-inline:36px 12px;
+  }
+
+  #overviewHeaderBar,
+  .overview-actions,
+  .list-actions,
+  .overview-headerbar .overview-quick{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #overviewHeaderBar > *,
+  .overview-actions > *,
+  .list-actions > *,
+  .overview-headerbar .overview-quick > *{
+    flex:0 0 auto;
+    width:auto !important;
+    max-width:none !important;
+    min-width:0;
+  }
+
+  #allHitCount{
+    display:none !important;
+  }
+
+  #searchAll,
+  .list-actions .input,
+  .overview-actions .input{
+    width:148px !important;
+    min-width:148px !important;
+  }
+
+  #btnAllToggle,
+  #btnQuickAddExpense,
+  #btnQuickAddJournal{
+    width:40px;
+    min-width:40px;
+    height:40px;
+    min-height:40px;
+    padding:0 !important;
+    font-size:0 !important;
+    border-radius:12px !important;
+  }
+
+  #btnAllToggle::before,
+  #btnQuickAddExpense::before,
+  #btnQuickAddJournal::before{
+    font-size:18px;
+    line-height:1;
+    font-weight:700;
+  }
+
+  #btnAllToggle::before{
+    content:"\21F5";
+  }
+
+  #btnQuickAddExpense::before{
+    content:"+\20AA";
+  }
+
+  #btnQuickAddJournal::before{
+    content:"+\270E";
+  }
+
+  #btnAllPrev,
+  #btnAllNext,
+  #btnAllSort{
+    width:40px;
+    min-width:40px;
+    height:40px;
+    min-height:40px;
+    padding:0 !important;
+  }
+}
+
+@media (min-width: 769px){
+  #btnAccount{
+    display:none !important;
+  }
+}
