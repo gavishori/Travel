@@ -3473,454 +3473,215 @@ button, .btn, .menu-btn, select, input, textarea {
   white-space:nowrap;
 }
 
+/* === Mobile final overrides === */
 @media (max-width: 768px){
-  html, body{
-    height:100%;
-    overflow-x:auto;
-    overflow-y:hidden !important;
+  html,
+  body{
+    height:auto;
+    min-height:100%;
+  }
+
+  body{
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
   }
 
   .app,
   .container,
   .content,
-  .sidebar,
-  #main,
-  .tabview{
-    height:100%;
-    overflow-y:hidden !important;
+  .sidebar{
+    height:auto !important;
+    min-height:0 !important;
+    overflow:visible !important;
   }
 
-  #view-expenses .expenses-table-container,
-  #view-journal .expenses-table-container,
-  #view-overview .expenses-table-container{
-    overflow-x:auto !important;
-    overflow-y:hidden !important;
-    -webkit-overflow-scrolling:touch;
-  }
-
-  #view-expenses .expenses-table,
-  #view-journal .expenses-table,
-  #view-overview .expenses-table{
-    width:100%;
-    min-width:0;
-    border-spacing:0 10px;
-  }
-
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header),
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header){
-    display:grid !important;
-    grid-template-columns:max-content max-content minmax(0,1fr) auto;
-    grid-template-areas:
-      "date time . menu"
-      "title category amount menu";
-    align-items:center;
-    gap:0;
-    background:rgba(255,120,120,.20) !important;
-    border:1px solid color-mix(in oklab, var(--border) 76%, white 24%);
-    border-radius:12px;
-    overflow:hidden;
-  }
-
-  #view-journal .expenses-table tr.exp-item:has(td.header),
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){
-    display:grid !important;
-    grid-template-columns:max-content max-content minmax(0,1fr) auto;
-    grid-template-areas:
-      "date time . menu"
-      "location location location menu";
-    align-items:center;
-    gap:0;
-    background:rgba(140,255,140,.20) !important;
-    border:1px solid color-mix(in oklab, var(--border) 76%, white 24%);
-    border-radius:12px;
-    overflow:hidden;
-  }
-
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.header) td.cell,
-  #view-journal .expenses-table tr.exp-item:has(td.header) td.cell,
-  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.header) td.cell{
-    display:block !important;
-    min-width:0;
-    border:none !important;
-    background:transparent !important;
-    padding:10px 12px;
-    line-height:1.25;
-  }
-
-  #view-expenses .expenses-table.stacked td.header.date,
-  #view-journal .expenses-table td.header.date,
-  #view-overview .expenses-table td.header.date{ grid-area:date; direction:ltr; unicode-bidi:isolate; text-align:right; }
-
-  #view-expenses .expenses-table.stacked td.header.time,
-  #view-journal .expenses-table td.header.time,
-  #view-overview .expenses-table td.header.time{ grid-area:time; direction:ltr; unicode-bidi:isolate; text-align:right; }
-
-  #view-expenses .expenses-table.stacked td.header.title,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.title{ grid-area:title; font-weight:700; }
-
-  #view-expenses .expenses-table.stacked td.header.category,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category{ grid-area:category; display:block !important; color:var(--muted); font-size:.92em; }
-
-  #view-expenses .expenses-table.stacked td.header.amount,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount{ grid-area:amount; text-align:left; font-weight:800; white-space:nowrap; }
-
-  #view-expenses .expenses-table.stacked td.header.currency,
-  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency{ display:none !important; }
-
-  #view-journal .expenses-table td.header.location,
-  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location{ grid-area:location; font-weight:700; }
-
-  #view-expenses .expenses-table.stacked td.menu-cell,
-  #view-journal .expenses-table td.menu-cell,
-  #view-overview .expenses-table td.menu-cell{
-    grid-area:menu;
-    display:flex !important;
-    align-items:center;
-    justify-content:center;
-    align-self:stretch;
-    padding:8px 10px;
-    border-inline-start:1px solid color-mix(in oklab, var(--border) 70%, white 30%);
-  }
-
-  #view-expenses .expenses-table.stacked td.header.title,
-  #view-expenses .expenses-table.stacked td.header.category,
-  #view-journal .expenses-table td.header.location,
-  #view-overview .expenses-table td.header.title,
-  #view-overview .expenses-table td.header.category,
-  #view-overview .expenses-table td.header.location{
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-
-  #view-expenses .expenses-table.stacked tr.exp-item:has(td.notes),
-  #view-journal .expenses-table tr.exp-item:has(td.notes),
-  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.notes){
-    display:block !important;
-    margin-top:-6px;
-    margin-bottom:10px;
-  }
-
-  #view-expenses .expenses-table.stacked td.notes,
-  #view-journal .expenses-table td.notes,
-  #view-overview .expenses-table td.notes{
-    display:block !important;
-    width:100%;
-    max-width:100%;
-    overflow-x:auto !important;
-    overflow-y:hidden !important;
-    white-space:nowrap;
-    text-overflow:clip;
-    padding:8px 12px 2px;
-    border:none !important;
-    background:transparent !important;
-  }
-
-  #view-expenses .expenses-table.stacked td.notes * ,
-  #view-journal .expenses-table td.notes * ,
-  #view-overview .expenses-table td.notes *{
-    white-space:nowrap !important;
-  }
-
-  .menu-btn{
-    min-width:42px;
-    min-height:42px;
-  }
-}
-
-@media (max-width: 768px){
-  body{
-    overflow-y:hidden !important;
+  .container.home-mode #tripList.grid,
+  #tripList.grid{
+    grid-template-columns:1fr !important;
   }
 
   header{
-    display:flex !important;
-    flex-wrap:nowrap !important;
-    align-items:center !important;
+    align-items:stretch !important;
     gap:8px !important;
-    padding:8px 10px !important;
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
+    padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 12px !important;
   }
 
-  header .brand{
-    flex:0 0 auto !important;
-    min-width:auto !important;
-    font-size:.95rem !important;
+  header .brand,
+  .brand-text,
+  .header-dest{
+    max-width:100% !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:initial !important;
+    line-height:1.35;
   }
 
-  header .brand img{
-    height:24px !important;
-  }
-
-  #headerDest{
-    flex:1 1 auto;
-    min-width:0;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    font-size:.9rem;
-  }
-
-  #authArea{
-    position:relative;
-    flex:0 0 auto;
-  }
-
-  #currentUserEmail{
-    position:absolute;
-    top:calc(100% + 8px);
-    inset-inline-end:0;
-    min-width:180px;
-    max-width:min(78vw, 260px);
-    padding:10px 12px;
-    border-radius:14px;
-    background:#ffffff !important;
-    color:#17324d !important;
-    box-shadow:0 12px 28px rgba(0,0,0,.18);
-    border:1px solid rgba(18,43,70,.14);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    z-index:50;
-    display:none !important;
-  }
-
-  #authArea.account-open #currentUserEmail{
-    display:block !important;
-  }
-
-  #btnAllTrips,
-  #btnAccount,
-  #btnLogin,
-  #btnTheme{
-    flex:0 0 auto;
-    width:40px;
-    min-width:40px;
-    height:40px;
-    min-height:40px;
-    padding:0 !important;
-    border-radius:12px !important;
-    font-size:0 !important;
-    line-height:1;
-  }
-
-  #btnAllTrips::before,
-  #btnAccount::before,
-  #btnLogin::before,
-  #btnTheme::before{
-    font-size:20px;
-    line-height:1;
-  }
-
-  #btnAllTrips::before{
-    content:"\2261";
-  }
-
-  #btnAccount::before{
-    content:"@";
-    font-size:18px;
-    font-weight:700;
-  }
-
-  #btnLogin::before{
-    content:"\21AA";
-  }
-
-  #btnLogin.danger::before{
-    content:"\238B";
-  }
-
-  #btnTheme::before{
-    content:"\25D0";
-  }
-
-  #userBadge,
-  header > .btn.success{
-    display:none !important;
+  header button,
+  header .btn,
+  #userBadge{
+    min-height:44px;
   }
 
   .tabs{
-    gap:8px;
-    padding:8px 10px;
-    flex-wrap:nowrap !important;
-    overflow-x:auto !important;
-    overflow-y:hidden !important;
+    position:sticky;
+    top:0;
+    z-index:8;
+    background:var(--bg);
+    padding-inline:10px !important;
+    padding-block:8px !important;
   }
 
-  .tab-select-wrap{
-    flex:0 0 auto;
-  }
-
+  .tab-select-wrap,
   .tab-select{
-    min-width:170px !important;
-    max-width:170px !important;
-    padding-inline:36px 12px;
+    width:100%;
+    max-width:100% !important;
   }
 
-  #overviewHeaderBar,
+  .overview-headerbar,
   .overview-actions,
-  .list-actions,
-  .overview-headerbar .overview-quick{
-    display:flex !important;
-    flex-wrap:nowrap !important;
-    align-items:center;
-    gap:8px;
-    width:100%;
+  .list-actions{
+    grid-template-columns:1fr !important;
+  }
+
+  .overview-headerbar .btn,
+  .overview-actions .btn,
+  .list-actions .btn,
+  .overview-headerbar .search-input,
+  .overview-headerbar .mode-select,
+  .overview-actions .search-input{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  #view-meta .dest-row,
+  #view-meta .date-row,
+  #view-meta .budget-block,
+  #view-meta .budget-row,
+  #view-meta .budget-actions-row{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+  }
+
+  #view-meta .date-row .people-input,
+  #view-meta .date-row .multi-types{
+    grid-column:auto !important;
+  }
+
+  #view-meta .budget-row label,
+  #view-meta .budget-row .input,
+  #view-meta .budget-actions-row .btn{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+  }
+
+  #view-meta .budget-actions-row .btn{
+    min-height:44px;
+  }
+
+  #view-share{
+    height:auto !important;
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+
+  #view-share .share-page{
+    padding:12px 0 24px;
+  }
+
+  #view-share .share-grid,
+  #view-share .cards.share-grid,
+  #view-share .cards{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    overflow:visible !important;
+  }
+
+  #view-share .share-inline{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  #view-share #shareDuration.input,
+  #view-share .btn,
+  #view-share .input,
+  #view-share select{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  .map-toolbar{
+    left:10px !important;
+    right:10px !important;
+    top:10px !important;
+    gap:8px !important;
+    flex-wrap:wrap;
+  }
+
+  .map-toolbar .btn{
+    flex:1 1 calc(50% - 4px);
     min-width:0;
-    overflow-x:auto;
-    overflow-y:hidden;
+  }
+
+  .leaflet-container,
+  #bigMap{
+    height:clamp(320px, 55vh, 520px) !important;
+  }
+
+  dialog.modal{
+    width:min(100% - 16px, 560px) !important;
+    max-width:min(100% - 16px, 560px) !important;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-bottom, 0px)) !important;
+    margin:auto;
+  }
+
+  .modal .body{
+    max-height:calc(100dvh - 170px - env(safe-area-inset-bottom, 0px));
+    overflow:auto;
     -webkit-overflow-scrolling:touch;
   }
 
-  #overviewHeaderBar > *,
-  .overview-actions > *,
-  .list-actions > *,
-  .overview-headerbar .overview-quick > *{
-    flex:0 0 auto;
-    width:auto !important;
-    max-width:none !important;
-    min-width:0;
+  .modal .footer{
+    flex-direction:column;
+    align-items:stretch;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
-  #allHitCount{
-    display:none !important;
+  .modal .footer .btn{
+    width:100%;
+    min-height:44px;
   }
 
-  #searchAll,
-  .list-actions .input,
-  .overview-actions .input{
-    width:148px !important;
-    min-width:148px !important;
-  }
-
-  #btnAllToggle,
-  #btnQuickAddExpense,
-  #btnQuickAddJournal{
-    width:40px;
-    min-width:40px;
-    height:40px;
-    min-height:40px;
-    padding:0 !important;
-    font-size:0 !important;
-    border-radius:12px !important;
-  }
-
-  #btnAllToggle::before,
-  #btnQuickAddExpense::before,
-  #btnQuickAddJournal::before{
-    font-size:18px;
-    line-height:1;
-    font-weight:700;
-  }
-
-  #btnAllToggle::before{
-    content:"\21F5";
-  }
-
-  #btnQuickAddExpense::before{
-    content:"+\20AA";
-  }
-
-  #btnQuickAddJournal::before{
-    content:"+\270E";
-  }
-
-  #btnAllPrev,
-  #btnAllNext,
-  #btnAllSort{
-    width:40px;
-    min-width:40px;
-    height:40px;
-    min-height:40px;
-    padding:0 !important;
-  }
-}
-
-@media (min-width: 769px){
-  #btnAccount{
-    display:none !important;
-  }
-}
-
-@media (max-width: 768px){
-  body.logged-out{
-    overflow-y:auto !important;
-  }
-
-  body.logged-out .app{
-    grid-template-rows:1fr !important;
-    min-height:100dvh;
-  }
-
-  body.logged-out .app > header{
-    display:none !important;
-  }
-
-  body.logged-out .container{
-    display:none !important;
-  }
-
-  .login-screen{
-    display:grid;
-    place-items:start center;
-    min-height:100dvh;
-    height:auto;
+  #mobileAuthOverlay{
+    align-items:flex-end;
     padding:16px;
-    padding-top:max(16px, env(safe-area-inset-top));
+    padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
-  .login-card{
-    width:min(100%, 460px) !important;
-    padding:18px 16px 20px !important;
-    border-radius:20px !important;
-    align-items:stretch !important;
-    gap:12px !important;
-    margin:0 auto;
+  #mobileAuthCard{
+    width:min(100%, 460px);
+    border-radius:18px;
+  }
+}
+
+@media (max-width: 520px){
+  header{
+    padding-inline:10px !important;
   }
 
-  .login-card img{
-    display:block;
-    max-width:216px;
-    height:192px !important;
-    margin:0 auto 4px !important;
+  .map-toolbar .btn{
+    flex-basis:100%;
   }
 
-  .login-card h1,
-  .login-card p,
-  .login-card #lsError{
-    width:100%;
-    text-align:center;
+  .country-trips-dialog{
+    inset:10px !important;
+    width:auto !important;
+    max-height:calc(100dvh - 20px) !important;
   }
 
-  .login-card label{
-    display:grid;
-    gap:8px;
-    width:100%;
-    font-size:16px;
-  }
-
-  .login-card .input{
-    width:100%;
-    min-height:52px;
-    font-size:16px;
-  }
-
-  .login-card .row{
-    display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:10px !important;
-    width:100%;
-  }
-
-  .login-card .row > *{
-    width:100% !important;
-  }
-
-  .login-card .btn{
-    min-height:52px;
-    justify-content:center;
-    font-size:1rem;
+  .trip-map-topbar,
+  .country-trips-list,
+  .country-trips-item{
+    min-width:0 !important;
   }
 }

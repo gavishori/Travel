@@ -1,4 +1,4 @@
-﻿// --- Helper: strip links (for Word export) ---
+// --- Helper: strip links (for Word export) ---
 function stripLinks(text){
   try{
     if(text==null) return '';
@@ -42,112 +42,18 @@ function wireAuthPrimaryButton(){
     const target = document.getElementById('btnLogin');
     if(!target) return;
     if(loggedIn){
-      target.textContent = '× ×™×ª×•×§';
+      target.textContent = 'ניתוק';
       target.classList.add('danger');
       target.addEventListener('click', doLogout, {passive:false});
     } else {
-      target.textContent = '×”×ª×—×‘×¨×•×ª';
+      target.textContent = 'התחברות';
       target.classList.remove('danger');
     }
   };
 }
 document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
 
-function wireMobileHeaderAccountMenu(){
-  const authArea = document.getElementById('authArea');
-  const btnAccount = document.getElementById('btnAccount');
-  if(!authArea || !btnAccount || btnAccount.dataset.wired === '1') return;
-  btnAccount.dataset.wired = '1';
-
-  const closeMenu = ()=> authArea.classList.remove('account-open');
-
-  btnAccount.addEventListener('click', (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    authArea.classList.toggle('account-open');
-  });
-
-  document.addEventListener('click', (e)=>{
-    if(!authArea.contains(e.target)) closeMenu();
-  });
-
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape') closeMenu();
-  });
-}
-document.addEventListener('DOMContentLoaded', wireMobileHeaderAccountMenu);
-
-function wireLandingAuthActions(){
-  const emailInput = document.getElementById('lsEmail');
-  const passInput = document.getElementById('lsPass');
-  const errEl = document.getElementById('lsError');
-  const loginBtn = document.getElementById('loginBtn');
-  const signupBtn = document.getElementById('lsSignUp');
-  const resetBtn = document.getElementById('lsReset');
-  if(!emailInput || !passInput || !loginBtn) return;
-
-  const bindFresh = (btn, handler)=>{
-    if(!btn) return null;
-    const clone = btn.cloneNode(true);
-    clone.dataset.wired = '1';
-    btn.parentNode.replaceChild(clone, btn);
-    clone.addEventListener('click', handler);
-    return clone;
-  };
-
-  const doLandingLogin = async ()=>{
-    const email = emailInput.value.trim();
-    const pass = passInput.value;
-    if(errEl) errEl.textContent = '';
-    if(!email || !pass){
-      if(errEl) errEl.textContent = 'אנא מלא אימייל וסיסמה';
-      return;
-    }
-    try{
-      const btn = document.getElementById('loginBtn');
-      if(btn) btn.disabled = true;
-      await FB.signInWithEmailAndPassword(auth, email, pass);
-    }catch(e){
-      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאת התחברות');
-      console.error('landing login failed', e);
-    }finally{
-      const btn = document.getElementById('loginBtn');
-      if(btn) btn.disabled = false;
-    }
-  };
-
-  bindFresh(loginBtn, doLandingLogin);
-  bindFresh(signupBtn, async ()=>{
-    try{
-      await FB.createUserWithEmailAndPassword(auth, emailInput.value.trim(), passInput.value);
-      if(errEl) errEl.textContent = '';
-    }catch(e){
-      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאה');
-    }
-  });
-  bindFresh(resetBtn, async ()=>{
-    try{
-      await FB.sendPasswordResetEmail(auth, emailInput.value.trim());
-      if(typeof showToast === 'function') showToast('נשלח מייל לאיפוס');
-      if(errEl) errEl.textContent = '';
-    }catch(e){
-      if(errEl) errEl.textContent = typeof xErr === 'function' ? xErr(e) : (e?.message || 'שגיאה');
-    }
-  });
-
-  const submitOnEnter = (ev)=>{
-    if(ev.key === 'Enter'){
-      ev.preventDefault();
-      doLandingLogin();
-    }
-  };
-  emailInput.addEventListener('keydown', submitOnEnter);
-  passInput.addEventListener('keydown', submitOnEnter);
-}
-document.addEventListener('DOMContentLoaded', wireLandingAuthActions);
-
-
-// --- ensure "×ž×—×§ × ×‘×—×¨×™×" button exists in Journal tab even if HTML not updated ---
+// --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
     const view = document.getElementById('view-journal');
@@ -160,13 +66,13 @@ document.addEventListener('DOMContentLoaded', wireLandingAuthActions);
       btn = document.createElement('button');
       btn.id = 'btnDeleteSelectedJournal';
       btn.className = 'btn danger';
-      btn.textContent = '×ž×—×§ × ×‘×—×¨×™×';
+      btn.textContent = 'מחק נבחרים';
       actions.insertBefore(btn, actions.querySelector('#btnSortJournal')?.nextSibling || null);
       if(!cancelBtn){
         cancelBtn = document.createElement('button');
         cancelBtn.id = 'btnCancelSelectionJournal';
         cancelBtn.className = 'btn';
-        cancelBtn.textContent = '×‘×˜×œ ×‘×—×™×¨×”';
+        cancelBtn.textContent = 'בטל בחירה';
         cancelBtn.style.display = 'none';
         actions.insertBefore(cancelBtn, btn.nextSibling);
       }
@@ -255,7 +161,7 @@ document.addEventListener('keydown', (e)=>{
   const isTextarea = tag.toLowerCase() === 'textarea' ||
                      document.activeElement?.isContentEditable;
 
-  // Ctrl/Cmd + Enter â†’ ×©×ž×™×¨×”
+  // Ctrl/Cmd + Enter → שמירה
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     if (anyOpen('expenseModal')) document.getElementById('expSave')?.click();
     if (anyOpen('journalModal')) document.getElementById('jrSave')?.click();
@@ -263,19 +169,19 @@ document.addEventListener('keydown', (e)=>{
     return;
   }
 
-  // Enter ×¨×’×™×œ â†’ ×™×¨×™×“×ª ×©×•×¨×” ×¨×§ ×‘Ö¾textarea ××• contenteditable
+  // Enter רגיל → ירידת שורה רק ב־textarea או contenteditable
   if (e.key === 'Enter' && isTextarea) {
-    // ×œ× × ×•×’×¢×™× â€” ×”×“×¤×“×¤×Ÿ ×›×‘×¨ ×ž×•×¨×™×“ ×©×•×¨×”
+    // לא נוגעים — הדפדפן כבר מוריד שורה
     return;
   }
 
-  // ×ž× ×™×¢×ª ×©×œ×™×—×”/×©×ž×™×¨×” ×‘×˜×¢×•×ª ×‘×›×œ ×ž×§×•× ××—×¨
+  // מניעת שליחה/שמירה בטעות בכל מקום אחר
   if (e.key === 'Enter' && !isTextarea) {
     e.preventDefault();
   }
 });
 
-// ×ª×™×§×•×Ÿ ×œ×ž×•×‘×™×™×œ â€“ ×ž××–×™×Ÿ ×œÖ¾input ×œ×ž×§×¨×” ×©×”Ö¾keydown ×œ× × ×•×¨×”
+// תיקון למובייל – מאזין ל־input למקרה שה־keydown לא נורה
 document.addEventListener('input', (e) => {
   const tag = (e.target && e.target.tagName) || '';
   if (tag.toLowerCase() === 'textarea') {
@@ -396,7 +302,7 @@ function convertAmount(amount, from, to, rates){
 async function fetchRatesOnce(){
   try{
     const localCur = state.current?.localCurrency;
-    // ×¡×™× ×•×Ÿ ×›×¤×™×œ×•×™×•×ª ×•×ž× ×™×¢×ª ×©×œ×™×—×ª USD ×›×¢×¨×š ×™×¢×“ ×›×“×™ ×œ×ž× ×•×¢ ×©×’×™××” 400
+    // סינון כפילויות ומניעת שליחת USD כערך יעד כדי למנוע שגיאה 400
     const to = [...new Set(['ILS', 'EUR', localCur].filter(c => c && c !== 'USD'))];
     const r = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${to.join(',')}`);
     const d = await r.json();
@@ -533,33 +439,33 @@ function attachMapPopup(marker, type, id, dataObj){
     const isExp = (type==='expense');
     const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
     
-    // ×‘×—×¨ ××ª ×”×©×“×” ×”× ×›×•×Ÿ (locationName ×œ×”×•×¦××”, placeName ×œ×™×•×ž×Ÿ)
+    // בחר את השדה הנכון (locationName להוצאה, placeName ליומן)
     const placeRaw = isExp ? (dataObj.locationName || '') : (dataObj.placeName || '');
     
-    // ×”×¡×¨×ª ×›×¤×™×œ×•×™×•×ª ×‘×©× ×”×ž×§×•×
+    // הסרת כפילויות בשם המקום
     const placeParts = (placeRaw || '').split(',').map(s => s.trim()).filter(Boolean);
     const uniqueParts = [...new Set(placeParts)];
     const place = esc(uniqueParts.join(', '));
 
-    // ×”×’×“×¨×ª ×©×•×¨×•×ª ×¡×›×•× ×•×§×˜×’×•×¨×™×” (×¨×§ ×œ×”×•×¦××•×ª)
-    const amountLine = isExp ? `<div><strong>×¡×›×•×:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
-    const catLine = isExp ? `<div><strong>×§×˜×’×•×¨×™×”:</strong> ${esc(dataObj.category||'')}</div>` : '';
+    // הגדרת שורות סכום וקטגוריה (רק להוצאות)
+    const amountLine = isExp ? `<div><strong>סכום:</strong> ${esc(dataObj.amount||'')} ${esc(dataObj.currency||'')}</div>` : '';
+    const catLine = isExp ? `<div><strong>קטגוריה:</strong> ${esc(dataObj.category||'')}</div>` : '';
     
-    // ×”×›× ×ª ×©×•×¨×ª ×ª×™××•×¨ (×‘×™×Ÿ ×× ×–×” ×™×•×ž×Ÿ ××• ×”×•×¦××”)
+    // הכנת שורת תיאור (בין אם זה יומן או הוצאה)
     const rawDesc = isExp ? (dataObj.desc || '') : (dataObj.text || '');
-    const descLine = rawDesc ? `<div style="margin-top:4px; word-break: break-word;"><strong>×ª×™××•×¨:</strong> <span class="muted">${linkifyText(rawDesc)}</span></div>` : '';
+    const descLine = rawDesc ? `<div style="margin-top:4px; word-break: break-word;"><strong>תיאור:</strong> <span class="muted">${linkifyText(rawDesc)}</span></div>` : '';
 
     const html = `
       <div class="map-popup" style="direction: rtl; text-align: right;">
-        <div><strong>${isExp?'×”×•×¦××”':'×™×•×ž×Ÿ'}</strong></div>
-        <div><strong>×ª××¨×™×š:</strong> ${esc(date||'')}</div>
+        <div><strong>${isExp?'הוצאה':'יומן'}</strong></div>
+        <div><strong>תאריך:</strong> ${esc(date||'')}</div>
         ${amountLine}
         ${catLine}
-        <div><strong>×ž×§×•×:</strong> ${place}</div>
+        <div><strong>מקום:</strong> ${place}</div>
         ${descLine}
         <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem; justify-content: flex-end;">
-          <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">×”×¦×’</button>
-          ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">×¢×¨×•×š</button>`}
+          <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">הצג</button>
+          ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">ערוך</button>`}
         </div>
       </div>`;
 
@@ -582,13 +488,13 @@ function attachMapPopup(marker, type, id, dataObj){
           const tid = state.currentTripId;
           if (!tid) {
             /*log removed*/
-            try { toast('×©×’×™××”: ××™×Ÿ × ×¡×™×¢×” ×¤×¢×™×œ×” ×œ×¢×¨×™×›×”'); } catch (_) {}
+            try { toast('שגיאה: אין נסיעה פעילה לעריכה'); } catch (_) {}
             return;
           }
 
           if (!state._lastTripObj) {
             /*log removed*/
-            try { toast('×©×’×™××”: ×”× ×ª×•× ×™× ×©×œ ×”× ×¡×™×¢×” ×œ× × ×˜×¢× ×•'); } catch (_) {}
+            try { toast('שגיאה: הנתונים של הנסיעה לא נטענו'); } catch (_) {}
             return;
           }
 
@@ -597,7 +503,7 @@ function attachMapPopup(marker, type, id, dataObj){
 
           if (!srcCollection || typeof srcCollection !== 'object') {
             /*log removed*/
-            try { toast('×œ× × ×ž×¦× ×¤×¨×™×˜ ×œ×¢×¨×™×›×”'); } catch (_) {}
+            try { toast('לא נמצא פריט לעריכה'); } catch (_) {}
             return;
           }
 
@@ -605,7 +511,7 @@ function attachMapPopup(marker, type, id, dataObj){
 
           if (!obj) {
             /*log removed*/
-            try { toast('×œ× × ×ž×¦× ×¤×¨×™×˜ ×œ×¢×¨×™×›×” (××•×œ×™ × ×ž×—×§ ××• ×¢×•×“×›×Ÿ)'); } catch (_) {}
+            try { toast('לא נמצא פריט לעריכה (אולי נמחק או עודכן)'); } catch (_) {}
             return;
           }
 
@@ -625,8 +531,8 @@ function attachMapPopup(marker, type, id, dataObj){
 function seedExpenseCategoriesSelect(sel){
   try{
     if(!sel) return;
-    sel.innerHTML = '<option value="">×”×›×•×œ</option>';
-    const cats = (state.categories?.expenses) || ['×˜×™×¡×”','×œ×™× ×”','×ª×§×©×•×¨×ª','×¨×›×‘','×‘×™×˜×•×— ×‘×¨×™××•×ª','×ž×–×•×Ÿ - ×ž×¡×¢×“×•×ª / ×¡×•×¤×¨','×§× ×™×•×ª','××˜×¨×§×¦×™×•×ª','×ª×—×‘×•×¨×”','××—×¨'];
+    sel.innerHTML = '<option value="">הכול</option>';
+    const cats = (state.categories?.expenses) || ['טיסה','לינה','תקשורת','רכב','ביטוח בריאות','מזון - מסעדות / סופר','קניות','אטרקציות','תחבורה','אחר'];
     cats.forEach(c=>{
       const opt = document.createElement('option');
       opt.value = c; opt.textContent = c;
@@ -687,7 +593,7 @@ function initMiniMap(t){
     // Create map once
     if(!state.maps.mini){
       state.maps.mini = L.map('miniMap', { zoomControl: false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' })
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
         .addTo(state.maps.mini);
     }
     // Clear previous layers
@@ -709,18 +615,18 @@ function initMiniMap(t){
    // Journal markers (and paths)
     Object.entries(t.journal||{}).forEach(([id,j])=>{
       if (j.path && Array.isArray(j.path) && j.path.length > 1) {
-          // --- ×”×ª×™×§×•×Ÿ: ×”×ž×¨×” ×©×œ ×ž×‘× ×” ×”× ×§×•×“×•×ª ×¢×‘×•×¨ Leaflet ---
+          // --- התיקון: המרה של מבנה הנקודות עבור Leaflet ---
           const leafletPath = j.path.map(p => [p.lat, p.lng]);
           L.polyline(leafletPath, { color: '#007bff', weight: 3 }).addTo(group);
-          pts.push(...leafletPath); // ×”×•×¡×£ ××ª ×›×œ ×”× ×§×•×“×•×ª ×œ×—×™×©×•×‘ ×”-bounds
-          // --- ×¡×•×£ ×”×ª×™×§×•×Ÿ ---
+          pts.push(...leafletPath); // הוסף את כל הנקודות לחישוב ה-bounds
+          // --- סוף התיקון ---
           
-          // ×”×•×¡×£ ×ž×¨×§×¨ ×‘× ×§×•×“×ª ×”×”×ª×—×œ×” ×¢× ×¤×•×¤××¤
+          // הוסף מרקר בנקודת ההתחלה עם פופאפ
           if (typeof j.lat === 'number' && typeof j.lng === 'number') {
               ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
           }
       } else if (typeof j.lat==='number' && typeof j.lng==='number') {
-        // ×”×ª× ×”×’×•×ª ×¨×’×™×œ×” ×¢×‘×•×¨ × ×§×•×“×•×ª ×™×•×ž×Ÿ ×‘×•×“×“×•×ª
+        // התנהגות רגילה עבור נקודות יומן בודדות
         pts.push([j.lat, j.lng]);
         ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
       }
@@ -743,7 +649,7 @@ function initBigMap() {
   try{
     if(!state.maps.big){
       state.maps.big = L.map('bigMap');
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' }).addTo(state.maps.big);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.big);
     }
     const ref = state.currentTripId;
     if(!ref){ invalidateMap(state.maps.big); return; }
@@ -773,18 +679,18 @@ const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}
       let jourIndex = 1;
       jourEntries.forEach(([id,j])=>{
         if (j.path && Array.isArray(j.path) && j.path.length > 1) {
-            // --- ×”×ª×™×§×•×Ÿ: ×”×ž×¨×” ×©×œ ×ž×‘× ×” ×”× ×§×•×“×•×ª ×¢×‘×•×¨ Leaflet ---
+            // --- התיקון: המרה של מבנה הנקודות עבור Leaflet ---
             const leafletPath = j.path.map(p => [p.lat, p.lng]);
             L.polyline(leafletPath, { color: '#007bff', weight: 3 }).addTo(journalLG);
             pts.push(...leafletPath);
-            // --- ×¡×•×£ ×”×ª×™×§×•×Ÿ ---
+            // --- סוף התיקון ---
 
-            // ×”×•×¡×£ ×ž×¨×§×¨ ×ž×ž×•×¡×¤×¨ ×‘× ×§×•×“×ª ×”×”×ª×—×œ×” ×¢× ×¤×•×¤××¤
+            // הוסף מרקר ממוספר בנקודת ההתחלה עם פופאפ
             if (typeof j.lat === 'number' && typeof j.lng === 'number') {
                  ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(journalLG);})(_numberedMarker(j.lat, j.lng, jourIndex++, 'journal')));
             }
         } else if (typeof j.lat==='number' && typeof j.lng==='number') {
-          // ×”×ª× ×”×’×•×ª ×¨×’×™×œ×” ×¢×‘×•×¨ × ×§×•×“×•×ª ×‘×•×“×“×•×ª
+          // התנהגות רגילה עבור נקודות בודדות
           pts.push([j.lat,j.lng]);
           ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(journalLG);})(_numberedMarker(j.lat, j.lng, jourIndex++, 'journal')));
         }
@@ -1037,7 +943,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
 
 // Overview tab dropdown (All / Expenses / Journal)
 (function bindOverviewTabSelect(){
-  // Header dropdown ("×”×¦×’") that navigates to main tabs
+  // Header dropdown ("הצג") that navigates to main tabs
   const sel = document.getElementById('overviewTabSelect');
   if(!sel || sel.dataset.bound) return;
   sel.dataset.bound = '1';
@@ -1055,7 +961,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
       }
     }catch(_){}
 
-    // Actions inside the "×”×¦×’" dropdown:
+    // Actions inside the "הצג" dropdown:
     // journal/expenses change the internal filter of the Overview timeline.
     // mix resets the filter to show both (journal + expenses) together, sorted by time.
     if (v === 'journal' || v === 'expenses' || v === 'mix') {
@@ -1083,7 +989,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
     if (v === 'breakdown') {
       try { sel.value = 'breakdown'; } catch (_) {}
       // setTimeout(0) lets the select's click event finish propagating before the dialog
-      // opens â€” otherwise the document click-outside listener closes it immediately.
+      // opens — otherwise the document click-outside listener closes it immediately.
       setTimeout(() => {
         if (typeof window.__openBreakdownDialog === 'function') {
           window.__openBreakdownDialog();
@@ -1122,7 +1028,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
     if (tabEl) tabEl.click();
   });
 })();
-// (old Auth UI block removed â€“ using unified handler below)
+// (old Auth UI block removed – using unified handler below)
 
 // Handle share link mode (read-only)
 const url = new URL(location.href);
@@ -1175,12 +1081,12 @@ function num(n){
 }
 function xErr(e){
   const msg = e?.message || String(e);
-  if (msg.includes('auth/invalid-email')) return '×ž×™×™×œ ×œ× ×ª×§×™×Ÿ';
-  if (msg.includes('auth/weak-password')) return '×¡×™×¡×ž×” ×—×œ×©×” (6 ×ª×•×•×™× ×•×ž×¢×œ×”)';
-  if (msg.includes('auth/email-already-in-use')) return '×ž×™×™×œ ×›×‘×¨ ×§×™×™× ×‘×ž×¢×¨×›×ª';
-  if (msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) return '×©× ×ž×©×ª×ž×© ××• ×¡×™×¡×ž×” ×©×’×•×™×™×';
-  if (msg.includes('auth/user-not-found')) return '×ž×©×ª×ž×© ×œ× × ×ž×¦×';
-  return '×©×’×™××”: ' + msg;
+  if (msg.includes('auth/invalid-email')) return 'מייל לא תקין';
+  if (msg.includes('auth/weak-password')) return 'סיסמה חלשה (6 תווים ומעלה)';
+  if (msg.includes('auth/email-already-in-use')) return 'מייל כבר קיים במערכת';
+  if (msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) return 'שם משתמש או סיסמה שגויים';
+  if (msg.includes('auth/user-not-found')) return 'משתמש לא נמצא';
+  return 'שגיאה: ' + msg;
 }
 function numOrNull(s){
   const n = Number(s);
@@ -1220,7 +1126,7 @@ function subscribeTrips(){
       __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
       return;
     }
-    showToast('××™×Ÿ ×”×¨×©××” ×œ×§×¨×•× × ×ª×•× ×™× (×‘×“×•×§ ×”×ª×—×‘×¨×•×ª/×—×•×§×™ Firestore)');
+    showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
   });
 }
 async function renderTripList(){
@@ -1258,35 +1164,35 @@ async function renderTripList(){
   document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
 }
 function cardHTML(t, s){
-  const period = `${fmtDate(t.start)} â€“ ${fmtDate(t.end)}`;
+  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
   const where = t.__match?.where || [];
   return `<div class="trip-card" data-trip="${t.id}">
     <div>
-        <strong>${esc(t.destination||'×œ×œ× ×™×¢×“')}</strong>
+        <strong>${esc(t.destination||'ללא יעד')}</strong>
     </div>
     <div class="muted">${period}</div>
     <div class="trip-footer-grid">
       <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
-      <button class="menu-btn" data-id="${t.id}" aria-label="×¤×¢×•×œ×•×ª">
+      <button class="menu-btn" data-id="${t.id}" aria-label="פעולות">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </button>
     </div>
-    ${s ? `<div class="muted" style="margin-top:6px;width:100%">×”×ª××ž×•×ª: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
+    ${s ? `<div class="muted" style="margin-top:6px;width:100%">התאמות: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
   </div>`;
 }
 function rowHTML(t, s){
-  const period = `${fmtDate(t.start)} â€“ ${fmtDate(t.end)}`;
+  const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
   const where = t.__match?.where || [];
   return `<div class="trip-row" data-trip="${t.id}">
     <div class="row-main-content">
-      <strong>${esc(t.destination||'×œ×œ× ×™×¢×“')}</strong>
+      <strong>${esc(t.destination||'ללא יעד')}</strong>
       <span class="muted">${period}</span>
       <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
     </div>
-    <button class="menu-btn" data-id="${t.id}" aria-label="×¤×¢×•×œ×•×ª">
+    <button class="menu-btn" data-id="${t.id}" aria-label="פעולות">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
-    ${s ? `<div class="muted" style="grid-column:1/-1;margin-top:4px">×”×ª××ž×•×ª: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
+    ${s ? `<div class="muted" style="grid-column:1/-1;margin-top:4px">התאמות: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
   </div>`;
 }
 
@@ -1311,7 +1217,7 @@ function showView(view){
     }
 
     // Show the Overview toolbar (header bar) only when the Overview tab is active.
-    // The toolbar itself lives next to the "×™×™×‘×•× / ×™×™×¦×•× / ×©×™×ª×•×£" tab button,
+    // The toolbar itself lives next to the "ייבוא / ייצוא / שיתוף" tab button,
     // but we do not want it visible in other tabs.
     try {
       const hb = document.getElementById('overviewHeaderBar');
@@ -1337,43 +1243,43 @@ async function openTrip(id){
 // Function to map destination/country to currency (supports Hebrew + English + common variants)
 const localCurrencyMap = {
   // Europe
-  "×‘×•×œ×’×¨×™×”":"BGN","Bulgaria":"BGN","bulgaria":"BGN",
-  "×¨×•×ž× ×™×”":"RON","Romania":"RON","romania":"RON",
-  "×’×™××•×¨×’×™×”":"GEL","×’××•×¨×’×™×”":"GEL","Georgia":"GEL","georgia":"GEL",
-  "×¤×•×œ×™×Ÿ":"PLN","Poland":"PLN","poland":"PLN",
-  "×¦'×›×™×”":"CZK","×¦×›×™×”":"CZK","Czech":"CZK","Czechia":"CZK","czech":"CZK","czechia":"CZK",
-  "×”×•× ×’×¨×™×”":"HUF","Hungary":"HUF","hungary":"HUF",
-  "×©×•×•×™×¥":"CHF","×©×•×•×™×™×¥":"CHF","Switzerland":"CHF","switzerland":"CHF",
-  "×‘×¨×™×˜× ×™×”":"GBP","×× ×’×œ×™×”":"GBP","UK":"GBP","United Kingdom":"GBP","Britain":"GBP","England":"GBP","uk":"GBP",
-  "×¦×¨×¤×ª":"EUR","France":"EUR","france":"EUR",
-  "×’×¨×ž× ×™×”":"EUR","Germany":"EUR","germany":"EUR",
-  "××™×˜×œ×™×”":"EUR","Italy":"EUR","italy":"EUR",
-  "×¡×¤×¨×“":"EUR","Spain":"EUR","spain":"EUR",
-  "×™×•×•×Ÿ":"EUR","Greece":"EUR","greece":"EUR",
-  "×§×¨×•××˜×™×”":"EUR","Croatia":"EUR","croatia":"EUR",
-  "×©×•×•×“×™×”":"SEK","Sweden":"SEK","sweden":"SEK",
-  "× ×•×¨×•×•×’×™×”":"NOK","Norway":"NOK","norway":"NOK",
-  "×“× ×ž×¨×§":"DKK","Denmark":"DKK","denmark":"DKK",
-  "×¡×¨×‘×™×”":"RSD","Serbia":"RSD","serbia":"RSD",
+  "בולגריה":"BGN","Bulgaria":"BGN","bulgaria":"BGN",
+  "רומניה":"RON","Romania":"RON","romania":"RON",
+  "גיאורגיה":"GEL","גאורגיה":"GEL","Georgia":"GEL","georgia":"GEL",
+  "פולין":"PLN","Poland":"PLN","poland":"PLN",
+  "צ'כיה":"CZK","צכיה":"CZK","Czech":"CZK","Czechia":"CZK","czech":"CZK","czechia":"CZK",
+  "הונגריה":"HUF","Hungary":"HUF","hungary":"HUF",
+  "שוויץ":"CHF","שווייץ":"CHF","Switzerland":"CHF","switzerland":"CHF",
+  "בריטניה":"GBP","אנגליה":"GBP","UK":"GBP","United Kingdom":"GBP","Britain":"GBP","England":"GBP","uk":"GBP",
+  "צרפת":"EUR","France":"EUR","france":"EUR",
+  "גרמניה":"EUR","Germany":"EUR","germany":"EUR",
+  "איטליה":"EUR","Italy":"EUR","italy":"EUR",
+  "ספרד":"EUR","Spain":"EUR","spain":"EUR",
+  "יוון":"EUR","Greece":"EUR","greece":"EUR",
+  "קרואטיה":"EUR","Croatia":"EUR","croatia":"EUR",
+  "שוודיה":"SEK","Sweden":"SEK","sweden":"SEK",
+  "נורווגיה":"NOK","Norway":"NOK","norway":"NOK",
+  "דנמרק":"DKK","Denmark":"DKK","denmark":"DKK",
+  "סרביה":"RSD","Serbia":"RSD","serbia":"RSD",
 
   // Asia / Middle East
-  "×ª××™×œ× ×“":"THB","Thailand":"THB","thailand":"THB",
-  "×˜×•×¨×§×™×”":"TRY","Turkey":"TRY","turkey":"TRY",
-  "×™×¤×Ÿ":"JPY","Japan":"JPY","japan":"JPY",
-  "×¡×™×Ÿ":"CNY","China":"CNY","china":"CNY",
-  "×¡×™× ×’×¤×•×¨":"SGD","Singapore":"SGD","singapore":"SGD",
-  "××™×—×•×“ ×”××ž×™×¨×•×™×•×ª":"AED","×“×•×‘××™":"AED","UAE":"AED","United Arab Emirates":"AED","Dubai":"AED","uae":"AED","dubai":"AED",
+  "תאילנד":"THB","Thailand":"THB","thailand":"THB",
+  "טורקיה":"TRY","Turkey":"TRY","turkey":"TRY",
+  "יפן":"JPY","Japan":"JPY","japan":"JPY",
+  "סין":"CNY","China":"CNY","china":"CNY",
+  "סינגפור":"SGD","Singapore":"SGD","singapore":"SGD",
+  "איחוד האמירויות":"AED","דובאי":"AED","UAE":"AED","United Arab Emirates":"AED","Dubai":"AED","uae":"AED","dubai":"AED",
 
   // Americas / Oceania
-  "×§× ×“×”":"CAD","Canada":"CAD","canada":"CAD",
-  "×ž×§×¡×™×§×•":"MXN","Mexico":"MXN","mexico":"MXN",
-  "××•×¡×˜×¨×œ×™×”":"AUD","Australia":"AUD","australia":"AUD"
+  "קנדה":"CAD","Canada":"CAD","canada":"CAD",
+  "מקסיקו":"MXN","Mexico":"MXN","mexico":"MXN",
+  "אוסטרליה":"AUD","Australia":"AUD","australia":"AUD"
 };
 
 Object.assign(localCurrencyMap, {
-  '××¨×”"×‘': 'USD',
-  '××¨×¦×•×ª ×”×‘×¨×™×ª': 'USD',
-  '××¨×¦×•×ª-×”×‘×¨×™×ª': 'USD',
+  'ארה"ב': 'USD',
+  'ארצות הברית': 'USD',
+  'ארצות-הברית': 'USD',
   'USA': 'USD',
   'U.S.A': 'USD',
   'US': 'USD',
@@ -1432,14 +1338,14 @@ function normalizeTripShape(trip){
   const normalizedExpenses = Array.isArray(rawExpenses)
     ? rawExpenses.map((e)=>({
         ...e,
-        category: (e?.category || '××—×¨').toString(),
+        category: (e?.category || 'אחר').toString(),
         currency: (e?.currency || inferredLocalCurrency || 'USD').toString().toUpperCase(),
         rates: normalizeRatesShape(e?.rates || normalizedRates)
       }))
     : Object.fromEntries(
         Object.entries(rawExpenses).map(([id, e])=>[id, {
           ...e,
-          category: (e?.category || '××—×¨').toString(),
+          category: (e?.category || 'אחר').toString(),
           currency: (e?.currency || inferredLocalCurrency || 'USD').toString().toUpperCase(),
           rates: normalizeRatesShape(e?.rates || normalizedRates)
         }])
@@ -1470,26 +1376,26 @@ async function backfillTripVersionFields(trip){
 
 // Best-effort destination city (avoid showing a country name as a "title")
 const currencyDefaultCityMap = {
-  THB: '×‘× ×’×§×•×§',
-  BGN: '×¡×•×¤×™×”',
-  GEL: '×˜×‘×™×œ×™×¡×™',
-  RON: '×‘×•×§×¨×©×˜',
-  TRY: '×× ×§×¨×”',
-  PLN: '×•×¨×©×”',
-  CZK: '×¤×¨××’',
-  HUF: '×‘×•×“×¤×©×˜',
-  CHF: '×‘×¨×Ÿ',
-  GBP: '×œ×•× ×“×•×Ÿ',
-  SEK: '×©×˜×•×§×”×•×œ×',
-  NOK: '××•×¡×œ×•',
-  DKK: '×§×•×¤× ×”×’×Ÿ',
-  JPY: '×˜×•×§×™×•',
-  CNY: '×‘×™×™×’×³×™× ×’',
-  SGD: '×¡×™× ×’×¤×•×¨',
-  AED: '×“×•×‘××™',
-  CAD: '××•×˜×•×•×”',
-  MXN: '×ž×§×¡×™×§×• ×¡×™×˜×™',
-  AUD: '×§× ×‘×¨×”'
+  THB: 'בנגקוק',
+  BGN: 'סופיה',
+  GEL: 'טביליסי',
+  RON: 'בוקרשט',
+  TRY: 'אנקרה',
+  PLN: 'ורשה',
+  CZK: 'פראג',
+  HUF: 'בודפשט',
+  CHF: 'ברן',
+  GBP: 'לונדון',
+  SEK: 'שטוקהולם',
+  NOK: 'אוסלו',
+  DKK: 'קופנהגן',
+  JPY: 'טוקיו',
+  CNY: 'בייג׳ינג',
+  SGD: 'סינגפור',
+  AED: 'דובאי',
+  CAD: 'אוטווה',
+  MXN: 'מקסיקו סיטי',
+  AUD: 'קנברה'
 };
 
 function guessDestinationCity(t){
@@ -1586,21 +1492,21 @@ async function loadTrip(){
     if (Object.keys(patch).length) await FB.updateDoc(ref, patch);
   }catch(_){}
 
-  // Overview meta (optional â€“ only if element exists)
+  // Overview meta (optional – only if element exists)
   (function(){
     const metaEl = document.getElementById('metaSummary');
     if(!metaEl) return;
     metaEl.innerHTML = `
     <div><strong>${esc(t.destination||'')}</strong></div>
-    <div class="muted">${fmtDate(t.start)} â€“ ${fmtDate(t.end)}</div>
-    <div>×ž×©×ª×ª×¤×™×: ${esc((t.people||[]).join(', '))}</div>
-    <div>×¡×•×’×™×: ${esc((t.types||[]).join(', '))}</div>
+    <div class="muted">${fmtDate(t.start)} – ${fmtDate(t.end)}</div>
+    <div>משתתפים: ${esc((t.people||[]).join(', '))}</div>
+    <div>סוגים: ${esc((t.types||[]).join(', '))}</div>
     ${(() => {
       const b = t.budget || {};
       const pairs = Object.entries(b).filter(([k,v]) => Number(v) > 0);
       if (!pairs.length) return '';
-      const line = pairs.map(([k,v]) => `${k} ${formatInt(v)}`).join(' Â· ');
-      return `<div>×ª×§×¦×™×‘: ${line}</div>`;
+      const line = pairs.map(([k,v]) => `${k} ${formatInt(v)}`).join(' · ');
+      return `<div>תקציב: ${line}</div>`;
     })()}
   `;
   })();
@@ -1611,7 +1517,7 @@ async function loadTrip(){
   $('#metaPeople').value = (t.people||[]).join(', ');
   (function(){ const typesArr = Array.isArray(t.types)?t.types:[]; $$('.metaType').forEach(btn=>{ btn.classList.toggle('active', typesArr.includes(btn.dataset.value)); btn.onclick = ()=> btn.classList.toggle('active'); }); })();
   const budget = t.budget||{ USD:0, EUR:0, ILS:0 };
-  $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? '×‘×™×˜×•×œ × ×¢×™×œ×”' : '×§×‘×¢ ×ª×§×¦×™×‘'; be.classList.toggle('locked', !!t.budgetLocked);}
+  $('#bUSD').value = formatInt(budget.USD||0); $('#bEUR').value = formatInt(budget.EUR||0); $('#bILS').value = formatInt(budget.ILS||0); ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = !!t.budgetLocked); const be=$('#btnBudgetEdit'); if(be){ be.textContent = t.budgetLocked ? 'ביטול נעילה' : 'קבע תקציב'; be.classList.toggle('locked', !!t.budgetLocked);}
   if(t.rates && !missingBaseRates){ state.rates = t.rates; }
   const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS'); if(_r1) _r1.value = state.rates.USDEUR; if(_r2) _r2.value = state.rates.USDILS;
 
@@ -1627,7 +1533,7 @@ async function loadTrip(){
   }
   renderExpenseSummary(t);
 
-  // If trip dates overlap "today" on open â†’ show quick actions popup
+  // If trip dates overlap "today" on open → show quick actions popup
   try{ maybeShowTripTodayPrompt(t); }catch(_){ }
   
   // Reset dirty state on successful load
@@ -1746,7 +1652,7 @@ function renderExpenses(t, order){
     const tr1 = document.createElement('tr');
     tr1.className = 'exp-item';
     tr1.dataset.id = e.id;
-    tr1.dataset.kind = 'expense'; // ×ž×—×–×™×¨ ××ª ×”×¦×‘×¢ ×”××“×•×
+    tr1.dataset.kind = 'expense'; // מחזיר את הצבע האדום
     tr1.innerHTML = `
       <td class="cell header date">${bidiWrap(dateStr)}</td>
       <td class="cell header time">${bidiWrap(timeStr)}</td>
@@ -1754,7 +1660,7 @@ function renderExpenses(t, order){
       <td class="cell header category">${cat}</td>
       <td class="cell header amount">
         <div class="amt-main" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
-          <button class="fx-btn" type="button" data-fx="1">â–¾</button>
+          <button class="fx-btn" type="button" data-fx="1">▾</button>
           <span class="code">${bidiWrap(curr)}</span> <span class="val">${bidiWrap(amount)}</span>
         </div>
       </td>
@@ -1788,7 +1694,7 @@ function renderJournal(t, order){
 
     const tr1 = document.createElement('tr');
     tr1.className = 'exp-item';
-    tr1.dataset.kind = 'journal'; // ×ž×—×–×™×¨ ××ª ×”×¦×‘×¢ ×”×™×¨×•×§
+    tr1.dataset.kind = 'journal'; // מחזיר את הצבע הירוק
     const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select"></td>` : "";
     
     const displayTitle = deriveJournalTitle(j);
@@ -1941,11 +1847,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
   syncOverviewTabLabel();
   wireOverviewSort();
 });
-// ×”×¤×¢×œ×ª ×”×›×¤×ª×•×¨ ×œ×¤×ª×™×—×ª ×—×œ×•×Ÿ "× ×¡×™×¢×” ×—×“×©×”"
+// הפעלת הכפתור לפתיחת חלון "נסיעה חדשה"
 $('#btnNewTrip').addEventListener('click', () => {
   const modal = $('#tripModal');
   if (modal) {
-    // ××™×¤×•×¡ ×©×“×•×ª ×œ×¤× ×™ ×¤×ª×™×—×”
+    // איפוס שדות לפני פתיחה
     $('#tripDest').value = '';
     $('#tripStart').value = '';
     $('#tripEnd').value = '';
@@ -1953,24 +1859,24 @@ $('#btnNewTrip').addEventListener('click', () => {
   }
 });
 
-// ×”×©×•×¨×” ×”×§×™×™×ž×ª (×œ×”×©×•×•××”):
+// השורה הקיימת (להשוואה):
 $('#tripCancel').addEventListener('click', ()=> $('#tripModal').close());
 $('#tripSave').addEventListener('click', async ()=>{
-  // ×”×•×¡×¤× ×• ×‘×œ×•×§ try...catch ×›×“×™ ×œ×ž× ×•×¢ ×§×¨×™×¡×” ×©×§×˜×”
+  // הוספנו בלוק try...catch כדי למנוע קריסה שקטה
   try {
     const dest = $('#tripDest').value.trim(); 
     const start = $('#tripStart').value; 
     const end = $('#tripEnd').value;
 
     if(!dest||!start||!end) {
-      showToast('×× × ×ž×œ× ×™×¢×“ ×•×ª××¨×™×›×™×');
-      return; // ×¢×¦×™×¨×” ×× ×—×¡×¨×™× × ×ª×•× ×™×
+      showToast('אנא מלא יעד ותאריכים');
+      return; // עצירה אם חסרים נתונים
     }
 
-    // ×‘×“×™×§×” ×§×¨×™×˜×™×ª: ×•×“× ×©×¤×¨×˜×™ ×”×ž×©×ª×ž×© × ×˜×¢× ×•
+    // בדיקה קריטית: ודא שפרטי המשתמש נטענו
     if (!state.user || !state.user.uid) {
       console.error("Save failed: state.user.uid is missing.", state.user);
-      showToast('×©×’×™××”: ×”×ž×©×ª×ž×© ×œ× ×ž×—×•×‘×¨ ×›×¨××•×™. × ×¡×” ×œ×¨×¢× ×Ÿ.');
+      showToast('שגיאה: המשתמש לא מחובר כראוי. נסה לרענן.');
       return;
     }
 
@@ -1989,7 +1895,7 @@ $('#tripSave').addEventListener('click', async ()=>{
     if (localCur && live.USDLocal) lockedRates.USDLocal = live.USDLocal;
 
     await FB.setDoc(FB.doc(db, 'trips', id), {
-      ownerUid: state.user.uid, // ×¢×›×©×™×• ×‘×˜×•×— ×œ×’×©×ª ×œ-uid
+      ownerUid: state.user.uid, // עכשיו בטוח לגשת ל-uid
       destination: dest,
       start,
       end,
@@ -2003,12 +1909,12 @@ $('#tripSave').addEventListener('click', async ()=>{
     });
 
     $('#tripModal').close(); 
-    showToast('× ×•×¦×¨×” × ×¡×™×¢×”');
+    showToast('נוצרה נסיעה');
 
   } catch (err) {
-    // ×”×¦×’ ×”×•×“×¢×ª ×©×’×™××” ×‘×ž×§×•× ×œ×§×¨×•×¡ ×‘×©×§×˜
+    // הצג הודעת שגיאה במקום לקרוס בשקט
     console.error("Error saving trip:", err);
-    showToast('×©×’×™××” ×‘×©×ž×™×¨×ª ×”× ×¡×™×¢×”: ' + err.message);
+    showToast('שגיאה בשמירת הנסיעה: ' + err.message);
   }
 });
 
@@ -2029,7 +1935,7 @@ $('#btnSaveMeta').addEventListener('click', async ()=>{
   const destination = $('#metaDestination').value.trim();
   const localCur = getLocalCurrency(destination);
   await FB.updateDoc(ref, { destination, start: $('#metaStart').value, end: $('#metaEnd').value, people, types, localCurrency: localCur });
-  showToast('× ×©×ž×¨'); loadTrip();
+  showToast('נשמר'); loadTrip();
 });
 $('#btnVerifyOnMap').click(() => {
   // ...
@@ -2060,8 +1966,8 @@ $('#btnBudgetEdit').addEventListener('click', async ()=>{
   await FB.updateDoc(ref, { budget, rates: lockedRates, budgetLocked: locking });
   ['bUSD','bEUR','bILS'].forEach(id=> $('#'+id).disabled = locking);
   btn.classList.toggle('locked', locking);
-  btn.textContent = locking ? '×‘×™×˜×•×œ × ×¢×™×œ×”' : '×§×‘×¢ ×ª×§×¦×™×‘';
-  showToast(locking ? '×”×ª×§×¦×™×‘ × ×§×‘×¢' : '×”×ª×§×¦×™×‘ ×¤×ª×•×— ×œ×¢×¨×™×›×”');
+  btn.textContent = locking ? 'ביטול נעילה' : 'קבע תקציב';
+  showToast(locking ? 'התקציב נקבע' : 'התקציב פתוח לעריכה');
   state.isDirty = false; // Reset dirty state on save
 });
 // Expenses CRUD
@@ -2103,15 +2009,15 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
 
    $('#expenseModal').dataset.id = e?.id||'';
   try{ const tEl=document.getElementById("expTitle"); if(tEl) tEl.value = e?.title || ""; }catch(_){ }
-  $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc,'×§×™×©×•×¨') : '')) || '';
+  $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc,'קישור') : '')) || '';
   enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
   const __defCur = (e && e.currency) ? e.currency : (state.current?.localCurrency || 'USD');
   $('#expCurr').value = __defCur;
 	  $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
 	document.getElementById('expLocationName').value = e?.locationName || '';
-  if (typeof updateLocLabelState === 'function') updateLocLabelState('exp'); // <--- ×ª×™×§×•×Ÿ: ×¢×“×›×•×Ÿ ×ª×¦×•×’×ª ×”×ª×•×•×™×ª
+  if (typeof updateLocLabelState === 'function') updateLocLabelState('exp'); // <--- תיקון: עדכון תצוגת התווית
 $('#expLocationName').value = e?.locationName || '';
-  updateLocLabelState('exp'); // <--- ×©×•×¨×” ×—×“×©×” ×©× ×•×¡×¤×”
+  updateLocLabelState('exp'); // <--- שורה חדשה שנוספה
 	  try{ updateExpLocationPreview(); }catch(_){ }
 
 	  // Auto-save current location for NEW expenses (prefill quickly, then refresh in background)
@@ -2157,9 +2063,9 @@ $('#expLocationName').value = e?.locationName || '';
 }
 
 async function saveExpense(){
-  // ×‘×“×™×§×” ×›×¤×•×™×” ×©×œ ×ž×™×§×•× ×œ×¤× ×™ ×©×ž×™×¨×”
+  // בדיקה כפויה של מיקום לפני שמירה
   if ($('#expLocationName').value.trim() && !$('#expLat').value) {
-      if(typeof showToast === 'function') // showToast ×‘×•×˜×œ: ×œ× ×ž×—×¤×©×™× ×ž×™×§×•× ××•×˜×•×ž×˜×™×ª ×™×•×ª×¨;
+      if(typeof showToast === 'function') // showToast בוטל: לא מחפשים מיקום אוטומטית יותר;
       await autoFetchCoords('exp');
   }
 
@@ -2229,7 +2135,7 @@ async function saveExpense(){
 
   await FB.updateDoc(ref, { expenses: t.expenses, rates: t.rates });
   $('#expenseModal').close();
-  showToast('×”×”×•×¦××” × ×©×ž×¨×”');
+  showToast('ההוצאה נשמרה');
   await loadTrip();
 }
 
@@ -2244,7 +2150,7 @@ $('#lsReset').addEventListener('click', async ()=>{
 
 // Safe HTML escape
 
-  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('× ×©×œ×— ×ž×™×™×œ ×œ××™×¤×•×¡'); }catch(e){ $('#lsError').textContent = xErr(e); }
+  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
 });
 // ---- Missing sign-in button wiring (added) ----
 (function(){
@@ -2252,7 +2158,7 @@ $('#lsReset').addEventListener('click', async ()=>{
   const doLogin = async (emailSel, passSel, errSel)=>{
     const email = $(emailSel)?.value?.trim();
     const pass  = $(passSel)?.value;
-    if(!email || !pass){ if($(errSel)) $(errSel).textContent = '×× × ×ž×œ× ××™×ž×™×™×œ ×•×¡×™×¡×ž×”'; return; }
+    if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
     try{
       await FB.signInWithEmailAndPassword(auth, email, pass);
       if($(errSel)) $(errSel).textContent = '';
@@ -2280,17 +2186,17 @@ function snippet(text, s, len=60){
   if(!text) return ''; const t = String(text); const idx = t.toLowerCase().indexOf(s);
   if(idx<0) return esc(t.slice(0,len));
   const start = Math.max(0, idx - Math.floor(len/3)); const end = Math.min(t.length, idx + s.length + Math.floor(len/3));
-  const seg = t.slice(start, end); const pre = start>0 ? 'â€¦' : ''; const post = end<t.length ? 'â€¦' : '';
+  const seg = t.slice(start, end); const pre = start>0 ? '…' : ''; const post = end<t.length ? '…' : '';
   return pre + mark(seg, s) + post;
 }
 function matchInfo(t, s){
   let score = 0, where = [];
-  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push({label:`<span class="match-source">×™×¢×“:</span> ${snippet(dst,s)}`, type:'meta', itemId:null}); }
-  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push({label:`<span class="match-source">×¡×•×’×™×:</span> ${snippet(types,s)}`, type:'meta', itemId:null}); }
-  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push({label:`<span class="match-source">×ž×©×ª×ª×¤×™×:</span> ${snippet(people,s)}`, type:'meta', itemId:null}); }
-  const ex = Object.entries(t.expenses||{}); let exHits = 0; ex.forEach(([id, e])=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push({label:`<span class="match-source">×”×•×¦××•×ª:</span> ${snippet(e.desc||e.category||'', s)}`, type:'expense', itemId:id});} });
+  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push({label:`<span class="match-source">יעד:</span> ${snippet(dst,s)}`, type:'meta', itemId:null}); }
+  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push({label:`<span class="match-source">סוגים:</span> ${snippet(types,s)}`, type:'meta', itemId:null}); }
+  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push({label:`<span class="match-source">משתתפים:</span> ${snippet(people,s)}`, type:'meta', itemId:null}); }
+  const ex = Object.entries(t.expenses||{}); let exHits = 0; ex.forEach(([id, e])=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push({label:`<span class="match-source">הוצאות:</span> ${snippet(e.desc||e.category||'', s)}`, type:'expense', itemId:id});} });
   if(exHits) score += Math.min(3, exHits);
-  const jr = Object.entries(t.journal||{}); let jrHits = 0; jr.forEach(([id, j])=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push({label:`<span class="match-source">×™×•×ž×Ÿ:</span> ${snippet(j.text||j.placeName||'', s)}`, type:'journal', itemId:id});} });
+  const jr = Object.entries(t.journal||{}); let jrHits = 0; jr.forEach(([id, j])=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push({label:`<span class="match-source">יומן:</span> ${snippet(j.text||j.placeName||'', s)}`, type:'journal', itemId:id});} });
   if(jrHits) score += Math.min(3, jrHits);
   return { hit: score>0, score, where };
 }
@@ -2305,7 +2211,7 @@ function highlightAndScroll(element, s){
 function searchAndNavigate(tripId, query, type, itemId){
   openTrip(tripId).then(()=>{
     if(type === 'expense'){
-      // "×”×•×¦××•×ª" ×•"×™×•×ž×Ÿ" ×”×•×¡×¨×• ×ž×”×˜××‘×™×; ×”×›×œ ×ž×•×¤×™×¢ ×‘"×”×¦×’ ×”×›×œ"
+      // "הוצאות" ו"יומן" הוסרו מהטאבים; הכל מופיע ב"הצג הכל"
       document.querySelector('#tabs [data-tab="overview"]')?.click();
       setTimeout(()=>{
         const cont = document.querySelector(`#view-overview`) || document.querySelector(`#tblAllTimeline`);
@@ -2347,13 +2253,13 @@ let _rowActionTrip = null; // New global state for trip actions
 
   if (btnDel) btnDel.addEventListener('click', ()=>{
     if (_rowActionExpense) {
-      routeDelete({type:'expense', id:_rowActionExpense.id, message:'×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ×”×•×¦××” ×–×•?'});
+      routeDelete({type:'expense', id:_rowActionExpense.id, message:'האם אתה בטוח שברצונך למחוק הוצאה זו?'});
     }
     else if (_rowActionJournal) {
-      routeDelete({type:'journal', id:_rowActionJournal.id, message:'×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ×¨×™×©×•× ×–×”?'});
+      routeDelete({type:'journal', id:_rowActionJournal.id, message:'האם אתה בטוח שברצונך למחוק רישום זה?'});
     }
     else if (_rowActionTrip) {
-      routeDelete({type:'trip', id:_rowActionTrip.id, message:'×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ×˜×™×•×œ ×–×”? ×¤×¢×•×œ×” ×–×• ××™× ×” ×”×¤×™×›×”.'});
+      routeDelete({type:'trip', id:_rowActionTrip.id, message:'האם אתה בטוח שברצונך למחוק טיול זה? פעולה זו אינה הפיכה.'});
     }
     modal.close(); _rowActionExpense = _rowActionJournal = _rowActionTrip = null;
   });
@@ -2369,7 +2275,7 @@ function routeDelete(opts){
   try {
     const type = opts?.type;
     const id   = opts?.id;
-    const msg  = opts?.message || '×œ××©×¨ ×ž×—×™×§×”?';
+    const msg  = opts?.message || 'לאשר מחיקה?';
     if (!type || !id) return;
     showConfirm(msg, ()=>{
       if (type === 'expense') return deleteExpense(id);
@@ -2398,7 +2304,7 @@ function showConfirm(msg, onYes){
   const m = document.getElementById('confirmDeleteModal');
   if(!m){ if(onYes) onYes(); return; }
   const body = m.querySelector('.body p') || m.querySelector('.body');
-  if(body) body.textContent = msg || '×œ××©×¨?';
+  if(body) body.textContent = msg || 'לאשר?';
   m.showModal();
   m._yesHandler = ()=>{
     try{ onYes && onYes(); } finally { m.close(); }
@@ -2423,7 +2329,7 @@ function showConfirm(msg, onYes){
     expDelBtn.addEventListener('click', () => {
       const expId = document.getElementById('expenseModal')?.dataset?.id;
       if (!expId) return;
-      showConfirm('×œ××©×¨ ×ž×—×™×§×”?', async () => {
+      showConfirm('לאשר מחיקה?', async () => {
         try {
           await deleteExpense(expId);
         } finally {
@@ -2440,7 +2346,7 @@ function showConfirm(msg, onYes){
     jrDelBtn.addEventListener('click', () => {
       const jrId = document.getElementById('journalModal')?.dataset?.id;
       if (!jrId) return;
-      showConfirm('×œ××©×¨ ×ž×—×™×§×”?', async () => {
+      showConfirm('לאשר מחיקה?', async () => {
         try {
           await deleteJournal(jrId);
         } finally {
@@ -2457,7 +2363,7 @@ async function deleteTrip(id) {
   if (!id) return;
   const ref = FB.doc(db, 'trips', id);
   await FB.deleteDoc(ref);
-  showToast('×”×˜×™×•×œ × ×ž×—×§ ×‘×”×¦×œ×—×”');
+  showToast('הטיול נמחק בהצלחה');
   enterHomeMode();
 }
 
@@ -2467,7 +2373,7 @@ function handleGlobalDeleteClicks(e){
   e.preventDefault();
   const expId = document.getElementById('expenseModal')?.dataset?.id;
   if(!expId) return;
-  showConfirm('×œ××©×¨ ×ž×—×™×§×”?', async ()=>{
+  showConfirm('לאשר מחיקה?', async ()=>{
     try{
       // Use the existing, correct delete function
       await deleteExpense(expId);
@@ -2491,7 +2397,7 @@ async function deleteExpense(id){
   if(t.expenses && t.expenses[id]){
     delete t.expenses[id];
     await FB.updateDoc(ref, { expenses: t.expenses });
-    showToast('×”×•×¦××” × ×ž×—×§×”');
+    showToast('הוצאה נמחקה');
     await loadTrip();
   }
 }
@@ -2514,7 +2420,7 @@ async function deleteJournalBulkLocal(ids){
   }
   // 2) Instant re-render (no network)
   renderJournal(state.current, state.journalSort);
-  showToast(`× ×ž×—×§×• ${removed} ×¨×™×©×•×ž×™×`);
+  showToast(`נמחקו ${removed} רישומים`);
   // 3) Background sync (best-effort)
   try{
     const ref = FB.doc(db,'trips', tid);
@@ -2541,7 +2447,7 @@ async function deleteJournal(id){
   if(t.journal && t.journal[id]){
     delete t.journal[id];
     await FB.updateDoc(ref, { journal: t.journal });
-    showToast('×¨×™×©×•× ×™×•×ž×Ÿ × ×ž×—×§');
+    showToast('רישום יומן נמחק');
     await loadTrip();
   }
 }
@@ -2575,7 +2481,7 @@ function handleBarSort(e){
 document.addEventListener('click', handleBarSort);
 
 
-const EXPENSE_CATEGORIES = ['×˜×™×¡×”','×œ×™× ×”','×ª×§×©×•×¨×ª','×¨×›×‘','×‘×™×˜×•×— ×‘×¨×™××•×ª','×ž×–×•×Ÿ - ×ž×¡×¢×“×•×ª / ×¡×•×¤×¨','×§× ×™×•×ª','××˜×¨×§×¦×™×•×ª','××—×¨'];
+const EXPENSE_CATEGORIES = ['טיסה','לינה','תקשורת','רכב','ביטוח בריאות','מזון - מסעדות / סופר','קניות','אטרקציות','אחר'];
 function seedExpenseCategories(){
   const sel = document.getElementById('expCat');
   if(!sel) return;
@@ -2610,7 +2516,7 @@ function applyRateNotes(){
       // Removed the creation and appending of the rate-note div
       // const note = document.createElement('div');
       // note.className = 'rate-note';
-      // note.textContent = `â‚ª${convertedAmountILS.toFixed(2)}`; // Display the converted amount in ILS
+      // note.textContent = `₪${convertedAmountILS.toFixed(2)}`; // Display the converted amount in ILS
       // amountTd.appendChild(note);
     });
   });
@@ -2638,11 +2544,11 @@ function getCurrentLocation(callback) {
         callback(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
-        showToast('×©×’×™××” ×‘×§×‘×œ×ª ×ž×™×§×•×: ' + error.message);
+        showToast('שגיאה בקבלת מיקום: ' + error.message);
       }
     );
   } else {
-    showToast('×”×“×¤×“×¤×Ÿ ××™× ×• ×ª×•×ž×š ×‘-Geolocation.');
+    showToast('הדפדפן אינו תומך ב-Geolocation.');
   }
 }
 
@@ -2668,7 +2574,7 @@ function updateExpLocationPreview(){
     const prev = document.getElementById('expLocationPreview');
     if(!prev) return;
     const name = (document.getElementById('expLocationName')?.value || '').trim();
-    prev.textContent = name ? name : '×ž×™×§×•× × ×©×ž×¨ ××•×˜×•×ž×˜×™×ª';
+    prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
   }catch(_){ }
 }
 async function setExpenseLocation(lat, lng, name, opts){
@@ -2686,7 +2592,7 @@ function updateJrLocationPreview(){
     const prev = document.getElementById('jrLocationPreview');
     if(!prev) return;
     const name = (document.getElementById('jrPlaceName')?.value || '').trim();
-    prev.textContent = name ? name : '×ž×™×§×•× × ×©×ž×¨ ××•×˜×•×ž×˜×™×ª';
+    prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
   }catch(_){ }
 }
 async function setJournalLocation(lat, lng, name, opts){
@@ -2706,8 +2612,8 @@ function openFxDetailsModal(payload){
     const { curr, amountNum, rateToILS, ilsNum } = payload || {};
     const fmtAmt = (n, min=2, max=2) => Number(n||0).toLocaleString('he-IL', { minimumFractionDigits:min, maximumFractionDigits:max });
     const localTxt = `${curr} ${fmtAmt(amountNum)}`;
-    const rateTxt = (rateToILS!=null) ? `1 ${curr} = â‚ª ${fmtAmt(rateToILS,4,4)}` : '×œ× ×–×ž×™×Ÿ';
-    const ilsTxt  = (ilsNum!=null) ? `â‚ª ${fmtAmt(ilsNum)}` : '×œ× ×–×ž×™×Ÿ';
+    const rateTxt = (rateToILS!=null) ? `1 ${curr} = ₪ ${fmtAmt(rateToILS,4,4)}` : 'לא זמין';
+    const ilsTxt  = (ilsNum!=null) ? `₪ ${fmtAmt(ilsNum)}` : 'לא זמין';
     const $l=document.getElementById('fxLocal'); if($l) $l.textContent = localTxt;
     const $r=document.getElementById('fxRate');  if($r) $r.textContent = rateTxt;
     const $i=document.getElementById('fxILS');   if($i) $i.textContent = ilsTxt;
@@ -2727,10 +2633,10 @@ async function searchLocationByName(name, callback, isHebrew) {
       if(emailSpan){ emailSpan.textContent=''; emailSpan.style.display='none'; }
       if(btnLogin) btnLogin.style.display='inline-block';
       const ub=document.getElementById('userBadge'); if(ub) ub.style.display='none';
-      showToast('×œ× × ×ž×¦× ×ž×™×§×•× ×¢×‘×•×¨ ×”×©× ×”×–×”.');
+      showToast('לא נמצא מיקום עבור השם הזה.');
     }
   } catch (e) {
-    showToast('×©×’×™××” ×‘×—×™×¤×•×© ×ž×™×§×•×: ' + e.message);
+    showToast('שגיאה בחיפוש מיקום: ' + e.message);
   }
 }
 
@@ -2740,10 +2646,10 @@ function _cleanPlaceLabel(v){
     let s = String(v || '').trim();
     if(!s) return '';
     s = s
-      .replace(/^×ª×™×§×•×Ÿ\s+/, '')
+      .replace(/^תיקון\s+/, '')
       .replace(/^near\s+/i, '')
-      .replace(/^×œ×™×“\s+/, '')
-      .replace(/\s*,\s*×™×©×¨××œ$/,'')
+      .replace(/^ליד\s+/, '')
+      .replace(/\s*,\s*ישראל$/,'')
       .replace(/\s*,\s*israel$/i,'')
       .trim();
     return s;
@@ -2798,7 +2704,7 @@ function _placeFromReversePayload(data, preferHebrew){
 
     if (poi) return poi;
     if (cityish) return cityish;
-    if (isIsrael) return _cleanPlaceLabel(addr.country || '×™×©×¨××œ');
+    if (isIsrael) return _cleanPlaceLabel(addr.country || 'ישראל');
     return _cleanPlaceLabel(addr.country || data?.display_name || '');
   }catch(_){ return ''; }
 }
@@ -2845,125 +2751,125 @@ const __countryReverseCache = new Map();
 const __placeSearchCache = new Map();
 const __countryCenterCache = new Map();
 const countryCapitalMap = {
-  'israel': { label:'×™×©×¨××œ', capital:'Jerusalem, Israel', lat:31.7683, lng:35.2137 },
-  'france': { label:'×¦×¨×¤×ª', capital:'Paris, France', lat:48.8566, lng:2.3522 },
-  'switzerland': { label:'×©×•×•×™×™×¥', capital:'Bern, Switzerland', lat:46.9480, lng:7.4474 },
-  'italy': { label:'××™×˜×œ×™×”', capital:'Rome, Italy', lat:41.9028, lng:12.4964 },
-  'germany': { label:'×’×¨×ž× ×™×”', capital:'Berlin, Germany', lat:52.5200, lng:13.4050 },
-  'spain': { label:'×¡×¤×¨×“', capital:'Madrid, Spain', lat:40.4168, lng:-3.7038 },
-  'greece': { label:'×™×•×•×Ÿ', capital:'Athens, Greece', lat:37.9838, lng:23.7275 },
-  'austria': { label:'××•×¡×˜×¨×™×”', capital:'Vienna, Austria', lat:48.2082, lng:16.3738 },
-  'czechia': { label:'×¦×³×›×™×”', capital:'Prague, Czechia', lat:50.0755, lng:14.4378 },
-  'hungary': { label:'×”×•× ×’×¨×™×”', capital:'Budapest, Hungary', lat:47.4979, lng:19.0402 },
-  'poland': { label:'×¤×•×œ×™×Ÿ', capital:'Warsaw, Poland', lat:52.2297, lng:21.0122 },
-  'romania': { label:'×¨×•×ž× ×™×”', capital:'Bucharest, Romania', lat:44.4268, lng:26.1025 },
-  'bulgaria': { label:'×‘×•×œ×’×¨×™×”', capital:'Sofia, Bulgaria', lat:42.6977, lng:23.3219 },
-  'croatia': { label:'×§×¨×•××˜×™×”', capital:'Zagreb, Croatia', lat:45.8150, lng:15.9819 },
-  'serbia': { label:'×¡×¨×‘×™×”', capital:'Belgrade, Serbia', lat:44.7866, lng:20.4489 },
-  'denmark': { label:'×“× ×ž×¨×§', capital:'Copenhagen, Denmark', lat:55.6761, lng:12.5683 },
-  'sweden': { label:'×©×•×•×“×™×”', capital:'Stockholm, Sweden', lat:59.3293, lng:18.0686 },
-  'norway': { label:'× ×•×¨×•×•×’×™×”', capital:'Oslo, Norway', lat:59.9139, lng:10.7522 },
-  'united kingdom': { label:'×‘×¨×™×˜× ×™×”', capital:'London, United Kingdom', lat:51.5072, lng:-0.1276 },
-  'thailand': { label:'×ª××™×œ× ×“', capital:'Bangkok, Thailand', lat:13.7563, lng:100.5018 },
-  'turkey': { label:'×˜×•×¨×§×™×”', capital:'Ankara, Turkey', lat:39.9334, lng:32.8597 },
-  'japan': { label:'×™×¤×Ÿ', capital:'Tokyo, Japan', lat:35.6762, lng:139.6503 },
-  'china': { label:'×¡×™×Ÿ', capital:'Beijing, China', lat:39.9042, lng:116.4074 },
-  'hong kong': { label:'×”×•× ×’ ×§×•× ×’', capital:'Hong Kong', lat:22.3193, lng:114.1694 },
-  'vietnam': { label:'×•×™××˜× ×', capital:'Hanoi, Vietnam', lat:21.0278, lng:105.8342 },
-  'singapore': { label:'×¡×™× ×’×¤×•×¨', capital:'Singapore', lat:1.3521, lng:103.8198 },
-  'united arab emirates': { label:'××™×—×•×“ ×”××ž×™×¨×•×™×•×ª', capital:'Abu Dhabi, United Arab Emirates', lat:24.4539, lng:54.3773 },
-  'canada': { label:'×§× ×“×”', capital:'Ottawa, Canada', lat:45.4215, lng:-75.6972 },
-  'mexico': { label:'×ž×§×¡×™×§×•', capital:'Mexico City, Mexico', lat:19.4326, lng:-99.1332 },
-  'australia': { label:'××•×¡×˜×¨×œ×™×”', capital:'Canberra, Australia', lat:-35.2809, lng:149.1300 },
-  'georgia': { label:'×’××•×¨×’×™×”', capital:'Tbilisi, Georgia', lat:41.7151, lng:44.8271 },
-  'cyprus': { label:'×§×¤×¨×™×¡×™×Ÿ', capital:'Nicosia, Cyprus', lat:35.1856, lng:33.3823 },
-  'usa': { label:'××¨×¦×•×ª ×”×‘×¨×™×ª', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 },
-  'united states': { label:'××¨×¦×•×ª ×”×‘×¨×™×ª', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 }
+  'israel': { label:'ישראל', capital:'Jerusalem, Israel', lat:31.7683, lng:35.2137 },
+  'france': { label:'צרפת', capital:'Paris, France', lat:48.8566, lng:2.3522 },
+  'switzerland': { label:'שווייץ', capital:'Bern, Switzerland', lat:46.9480, lng:7.4474 },
+  'italy': { label:'איטליה', capital:'Rome, Italy', lat:41.9028, lng:12.4964 },
+  'germany': { label:'גרמניה', capital:'Berlin, Germany', lat:52.5200, lng:13.4050 },
+  'spain': { label:'ספרד', capital:'Madrid, Spain', lat:40.4168, lng:-3.7038 },
+  'greece': { label:'יוון', capital:'Athens, Greece', lat:37.9838, lng:23.7275 },
+  'austria': { label:'אוסטריה', capital:'Vienna, Austria', lat:48.2082, lng:16.3738 },
+  'czechia': { label:'צ׳כיה', capital:'Prague, Czechia', lat:50.0755, lng:14.4378 },
+  'hungary': { label:'הונגריה', capital:'Budapest, Hungary', lat:47.4979, lng:19.0402 },
+  'poland': { label:'פולין', capital:'Warsaw, Poland', lat:52.2297, lng:21.0122 },
+  'romania': { label:'רומניה', capital:'Bucharest, Romania', lat:44.4268, lng:26.1025 },
+  'bulgaria': { label:'בולגריה', capital:'Sofia, Bulgaria', lat:42.6977, lng:23.3219 },
+  'croatia': { label:'קרואטיה', capital:'Zagreb, Croatia', lat:45.8150, lng:15.9819 },
+  'serbia': { label:'סרביה', capital:'Belgrade, Serbia', lat:44.7866, lng:20.4489 },
+  'denmark': { label:'דנמרק', capital:'Copenhagen, Denmark', lat:55.6761, lng:12.5683 },
+  'sweden': { label:'שוודיה', capital:'Stockholm, Sweden', lat:59.3293, lng:18.0686 },
+  'norway': { label:'נורווגיה', capital:'Oslo, Norway', lat:59.9139, lng:10.7522 },
+  'united kingdom': { label:'בריטניה', capital:'London, United Kingdom', lat:51.5072, lng:-0.1276 },
+  'thailand': { label:'תאילנד', capital:'Bangkok, Thailand', lat:13.7563, lng:100.5018 },
+  'turkey': { label:'טורקיה', capital:'Ankara, Turkey', lat:39.9334, lng:32.8597 },
+  'japan': { label:'יפן', capital:'Tokyo, Japan', lat:35.6762, lng:139.6503 },
+  'china': { label:'סין', capital:'Beijing, China', lat:39.9042, lng:116.4074 },
+  'hong kong': { label:'הונג קונג', capital:'Hong Kong', lat:22.3193, lng:114.1694 },
+  'vietnam': { label:'ויאטנם', capital:'Hanoi, Vietnam', lat:21.0278, lng:105.8342 },
+  'singapore': { label:'סינגפור', capital:'Singapore', lat:1.3521, lng:103.8198 },
+  'united arab emirates': { label:'איחוד האמירויות', capital:'Abu Dhabi, United Arab Emirates', lat:24.4539, lng:54.3773 },
+  'canada': { label:'קנדה', capital:'Ottawa, Canada', lat:45.4215, lng:-75.6972 },
+  'mexico': { label:'מקסיקו', capital:'Mexico City, Mexico', lat:19.4326, lng:-99.1332 },
+  'australia': { label:'אוסטרליה', capital:'Canberra, Australia', lat:-35.2809, lng:149.1300 },
+  'georgia': { label:'גאורגיה', capital:'Tbilisi, Georgia', lat:41.7151, lng:44.8271 },
+  'cyprus': { label:'קפריסין', capital:'Nicosia, Cyprus', lat:35.1856, lng:33.3823 },
+  'usa': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 },
+  'united states': { label:'ארצות הברית', capital:'Washington, DC, United States', lat:38.9072, lng:-77.0369 }
 };
 const countryAliasMap = {
-  '×™×©×¨××œ':'israel','israel':'israel',
-  '×¦×¨×¤×ª':'france','france':'france',
-  '×©×•×•×™×¥':'switzerland','×©×•×•×™×™×¥':'switzerland','switzerland':'switzerland',
-  '××™×˜×œ×™×”':'italy','italy':'italy',
-  '×’×¨×ž× ×™×”':'germany','germany':'germany',
-  '×¡×¤×¨×“':'spain','spain':'spain',
-  '×™×•×•×Ÿ':'greece','greece':'greece',
-  '××•×¡×˜×¨×™×”':'austria','austria':'austria',
-  '×¦×›×™×”':'czechia','×¦×³×›×™×”':'czechia','×¦×›×³×™×”':'czechia','czechia':'czechia','czech':'czechia',
-  '×”×•× ×’×¨×™×”':'hungary','hungary':'hungary',
-  '×¤×•×œ×™×Ÿ':'poland','poland':'poland',
-  '×¨×•×ž× ×™×”':'romania','romania':'romania',
-  '×‘×•×œ×’×¨×™×”':'bulgaria','bulgaria':'bulgaria',
-  '×§×¨×•××˜×™×”':'croatia','croatia':'croatia',
-  '×¡×¨×‘×™×”':'serbia','serbia':'serbia',
-  '×“× ×ž×¨×§':'denmark','denmark':'denmark',
-  '×©×•×•×“×™×”':'sweden','×©×‘×“×™×”':'sweden','sweden':'sweden',
-  '× ×•×¨×•×•×’×™×”':'norway','× ×•×¨×‘×’×™×”':'norway','norway':'norway',
-  '×‘×¨×™×˜× ×™×”':'united kingdom','×× ×’×œ×™×”':'united kingdom','uk':'united kingdom','united kingdom':'united kingdom','britain':'united kingdom','england':'united kingdom',
-  '×ª××™×œ× ×“':'thailand','thailand':'thailand',
-  '×˜×•×¨×§×™×”':'turkey','turkey':'turkey',
-  '×™×¤×Ÿ':'japan','japan':'japan',
-  '×¡×™×Ÿ':'china','china':'china',
-  '×”×•× ×’ ×§×•× ×’':'hong kong','hong kong':'hong kong',
-  '×•×™××˜× ×':'vietnam','×•×™×™×˜× ××':'vietnam','vietnam':'vietnam',
-  '×¡×™× ×’×¤×•×¨':'singapore','singapore':'singapore',
-  '××™×—×•×“ ×”××ž×™×¨×•×™×•×ª':'united arab emirates','××™×—×•×“ ×”××ž×™×¨×•×™×•×ª ×”×¢×¨×‘×™×•×ª':'united arab emirates','uae':'united arab emirates','united arab emirates':'united arab emirates',
-  '×§× ×“×”':'canada','canada':'canada',
-  '×ž×§×¡×™×§×•':'mexico','mexico':'mexico',
-  '××•×¡×˜×¨×œ×™×”':'australia','australia':'australia',
-  '×’××•×¨×’×™×”':'georgia','×’×™××•×¨×’×™×”':'georgia','georgia':'georgia',
-  '×§×¤×¨×™×¡×™×Ÿ':'cyprus','cyprus':'cyprus','cypriot':'cyprus',
-  '××¨×”×‘':'usa','××¨×”×´×‘':'usa','××¨×”"×‘':'usa','××¨×¦×•×ª ×”×‘×¨×™×ª':'usa','usa':'usa','us':'usa','united states':'usa','united states of america':'usa','america':'usa'
+  'ישראל':'israel','israel':'israel',
+  'צרפת':'france','france':'france',
+  'שוויץ':'switzerland','שווייץ':'switzerland','switzerland':'switzerland',
+  'איטליה':'italy','italy':'italy',
+  'גרמניה':'germany','germany':'germany',
+  'ספרד':'spain','spain':'spain',
+  'יוון':'greece','greece':'greece',
+  'אוסטריה':'austria','austria':'austria',
+  'צכיה':'czechia','צ׳כיה':'czechia','צכ׳יה':'czechia','czechia':'czechia','czech':'czechia',
+  'הונגריה':'hungary','hungary':'hungary',
+  'פולין':'poland','poland':'poland',
+  'רומניה':'romania','romania':'romania',
+  'בולגריה':'bulgaria','bulgaria':'bulgaria',
+  'קרואטיה':'croatia','croatia':'croatia',
+  'סרביה':'serbia','serbia':'serbia',
+  'דנמרק':'denmark','denmark':'denmark',
+  'שוודיה':'sweden','שבדיה':'sweden','sweden':'sweden',
+  'נורווגיה':'norway','נורבגיה':'norway','norway':'norway',
+  'בריטניה':'united kingdom','אנגליה':'united kingdom','uk':'united kingdom','united kingdom':'united kingdom','britain':'united kingdom','england':'united kingdom',
+  'תאילנד':'thailand','thailand':'thailand',
+  'טורקיה':'turkey','turkey':'turkey',
+  'יפן':'japan','japan':'japan',
+  'סין':'china','china':'china',
+  'הונג קונג':'hong kong','hong kong':'hong kong',
+  'ויאטנם':'vietnam','וייטנאם':'vietnam','vietnam':'vietnam',
+  'סינגפור':'singapore','singapore':'singapore',
+  'איחוד האמירויות':'united arab emirates','איחוד האמירויות הערביות':'united arab emirates','uae':'united arab emirates','united arab emirates':'united arab emirates',
+  'קנדה':'canada','canada':'canada',
+  'מקסיקו':'mexico','mexico':'mexico',
+  'אוסטרליה':'australia','australia':'australia',
+  'גאורגיה':'georgia','גיאורגיה':'georgia','georgia':'georgia',
+  'קפריסין':'cyprus','cyprus':'cyprus','cypriot':'cyprus',
+  'ארהב':'usa','ארה״ב':'usa','ארה"ב':'usa','ארצות הברית':'usa','usa':'usa','us':'usa','united states':'usa','united states of america':'usa','america':'usa'
 };
 const placeAliasMap = {
-  '×œ×¨× ×§×”':'cyprus','larnaca':'cyprus','larnaka':'cyprus','larnaca':'cyprus',
-  '× ×™×§×•×¡×™×”':'cyprus','nicosia':'cyprus',
-  '×¤××¤×•×¡':'cyprus','paphos':'cyprus',
-  '××™×” × ××¤×”':'cyprus','××™×” × ××¤×”, ×§×¤×¨×™×¡×™×Ÿ':'cyprus','ayia napa':'cyprus','agia napa':'cyprus',
-  '×¤×¨×•×˜×¨××¡':'cyprus','protaras':'cyprus',
-  '×œ×™×ž×¡×•×œ':'cyprus','limassol':'cyprus',
-  '×§×¤×¨×™×¡×™×Ÿ ×”×¦×¤×•× ×™×ª':'cyprus','×¦×¤×•×Ÿ ×§×¤×¨×™×¡×™×Ÿ':'cyprus'
+  'לרנקה':'cyprus','larnaca':'cyprus','larnaka':'cyprus','larnaca':'cyprus',
+  'ניקוסיה':'cyprus','nicosia':'cyprus',
+  'פאפוס':'cyprus','paphos':'cyprus',
+  'איה נאפה':'cyprus','איה נאפה, קפריסין':'cyprus','ayia napa':'cyprus','agia napa':'cyprus',
+  'פרוטראס':'cyprus','protaras':'cyprus',
+  'לימסול':'cyprus','limassol':'cyprus',
+  'קפריסין הצפונית':'cyprus','צפון קפריסין':'cyprus'
 };
 const usStateMap = {
-  'new york': { label:'××¨×”"×‘ - × ×™×• ×™×•×¨×§', center:{ lat:42.9538, lng:-75.5268 } },
-  'florida': { label:'××¨×”"×‘ - ×¤×œ×•×¨×™×“×”', center:{ lat:27.6648, lng:-81.5158 } },
-  'california': { label:'××¨×”"×‘ - ×§×œ×™×¤×•×¨× ×™×”', center:{ lat:36.7783, lng:-119.4179 } },
-  'nevada': { label:'××¨×”"×‘ - × ×‘×“×”', center:{ lat:38.8026, lng:-116.4194 } },
-  'new jersey': { label:'××¨×”"×‘ - × ×™×• ×’×³×¨×–×™', center:{ lat:40.0583, lng:-74.4057 } },
-  'massachusetts': { label:'××¨×”"×‘ - ×ž×¡×¦×³×•×¡×˜×¡', center:{ lat:42.4072, lng:-71.3824 } },
-  'pennsylvania': { label:'××¨×”"×‘ - ×¤× ×¡×™×œ×‘× ×™×”', center:{ lat:41.2033, lng:-77.1945 } },
-  'virginia': { label:'××¨×”"×‘ - ×•×™×¨×’×³×™× ×™×”', center:{ lat:37.4316, lng:-78.6569 } },
-  'washington': { label:'××¨×”"×‘ - ×•×•×©×™× ×’×˜×•×Ÿ', center:{ lat:47.7511, lng:-120.7401 } },
-  'district of columbia': { label:'××¨×”"×‘ - ×•×•×©×™× ×’×˜×•×Ÿ ×“×™.×¡×™.', center:{ lat:38.9072, lng:-77.0369 } }
+  'new york': { label:'ארה"ב - ניו יורק', center:{ lat:42.9538, lng:-75.5268 } },
+  'florida': { label:'ארה"ב - פלורידה', center:{ lat:27.6648, lng:-81.5158 } },
+  'california': { label:'ארה"ב - קליפורניה', center:{ lat:36.7783, lng:-119.4179 } },
+  'nevada': { label:'ארה"ב - נבדה', center:{ lat:38.8026, lng:-116.4194 } },
+  'new jersey': { label:'ארה"ב - ניו ג׳רזי', center:{ lat:40.0583, lng:-74.4057 } },
+  'massachusetts': { label:'ארה"ב - מסצ׳וסטס', center:{ lat:42.4072, lng:-71.3824 } },
+  'pennsylvania': { label:'ארה"ב - פנסילבניה', center:{ lat:41.2033, lng:-77.1945 } },
+  'virginia': { label:'ארה"ב - וירג׳יניה', center:{ lat:37.4316, lng:-78.6569 } },
+  'washington': { label:'ארה"ב - וושינגטון', center:{ lat:47.7511, lng:-120.7401 } },
+  'district of columbia': { label:'ארה"ב - וושינגטון די.סי.', center:{ lat:38.9072, lng:-77.0369 } }
 };
 const usStateAliasMap = {
-  'new york':'new york','ny':'new york','× ×™×• ×™×•×¨×§':'new york',
-  'florida':'florida','fl':'florida','×¤×œ×•×¨×™×“×”':'florida',
-  'california':'california','ca':'california','×§×œ×™×¤×•×¨× ×™×”':'california',
-  'nevada':'nevada','nv':'nevada','× ×‘×“×”':'nevada','las vegas':'nevada','×œ××¡ ×•×’××¡':'nevada',
-  'new jersey':'new jersey','nj':'new jersey','× ×™×• ×’×³×¨×–×™':'new jersey','× ×™×• ×’×¨×–×™':'new jersey','newark':'new jersey',
-  'massachusetts':'massachusetts','ma':'massachusetts','×ž×¡×¦×³×•×¡×˜×¡':'massachusetts','boston':'massachusetts','×‘×•×¡×˜×•×Ÿ':'massachusetts',
-  'pennsylvania':'pennsylvania','pa':'pennsylvania','×¤× ×¡×™×œ×‘× ×™×”':'pennsylvania','×¤×™×œ×“×œ×¤×™×”':'pennsylvania','philadelphia':'pennsylvania',
-  'virginia':'virginia','va':'virginia','×•×™×¨×’×³×™× ×™×”':'virginia',
-  'washington':'washington','wa':'washington','washington state':'washington','×ž×“×™× ×ª ×•×•×©×™× ×’×˜×•×Ÿ':'washington','×•×•×©×™× ×’×˜×•×Ÿ':'washington','seattle':'washington','×¡×™××˜×œ':'washington',
-  'district of columbia':'district of columbia','dc':'district of columbia','washington dc':'district of columbia','washington d c':'district of columbia','washington, dc':'district of columbia','×•×•×©×™× ×’×˜×•×Ÿ ×“×™ ×¡×™':'district of columbia','×•×•×©×™× ×’×˜×•×Ÿ ×“×™.×¡×™.':'district of columbia','×•×•×©×™× ×’×˜×•×Ÿ ×“×™ ×¡×™':'district of columbia'
+  'new york':'new york','ny':'new york','ניו יורק':'new york',
+  'florida':'florida','fl':'florida','פלורידה':'florida',
+  'california':'california','ca':'california','קליפורניה':'california',
+  'nevada':'nevada','nv':'nevada','נבדה':'nevada','las vegas':'nevada','לאס וגאס':'nevada',
+  'new jersey':'new jersey','nj':'new jersey','ניו ג׳רזי':'new jersey','ניו גרזי':'new jersey','newark':'new jersey',
+  'massachusetts':'massachusetts','ma':'massachusetts','מסצ׳וסטס':'massachusetts','boston':'massachusetts','בוסטון':'massachusetts',
+  'pennsylvania':'pennsylvania','pa':'pennsylvania','פנסילבניה':'pennsylvania','פילדלפיה':'pennsylvania','philadelphia':'pennsylvania',
+  'virginia':'virginia','va':'virginia','וירג׳יניה':'virginia',
+  'washington':'washington','wa':'washington','washington state':'washington','מדינת וושינגטון':'washington','וושינגטון':'washington','seattle':'washington','סיאטל':'washington',
+  'district of columbia':'district of columbia','dc':'district of columbia','washington dc':'district of columbia','washington d c':'district of columbia','washington, dc':'district of columbia','וושינגטון די סי':'district of columbia','וושינגטון די.סי.':'district of columbia','וושינגטון די סי':'district of columbia'
 };
 function _cleanCountryLabel(v){
   return String(v || '')
     .replace(/^near\s+/i, '')
-    .replace(/^×œ×™×“\s+/, '')
+    .replace(/^ליד\s+/, '')
     .trim();
 }
 function normalizeCountryKey(value){
   const raw = _cleanCountryLabel(value).toLowerCase()
-    .replace(/[×³×´"'`]/g,'')
+    .replace(/[׳״"'`]/g,'')
     .replace(/\s+/g,' ')
     .trim();
   return countryAliasMap[raw] || raw;
 }
 function normalizePlaceKey(value){
   return _cleanCountryLabel(value).toLowerCase()
-    .replace(/[×³×´"'`]/g,'')
+    .replace(/[׳״"'`]/g,'')
     .replace(/\s+/g,' ')
     .trim();
 }
@@ -3163,15 +3069,15 @@ async function renderTripMapView(trips, renderToken){
   list.innerHTML = `
     <div class="trip-map-screen">
       <div class="trip-map-topbar">
-        <button id="btnExitTripMap" class="btn">×—×–×¨×” ×œ×ª×¦×•×’×” ×¨×’×™×œ×”</button>
-        <div class="trip-map-title">×ž×¤×ª ×”×ž×“×™× ×•×ª ×©×œ×™</div>
+        <button id="btnExitTripMap" class="btn">חזרה לתצוגה רגילה</button>
+        <div class="trip-map-title">מפת המדינות שלי</div>
       </div>
       <div class="trip-list-map-shell">
-        <div id="tripListMap" class="trip-list-map" aria-label="×ž×¤×ª ×ž×“×™× ×•×ª"></div>
+        <div id="tripListMap" class="trip-list-map" aria-label="מפת מדינות"></div>
         <div id="countryTripsModal" class="country-trips-modal" hidden>
           <div class="country-trips-backdrop" data-country-modal-close></div>
           <div class="country-trips-dialog" role="dialog" aria-modal="true" aria-labelledby="countryTripsTitle">
-            <button type="button" class="country-trips-close" aria-label="×¡×’×•×¨" data-country-modal-close>Ã—</button>
+            <button type="button" class="country-trips-close" aria-label="סגור" data-country-modal-close>×</button>
             <div id="countryTripsTitle" class="country-trips-title"></div>
             <div id="countryTripsList" class="country-trips-list"></div>
           </div>
@@ -3201,12 +3107,12 @@ async function renderTripMapView(trips, renderToken){
   window.addEventListener('keydown', state._countryTripsModalEscHandler);
   function openCountryTripsModal(group){
     if(!countryTripsModal || !countryTripsTitle || !countryTripsList || !group) return;
-    countryTripsTitle.textContent = `${group.country} Â· ${group.count} × ×¡×™×¢×•×ª`;
+    countryTripsTitle.textContent = `${group.country} · ${group.count} נסיעות`;
     countryTripsList.innerHTML = group.trips.map(trip=>`
       <button class="btn country-trips-item" data-trip-country-open="${esc(trip.id)}">
-        <strong>${esc(trip.destination || '×œ×œ× ×™×¢×“')}</strong>
+        <strong>${esc(trip.destination || 'ללא יעד')}</strong>
         <span>${esc(`${fmtDate(trip.start)} - ${fmtDate(trip.end)}`)}</span>
-        <span>${esc((Array.isArray(trip.people) && trip.people.length) ? trip.people.join(', ') : '×œ×œ× ×ž×©×ª×ª×¤×™×')}</span>
+        <span>${esc((Array.isArray(trip.people) && trip.people.length) ? trip.people.join(', ') : 'ללא משתתפים')}</span>
       </button>
     `).join('');
     bindCountryListActions(countryTripsList);
@@ -3219,12 +3125,12 @@ async function renderTripMapView(trips, renderToken){
   if(renderToken !== state._tripListRenderToken) return;
   if(!state.maps.home){
     state.maps.home = safeInitMap('tripListMap', { zoomControl: true });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' }).addTo(state.maps.home);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.home);
   } else {
     const existing = document.getElementById('tripListMap');
     if(existing && !existing._leaflet_map){
       state.maps.home = safeInitMap('tripListMap', { zoomControl: true });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' }).addTo(state.maps.home);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.home);
     }
   }
   const map = state.maps.home;
@@ -3265,7 +3171,7 @@ function _numFromTitleMaybe(s){
     // remove currency codes/symbols and normalize commas
     const cleaned = t
       .replace(/[A-Z]{2,5}/g,' ')
-      .replace(/[â‚ª$â‚¬Â£Â¥â‚©â‚½â‚¹â‚ºâ‚«â‚´â‚¦â‚²â‚±â‚¡â‚­â‚¸â‚¼â‚¾â‚¿]/g,' ')
+      .replace(/[₪$€£¥₩₽₹₺₫₴₦₲₱₡₭₸₼₾₿]/g,' ')
       .replace(/,/g,'')
       .replace(/\s+/g,'')
       .trim();
@@ -3383,7 +3289,7 @@ function openMapSelectModal(lat, lng) {
   const modal = $('#mapSelectModal');
   modal.showModal();
   state.maps.select = L.map('selectMap').setView([lat || 32.0853, lng || 34.7818], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' }).addTo(state.maps.select);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.select);
   state.maps.select.invalidateSize();
 
   if (lat && lng) {
@@ -3412,7 +3318,7 @@ $('#selectMapSave').addEventListener('click', async () => {
 	      const name = await reverseGeocode(lat, lng);
 	      await setExpenseLocation(lat, lng, name, {persist:true});
 	      try{ const inEdit = document.getElementById('expLocationNameEdit'); if(inEdit) inEdit.value = (document.getElementById('expLocationName')?.value||''); }catch(_){ }
-    // --- ×§×•×“ ×—×“×© (×œ××—×¨ ×”×ª×™×§×•×Ÿ) ---
+    // --- קוד חדש (לאחר התיקון) ---
     } else if (state.maps.currentModal === 'journal') {
       try{
         const displayName = await reverseGeocode(lat, lng);
@@ -3452,7 +3358,7 @@ $('#selectMapCancel').addEventListener('click', () => {
       getCurrentLocation(async (lat, lng) => {
         const name = await reverseGeocode(lat, lng);
         await setExpenseLocation(lat, lng, name, {persist:true});
-        showToast('×”×ž×™×§×•× ×”× ×•×›×—×™ × ×©×ž×¨.');
+        showToast('המיקום הנוכחי נשמר.');
       });
     });
   }
@@ -3592,7 +3498,7 @@ async function saveJournal() {
 
   await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
   $('#journalModal').close();
-  showToast('×¨×™×©×•× ×™×•×ž×Ÿ × ×©×ž×¨');
+  showToast('רישום יומן נשמר');
   await loadTrip();
 }
 
@@ -3612,7 +3518,7 @@ async function saveJournal() {
       getCurrentLocation(async (lat, lng) => {
         const name = await reverseGeocode(lat, lng);
         await setJournalLocation(lat, lng, name, {persist:true});
-        showToast('×”×ž×™×§×•× ×”× ×•×›×—×™ × ×©×ž×¨.');
+        showToast('המיקום הנוכחי נשמר.');
       });
     });
   }
@@ -3747,7 +3653,7 @@ async function saveMetaChanges() {
         budget,
         rates: lockedRates
     });
-    showToast('× ×©×ž×¨');
+    showToast('נשמר');
     state.isDirty = false;
     await loadTrip();
 }
@@ -3812,17 +3718,17 @@ async function ensureHtml2Canvas(){
 // Format helpers for meta
 function kvRowsFromMeta(trip){
   const rows = [];
-  rows.push({ field:'יעד', value: esc(trip.destination||'') });
-  rows.push({ field:'תאריכים', value: `${fmtDate(trip.start)} - ${fmtDate(trip.end)}` });
-  if (trip.people && trip.people.length) rows.push({ field:'משתתפים', value: esc(trip.people.join(', ')) });
-  if (trip.types && trip.types.length) rows.push({ field:'סוג טיול', value: esc(trip.types.join(', ')) });
+  rows.push({ שדה:'יעד', ערך: esc(trip.destination||'') });
+  rows.push({ שדה:'תאריכים', ערך: `${fmtDate(trip.start)} – ${fmtDate(trip.end)}` });
+  if (trip.people && trip.people.length) rows.push({ שדה:'משתתפים', ערך: esc(trip.people.join(', ')) });
+  if (trip.types && trip.types.length) rows.push({ שדה:'סוג טיול', ערך: esc(trip.types.join(', ')) });
   // Budget (flatten one level)
   if (trip.budget && typeof trip.budget === 'object'){
     const pairs = [];
     if (Number(trip.budget.USD) > 0) pairs.push(`USD: ${formatInt(trip.budget.USD)}`);
     if (Number(trip.budget.EUR) > 0) pairs.push(`EUR: ${formatInt(trip.budget.EUR)}`);
     if (Number(trip.budget.ILS) > 0) pairs.push(`ILS: ${formatInt(trip.budget.ILS)}`);
-    if (pairs.length) rows.push({ field:'תקציב', value: pairs.join(' | ') });
+    if (pairs.length) rows.push({ שדה:'תקציב', ערך: pairs.join(' | ') });
   }
   // Rates
   if (trip.rates && typeof trip.rates === 'object'){
@@ -3830,7 +3736,7 @@ function kvRowsFromMeta(trip){
     if (trip.rates.USDILS) parts.push(`USDILS: ${trip.rates.USDILS}`);
     if (trip.rates.USDEUR) parts.push(`USDEUR: ${trip.rates.USDEUR}`);
     if (trip.rates.USDLocal) parts.push(`USDLocal: ${trip.rates.USDLocal}`);
-    if (parts.length) rows.push({ field:'שערי מטבע', value: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
+    if (parts.length) rows.push({ שדה:'שערי מטבע', ערך: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
   }
   return rows;
 }
@@ -3838,10 +3744,10 @@ function kvRowsFromMeta(trip){
 // override PDF to always include all sections
 async function exportPDF(){
   const t = currentTrip();
-  if(!t.id){ toast('×¤×ª×— × ×¡×™×¢×”'); return; }
+  if(!t.id){ toast('פתח נסיעה'); return; }
   const ok1 = await ensureJsPDF();
   const ok2 = await ensureHtml2Canvas();
-  if(!ok1 || !ok2){ toast('×‘×¢×™×” ×‘×˜×¢×™× ×ª ×¡×¤×¨×™×•×ª PDF'); return; }
+  if(!ok1 || !ok2){ toast('בעיה בטעינת ספריות PDF'); return; }
 
   const { jsPDF } = window.jspdf || window;
   const doc = new jsPDF({orientation:'p', unit:'pt', format:'a4'});
@@ -3870,35 +3776,21 @@ async function exportPDF(){
 // override Excel
 async function exportExcel(){
   const t = currentTrip();
-  if(!t.id){ toast('×¤×ª×— × ×¡×™×¢×”'); return; }
-  const ok = await ensureXLSX(); if(!ok){ toast('×‘×¢×™×” ×‘×™×™×¦×•× Excel'); return; }
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureXLSX(); if(!ok){ toast('בעיה בייצוא Excel'); return; }
   const wb = XLSX.utils.book_new();
 
   const meta = kvRowsFromMeta(t);
   const s0 = XLSX.utils.json_to_sheet(meta);
-  XLSX.utils.book_append_sheet(wb, s0, '× ×ª×•× ×™ × ×¡×™×¢×”');
+  XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
 
-  const jr = Object.values(t.journal || {})
-    .sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''))
-    .map(j=>({
-      date: fmtDateTime(j.dateIso || j.createdAt),
-      title: (j.title || ''),
-      description: j.text || ''
-    }));
+  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), כותרת:(j.title||''), תיאור:j.text||'' }));
   const s1 = XLSX.utils.json_to_sheet(jr);
-  XLSX.utils.book_append_sheet(wb, s1, '×™×•×ž×Ÿ ×™×•×ž×™');
+  XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
 
-  const ex = Object.values(t.expenses || {})
-    .sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||''))
-    .map(e=>({
-      description: e.desc || '',
-      category: e.category || '',
-      amount: e.amount || '',
-      currency: e.currency || '',
-      date: fmtDateTime(e.dateIso || e.createdAt)
-    }));
+  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:e.amount||'', מטבע:e.currency||'', תאריך:fmtDateTime(e.dateIso || e.createdAt)}));
   const s2 = XLSX.utils.json_to_sheet(ex);
-  XLSX.utils.book_append_sheet(wb, s2, '×”×•×¦××•×ª');
+  XLSX.utils.book_append_sheet(wb, s2, 'הוצאות');
 
   const fn = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.xlsx`;
   XLSX.writeFile(wb, fn);
@@ -3907,21 +3799,21 @@ async function exportExcel(){
 // override Word
 async function exportWord(){
   const t = currentTrip();
-  if(!t.id){ toast('×¤×ª×— × ×¡×™×¢×”'); return; }
-  const ok = await ensureDOCX(); if(!ok){ toast('×‘×¢×™×” ×‘×™×™×¦×•× Word'); return; }
+  if(!t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
   const { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
 
   const metaRows = kvRowsFromMeta(t).map(r =>
     new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(r.field || '')]}),
-      new TableCell({ children:[new Paragraph(String(r.value || ''))]}),
+      new TableCell({ children:[new Paragraph(r['שדה'])]}),
+      new TableCell({ children:[new Paragraph(String(r['ערך']))]}),
     ]})
   );
   const metaTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'×©×“×”', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×¢×¨×š', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'שדה', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'ערך', alignment: AlignmentType.CENTER})]}),
     ]}), ...metaRows ]
   });
 
@@ -3937,29 +3829,29 @@ async function exportWord(){
   const jrTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'×ª××¨×™×š', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×›×•×ª×¨×ª', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×ª×™××•×¨', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'כותרת', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
     ]}), ...journalRows ]
   });
 
   const exRows = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e =>
     new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}), // 1. ×ª××¨×™×š
-      new TableCell({ children:[new Paragraph(e.currency||'')]}),                               // 2. ×ž×˜×‘×¢
-      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),                       // 3. ×¡×›×•×
-      new TableCell({ children:[new Paragraph(e.category||'')]}),                               // 4. ×§×˜×’×•×¨×™×”
-      new TableCell({ children:[new Paragraph(stripLinks(e.desc||''))]}),                                   // 5. ×ª×™××•×¨
+      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}), // 1. תאריך
+      new TableCell({ children:[new Paragraph(e.currency||'')]}),                               // 2. מטבע
+      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),                       // 3. סכום
+      new TableCell({ children:[new Paragraph(e.category||'')]}),                               // 4. קטגוריה
+      new TableCell({ children:[new Paragraph(stripLinks(e.desc||''))]}),                                   // 5. תיאור
     ]})
   );
   const exTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'×ª××¨×™×š', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×ž×˜×‘×¢', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×¡×›×•×', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×§×˜×’×•×¨×™×”', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'×ª×™××•×¨', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'מטבע', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'סכום', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'קטגוריה', alignment: AlignmentType.CENTER})]}),
+      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
     ]}), ...exRows ]
   });
 
@@ -3967,17 +3859,17 @@ async function exportWord(){
     sections:[{
       properties:{},
       children:[
-        // ×›×•×ª×¨×ª ×¨××©×™×ª: ×©×•× ×ª×” ×œ"×”×˜×™×•×œ ×©×œ×™ ×œ[×™×¢×“]"
-        new Paragraph({ text:`×”×˜×™×•×œ ×©×œ×™ ×œ${t.destination||'×”×ž×¨×›×–'}`, heading: HeadingLevel.TITLE }),
-        new Paragraph({ text:`${fmtDate(t.start)} â€“ ${fmtDate(t.end)}` }),
-        // ×›×•×ª×¨×ª ×ž×©× ×”: "× ×ª×•× ×™ × ×¡×™×¢×”" - ×”×•×¡×¤×ª ×™×™×©×•×¨ ×œ×™×ž×™×Ÿ
-        new Paragraph({ text:'× ×ª×•× ×™ × ×¡×™×¢×”', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
+        // כותרת ראשית: שונתה ל"הטיול שלי ל[יעד]"
+        new Paragraph({ text:`הטיול שלי ל${t.destination||'המרכז'}`, heading: HeadingLevel.TITLE }),
+        new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
+        // כותרת משנה: "נתוני נסיעה" - הוספת יישור לימין
+        new Paragraph({ text:'נתוני נסיעה', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         metaTable,
-        // ×›×•×ª×¨×ª ×ž×©× ×”: "×™×•×ž×Ÿ ×™×•×ž×™" - ×”×•×¦×ž×“×” ×œ×™×ž×™×Ÿ
-        new Paragraph({ text:'×™×•×ž×Ÿ ×™×•×ž×™', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
+        // כותרת משנה: "יומן יומי" - הוצמדה לימין
+        new Paragraph({ text:'יומן יומי', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         jrTable,
-        // ×›×•×ª×¨×ª ×ž×©× ×”: "×”×•×¦××•×ª" - ×”×•×¦×ž×“×” ×œ×™×ž×™×Ÿ
-        new Paragraph({ text:'×”×•×¦××•×ª', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
+        // כותרת משנה: "הוצאות" - הוצמדה לימין
+        new Paragraph({ text:'הוצאות', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
         exTable
       ]
     }]
@@ -3991,14 +3883,14 @@ async function exportWord(){
 // --- Export Trip Schedule to Word (A4, RTL, Sunday->Saturday) ---
 async function exportTripScheduleWord(){
   const t = currentTrip();
-  if(!t || !t.id){ toast('×¤×ª×— × ×¡×™×¢×”'); return; }
-  const ok = await ensureDOCX(); if(!ok){ toast('×‘×¢×™×” ×‘×™×™×¦×•× Word'); return; }
+  if(!t || !t.id){ toast('פתח נסיעה'); return; }
+  const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
   const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, TextRun } = window.docx || window;
 
   // Build inclusive range from Sunday before/at start to Saturday after/at end
   const dStart = dayjs(t.start);
   const dEnd   = dayjs(t.end);
-  if(!dStart.isValid() || !dEnd.isValid()){ toast('×ª××¨×™×›×™ × ×¡×™×¢×” ×œ× ×ª×§×™× ×™×'); return; }
+  if(!dStart.isValid() || !dEnd.isValid()){ toast('תאריכי נסיעה לא תקינים'); return; }
   const startSunday = dStart.day()===0 ? dStart.startOf('day') : dStart.subtract(dStart.day(), 'day').startOf('day');
   const endSaturday = dEnd.day()===6 ? dEnd.endOf('day')   : dEnd.add(6 - dEnd.day(), 'day').endOf('day');
 
@@ -4026,7 +3918,7 @@ Object.keys(expMap).forEach(k=>{
 });
 
   // Header row: days labels, right-to-left visual order (rightmost=Sunday)
-  const headerLabels = ['×©×‘×ª','×©×™×©×™','×—×ž×™×©×™','×¨×‘×™×¢×™','×©×œ×™×©×™','×©× ×™','×¨××©×•×Ÿ'];
+  const headerLabels = ['שבת','שישי','חמישי','רביעי','שלישי','שני','ראשון'];
   const headerRow = new TableRow({ children: headerLabels.map(txt => new TableCell({ children:[ new Paragraph({ text: txt, alignment: AlignmentType.CENTER }) ] })) });
 
   const weekRows = [];
@@ -4055,8 +3947,8 @@ Object.keys(expMap).forEach(k=>{
     sections: [{
       properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
       children: [
-        new Paragraph({ text: (t.destination ? `×œ×•"×– ×˜×™×•×œ â€“ ${t.destination}` : '×œ×•"×– ×˜×™×•×œ'), heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
-        new Paragraph({ text: `${fmtDate(t.start)} â€“ ${fmtDate(t.end)}`, alignment: AlignmentType.RIGHT }),
+        new Paragraph({ text: (t.destination ? `לו"ז טיול – ${t.destination}` : 'לו"ז טיול'), heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
+        new Paragraph({ text: `${fmtDate(t.start)} – ${fmtDate(t.end)}`, alignment: AlignmentType.RIGHT }),
         new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: Array(7).fill(1200), rows: [headerRow, ...weekRows] })
       ]
     }]
@@ -4066,7 +3958,7 @@ Object.keys(expMap).forEach(k=>{
   const blob = await Packer.toBlob(doc);
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
   setTimeout(()=> URL.revokeObjectURL(a.href), 2000);
-  toast('× ×•×¦×¨ ×§×•×‘×¥ ×œ×•"×– ×˜×™×•×œ (Word)');
+  toast('נוצר קובץ לו"ז טיול (Word)');
 }
 
 // Wire the new Export Trip Schedule button
@@ -4090,13 +3982,13 @@ async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', 
     const pass  = document.querySelector(passSel)?.value;
     if(!email || !pass){
       const e = document.querySelector(errSel);
-      if(e) e.textContent = '×× × ×ž×œ× ××™×ž×™×™×œ ×•×¡×™×¡×ž×”';
+      if(e) e.textContent = 'אנא מלא אימייל וסיסמה';
       return;
     }
     await FB.signInWithEmailAndPassword(FB.auth, email, pass);
     const e = document.querySelector(errSel); if(e) e.textContent = '';
   }catch(err){
-    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || '×©×’×™××ª ×”×ª×—×‘×¨×•×ª');
+    const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
     console.error('login failed', err);
   }finally{
     __loginInFlight = false;
@@ -4115,50 +4007,44 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     if((user?.uid||null)===__lastAuthUid){ return; }
     __lastAuthUid = user?.uid||null;
     
-    const emailSpan = document.getElementById('currentUserEmail'); // ×”×¡×¤××Ÿ ×©×”×•×¡×¤× ×• ×‘-index.html
+    const emailSpan = document.getElementById('currentUserEmail'); // הספאן שהוספנו ב-index.html
     const loginScreen = document.getElementById('loginScreen');
     const appContainer = document.querySelector('.container');
     const appEl = document.querySelector('.app');
-    const authModal = document.getElementById('authModal'); // ×ž×•×“×œ ×”×”×ª×—×‘×¨×•×ª
+    const authModal = document.getElementById('authModal'); // מודל ההתחברות
 
     if (appEl) appEl.style.display = 'grid'; 
-    document.body.classList.toggle('logged-out', !user); 
 
     if (user) {
-      // --- ×ž×©×ª×ž×© ×ž×—×•×‘×¨ ---
+      // --- משתמש מחובר ---
       if(emailSpan){ 
         emailSpan.textContent = user.email || ''; 
         emailSpan.style.display='inline-block'; 
-      const btnAccount = document.getElementById('btnAccount');
-      if(btnAccount) btnAccount.style.display='inline-block'; 
       }
-      // ×§×¨× ×œ×¤×•× ×§×¦×™×” ×©×ž×—×œ×™×¤×” ××ª ×”×›×¤×ª×•×¨ ×œ"× ×™×ª×•×§"
+      // קרא לפונקציה שמחליפה את הכפתור ל"ניתוק"
       if (typeof window.__authPrimarySwap === 'function') {
         window.__authPrimarySwap(true);
       }
       
       if (loginScreen) loginScreen.style.display = 'none';
       if (appContainer) appContainer.style.display = 'grid'; 
-      if (authModal) authModal.close(); // ×¡×’×•×¨ ××ª ×ž×•×“×œ ×”×”×ª×—×‘×¨×•×ª ×× ×¤×ª×•×—
+      if (authModal) authModal.close(); // סגור את מודל ההתחברות אם פתוח
       
       state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ /*log removed*/ }
     
     } else {
-      // --- ×ž×©×ª×ž×© ×ž× ×•×ª×§ ---
+      // --- משתמש מנותק ---
       if(emailSpan){ 
         emailSpan.textContent=''; 
         emailSpan.style.display='none'; 
-      const btnAccount = document.getElementById('btnAccount');
-      if(btnAccount) btnAccount.style.display='none'; 
-      document.getElementById('authArea')?.classList.remove('account-open'); 
       }
-      // ×§×¨× ×œ×¤×•× ×§×¦×™×” ×©×ž×—×œ×™×¤×” ××ª ×”×›×¤×ª×•×¨ ×œ"×”×ª×—×‘×¨×•×ª"
+      // קרא לפונקציה שמחליפה את הכפתור ל"התחברות"
       if (typeof window.__authPrimarySwap === 'function') {
         window.__authPrimarySwap(false);
       }
 
-      if (authModal?.open) authModal.close(); // keep a single auth surface and avoid blocking the login screen
+      if (authModal && !authModal.open) authModal.showModal(); // הצג את מודל ההתחברות
       if (appContainer) appContainer.style.display = 'none'; 
       
       state.user = null;
@@ -4541,14 +4427,14 @@ function linkifyText(str, label){
     const trimmed = line.trim();
     if (trimmed && singleUrlPattern.test(trimmed)){
       const href = trimmed.startsWith('http') ? trimmed : 'http://' + trimmed;
-      return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="×§×™×©×•×¨"></a>';
+      return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="קישור"></a>';
     }
     return line
       .replace(urlPattern, m=>{
         const href = m.startsWith('http') ? m : 'http://' + m;
-        return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="×§×™×©×•×¨"></a>';
+        return '<a class="link-icon" href="'+href+'" target="_blank" rel="noopener" aria-label="קישור"></a>';
       })
-      .replace(emailPattern, m=>'<a class="mail-icon" href="mailto:'+m+'" aria-label="×ž×™×™×œ"></a>');
+      .replace(emailPattern, m=>'<a class="mail-icon" href="mailto:'+m+'" aria-label="מייל"></a>');
   }).join('<br>');
   return out;
 }
@@ -4597,8 +4483,8 @@ function enableLinkRemoval(container){
         if(!a.querySelector('.link-x')){
           const x = document.createElement('span');
           x.className = 'link-x';
-          x.textContent = 'Ã—';
-          x.title = '×ž×—×§ ×§×™×©×•×¨';
+          x.textContent = '×';
+          x.title = 'מחק קישור';
           a.appendChild(x);
         }
       });
@@ -4685,11 +4571,11 @@ function renderExpenseSummary(t){
   const fmtSigned = (n)=> formatIntSigned(Math.round(n));
 
   bar.innerHTML = `
-    <button id="barCurrency" class="btn" title="×”×—×œ×£ ×ž×˜×‘×¢">${cur}</button>
-    <div class="kpi"><span class="lbl">×ª×§×¦×™×‘</span><span class="val">${fmt(budgetRaw)} ${cur}</span></div>
-    <div class="kpi"><span class="lbl">×©×•×œ×</span><span class="val">${fmt(paid)} ${cur}</span></div>
-    <div class="kpi"><span class="lbl">×™×ª×¨×”</span><span class="val bold ${isNeg ? 'neg' : ''}">${fmtSigned(balance)} ${cur}</span></div>
-    <div class="budget-progress ${band}" aria-label="×”×ª×§×“×ž×•×ª ×ª×§×¦×™×‘">
+    <button id="barCurrency" class="btn" title="החלף מטבע">${cur}</button>
+    <div class="kpi"><span class="lbl">תקציב</span><span class="val">${fmt(budgetRaw)} ${cur}</span></div>
+    <div class="kpi"><span class="lbl">שולם</span><span class="val">${fmt(paid)} ${cur}</span></div>
+    <div class="kpi"><span class="lbl">יתרה</span><span class="val bold ${isNeg ? 'neg' : ''}">${fmtSigned(balance)} ${cur}</span></div>
+    <div class="budget-progress ${band}" aria-label="התקדמות תקציב">
       <div class="track"><div class="fill" style="width:${pct}%"></div></div>
       <div class="pct" aria-hidden="true">${pct}%</div>
     </div>
@@ -4700,9 +4586,9 @@ function renderExpenseSummary(t){
 // === GPX Import (to Journal) [FIXED for Namespaces, v2] ===
 importGPXFromFile = async function(file, opts={}){
   try{
-    if(!file){ if(typeof toast==='function') toast('×œ× × ×‘×—×¨ ×§×•×‘×¥'); return; }
+    if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
-    if(!tid){ if(typeof toast==='function') toast('×¤×ª×— × ×¡×™×¢×” ×œ×¤× ×™ ×™×™×‘×•×'); return; }
+    if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
     const xmlText = await file.text();
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, 'application/xml');
@@ -4712,7 +4598,7 @@ importGPXFromFile = async function(file, opts={}){
     const parserError = xml.getElementsByTagName('parsererror');
     if (parserError.length > 0) {
       console.error('GPX XML Parse Error:', parserError[0].textContent);
-      throw new Error('×§×•×‘×¥ GPX ×œ× ×ª×§×™×Ÿ');
+      throw new Error('קובץ GPX לא תקין');
     }
 
     let wpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'wpt'));
@@ -4723,14 +4609,14 @@ importGPXFromFile = async function(file, opts={}){
 
     const points = [];
 
-    // --- ×¤×•× ×§×¦×™×™×ª ×¢×–×¨ ×ž×ª×•×§× ×ª v2 ---
+    // --- פונקציית עזר מתוקנת v2 ---
     function getTag(el, name){
       if (!el) return '';
       let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
       if (!t) t = el.getElementsByTagName(name)[0]; // Fallback
       return t ? (t.textContent || '').trim() : '';
     }
-    // --- ×¤×•× ×§×¦×™×™×ª ×¢×–×¨ ×ž×ª×•×§× ×ª v2 ---
+    // --- פונקציית עזר מתוקנת v2 ---
     function getExt(el, name){
       let exts = el.getElementsByTagNameNS(gpxNamespace, 'extensions')[0];
       if (!exts) exts = el.getElementsByTagName('extensions')[0];
@@ -4748,7 +4634,7 @@ importGPXFromFile = async function(file, opts={}){
       if(Number.isFinite(lat) && Number.isFinite(lng)){
         points.push({
           lat, lng,
-          _name: getTag(el,'name') || '× ×§×•×“×”',
+          _name: getTag(el,'name') || 'נקודה',
           _desc: getTag(el,'desc'),
           _time: getTag(el,'time'),
           _source: getExt(el,'source') || 'journal'
@@ -4761,7 +4647,7 @@ importGPXFromFile = async function(file, opts={}){
       if(Number.isFinite(lat) && Number.isFinite(lng)){
         points.push({
           lat, lng,
-          _name: '×ž×¡×œ×•×œ',
+          _name: 'מסלול',
           _desc: '',
           _time: getTag(el,'time'),
           _source: 'journal'
@@ -4769,7 +4655,7 @@ importGPXFromFile = async function(file, opts={}){
       }
     });
 
-    if(!points.length){ if(typeof toast==='function') toast('×œ× × ×ž×¦××• × ×§×•×“×•×ª GPX'); return; }
+    if(!points.length){ if(typeof toast==='function') toast('לא נמצאו נקודות GPX'); return; }
 
     const ref = FB.doc(db, 'trips', state.currentTripId);
     const snap = await FB.getDoc(ref);
@@ -4788,7 +4674,7 @@ importGPXFromFile = async function(file, opts={}){
 
       t.journal[id] = {
         text: p._desc || '',
-        placeName: p._name || '× ×§×•×“×ª ×ž×¡×œ×•×œ',
+        placeName: p._name || 'נקודת מסלול',
         placeUrl: '',
         lat: p.lat, 
         lng: p.lng,
@@ -4802,14 +4688,14 @@ importGPXFromFile = async function(file, opts={}){
     });
 
     await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
-    if(typeof toast==='function') toast(`×™×™×‘×•× GPX ×”×•×©×œ× â€” × ×•×¡×¤×• ${added} × ×§×•×“×•×ª ×œ×™×•×ž×Ÿ`);
+    if(typeof toast==='function') toast(`ייבוא GPX הושלם — נוספו ${added} נקודות ליומן`);
     if(!opts.suppressReload){
       await loadTrip();
       switchToTab('map');
     }
   }catch(e){
     console.error('GPX import failed', e);
-    if(typeof toast==='function') toast('×©×’×™××” ×‘×™×™×‘×•× GPX');
+    if(typeof toast==='function') toast('שגיאה בייבוא GPX');
   }
 }
 
@@ -4817,9 +4703,9 @@ importGPXFromFile = async function(file, opts={}){
 importGPXAsTrek = async function(file, opts){
   opts = opts || {};
   try{
-    if(!file){ if(typeof toast==='function') toast('×œ× × ×‘×—×¨ ×§×•×‘×¥'); return; }
+    if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
-    if(!tid){ if(typeof toast==='function') toast('×¤×ª×— × ×¡×™×¢×” ×œ×¤× ×™ ×™×™×‘×•×'); return; }
+    if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
 
     const xmlText = await file.text();
     const parser = new DOMParser();
@@ -4830,7 +4716,7 @@ importGPXAsTrek = async function(file, opts){
     const parserError = xml.getElementsByTagName('parsererror');
     if (parserError.length > 0) {
       console.error('GPX XML Parse Error:', parserError[0].textContent);
-      throw new Error('×§×•×‘×¥ GPX ×œ× ×ª×§×™×Ÿ');
+      throw new Error('קובץ GPX לא תקין');
     }
     
     // --- Robustly find track points ---
@@ -4839,16 +4725,16 @@ importGPXAsTrek = async function(file, opts){
       trkpts = Array.from(xml.getElementsByTagName('trkpt')); // Fallback
     }
     
-    // --- ×”×ª×™×§×•×Ÿ: ×©×ž×™×¨×” ×›×ž×¢×¨×š ×©×œ ××•×‘×™×™×§×˜×™× ---
+    // --- התיקון: שמירה כמערך של אובייקטים ---
     const path = trkpts.map(el => ({
       lat: Number(el.getAttribute('lat')), 
       lng: Number(el.getAttribute('lon'))
     })).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    // --- ×¡×•×£ ×”×ª×™×§×•×Ÿ ---
+    // --- סוף התיקון ---
 
-    if(path.length < 2){ if(typeof toast==='function') toast('×œ× × ×ž×¦× ×ž×¡×œ×•×œ (×œ×¤×—×•×ª 2 × ×§×•×“×•×ª) ×‘×§×•×‘×¥'); return; }
+    if(path.length < 2){ if(typeof toast==='function') toast('לא נמצא מסלול (לפחות 2 נקודות) בקובץ'); return; }
 
-    // --- ×¤×•× ×§×¦×™×™×ª ×¢×–×¨ ×ž×ª×•×§× ×ª v2 ---
+    // --- פונקציית עזר מתוקנת v2 ---
     function getTag(el, name){
       if (!el) return '';
       let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
@@ -4856,20 +4742,20 @@ importGPXAsTrek = async function(file, opts){
       return t ? (t.textContent || '').trim() : '';
     }
 
-    // × ×ª×•× ×™ × ×§×•×“×•×ª ×§×¦×” ×•×©×
+    // נתוני נקודות קצה ושם
     const firstPtEl = trkpts[0];
     const lastPtEl = trkpts[trkpts.length - 1];
     
-    // --- ×”×ª×™×§×•×Ÿ: ×§×¨×™××” ×ž×ž×‘× ×” ××•×‘×™×™×§×˜ ---
+    // --- התיקון: קריאה ממבנה אובייקט ---
     const firstPt = path[0]; // {lat: ..., lng: ...}
     const lastPt = path[path.length - 1]; // {lat: ..., lng: ...}
     
-    // --- ×©×œ×™×¤×ª ×©× ×ž×ª×•×§× ×ª v2 ---
+    // --- שליפת שם מתוקנת v2 ---
     let trackNameEl = xml.getElementsByTagNameNS(gpxNamespace, 'name')[0];
     if (!trackNameEl) trackNameEl = xml.getElementsByTagName('name')[0]; // Fallback
-    const trackName = (trackNameEl?.textContent || '×ž×¡×œ×•×œ GPX').trim();
+    const trackName = (trackNameEl?.textContent || 'מסלול GPX').trim();
     
-    // --- ×©×œ×™×¤×ª ×–×ž×Ÿ ×ž×ª×•×§× ×ª v2 ---
+    // --- שליפת זמן מתוקנת v2 ---
     const startTime = getTag(firstPtEl, 'time') || new Date().toISOString();
 
     // (rest of the function is the same)
@@ -4883,31 +4769,31 @@ importGPXAsTrek = async function(file, opts){
     const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
     const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
     
-    // --- ×”×ª×™×§×•×Ÿ: ×§×‘×œ×ª ×©×ž×•×ª ×ž×§×•×ž×•×ª ×‘×ž×§×•× ×§×•××•×¨×“×™× ×˜×•×ª ---
+    // --- התיקון: קבלת שמות מקומות במקום קואורדינטות ---
     const [startPlace, endPlace] = await Promise.all([
       reverseGeocode(firstPt.lat, firstPt.lng),
       reverseGeocode(lastPt.lat, lastPt.lng)
     ]);
 
-    const text = `×ž×¡×œ×•×œ: ${trackName}\n×ª××¨×™×š: ${__dateStr} ${__timeStr}\n× ×§×•×“×ª ×”×ª×—×œ×”: ${startPlace}\n× ×§×•×“×ª ×¡×™×•×: ${endPlace}`;
-    // --- ×¡×•×£ ×”×ª×™×§×•×Ÿ ---
+    const text = `מסלול: ${trackName}\nתאריך: ${__dateStr} ${__timeStr}\nנקודת התחלה: ${startPlace}\nנקודת סיום: ${endPlace}`;
+    // --- סוף התיקון ---
     
     t.journal[id] = {
       text: text,
       html: text.replace(/\n/g, '<br>'),
       placeName: trackName,
-      // --- ×”×ª×™×§×•×Ÿ: ×©×ž×™×¨×ª lat/lng ×ž× ×§×•×“×ª ×”×”×ª×—×œ×” ---
+      // --- התיקון: שמירת lat/lng מנקודת ההתחלה ---
       lat: firstPt.lat,
       lng: firstPt.lng,
       createdAt: startTime,
       dateIso: startTime,
       date: __dateStr,
       time: __timeStr,
-      path: __downsamplePath(path, 800) // <-- ×ž×“×•×œ×œ ×›×“×™ ×œ× ×œ×¢×‘×•×¨ ×ž×’×‘×œ×ª ×’×•×“×œ
+      path: __downsamplePath(path, 800) // <-- מדולל כדי לא לעבור מגבלת גודל
     };
     
     await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
-    if(typeof toast==='function') toast(`×ž×¡×œ×•×œ GPX ×™×•×‘× ×‘×”×¦×œ×—×” ×›×¨×©×•×ž×” ××—×ª`);
+    if(typeof toast==='function') toast(`מסלול GPX יובא בהצלחה כרשומה אחת`);
     if(!opts.suppressReload){
       await loadTrip();
       switchToTab('map');
@@ -4915,7 +4801,7 @@ importGPXAsTrek = async function(file, opts){
 
   }catch(e){
     console.error('GPX Trek import failed', e);
-    if(typeof toast==='function') toast('×©×’×™××” ×‘×™×™×‘×•× ×ž×¡×œ×•×œ GPX');
+    if(typeof toast==='function') toast('שגיאה בייבוא מסלול GPX');
   }
 }
 // --- delegated handler: works even if button is injected later ---
@@ -4927,24 +4813,24 @@ document.addEventListener('click', async (e)=>{
     state.journalSelectedIds = new Set();
     state._jrLastIndex = null;
     state.journalSelectionMode = true;
-    if(btn) btn.textContent = '×ž×—×§ (0)';
+    if(btn) btn.textContent = 'מחק (0)';
     if(state.current) renderJournal(state.current, state.journalSort);
     return;
   }
   const count = state.journalSelectedIds ? state.journalSelectedIds.size : 0;
   if(count === 0){
     state.journalSelectionMode = false;
-    if(btn) btn.textContent = '×ž×—×§ × ×‘×—×¨×™×';
+    if(btn) btn.textContent = 'מחק נבחרים';
     if(state.current) renderJournal(state.current, state.journalSort);
     return;
   }
-  showConfirm(`×œ×ž×—×•×§ ${count} ×¨×©×•×ž×•×ª?`, async ()=>{
+  showConfirm(`למחוק ${count} רשומות?`, async ()=>{
     const ids = Array.from(state.journalSelectedIds);
     try{ await deleteJournalBulkLocal(ids); }catch(_){}
     state.journalSelectionMode = false;
     state.journalSelectedIds = new Set();
     state._jrLastIndex = null;
-    if(btn) btn.textContent = '×ž×—×§ × ×‘×—×¨×™×';
+    if(btn) btn.textContent = 'מחק נבחרים';
     document.getElementById('confirmDeleteModal')?.close?.();
   });
 });
@@ -4979,8 +4865,8 @@ function exportGPX(){
     a.href = URL.createObjectURL(blob);
     a.download = `FLYMILY_${name.replace(/\s+/g,'_')}.gpx`;
     document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
-    if(typeof toast==='function') toast('×™×™×¦×•× GPX ×”×•×©×œ×');
-  }catch(e){ console.error(e); if(typeof toast==='function') toast('×©×’×™××” ×‘×™×¦×•× GPX'); }
+    if(typeof toast==='function') toast('ייצוא GPX הושלם');
+  }catch(e){ console.error(e); if(typeof toast==='function') toast('שגיאה ביצוא GPX'); }
 }
 
 // === Wire Import/Export/Share buttons in Share tab ===
@@ -5005,10 +4891,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       let ok=0, fail=0;
       for(const f of list){
         try{ await importGPXFromFile(f, {suppressReload:true}); ok++; }
-        catch(e){ console.error('Import GPX failed', f?.name, e); fail++; if(typeof toast==='function') toast(`×©×’×™××” ×‘×˜×¢×™× ×ª GPX: ${f?.name||''}`); }
+        catch(e){ console.error('Import GPX failed', f?.name, e); fail++; if(typeof toast==='function') toast(`שגיאה בטעינת GPX: ${f?.name||''}`); }
       }
       gpxFile.value='';
-      if(ok && typeof toast==='function') toast(`×™×•×‘××• ${ok} ×§×‘×¦×™ GPX${fail?` (× ×›×©×œ×• ${fail})`:''}`);
+      if(ok && typeof toast==='function') toast(`יובאו ${ok} קבצי GPX${fail?` (נכשלו ${fail})`:''}`);
       if(ok){ await loadTrip(); switchToTab('map'); }
     });
   }
@@ -5027,7 +4913,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         catch(e){ console.error(e); fail++; }
       }
       trekFile.value='';
-      if(typeof toast==='function') toast(`×™×™×‘×•× GPX: ${ok} ×”×¦×œ×™×—×•${fail?` Â· ${fail} × ×›×©×œ×•`:''}`);
+      if(typeof toast==='function') toast(`ייבוא GPX: ${ok} הצליחו${fail?` · ${fail} נכשלו`:''}`);
       try{ await loadTrip(); }catch(_){ }
       try{ switchToTab('map'); }catch(_){ }
     });
@@ -5057,13 +4943,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const val = sel?.value || '1w';
       state.shareDuration = val;
       if(typeof startShare==='function') startShare(val);
-      else if(typeof toast==='function') toast('×©×™×ª×•×£ ×”×•×¤×¢×œ: ' + val);
+      else if(typeof toast==='function') toast('שיתוף הופעל: ' + val);
     });
   }
   if(stop){
     stop.addEventListener('click', ()=>{
       if(typeof stopShare==='function') stopShare();
-      else if(typeof toast==='function') toast('×©×™×ª×•×£ ×‘×•×˜×œ');
+      else if(typeof toast==='function') toast('שיתוף בוטל');
     });
   }
 });
@@ -5096,7 +4982,7 @@ window.initMiniMap = function(t){
     if(!state.maps) state.maps = {};
     if(!state.maps.mini){
       state.maps.mini = L.map('miniMap', { zoomControl:false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' })
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
         .addTo(state.maps.mini);
     }
     // clear old
@@ -5133,7 +5019,7 @@ window.initBigMap = function(){
     if(!state.maps) state.maps = {};
     if(!state.maps.big){
       state.maps.big = L.map('bigMap');
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Â© OpenStreetMap' })
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
         .addTo(state.maps.big);
     }
     // clear old layers
@@ -5174,9 +5060,9 @@ window.initBigMap = function(){
 // === KML Import (to Journal) ===
 async function importKMLFromFile(file){
   try{
-    if(!file){ if(typeof toast==='function') toast('×œ× × ×‘×—×¨ ×§×•×‘×¥'); return; }
+    if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
-    if(!tid){ if(typeof toast==='function') toast('×¤×ª×— × ×¡×™×¢×” ×œ×¤× ×™ ×™×™×‘×•×'); return; }
+    if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
 
     const xmlText = await file.text();
     const parser = new DOMParser();
@@ -5201,7 +5087,7 @@ async function importKMLFromFile(file){
     const points = [];
 
     placemarks.forEach(pm=>{
-      const name = getText(pm, 'name') || '× ×§×•×“×”';
+      const name = getText(pm, 'name') || 'נקודה';
       const desc = getText(pm, 'description');
       // Point
       const point = pm.getElementsByTagName('Point')[0];
@@ -5222,7 +5108,7 @@ async function importKMLFromFile(file){
       }
     });
 
-    if(!points.length){ if(typeof toast==='function') toast('×œ× × ×ž×¦××• × ×§×•×“×•×ª KML'); return; }
+    if(!points.length){ if(typeof toast==='function') toast('לא נמצאו נקודות KML'); return; }
 
     const ref = FB.doc(db, 'trips', state.currentTripId);
     const snap = await FB.getDoc(ref);
@@ -5233,40 +5119,40 @@ async function importKMLFromFile(file){
     points.forEach(p=>{
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
       
-      // --- ×”×ª×—×œ×ª ×”×ª×™×§×•×Ÿ ---
-      // 1. ×”×’×“×¨×ª ×ž×©×ª× ×™ ×”×ª××¨×™×š ×•×”×©×¢×” ×¢×œ ×‘×¡×™×¡ ×”×–×ž×Ÿ ×ž×”×§×•×‘×¥
+      // --- התחלת התיקון ---
+      // 1. הגדרת משתני התאריך והשעה על בסיס הזמן מהקובץ
       const _point_dateIso = p._time ? new Date(p._time).toISOString() : new Date().toISOString();
       const __dt = new Date(_point_dateIso);
       const pad2 = n => String(n).padStart(2, '0');
       const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
       const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
-      // 2. ×‘× ×™×™×ª ××•×‘×™×™×§×˜ ×”×™×•×ž×Ÿ
+      // 2. בניית אובייקט היומן
       t.journal[id] = {
         text: p._desc || '',
         placeName: p._name || '',
         placeUrl: '',
         lat: p.lat, 
         lng: p.lng,
-        createdAt: _point_dateIso, // 3. ×”×•×¡×¨ ×”×¤×¡×™×§ ×”×ž×™×•×ª×¨
-        dateIso: _point_dateIso,   // 4. ×©×™×ž×•×© ×‘×ž×©×ª× ×” ×”×—×“×©
-        date: __dateStr,         // 5. ×©×™×ž×•×© ×‘×ž×©×ª× ×” ×”×—×“×©
-        time: __timeStr          // 6. ×©×™×ž×•×© ×‘×ž×©×ª× ×” ×”×—×“×©
+        createdAt: _point_dateIso, // 3. הוסר הפסיק המיותר
+        dateIso: _point_dateIso,   // 4. שימוש במשתנה החדש
+        date: __dateStr,         // 5. שימוש במשתנה החדש
+        time: __timeStr          // 6. שימוש במשתנה החדש
       };
-      // --- ×¡×•×£ ×”×ª×™×§×•×Ÿ ---
+      // --- סוף התיקון ---
       
       added++;
     });
 
     await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
-    if(typeof toast==='function') toast(`×™×™×‘×•× KML ×”×•×©×œ× â€” × ×•×¡×¤×• ${added} × ×§×•×“×•×ª ×œ×™×•×ž×Ÿ`);
+    if(typeof toast==='function') toast(`ייבוא KML הושלם — נוספו ${added} נקודות ליומן`);
     if(!opts.suppressReload){
       await loadTrip();
       switchToTab('map');
     }
   }catch(e){
     console.error('KML import failed', e);
-    if(typeof toast==='function') toast('×©×’×™××” ×‘×™×™×‘×•× KML');
+    if(typeof toast==='function') toast('שגיאה בייבוא KML');
   }
 }
 
@@ -5306,7 +5192,7 @@ async function importKMLFromFile(file){
         // Prevent native text selection while shift-click dragging
         e.preventDefault();
       }else{
-        // Single click â€“ still let any selection-mode listeners know
+        // Single click – still let any selection-mode listeners know
         target.dispatchEvent(new Event('change', { bubbles:true }));
       }
       lastIndex = idx;
@@ -5350,7 +5236,7 @@ function renderCategoryBreakdownNode(targetId){
 
   // normalize expenses and build per-category lists
   expenses.forEach(e=>{
-    const cat = (e?.category || '××—×¨').toString();
+    const cat = (e?.category || 'אחר').toString();
     const amt = Number(e?.amount||0);
     const from = (e?.currency || 'ILS');
     const rates = e?.rates || state?.rates || {};
@@ -5392,20 +5278,20 @@ function renderCategoryBreakdownNode(targetId){
   const cats = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]);
   const fmtILS = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
   const fmtAmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:2});
-  // ×”×¤×™×œ×•×— ×—×™×™×‘ ×œ×”×™×•×ª ×ž×‘×•×¡×¡ ×¢×œ ×ž×” ×©×©×•×œ× ×‘×¤×•×¢×œ ×‘×©"×—, ×•×œ× ×¢×œ ×”×ª×§×¦×™×‘.
+  // הפילוח חייב להיות מבוסס על מה ששולם בפועל בש"ח, ולא על התקציב.
   const pctBase = total;
-  const pctLabel = '××—×•×– ×ž×¡×š ×©×©×•×œ×';
+  const pctLabel = 'אחוז מסך ששולם';
 
   let html = `
     <div class="breakdown-head" dir="rtl">
-      <div class="breakdown-note">×œ×—×™×¦×” ×¢×œ ×§×˜×’×•×¨×™×” ×ª×¤×ª×— ××ª ×”×”×•×¦××•×ª ×©×‘×§×˜×’×•×¨×™×”</div>
-      <div class="muted">×”×—×™×©×•×‘ ×ž×‘×•×¡×¡ ×¢×œ ×¡×š ×©×©×•×œ× ×‘×¤×•×¢×œ: ${fmtILS(total)} ILS</div>
+      <div class="breakdown-note">לחיצה על קטגוריה תפתח את ההוצאות שבקטגוריה</div>
+      <div class="muted">החישוב מבוסס על סך ששולם בפועל: ${fmtILS(total)} ILS</div>
     </div>
     <table class="breakdown-table" dir="rtl">
       <thead>
         <tr>
-          <th class="bd-cat">×§×˜×’×•×¨×™×”</th>
-          <th class="bd-sum">×¡×›×•× (ILS)</th>
+          <th class="bd-cat">קטגוריה</th>
+          <th class="bd-sum">סכום (ILS)</th>
           <th class="bd-pct">${pctLabel}</th>
         </tr>
       </thead>
@@ -5421,7 +5307,7 @@ function renderCategoryBreakdownNode(targetId){
     html += `
       <tr class="breakdown-cat-row" data-bd-cat="${safeCat}" data-bd-row="${rowId}" role="button" tabindex="0">
         <td class="bd-cat">
-          <span class="bd-toggle" aria-hidden="true">â–¸</span>
+          <span class="bd-toggle" aria-hidden="true">▸</span>
           <span class="bd-cat-name">${safeCat}</span>
           <span class="bd-count">(${(byCategory[cat]?.items?.length||0)})</span>
         </td>
@@ -5436,14 +5322,14 @@ function renderCategoryBreakdownNode(targetId){
     // details row (collapsed by default)
     const items = (byCategory[cat]?.items || []);
     const detailsRows = items.map(it=>{
-      const ilsTxt = isFinite(it.ils) ? fmtILS(it.ils) : 'â€”';
+      const ilsTxt = isFinite(it.ils) ? fmtILS(it.ils) : '—';
       const when = [it.date, it.time].filter(Boolean).join(' ');
       const desc = esc((it.desc||'').trim());
       const cur = esc((it.currency||'').toUpperCase());
       return `
         <tr>
           <td class="bd-item-desc">
-            <div class="bd-item-title">${desc || '<span class="muted">(×œ×œ× ×ª×™××•×¨)</span>'}</div>
+            <div class="bd-item-title">${desc || '<span class="muted">(ללא תיאור)</span>'}</div>
             ${when ? `<div class="muted bd-item-when">${esc(when)}</div>` : ''}
           </td>
           <td class="bd-item-amt">${fmtAmt(it.amount)} ${cur}</td>
@@ -5459,13 +5345,13 @@ function renderCategoryBreakdownNode(targetId){
             <table class="bd-items">
               <thead>
                 <tr>
-                  <th>×”×•×¦××”</th>
-                  <th>×¡×›×•×</th>
+                  <th>הוצאה</th>
+                  <th>סכום</th>
                   <th>ILS</th>
                 </tr>
               </thead>
               <tbody>
-                ${detailsRows || `<tr><td colspan="3" class="muted">××™×Ÿ ×”×•×¦××•×ª ×‘×§×˜×’×•×¨×™×”.</td></tr>`}
+                ${detailsRows || `<tr><td colspan="3" class="muted">אין הוצאות בקטגוריה.</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -5476,7 +5362,7 @@ function renderCategoryBreakdownNode(targetId){
 
   html += `
       <tr>
-        <td class="breakdown-total">×¡×”"×›</td>
+        <td class="breakdown-total">סה"כ</td>
         <td class="breakdown-total">${fmtILS(total)}</td>
         <td></td>
       </tr>
@@ -5490,13 +5376,13 @@ function renderCategoryBreakdownNode(targetId){
     const parts = Object.entries(byCur).map(([c,s])=>`${c}: ${fmtAmt(s)}`);
     html += `
       <div class="breakdown-warning" dir="rtl">
-        <div>×©×™×ž×• ×œ×‘: ×™×© ${unconverted.length} ×”×•×¦××•×ª ×œ×œ× ×©×¢×¨ ×”×ž×¨×” ×œ-ILS. ×”×Ÿ ×ž×•×¦×’×•×ª ×›××Ÿ ×›×“×™ ×©×©×•× ×”×•×¦××” ×œ× ×ª×™×¢×œ×.</div>
-        <div class="muted">×¡×™×›×•× ×œ×¤×™ ×ž×˜×‘×¢: ${parts.join(' , ')}</div>
+        <div>שימו לב: יש ${unconverted.length} הוצאות ללא שער המרה ל-ILS. הן מוצגות כאן כדי ששום הוצאה לא תיעלם.</div>
+        <div class="muted">סיכום לפי מטבע: ${parts.join(' , ')}</div>
       </div>
       <div class="breakdown-missing" dir="rtl">
-        <div class="breakdown-missing-title">×”×•×¦××•×ª ×œ×œ× ×”×ž×¨×”</div>
+        <div class="breakdown-missing-title">הוצאות ללא המרה</div>
         <table class="breakdown-missing-table">
-          <thead><tr><th>×§×˜×’×•×¨×™×”</th><th>×¡×›×•×</th><th>×ž×˜×‘×¢</th><th>×ª×™××•×¨</th></tr></thead>
+          <thead><tr><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תיאור</th></tr></thead>
           <tbody>
             ${unconverted.map(u=>`
               <tr>
@@ -5528,7 +5414,7 @@ function renderCategoryBreakdownNode(targetId){
       details.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
       row.classList.toggle('open', !isOpen);
       const icon = row.querySelector('.bd-toggle');
-      if(icon) icon.textContent = isOpen ? 'â–¸' : 'â–¾';
+      if(icon) icon.textContent = isOpen ? '▸' : '▾';
     };
 
     el.addEventListener('click', (ev)=>{
@@ -5550,7 +5436,7 @@ function renderCategoryBreakdownNode(targetId){
 }
 
 
-// === Bind "×¡×™×›×•× ×¤×™×œ×•×—" button reliably ===
+// === Bind "סיכום פילוח" button reliably ===
 (function(){
   function openBreakdown(){
     const dlg = document.getElementById('breakdownDialog');
@@ -5586,7 +5472,7 @@ function renderCategoryBreakdownNode(targetId){
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && dlg.open) closeBreakdown(); });
       document.addEventListener('click', (e)=>{
         if(!dlg.open) return;
-        // Ignore clicks from the nav dropdown â€” they triggered the open and must not close it
+        // Ignore clicks from the nav dropdown — they triggered the open and must not close it
         if(e.target && e.target.closest && e.target.closest('#overviewTabSelect')) return;
         const r = dlg.getBoundingClientRect();
         const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
@@ -5623,7 +5509,7 @@ function renderCategoryBreakdownNode(targetId){
   });
 })();
 
-// === Hard bind for Overview "×¤×™×œ×•×—" button (guards against layout refactors) ===
+// === Hard bind for Overview "פילוח" button (guards against layout refactors) ===
 // Some UI refactors moved the button into tab chrome; use capture delegation so it always works.
 (function(){
   function handler(e){
@@ -5648,13 +5534,13 @@ function renderCategoryBreakdownNode(targetId){
       const source = document.querySelector('#view-overview') || document.querySelector('#overview') || document.body;
       const clone = source.cloneNode(true);
       const w = window.open('', '_blank', 'noopener,noreferrer');
-      if(!w){ alert('×œ× × ×™×ª×Ÿ ×œ×¤×ª×•×— ×—×œ×•×Ÿ ×ª×¦×•×’×” (×™×ª×›×Ÿ ×©×—×¡×™×ž×ª ×¤×•×¤-××¤×™× ×¤×¢×™×œ×”).'); return; }
+      if(!w){ alert('לא ניתן לפתוח חלון תצוגה (יתכן שחסימת פופ-אפים פעילה).'); return; }
       const html = `<!doctype html>
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>×ª×¦×•×’×” ×œ×¤× ×™ ×”×“×¤×¡×”</title>
+  <title>תצוגה לפני הדפסה</title>
   <link rel="stylesheet" href="./style.css">
   <style>
     body{padding:16px}
@@ -5666,21 +5552,21 @@ function renderCategoryBreakdownNode(targetId){
   </style>
 </head>
 <body>
-  <div class="toolbar"><button class="btn" onclick="print()">ðŸ–¨ï¸ ×”×“×¤×¡</button><button class="btn" onclick="close()">âœ–ï¸ ×¡×’×•×¨</button></div>
+  <div class="toolbar"><button class="btn" onclick="print()">🖨️ הדפס</button><button class="btn" onclick="close()">✖️ סגור</button></div>
   <main id="printRoot"></main>
 </body>
 </html>`;
       w.document.open(); w.document.write(html); w.document.close();
       w.document.getElementById('printRoot')?.appendChild(clone);
       Array.from(w.document.querySelectorAll('[hidden]')).forEach(el=>el.removeAttribute('hidden'));
-    }catch(e){ console.error('print preview error', e); alert('×©×’×™××” ×‘×ª×¦×•×’×” ×œ×¤× ×™ ×”×“×¤×¡×”'); }
+    }catch(e){ console.error('print preview error', e); alert('שגיאה בתצוגה לפני הדפסה'); }
   }
   window.openTripPrintPreview = openPrintPreview;
   document.addEventListener('DOMContentLoaded', ()=>{
     const btn = document.getElementById('btnExportTripSchedule');
     if(btn && !btn.dataset._ppBound){
       btn.dataset._ppBound = '1';
-      btn.textContent = '×™×™×¦× ×”×•×¦××•×ª ×œ WORD';
+      btn.textContent = 'ייצא הוצאות ל WORD';
       btn.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); openPrintPreview(); });
     }
   });
@@ -5739,7 +5625,7 @@ function renderCategoryBreakdownNode(targetId){
     // save on most selection changes
     editor.addEventListener('keyup', remember);
     editor.addEventListener('mouseup', remember);
-    editor.addEventListener('touchend', remember); /* <--- ×ª×™×§×•×Ÿ ×œ×ž×•×‘×™×™×œ */
+    editor.addEventListener('touchend', remember); /* <--- תיקון למובייל */
     document.addEventListener('selectionchange', ()=>{
       const sel = window.getSelection();
       if(!sel || sel.rangeCount===0) return;
@@ -6092,7 +5978,7 @@ function renderCategoryBreakdownNode(targetId){
       try{
         btn.disabled = true;
         const original = btn.textContent;
-        btn.textContent = '×ž×ª× ×ª×§...';
+        btn.textContent = 'מתנתק...';
         await dynamicFirebaseSignOut();
         await clearFirebaseCaches();
         cleanReload();
@@ -6153,7 +6039,7 @@ function renderCategoryBreakdownNode(targetId){
     }
 
     function updateLabel(){
-      button.textContent = areAllCollapsed() ? '×¤×ª×— ×”×›×œ' : '×¦×ž×¦× ×”×›×œ';
+      button.textContent = areAllCollapsed() ? 'פתח הכל' : 'צמצם הכל';
     }
 
     function persistState(){
@@ -6234,11 +6120,11 @@ function renderCategoryBreakdownNode(targetId){
   }
 })();
 
-// --- ×”×•×¡×¤×”: ×œ×•×’×™×§×” ×—×¡×¨×” ×œ×™×™×‘×•× ×§×•×‘×¥ JSON (×ž×˜×¤×œ ×‘×¤×•×¨×ž×˜ ×¤×•×œ×™×Ÿ 2018 + ×¨×•×ž× ×™×” 2016) ---
-// *** ×’×¨×¡×” 2: ×ª×•×ž×š ×‘×§×•××•×¨×“×™× ×˜×•×ª ×•×©×ž×•×ª ×ž×§×•×ž×•×ª ×ž×”×§×•×‘×¥ ***
+// --- הוספה: לוגיקה חסרה לייבוא קובץ JSON (מטפל בפורמט פולין 2018 + רומניה 2016) ---
+// *** גרסה 2: תומך בקואורדינטות ושמות מקומות מהקובץ ***
 (function() {
     /**
-     * ×¤×•× ×§×¦×™×™×ª ×¢×–×¨ ×œ× ×™×ª×•×— ×ª××¨×™×š ×‘×ž×‘× ×” DD/MM/YYYY
+     * פונקציית עזר לניתוח תאריך במבנה DD/MM/YYYY
      */
     function parseDMY(dmyStr) {
         if (!dmyStr) return new Date();
@@ -6248,11 +6134,11 @@ function renderCategoryBreakdownNode(targetId){
             const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]), 9, 0, 0);
             if (!isNaN(d)) return d;
         }
-        return new Date(); // ×’×™×‘×•×™
+        return new Date(); // גיבוי
     }
 
     /**
-     * ×¤×•× ×§×¦×™×™×ª ×¢×–×¨ ×œ×‘×™×¦×•×¢ Geocoding (×¢×‘×•×¨ ×§×•×‘×¥ ×¤×•×œ×™×Ÿ)
+     * פונקציית עזר לביצוע Geocoding (עבור קובץ פולין)
      */
     async function geocodePlaceName(name) {
         if (!name) return null;
@@ -6275,26 +6161,26 @@ function renderCategoryBreakdownNode(targetId){
 
     function attachJsonImportListener() {
         const fileInput = document.getElementById('importFile');
-        const importBtn = document.getElementById('btnImport'); // ×”×›×¤×ª×•×¨ ×”× ×¡×ª×¨
+        const importBtn = document.getElementById('btnImport'); // הכפתור הנסתר
 
         if (!fileInput || !importBtn || importBtn.dataset.wired) return;
         importBtn.dataset.wired = '1';
 
-        // ×¤×•× ×§×¦×™×™×ª ×™×™×‘×•× ×—×“×©×” ×©×ª×•×ž×›×ª ×‘×©× ×™ ×”×¤×•×¨×ž×˜×™×
+        // פונקציית ייבוא חדשה שתומכת בשני הפורמטים
         importBtn.addEventListener('click', async () => {
             const tid = state.currentTripId;
             if (!tid) {
-                toast('×”×§×•×‘×¥ ×œ× × ×˜×¢×Ÿ. ×¢×œ×™×š ×œ×¤×ª×•×— × ×¡×™×¢×” ×§×™×™×ž×ª ×§×•×“×.');
+                toast('הקובץ לא נטען. עליך לפתוח נסיעה קיימת קודם.');
                 return;
             }
 
             const file = fileInput.files[0];
             if (!file) {
-                toast('×”×§×•×‘×¥ ×œ× × ×˜×¢×Ÿ. ×œ× × ×‘×—×¨ ×§×•×‘×¥.');
+                toast('הקובץ לא נטען. לא נבחר קובץ.');
                 return;
             }
 
-            toast('×ž×¢×‘×“ ×§×•×‘×¥, × × ×œ×”×ž×ª×™×Ÿ...'); // ×”×•×“×¢×ª "×ž×¢×‘×“"
+            toast('מעבד קובץ, נא להמתין...'); // הודעת "מעבד"
 
             try {
                 const text = await file.text();
@@ -6303,7 +6189,7 @@ function renderCategoryBreakdownNode(targetId){
                 const ref = FB.doc(db, 'trips', tid);
                 const snap = await FB.getDoc(ref);
                 if (!snap.exists()) {
-                    throw new Error('×”× ×¡×™×¢×” ×”×¤×¢×™×œ×” ×œ× × ×ž×¦××”.');
+                    throw new Error('הנסיעה הפעילה לא נמצאה.');
                 }
                 const t = snap.data() || {};
                 t.journal = t.journal || {};
@@ -6313,9 +6199,9 @@ function renderCategoryBreakdownNode(targetId){
                 let journalAdded = 0;
                 const pad = n => String(n).padStart(2, '0');
 
-                // --- ×–×™×”×•×™ ×ž×‘× ×” ×”×§×•×‘×¥ ---
+                // --- זיהוי מבנה הקובץ ---
 
-                // ×¤×•×¨×ž×˜ 1: ×¤×•×œ×™×Ÿ 2018 (×ž×¢×¨×š ×©×œ ×™×ž×™×)
+                // פורמט 1: פולין 2018 (מערך של ימים)
                 if (Array.isArray(data)) {
                     for (const day of data) {
                         const dayDate = new Date(day.date);
@@ -6329,14 +6215,14 @@ function renderCategoryBreakdownNode(targetId){
                         let coords = null;
                         if (placeName) {
                             coords = await geocodePlaceName(placeName);
-                            await new Promise(resolve => setTimeout(resolve, 500)); // ×ž× ×™×¢×ª ×—×¡×™×ž×ª API
+                            await new Promise(resolve => setTimeout(resolve, 500)); // מניעת חסימת API
                         }
                         
                         const journalId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
                         t.journal[journalId] = {
                             text: day.content || '',
                             html: (day.content || '').replace(/\n/g, '<br>'),
-                            placeName: placeName || (day.locations ? day.locations.join(', ') : '×ž×ª×•×š ×™×™×‘×•×'),
+                            placeName: placeName || (day.locations ? day.locations.join(', ') : 'מתוך ייבוא'),
                             createdAt: dayIso, dateIso: dayIso, date: dateStr, time: timeStr,
                             lat: coords ? coords.lat : null,
                             lng: coords ? coords.lng : null 
@@ -6347,14 +6233,14 @@ function renderCategoryBreakdownNode(targetId){
                             for (const exp of day.expenses) {
                                 const expId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
                                 let currency = 'ILS'; 
-                                if (exp.currency === 'â‚ª') currency = 'ILS';
-                                if (exp.currency === '×–×œ×•×˜×™') currency = 'PLN';
-                                if (exp.currency === '×™×•×¨×•' || exp.currency === '××™×¨×•') currency = 'EUR';
+                                if (exp.currency === '₪') currency = 'ILS';
+                                if (exp.currency === 'זלוטי') currency = 'PLN';
+                                if (exp.currency === 'יורו' || exp.currency === 'אירו') currency = 'EUR';
 
                                 t.expenses[expId] = {
-                                    desc: exp.type || '×™×™×‘×•× ×ž-JSON',
-                                    descHtml: exp.type || '×™×™×‘×•× ×ž-JSON',
-                                    category: exp.type || '××—×¨',
+                                    desc: exp.type || 'ייבוא מ-JSON',
+                                    descHtml: exp.type || 'ייבוא מ-JSON',
+                                    category: exp.type || 'אחר',
                                     amount: Number(exp.amount) || 0,
                                     currency: currency,
                                     locationName: placeName || '',
@@ -6368,7 +6254,7 @@ function renderCategoryBreakdownNode(targetId){
                         }
                     }
                 }
-                // ×¤×•×¨×ž×˜ 2: ×¨×•×ž× ×™×” 2016 (××•×‘×™×™×§×˜ ×¢× {journal, expenses}) - *** ×¢× ×ª×ž×™×›×” ×‘×§×•××•×¨×“×™× ×˜×•×ª ***
+                // פורמט 2: רומניה 2016 (אובייקט עם {journal, expenses}) - *** עם תמיכה בקואורדינטות ***
                 else if (typeof data === 'object' && data.journal && Array.isArray(data.journal) && data.expenses && Array.isArray(data.expenses)) {
                     
                     for (const j of data.journal) {
@@ -6381,9 +6267,9 @@ function renderCategoryBreakdownNode(targetId){
                         t.journal[id] = { 
                             text: j.text || '', 
                             html: (j.text || '').replace(/\n/g, '<br>'), 
-                            placeName: j.placeName || '', // <-- ×ª×ž×™×›×” ×—×“×©×”
-                            lat: j.lat || null,           // <-- ×ª×ž×™×›×” ×—×“×©×”
-                            lng: j.lng || null,           // <-- ×ª×ž×™×›×” ×—×“×©×”
+                            placeName: j.placeName || '', // <-- תמיכה חדשה
+                            lat: j.lat || null,           // <-- תמיכה חדשה
+                            lng: j.lng || null,           // <-- תמיכה חדשה
                             createdAt: iso, dateIso: iso, date: dateStr, time: timeStr 
                         };
                         journalAdded++;
@@ -6397,37 +6283,37 @@ function renderCategoryBreakdownNode(targetId){
                         const timeStr = '09:00';
 
                         t.expenses[id] = {
-                            desc: e.desc || '×™×™×‘×•× ×ž-JSON', 
-                            descHtml: e.desc || '×™×™×‘×•× ×ž-JSON', 
-                            category: e.category || '××—×¨', // <-- ×ª×ž×™×›×” ×—×“×©×”
+                            desc: e.desc || 'ייבוא מ-JSON', 
+                            descHtml: e.desc || 'ייבוא מ-JSON', 
+                            category: e.category || 'אחר', // <-- תמיכה חדשה
                             amount: Number(e.amount) || 0, 
                             currency: e.currency || 'ILS', 
-                            locationName: e.locationName || e.placeName || '', // <-- ×ª×ž×™×›×” ×—×“×©×”
-                            lat: e.lat || null,           // <-- ×ª×ž×™×›×” ×—×“×©×”
-                            lng: e.lng || null,           // <-- ×ª×ž×™×›×” ×—×“×©×”
+                            locationName: e.locationName || e.placeName || '', // <-- תמיכה חדשה
+                            lat: e.lat || null,           // <-- תמיכה חדשה
+                            lng: e.lng || null,           // <-- תמיכה חדשה
                             createdAt: iso, dateIso: iso, date: dateStr, time: timeStr, 
                             rates: { ...(state.rates || {}) } 
                         };
                         expensesAdded++;
                     }
                 }
-                // ×¤×•×¨×ž×˜ ×œ× ×ž×–×•×”×”
+                // פורמט לא מזוהה
                 else {
-                    throw new Error('×ž×‘× ×” ×”×§×•×‘×¥ ××™× ×• × ×ª×ž×š.');
+                    throw new Error('מבנה הקובץ אינו נתמך.');
                 }
 
-                // ×©×ž×™×¨×” ×•×”×•×“×¢×ª ×”×¦×œ×—×”
+                // שמירה והודעת הצלחה
                 await FB.updateDoc(ref, {
                     journal: t.journal,
                     expenses: t.expenses
                 });
 
-                toast(`×”×§×•×‘×¥ × ×˜×¢×Ÿ ×‘×”×¦×œ×—×”! (× ×•×¡×¤×• ${journalAdded} ×™×•×ž×Ÿ ×•-${expensesAdded} ×”×•×¦××•×ª)`);
+                toast(`הקובץ נטען בהצלחה! (נוספו ${journalAdded} יומן ו-${expensesAdded} הוצאות)`);
                 await loadTrip(); 
 
             } catch (err) {
                 console.error('JSON import error:', err);
-                toast('×”×§×•×‘×¥ ×œ× × ×˜×¢×Ÿ: ' + err.message); // ×”×•×“×¢×ª ×›×™×©×œ×•×Ÿ
+                toast('הקובץ לא נטען: ' + err.message); // הודעת כישלון
             } finally {
                 fileInput.value = '';
             }
@@ -6440,46 +6326,46 @@ function renderCategoryBreakdownNode(targetId){
         attachJsonImportListener();
     }
 })();
-// --- ×¡×•×£ ×”×§×•×“ ×”×—×¡×¨ ---
+// --- סוף הקוד החסר ---
 
 // ======================================================
-// ×ª×•×¡×¤×•×ª ×—×“×©×•×ª: ×”×¡×ª×¨×ª ×ª×•×•×™×ª "×ž×™×§×•×" + ×ž×¦×™××ª ×§×•××•×¨×“×™× ×˜×•×ª ××•×˜×•×ž×˜×™×ª
+// תוספות חדשות: הסתרת תווית "מיקום" + מציאת קואורדינטות אוטומטית
 // ======================================================
 
-// 1. ×¤×•× ×§×¦×™×” ×œ×”×¡×ª×¨×ª/×”×¦×’×ª ×”×ª×•×•×™×ª "×ž×™×§×•×"
+// 1. פונקציה להסתרת/הצגת התווית "מיקום"
 function updateLocLabelState(prefix) {
   const inputId = prefix + 'LocationName';
   const el = document.getElementById(inputId);
   if (!el) return;
   const labelSpan = el.parentElement ? el.parentElement.querySelector('.loc-label') : null;
   if (labelSpan) {
-    // ×× ×™×© ×˜×§×¡×˜ ×‘×©×“×”, ×”×¡×ª×¨ ××ª ×”×ž×™×œ×” "×ž×™×§×•×"
+    // אם יש טקסט בשדה, הסתר את המילה "מיקום"
     labelSpan.style.display = (el.value && el.value.trim() !== '') ? 'none' : '';
   }
 }
 
-// 2. ×¤×•× ×§×¦×™×” ×ž×©×•×“×¨×’×ª ×œ×¡×¨×™×§×ª ×§×•××•×¨×“×™× ×˜×•×ª (×ž× ×¡×” ×¢×‘×¨×™×ª ×•××– ×× ×’×œ×™×ª)
+// 2. פונקציה משודרגת לסריקת קואורדינטות (מנסה עברית ואז אנגלית)
 async function autoFetchCoords(prefix) {
-  // ×¤×•× ×§×¦×™×” ×ž× ×•×˜×¨×œ×ª: ×©×“×” ×”×›×•×ª×¨×ª ×”×•× ×˜×§×¡×˜ ×—×•×¤×©×™ ×‘×œ×‘×“, ×œ× ×ž×—×¤×©×™× ×ž×™×§×•× ×œ×¤×™ ×”×˜×§×¡×˜.
+  // פונקציה מנוטרלת: שדה הכותרת הוא טקסט חופשי בלבד, לא מחפשים מיקום לפי הטקסט.
   return;
 }
 
 
-// 3. ×”×¤×¢×œ×ª ×”×ž××–×™× ×™× ×‘×˜×¢×™× ×”
+// 3. הפעלת המאזינים בטעינה
 document.addEventListener('DOMContentLoaded', () => {
   ['exp', 'jr'].forEach(prefix => {
     const el = document.getElementById(prefix + 'LocationName');
     if (el) {
-      // ×‘×¢×ª ×”×§×œ×“×”: ×¢×“×›×Ÿ ×”×¡×ª×¨×ª ×ª×•×•×™×ª ×•×’× × ×§×” ×§×•××•×¨×“×™× ×˜×•×ª ×›×“×™ ×œ×›×¤×•×ª ×—×™×¤×•×© ×ž×—×“×©
+      // בעת הקלדה: עדכן הסתרת תווית וגם נקה קואורדינטות כדי לכפות חיפוש מחדש
       el.addEventListener('input', () => {
           updateLocLabelState(prefix);
           document.getElementById(prefix + 'Lat').value = '';
           document.getElementById(prefix + 'Lng').value = '';
       });
       
-      // ×‘×•×˜×œ: ××™×Ÿ ×™×•×ª×¨ ×—×™×¤×•×© ××•×˜×•×ž×˜×™ ×¢×œ blur â€“ ×”×©×“×” ×”×•× ×›×•×ª×¨×ª ×˜×§×¡×˜ ×‘×œ×‘×“
+      // בוטל: אין יותר חיפוש אוטומטי על blur – השדה הוא כותרת טקסט בלבד
 
-      // ×‘×“×™×§×” ×¨××©×•× ×™×ª
+      // בדיקה ראשונית
       updateLocLabelState(prefix);
     }
   });
@@ -6606,11 +6492,11 @@ function __renderGpxPanel(){
 
   panel.innerHTML = `
     <div class="gpx-head">
-      <button class="btn small" id="gpxShowAll">×”×¦×’ ×”×›×œ</button>
-      <button class="btn small" id="gpxHideAll">×”×¡×ª×¨ ×”×›×œ</button>
-      <button class="btn small" id="gpxFitAll">×–×•× ×œ×”×›×œ</button>
-      <button class="btn small danger" id="gpxClearAll">×ž×—×§ ×”×›×œ</button>
-      <div class="gpx-count">${count} ×ž×¡×œ×•×œ×™×</div>
+      <button class="btn small" id="gpxShowAll">הצג הכל</button>
+      <button class="btn small" id="gpxHideAll">הסתר הכל</button>
+      <button class="btn small" id="gpxFitAll">זום להכל</button>
+      <button class="btn small danger" id="gpxClearAll">מחק הכל</button>
+      <div class="gpx-count">${count} מסלולים</div>
     </div>
     <div class="gpx-list">
       ${ids.map(id=>{
@@ -6622,7 +6508,7 @@ function __renderGpxPanel(){
               <span class="gpx-name">${__escapeHtml(f.name)}</span>
             </label>
             <div class="gpx-actions">
-              <button class="btn small danger" data-act="del">×ž×—×§</button>
+              <button class="btn small danger" data-act="del">מחק</button>
               <button class="btn small" data-act="fit">Fit</button>
               <button class="btn small" data-act="solo">Solo</button>
             </div>
@@ -6714,7 +6600,7 @@ async function __deleteGpx(id){
   state.gpx.files.delete(id);
   state.gpx.order = state.gpx.order.filter(x=>x!==id);
   try{ if(state.current && state.current.journal) delete state.current.journal[id]; }catch(_){}
-  if(typeof toast==='function') toast('× ×ž×—×§');
+  if(typeof toast==='function') toast('נמחק');
   __renderGpxPanel();
 }
 
@@ -6734,7 +6620,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
 
 
 /* ===========================
-   Overview (×”×¦×’ ×”×›×œ) Search + Toggle All
+   Overview (הצג הכל) Search + Toggle All
    =========================== */
 (function(){
   function $(sel, root){ return (root||document).querySelector(sel); }
@@ -6746,7 +6632,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  // Allow invisible RTL/LTR control characters between letters so "×¢×™× ×ª" matches "×¢×™â€Ž× ×ª"
+  // Allow invisible RTL/LTR control characters between letters so "עינת" matches "עי‎נת"
   function buildLooseMatcher(q){
     q = (q || '').trim();
     if (!q) return null;
@@ -6844,7 +6730,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     const btn = document.getElementById('btnAllToggle');
     if (!btn) return;
     const collapsed = root.classList.contains('all-collapsed');
-    btn.textContent = collapsed ? '×¤×ª×— ×”×›×œ' : '×¦×ž×¦× ×”×›×œ';
+    btn.textContent = collapsed ? 'פתח הכל' : 'צמצם הכל';
   }
 
   function setCollapsed(collapsed){
@@ -6971,7 +6857,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
       updateCounter();
     });
 
-    // Quick actions (keep existing functionality; just expose entry points from "×”×¦×’ ×”×›×œ")
+    // Quick actions (keep existing functionality; just expose entry points from "הצג הכל")
     const qAddExpense = document.getElementById('btnQuickAddExpense');
     const qAddJournal = document.getElementById('btnQuickAddJournal');
     const qBreakdown = document.getElementById('btnQuickBreakdown');
@@ -7039,32 +6925,32 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
   async function doLogin(){
     const email = $q('#mEmail')?.value?.trim();
     const pass  = $q('#mPass')?.value||'';
-    if(!email || !pass){ setErr('×× × ×ž×œ× ××™×ž×™×™×œ ×•×¡×™×¡×ž×”'); return; }
-    setErr('×ž×ª×—×‘×¨...');
+    if(!email || !pass){ setErr('אנא מלא אימייל וסיסמה'); return; }
+    setErr('מתחבר...');
     try{
       await import('./firebase.js').then(async (m) => {
         const FBNS = window.FB || m.FB;
         const auth = window.auth || m.auth;
-        if (!FBNS || !auth) throw new Error('Firebase Auth ×œ× ××•×ª×—×œ');
+        if (!FBNS || !auth) throw new Error('Firebase Auth לא אותחל');
         await FBNS.signInWithEmailAndPassword(auth, email, pass);
       });
       setErr('');
     }catch(err){
       console.error('Mobile fallback login error:', err);
-      setErr('×©×’×™××” ×‘×”×ª×—×‘×¨×•×ª: ' + (err?.message||err));
+      setErr('שגיאה בהתחברות: ' + (err?.message||err));
     }
   }
 
   async function doLogout(){
-    setErr('×ž×ª× ×ª×§...');
+    setErr('מתנתק...');
     try{
       if(typeof window.hardSignOut === 'function') await window.hardSignOut();
       else if(window.FB?.signOut && (window.auth||window.FB?.auth)) await window.FB.signOut(window.auth||window.FB.auth);
-      setErr('× ×•×ª×§.');
+      setErr('נותק.');
       setTimeout(()=>setErr(''), 600);
     }catch(err){
       console.error('Mobile fallback logout error:', err);
-      setErr('×©×’×™××” ×‘×”×ª× ×ª×§×•×ª');
+      setErr('שגיאה בהתנתקות');
     }
   }
 
@@ -7092,6 +6978,3 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
   else wire();
 })();
-
-
-
