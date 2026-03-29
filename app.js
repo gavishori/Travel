@@ -7134,3 +7134,14 @@ FBNS?.onAuthStateChanged?.(auth, (u) => {
     document.body.dataset.authstate = 'out';
   }
 });
+    }catch(err){
+      console.error('Mobile auth wire error:', err);
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', wire);
+  }else{
+    wire();
+  }
+})();
