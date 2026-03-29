@@ -3780,3 +3780,47 @@ button, .btn, .menu-btn, select, input, textarea {
     overflow:visible !important;
   }
 }
+
+/* כל מה שבתוך הסוגריים האלו משפיע רק על מובייל/טאבלט */
+@media (max-width: 820px) {
+  
+  /* 1. תיקון הגלילה - במחשב הגדרת overflow:hidden, במובייל זה "הורג" את האתר */
+  html, body {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative;
+  }
+
+  /* 2. מניעת זום אוטומטי מעצבן באייפון כשלוחצים על שדות טקסט */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* 3. סידור המרווחים הכלליים */
+  .container, main {
+    padding: 10px !important;
+    width: 100% !important;
+  }
+
+  /* 4. הפיכת כרטיסי המידע (נסיעות/הוצאות) לטור אחד במקום שורות צפופות */
+  .trip-card, .expense-row, .journal-row {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    margin-bottom: 15px !important;
+    padding: 12px !important;
+  }
+}
+dialog.modal {
+    width: 92vw !important;
+    max-width: 92vw !important;
+    max-height: 85vh !important;
+    margin: auto !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }

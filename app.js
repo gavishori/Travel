@@ -7114,12 +7114,23 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     try{
       const FBNS = window.FB;
       const auth = window.auth || (FBNS && FBNS.auth);
-      FBNS?.onAuthStateChanged?.(auth, (u)=>{
-        if(u){ hide(overlay); document.body.dataset.authstate = 'in'; }
-        else{ if(isMobile()) show(overlay); document.body.dataset.authstate = 'out'; }
-      });
-    }catch(e){ console.warn('Auth observer failed (fallback still works manual):', e); }
+      // בתוך פונקציית ה-wire ב-app.js
+FBNS?.onAuthStateChanged?.(auth, (u) => {
+  const overlay = document.getElementById('mobileAuthOverlay');
+  if (u) {
+    // אם המשתמש מחובר - אנחנו מעיפים את החסימה מיד
+    if(overlay) {
+       overlay.style.setProperty('display', 'none', 'important');
+    }
+    document.body.dataset.authstate = 'in';
+    // חשוב: מחזירים את הגלילה למסך
+    document.body.style.overflow = 'auto'; 
+  } else {
+    // אם לא מחובר וזה מובייל - מציגים את ה-Login
+    if (isMobile() && overlay) {
+       overlay.style.display = 'flex';
+       document.body.style.overflow = 'hidden'; // מונע גלילה כשיש לוגין
+    }
+    document.body.dataset.authstate = 'out';
   }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-  else wire();
-})();
+});
