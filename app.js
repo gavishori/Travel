@@ -1102,6 +1102,42 @@ xErr = function(e){
   if (msg.includes('auth/unauthorized-domain')) return 'הדומיין הזה לא מורשה ב-Firebase Auth';
   return __baseXErr(e);
 };
+function ensureMobileAuthDebug(){
+  let root = document.getElementById('mobileAuthDebug');
+  if(root) return root;
+  root = document.createElement('div');
+  root.id = 'mobileAuthDebug';
+  root.innerHTML = `
+    <div id="mobileAuthDebugCard" role="dialog" aria-modal="true" aria-labelledby="mobileAuthDebugTitle">
+      <h3 id="mobileAuthDebugTitle">שגיאת התחברות במובייל</h3>
+      <p id="mobileAuthDebugMessage"></p>
+      <pre id="mobileAuthDebugRaw"></pre>
+      <div id="mobileAuthDebugActions">
+        <button id="mobileAuthDebugClose" class="btn primary" type="button">סגור</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(root);
+  root.querySelector('#mobileAuthDebugClose')?.addEventListener('click', ()=> root.classList.remove('show'));
+  root.addEventListener('click', (ev)=>{
+    if(ev.target === root) root.classList.remove('show');
+  });
+  return root;
+}
+function showMobileAuthDebug(error){
+  const isMobileViewport = typeof window.__isMobileViewport === 'function'
+    ? window.__isMobileViewport()
+    : (window.innerWidth <= 820);
+  if(!isMobileViewport) return;
+  const root = ensureMobileAuthDebug();
+  const pretty = xErr(error);
+  const raw = (error?.code ? `${error.code}\n` : '') + (error?.message || String(error || 'Unknown auth error'));
+  const msgEl = root.querySelector('#mobileAuthDebugMessage');
+  const rawEl = root.querySelector('#mobileAuthDebugRaw');
+  if(msgEl) msgEl.textContent = pretty;
+  if(rawEl) rawEl.textContent = raw;
+  root.classList.add('show');
+}
 function getActiveCurrencyFromTrip(t){
   return localStorage.getItem(`flymily_currency_${t.id}`) || 'ILS'; // Changed default to ILS to match the image
 }
@@ -2154,13 +2190,13 @@ $('#lsSignUp').addEventListener('click', async ()=>{
   try{
     await FB.createUserWithEmailAndPassword(auth, $('#lsEmail').value.trim(), $('#lsPass').value);
     $('#lsError').textContent = '';
-  }catch(e){ $('#lsError').textContent = xErr(e); }
+  }catch(e){ $('#lsError').textContent = xErr(e); showMobileAuthDebug(e); }
 });
 $('#lsReset').addEventListener('click', async ()=>{
 
 // Safe HTML escape
 
-  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); }
+  try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); showMobileAuthDebug(e); }
 });
 // ---- Missing sign-in button wiring (added) ----
 (function(){
@@ -2174,6 +2210,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       if($(errSel)) $(errSel).textContent = '';
     }catch(e){
       if($(errSel)) $(errSel).textContent = xErr(e);
+      showMobileAuthDebug(e);
       console.error('login failed', e);
     }
   };
@@ -2208,6 +2245,7 @@ $('#lsReset').addEventListener('click', async ()=>{
       if(authModal?.open) authModal.close();
     }catch(e){
       if(errEl) errEl.textContent = xErr(e);
+      showMobileAuthDebug(e);
       console.error('mobile-safe login failed', e);
       try{
         if(isMobileViewport()) alert(xErr(e));
@@ -4066,6 +4104,7 @@ async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', 
     const e = document.querySelector(errSel); if(e) e.textContent = '';
   }catch(err){
     const e = document.querySelector('#authError'); if(e) e.textContent = (err?.code || err?.message || 'שגיאת התחברות');
+    showMobileAuthDebug(err);
     console.error('login failed', err);
   }finally{
     __loginInFlight = false;
