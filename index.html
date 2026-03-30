@@ -28,16 +28,24 @@
       <div class="spacer"></div>
       <button id="btnAllTrips" class="btn" style="display:none">כל הנסיעות</button>
       <!-- Auth Compact -->
-      <div id="authArea" class="menu" style="display: flex; align-items: center; gap: 8px;">
-        <span id="currentUserEmail" style="display:none; color: white; font-size: 14px; opacity: .85;"></span>
-        <button id="btnLogin" class="btn primary">התחברות</button>
+      <div class="header-controls">
+        <span id="currentUserEmail" style="display:none"></span>
+        <button id="btnLogin" class="btn primary header-auth-btn" aria-label="התחברות">התחברות</button>
+        <button id="btnTheme" class="btn header-theme-btn" aria-label="שינוי ערכת צבעים">☀</button>
+        <span id="userBadge" class="muted" style="display:none"></span>
       </div>
-
-      <button id="btnTheme" class="btn">מצב כהה/בהיר</button>
-      <span id="userBadge" class="muted" style="display:none"></span>
     
-<button class="btn success" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
 </header>
+
+<dialog id="accountMenuDialog" class="account-menu-dialog">
+  <div class="account-menu-sheet">
+    <div id="accountMenuEmail" class="account-menu-email"></div>
+    <div class="account-menu-actions">
+      <button id="accountMenuLogout" class="btn danger" type="button">התנתקות</button>
+      <button id="accountMenuCancel" class="btn" type="button">ביטול</button>
+    </div>
+  </div>
+</dialog>
 
     
 <div id="loginScreen" class="login-screen">

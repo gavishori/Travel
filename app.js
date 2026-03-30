@@ -13,7 +13,7 @@ function stripLinks(text){
 
 var importGPXFromFile, importGPXAsTrek;
 // === Auth Button Toggle (Login <-> Logout) ===
-function wireAuthPrimaryButton(){
+function legacyWireAuthPrimaryButton(){
   const btn = document.getElementById('btnLogin'); // header primary button
   if(!btn) return;
   if(btn.dataset.authWired==='1') return;
@@ -51,7 +51,104 @@ function wireAuthPrimaryButton(){
     }
   };
 }
-document.addEventListener('DOMContentLoaded', wireAuthPrimaryButton);
+function isCompactMobileHeader(){
+  return window.matchMedia('(max-width: 820px)').matches;
+}
+
+function syncThemeToggleButton(){
+  const btn = document.getElementById('btnTheme');
+  if(!btn) return;
+  const isLight = document.body.dataset.theme === 'light';
+  const icon = isLight ? '☀' : '☾';
+  const nextLabel = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
+  btn.innerHTML = `<span aria-hidden="true">${icon}</span>`;
+  btn.setAttribute('aria-label', nextLabel);
+  btn.title = nextLabel;
+  btn.classList.add('icon-only');
+}
+
+async function performPrimaryLogout(e){
+  try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){ }
+  try{
+    if(typeof hardSignOut==='function'){ await hardSignOut(); }
+    else if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+    else if(typeof signOutUser==='function'){ await signOutUser(); }
+    else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
+  }catch(err){ console.error('primary logout failed', err); }
+  try { window.state = globalThis.state = { trips: [], current: null, currentTripId: null, user: null, maps: {}, filters: {}, shared: {}, rates: {}, categories: {} }; } catch(_) {}
+  try { sessionStorage.clear(); } catch(_) {}
+  try { localStorage.removeItem('activeTripId'); } catch(_) {}
+  try { location.replace(location.pathname + '?logout=' + Date.now()); } catch(_) { location.reload(); }
+}
+
+function openAccountMenu(){
+  const dlg = document.getElementById('accountMenuDialog');
+  if(!dlg || typeof dlg.showModal !== 'function') return;
+  if(!dlg.open) dlg.showModal();
+}
+
+function closeAccountMenu(){
+  const dlg = document.getElementById('accountMenuDialog');
+  if(dlg?.open) dlg.close();
+}
+
+function wireHeaderControls(){
+  const btn = document.getElementById('btnLogin');
+  const themeBtn = document.getElementById('btnTheme');
+  const dlg = document.getElementById('accountMenuDialog');
+  if(!btn) return;
+  if(btn.dataset.authWired==='1') return;
+  btn.dataset.authWired='1';
+
+  if(themeBtn && themeBtn.dataset.themeWired!=='1'){
+    themeBtn.dataset.themeWired='1';
+    themeBtn.addEventListener('click', () => {
+      document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
+      syncThemeToggleButton();
+    });
+  }
+
+  document.getElementById('accountMenuLogout')?.addEventListener('click', async (e)=>{
+    closeAccountMenu();
+    await performPrimaryLogout(e);
+  });
+  document.getElementById('accountMenuCancel')?.addEventListener('click', ()=> closeAccountMenu());
+  dlg?.addEventListener('click', (e)=>{
+    if(e.target === dlg) closeAccountMenu();
+  });
+
+  window.__authPrimarySwap = (loggedIn, email='')=>{
+    const old = document.getElementById('btnLogin');
+    if(!old) return;
+    const clone = old.cloneNode(true);
+    old.parentNode.replaceChild(clone, old);
+    const target = document.getElementById('btnLogin');
+    const compact = isCompactMobileHeader();
+    const emailEl = document.getElementById('accountMenuEmail');
+    if(!target) return;
+    if(emailEl) emailEl.textContent = email || '';
+    target.classList.remove('danger', 'icon-only', 'is-authenticated');
+    if(loggedIn){
+      target.classList.add('is-authenticated');
+      target.innerHTML = compact ? '<span aria-hidden="true">⇦</span>' : `<span>${email || 'חשבון'}</span>`;
+      target.setAttribute('aria-label', email ? `חשבון מחובר: ${email}` : 'חשבון מחובר');
+      target.title = email || 'חשבון מחובר';
+      if(compact) target.classList.add('icon-only');
+      target.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        openAccountMenu();
+      }, {passive:false});
+    } else {
+      target.textContent = 'התחברות';
+      target.setAttribute('aria-label', 'התחברות');
+      target.removeAttribute('title');
+    }
+  };
+
+  syncThemeToggleButton();
+  window.addEventListener('resize', syncThemeToggleButton);
+}
+document.addEventListener('DOMContentLoaded', wireHeaderControls);
 
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
@@ -909,10 +1006,7 @@ function updateHeaderDestination(){
 
 $('#btnAllTrips').addEventListener('click', enterHomeMode);
 
-// Theme toggle
-$('#btnTheme').addEventListener('click', () => {
-  document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
-});
+syncThemeToggleButton();
 
 // Tabs logic (supports non-button tab widgets like the Overview dropdown)
 function getActiveTabEl(){
@@ -1519,24 +1613,8 @@ async function loadTrip(){
 
   let effectiveRates = (t.rates && typeof t.rates === 'object') ? { ...t.rates } : null;
   const missingBaseRates = !effectiveRates || !Number(effectiveRates.USDILS) || !Number(effectiveRates.USDEUR);
-  if (missingBaseRates) {
-    try{
-      const fetchedRates = await fetchRatesOnce();
-      if(fetchedRates) effectiveRates = { ...(effectiveRates || {}), ...fetchedRates };
-    }catch(_){}
-  }
   if (effectiveRates) state.rates = effectiveRates;
   ensureExpenseCurrencyOption();
-  try{ await enrichLegacyExpenses(t); }catch(_){ }
-
-  // Backfill old trips so legacy data behaves like newly-created trips.
-  try{
-    const patch = {};
-    if (!rawTrip.localCurrency && inferredLocalCurrency) patch.localCurrency = inferredLocalCurrency;
-    if (!rawTrip.budget || typeof rawTrip.budget !== 'object') patch.budget = t.budget;
-    if (effectiveRates && missingBaseRates) patch.rates = effectiveRates;
-    if (Object.keys(patch).length) await FB.updateDoc(ref, patch);
-  }catch(_){}
 
   // Overview meta (optional – only if element exists)
   (function(){
@@ -1584,6 +1662,37 @@ async function loadTrip(){
   
   // Reset dirty state on successful load
   state.isDirty = false;
+
+  setTimeout(async ()=>{
+    if(state.currentTripId !== t.id) return;
+    let backgroundRates = effectiveRates;
+
+    if (missingBaseRates) {
+      try{
+        const fetchedRates = await fetchRatesOnce();
+        if(fetchedRates) backgroundRates = { ...(backgroundRates || {}), ...fetchedRates };
+        if(state.currentTripId !== t.id) return;
+        if(backgroundRates){
+          state.rates = backgroundRates;
+          if(state.current) state.current.rates = backgroundRates;
+          const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS');
+          if(_r1) _r1.value = state.rates.USDEUR;
+          if(_r2) _r2.value = state.rates.USDILS;
+          renderExpenseSummary(state.current || t);
+        }
+      }catch(_){}
+    }
+
+    try{ await enrichLegacyExpenses(t); }catch(_){ }
+
+    try{
+      const patch = {};
+      if (!rawTrip.localCurrency && inferredLocalCurrency) patch.localCurrency = inferredLocalCurrency;
+      if (!rawTrip.budget || typeof rawTrip.budget !== 'object') patch.budget = t.budget;
+      if (backgroundRates && missingBaseRates) patch.rates = backgroundRates;
+      if (Object.keys(patch).length) await FB.updateDoc(ref, patch);
+    }catch(_){}
+  }, 0);
 }
 
 // === Trip "today" prompt (Add Journal / Add Expense / Cancel) ===
@@ -4142,7 +4251,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       }
       // קרא לפונקציה שמחליפה את הכפתור ל"ניתוק"
       if (typeof window.__authPrimarySwap === 'function') {
-        window.__authPrimarySwap(true);
+        window.__authPrimarySwap(true, user.email || '');
       }
       
       if (loginScreen) loginScreen.style.display = 'none';
@@ -4160,7 +4269,7 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
       }
       // קרא לפונקציה שמחליפה את הכפתור ל"התחברות"
       if (typeof window.__authPrimarySwap === 'function') {
-        window.__authPrimarySwap(false);
+        window.__authPrimarySwap(false, '');
       }
 
       if (authModal && !authModal.open) authModal.showModal(); // הצג את מודל ההתחברות
