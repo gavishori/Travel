@@ -3978,7 +3978,8 @@ button, .btn, .menu-btn, select, input, textarea {
     padding: 12px !important;
   }
 }
-dialog.modal {
+@media (max-width: 820px) {
+  dialog.modal {
     width: 92vw !important;
     max-width: 92vw !important;
     max-height: 85vh !important;
@@ -3988,3 +3989,150 @@ dialog.modal {
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
   }
+}
+
+@media (max-width: 820px) {
+  .header-controls{
+    gap:6px !important;
+  }
+
+  .header-theme-btn.icon-only,
+  .header-auth-btn.icon-only{
+    inline-size:42px;
+    block-size:42px;
+    min-width:42px !important;
+    border-radius:999px;
+  }
+
+  #btnLogin{
+    min-width:42px !important;
+  }
+
+  #view-overview .cards{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  #view-overview .cards > *{
+    min-width:0;
+  }
+
+  #view-overview .expenses-table,
+  #view-expenses .expenses-table,
+  #view-journal .expenses-table{
+    width:100% !important;
+    table-layout:fixed !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:has(td.header){
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "title menu"
+      "date menu"
+      "amount menu"
+      "category menu" !important;
+    gap:0 !important;
+    align-items:center !important;
+    background:rgba(255, 120, 120, 0.20) !important;
+    border-radius:12px !important;
+    overflow:hidden !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "location menu"
+      "date menu" !important;
+    gap:0 !important;
+    align-items:center !important;
+    background:rgba(140, 255, 140, 0.20) !important;
+    border-radius:12px !important;
+    overflow:hidden !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.header) td.cell{
+    border:none !important;
+    background:transparent !important;
+    min-width:0 !important;
+    width:auto !important;
+    padding:.55rem .75rem !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.title{
+    grid-area:title !important;
+    font-weight:700;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time{
+    grid-area:date !important;
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.time{
+    display:none !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.amount{
+    grid-area:amount !important;
+    white-space:normal !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.category{
+    grid-area:category !important;
+    display:block !important;
+    color:var(--muted);
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"] td.header.currency{
+    display:none !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.location{
+    grid-area:location !important;
+    font-weight:700;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time{
+    grid-area:date !important;
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"] td.header.time{
+    display:none !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.header) td.menu-cell{
+    grid-area:menu !important;
+    align-self:stretch !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:.5rem .5rem .5rem .25rem !important;
+    width:56px !important;
+    min-width:56px !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.notes){
+    display:block !important;
+    margin-top:0 !important;
+    margin-bottom:10px !important;
+  }
+
+  #view-overview .expenses-table tr.exp-item[data-kind]:has(td.notes) td.notes{
+    display:block !important;
+    width:100% !important;
+    padding:.65rem .75rem .8rem !important;
+    border:none !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+}

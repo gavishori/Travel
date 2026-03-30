@@ -92,6 +92,59 @@ function closeAccountMenu(){
   if(dlg?.open) dlg.close();
 }
 
+function setBodyTheme(nextTheme){
+  document.body.dataset.theme = (nextTheme === 'light' ? 'light' : 'dark');
+  const btn = document.getElementById('btnTheme');
+  if(!btn) return;
+  const isLight = document.body.dataset.theme === 'light';
+  btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
+  const nextLabel = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
+  btn.setAttribute('aria-label', nextLabel);
+  btn.title = nextLabel;
+  btn.classList.add('icon-only');
+}
+
+function bindTap(btn, handler, key){
+  if(!btn || btn.dataset[key]==='1') return;
+  btn.dataset[key] = '1';
+  let lastTouchTs = 0;
+  const run = (ev)=>{
+    try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); }catch(_){ }
+    handler(ev);
+  };
+  btn.addEventListener('touchend', (ev)=>{
+    lastTouchTs = Date.now();
+    run(ev);
+  }, { passive:false });
+  btn.addEventListener('click', (ev)=>{
+    if(Date.now() - lastTouchTs < 500) return;
+    run(ev);
+  }, { passive:false });
+}
+
+function refreshHeaderAuthUi(forcedUser){
+  try{
+    if(typeof window.__authPrimarySwap !== 'function') return;
+    const user = forcedUser === undefined
+      ? ((typeof FB !== 'undefined' && FB?.auth?.currentUser) ? FB.auth.currentUser : null)
+      : forcedUser;
+    window.__authPrimarySwap(!!user, user?.email || '');
+  }catch(err){
+    console.warn('header auth sync failed', err);
+  }
+}
+
+function syncThemeToggleButtonLegacy(){
+  const btn = document.getElementById('btnTheme');
+  if(!btn) return;
+  const isLight = document.body.dataset.theme === 'light';
+  const nextLabel = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
+  btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
+  btn.setAttribute('aria-label', nextLabel);
+  btn.title = nextLabel;
+  btn.classList.add('icon-only');
+}
+
 function wireHeaderControls(){
   const btn = document.getElementById('btnLogin');
   const themeBtn = document.getElementById('btnTheme');
@@ -102,10 +155,6 @@ function wireHeaderControls(){
 
   if(themeBtn && themeBtn.dataset.themeWired!=='1'){
     themeBtn.dataset.themeWired='1';
-    themeBtn.addEventListener('click', () => {
-      document.body.dataset.theme = (document.body.dataset.theme === 'light' ? 'dark' : 'light');
-      syncThemeToggleButton();
-    });
   }
 
   document.getElementById('accountMenuLogout')?.addEventListener('click', async (e)=>{
@@ -144,8 +193,44 @@ function wireHeaderControls(){
     }
   };
 
-  syncThemeToggleButton();
+  if(themeBtn){
+    bindTap(themeBtn, ()=>{
+      const nextTheme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+      setBodyTheme(nextTheme);
+    }, 'themeTapWired');
+  }
+
+  window.__authPrimarySwap = (loggedIn, email='')=>{
+    const old = document.getElementById('btnLogin');
+    if(!old) return;
+    const clone = old.cloneNode(true);
+    old.parentNode.replaceChild(clone, old);
+    const target = document.getElementById('btnLogin');
+    const emailEl = document.getElementById('accountMenuEmail');
+    if(!target) return;
+    if(emailEl) emailEl.textContent = email || '';
+    target.classList.remove('danger', 'icon-only', 'is-authenticated');
+    if(loggedIn){
+      target.classList.add('is-authenticated', 'icon-only');
+      target.innerHTML = '<span aria-hidden="true">&#10140;</span>';
+      target.setAttribute('aria-label', 'חשבון מחובר');
+      target.title = 'חשבון מחובר';
+      bindTap(target, ()=> openAccountMenu(), 'authTapWired');
+    } else {
+      target.textContent = 'התחברות';
+      target.setAttribute('aria-label', 'התחברות');
+      target.removeAttribute('title');
+    }
+  };
+
+  setBodyTheme(document.body.dataset.theme);
   window.addEventListener('resize', syncThemeToggleButton);
+  window.addEventListener('pageshow', ()=> refreshHeaderAuthUi());
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) refreshHeaderAuthUi();
+  });
+  window.__refreshHeaderAuthUi = refreshHeaderAuthUi;
+  refreshHeaderAuthUi();
 }
 document.addEventListener('DOMContentLoaded', wireHeaderControls);
 
