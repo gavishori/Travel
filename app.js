@@ -311,6 +311,218 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 })();
+
+/* ---------- Final mobile-only shell overrides ---------- */
+(function(){
+  function mobileApplyThemeButton(){
+    if(!isCompactMobileHeader()) return;
+    const btn = document.getElementById('btnTheme');
+    if(!btn) return;
+    const isLight = document.body.dataset.theme === 'light';
+    btn.classList.add('icon-only');
+    btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
+    btn.setAttribute('aria-label', isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר');
+    btn.title = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
+  }
+
+  function mobileApplyAuthButton(loggedIn, email=''){
+    if(!isCompactMobileHeader()) return;
+    const current = document.getElementById('btnLogin');
+    if(!current) return;
+    const replacement = current.cloneNode(true);
+    current.parentNode.replaceChild(replacement, current);
+    const btn = document.getElementById('btnLogin');
+    const emailEl = document.getElementById('accountMenuEmail');
+    if(!btn) return;
+    if(emailEl) emailEl.textContent = email || '';
+    btn.classList.remove('danger');
+    btn.classList.add('icon-only');
+    btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
+    btn.setAttribute('aria-label', loggedIn ? 'חשבון מחובר' : 'התחברות');
+    btn.title = loggedIn ? 'חשבון מחובר' : 'התחברות';
+    if(loggedIn){
+      btn.classList.add('is-authenticated');
+      bindTap(btn, ()=> openAccountMenu(), 'mobileFinalAuthTap');
+    }else{
+      btn.classList.remove('is-authenticated');
+    }
+  }
+
+  function getCurrentAuthUser(){
+    return (typeof FB !== 'undefined' && FB?.auth?.currentUser) ? FB.auth.currentUser : null;
+  }
+
+  function ensureMobileSectionMenuDialog(){
+    if(!isCompactMobileHeader()) return null;
+    let dlg = document.getElementById('mobileSectionMenuDialog');
+    if(dlg) return dlg;
+    dlg = document.createElement('dialog');
+    dlg.id = 'mobileSectionMenuDialog';
+    dlg.className = 'modal mobile-section-dialog';
+    dlg.innerHTML = `
+      <header><strong id="mobileSectionMenuTitle">פעולות</strong></header>
+      <div class="body"><div id="mobileSectionMenuBody" class="mobile-section-menu-body"></div></div>
+      <div class="footer"><button id="mobileSectionMenuClose" class="btn" type="button">סגור</button></div>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#mobileSectionMenuClose')?.addEventListener('click', ()=> dlg.close());
+    dlg.addEventListener('click', (ev)=>{ if(ev.target === dlg) dlg.close(); });
+    return dlg;
+  }
+
+  function triggerButton(id){
+    document.getElementById(id)?.click();
+  }
+
+  function setOverviewSelectValue(value){
+    const select = document.getElementById('overviewTabSelect');
+    if(!select) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+
+  function getMobileVisibleSection(){
+    if(!document.getElementById('view-overview')?.hidden) return 'overview';
+    if(!document.getElementById('view-expenses')?.hidden) return 'expenses';
+    if(!document.getElementById('view-journal')?.hidden) return 'journal';
+    if(!document.getElementById('view-meta')?.hidden) return 'meta';
+    return 'home';
+  }
+
+  function buildMobileAction(label, action, variant=''){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `btn mobile-sheet-action ${variant}`.trim();
+    btn.textContent = label;
+    btn.addEventListener('click', ()=>{
+      action();
+      document.getElementById('mobileSectionMenuDialog')?.close();
+    });
+    return btn;
+  }
+
+  function openMobileSectionMenu(section){
+    if(!isCompactMobileHeader()) return;
+    const currentSection = section || getMobileVisibleSection();
+    const dlg = ensureMobileSectionMenuDialog();
+    if(!dlg) return;
+    const title = dlg.querySelector('#mobileSectionMenuTitle');
+    const body = dlg.querySelector('#mobileSectionMenuBody');
+    if(!title || !body) return;
+    body.innerHTML = '';
+    const add = (label, action, variant='') => body.appendChild(buildMobileAction(label, action, variant));
+
+    if(currentSection === 'overview'){
+      title.textContent = 'תצוגה ופעולות';
+      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'), 'primary');
+      add('הצג יומן', ()=> setOverviewSelectValue('journal'));
+      add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
+      add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
+      add('מפה', ()=> setOverviewSelectValue('map'));
+      add('+ הוצאה', ()=> triggerButton('btnQuickAddExpense'));
+      add('+ יומן', ()=> triggerButton('btnQuickAddJournal'));
+      add('מיין תצוגה', ()=> triggerButton('btnAllSort'));
+      add('צמצם / פרוס הכל', ()=> triggerButton('btnAllToggle'));
+    } else if(currentSection === 'expenses'){
+      title.textContent = 'פעולות הוצאות';
+      add('+ הוסף הוצאה', ()=> triggerButton('btnAddExpense'), 'primary');
+      add('מיין', ()=> triggerButton('btnSortExpenses'));
+      add('סנן', ()=> triggerButton('btnFilterExpenses'));
+      add('צמצם / פרוס הכל', ()=> triggerButton('btnToggleExpenseDetails'));
+      add('סיכום פילוח', ()=> triggerButton('openBreakdownBtn'));
+    } else if(currentSection === 'journal'){
+      title.textContent = 'פעולות יומן';
+      add('+ הוסף רישום', ()=> triggerButton('btnAddJournal'), 'primary');
+      add('מיין', ()=> triggerButton('btnSortJournal'));
+      add('צמצם / פרוס הכל', ()=> triggerButton('btnToggleJournalDetails'));
+    } else {
+      title.textContent = 'פעולות נסיעות';
+      add('נסיעה חדשה', ()=> triggerButton('btnNewTrip'), 'primary');
+      add('מיין לפי תאריך', ()=> triggerButton('btnSortTrips'));
+      add('כל הנסיעות', ()=> triggerButton('btnAllTrips'));
+    }
+
+    if(!dlg.open) dlg.showModal();
+  }
+
+  function ensureSectionButton(hostSelector, buttonId, label, section){
+    const host = document.querySelector(hostSelector);
+    if(!host || document.getElementById(buttonId)) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = buttonId;
+    btn.className = 'btn mobile-section-menu-btn';
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = '<span aria-hidden="true">&#9776;</span>';
+    btn.addEventListener('click', ()=> openMobileSectionMenu(section));
+    host.prepend(btn);
+  }
+
+  function applyMobileLayout(){
+    if(!isCompactMobileHeader()) return;
+    const newTripBtn = document.getElementById('btnNewTrip');
+    if(newTripBtn){
+      newTripBtn.textContent = '+';
+      newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
+      newTripBtn.title = 'נסיעה חדשה';
+    }
+
+    if(typeof state === 'object'){
+      state.viewMode = 'list';
+      state.lastNonMapView = 'list';
+    }
+
+    document.getElementById('btnViewList')?.classList.add('active');
+    ['btnViewGrid','btnViewMap'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.disabled = true;
+      el.setAttribute('aria-hidden', 'true');
+      el.tabIndex = -1;
+    });
+
+    ensureMobileSectionMenuDialog();
+    ensureSectionButton('#view-overview', 'mobileOverviewMenuBtn', 'פעולות תצוגה', 'overview');
+    ensureSectionButton('#view-expenses .list-actions', 'mobileExpensesMenuBtn', 'פעולות הוצאות', 'expenses');
+    ensureSectionButton('#view-journal .list-actions', 'mobileJournalMenuBtn', 'פעולות יומן', 'journal');
+  }
+
+  function wire(){
+    if(!isCompactMobileHeader()) return;
+    const themeBtn = document.getElementById('btnTheme');
+    if(themeBtn && themeBtn.dataset.mobileFinalTheme !== '1'){
+      themeBtn.dataset.mobileFinalTheme = '1';
+      bindTap(themeBtn, ()=>{
+        setBodyTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
+        mobileApplyThemeButton();
+      }, 'mobileFinalThemeTap');
+    }
+
+    window.__authPrimarySwap = mobileApplyAuthButton;
+    mobileApplyThemeButton();
+    const currentUser = getCurrentAuthUser();
+    mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
+    applyMobileLayout();
+
+    window.addEventListener('pageshow', ()=>{
+      if(!isCompactMobileHeader()) return;
+      const currentUser = getCurrentAuthUser();
+      mobileApplyThemeButton();
+      mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
+      applyMobileLayout();
+    });
+    window.addEventListener('focus', ()=>{
+      if(!isCompactMobileHeader()) return;
+      const currentUser = getCurrentAuthUser();
+      mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', wire);
+  }else{
+    wire();
+  }
+})();
 // --- end ensure button ---
 
 async function loadJournalOnly(){
