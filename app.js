@@ -129,11 +129,10 @@ function wireHeaderControls(){
     if(emailEl) emailEl.textContent = email || '';
     target.classList.remove('danger', 'icon-only', 'is-authenticated');
     if(loggedIn){
-      target.classList.add('is-authenticated');
-      target.innerHTML = compact ? '<span aria-hidden="true">⇦</span>' : `<span>${email || 'חשבון'}</span>`;
-      target.setAttribute('aria-label', email ? `חשבון מחובר: ${email}` : 'חשבון מחובר');
-      target.title = email || 'חשבון מחובר';
-      if(compact) target.classList.add('icon-only');
+      target.classList.add('is-authenticated', 'icon-only');
+      target.innerHTML = '<span aria-hidden="true">⇦</span>';
+      target.setAttribute('aria-label', 'חשבון מחובר');
+      target.title = 'חשבון מחובר';
       target.addEventListener('click', (ev)=>{
         ev.preventDefault();
         openAccountMenu();
@@ -4245,9 +4244,9 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
 
     if (user) {
       // --- משתמש מחובר ---
-      if(emailSpan){ 
-        emailSpan.textContent = user.email || ''; 
-        emailSpan.style.display='inline-block'; 
+      if(emailSpan){
+        emailSpan.textContent = user.email || '';
+        emailSpan.style.display='none';
       }
       // קרא לפונקציה שמחליפה את הכפתור ל"ניתוק"
       if (typeof window.__authPrimarySwap === 'function') {

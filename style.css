@@ -3752,6 +3752,10 @@ button, .btn, .menu-btn, select, input, textarea {
   gap:8px;
 }
 
+#currentUserEmail{
+  display:none !important;
+}
+
 .header-theme-btn.icon-only,
 .header-auth-btn.icon-only{
   inline-size:44px;
@@ -3932,6 +3936,13 @@ button, .btn, .menu-btn, select, input, textarea {
   .account-menu-dialog{
     inline-size:min(92vw, 340px);
   }
+}
+
+.header-auth-btn.is-authenticated{
+  background:#fff !important;
+  color:var(--brand) !important;
+  border:none !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
 }
 
 /* כל מה שבתוך הסוגריים האלו משפיע רק על מובייל/טאבלט */
