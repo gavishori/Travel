@@ -1,4 +1,4 @@
-// --- Helper: strip links (for Word export) ---
+﻿// --- Helper: strip links (for Word export) ---
 function stripLinks(text){
   try{
     if(text==null) return '';
@@ -53,6 +53,65 @@ function legacyWireAuthPrimaryButton(){
 }
 function isCompactMobileHeader(){
   return window.matchMedia('(max-width: 820px)').matches;
+}
+
+function isMobileViewport(){
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.innerWidth <= 820;
+}
+
+function ensureBudgetSummaryDialog(){
+  let dlg = document.getElementById('budgetSummaryDialog');
+  if(dlg) return dlg;
+  dlg = document.createElement('dialog');
+  dlg.id = 'budgetSummaryDialog';
+  dlg.className = 'modal budget-summary-dialog';
+  dlg.innerHTML = `
+    <header><strong>תקציב נסיעה</strong></header>
+    <div class="body" id="budgetSummaryDialogBody"></div>
+    <div class="footer">
+      <button type="button" class="btn" id="budgetSummaryDialogClose">סגור</button>
+    </div>
+  `;
+  document.body.appendChild(dlg);
+  dlg.querySelector('#budgetSummaryDialogClose')?.addEventListener('click', ()=> dlg.close());
+  dlg.addEventListener('click', (ev)=>{ if(ev.target === dlg) dlg.close(); });
+  return dlg;
+}
+
+function openBudgetSummaryDialog(payload){
+  const dlg = ensureBudgetSummaryDialog();
+  const body = dlg.querySelector('#budgetSummaryDialogBody');
+  if(!body) return;
+  body.innerHTML = `
+    <div class="budget-dialog-grid">
+      <div class="budget-dialog-card">
+        <span class="budget-dialog-label">תקציב</span>
+        <strong class="budget-dialog-value">${payload.budget}</strong>
+      </div>
+      <div class="budget-dialog-card">
+        <span class="budget-dialog-label">שולם</span>
+        <strong class="budget-dialog-value">${payload.paid}</strong>
+      </div>
+      <div class="budget-dialog-card">
+        <span class="budget-dialog-label">יתרה</span>
+        <strong class="budget-dialog-value ${payload.isNeg ? 'neg' : ''}">${payload.balance}</strong>
+      </div>
+      <div class="budget-dialog-card">
+        <span class="budget-dialog-label">ניצול</span>
+        <strong class="budget-dialog-value">${payload.pct}%</strong>
+      </div>
+    </div>
+  `;
+  if(!dlg.open) dlg.showModal();
+}
+
+function buildExpenseAmountMarkup(amount, currency){
+  return `
+    <div class="amt-main mobile-expense-amount" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+      <span class="val">${bidiWrap(amount)}</span>
+      <span class="code">${bidiWrap(currency || '')}</span>
+    </div>
+  `;
 }
 
 function syncThemeToggleButton(){
@@ -2354,7 +2413,6 @@ function renderExpenses(t, order){
   arr.forEach(e=>{
     const d = dayjs(e.dateIso || e.createdAt);
     const dateStr = d.isValid() ? d.format('DD/MM/YYYY') : '';
-    const timeStr = d.isValid() ? d.format('HH:mm') : '';
     const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const curr   = e.currency||'';
     let rateToILS = null;
@@ -2371,18 +2429,14 @@ function renderExpenses(t, order){
     const tr1 = document.createElement('tr');
     tr1.className = 'exp-item';
     tr1.dataset.id = e.id;
-    tr1.dataset.kind = 'expense'; // מחזיר את הצבע האדום
+    tr1.dataset.kind = 'expense';
+    tr1.dataset.mobileLayout = 'expense-two-line';
     tr1.innerHTML = `
       <td class="cell header date">${bidiWrap(dateStr)}</td>
-      <td class="cell header time">${bidiWrap(timeStr)}</td>
+      <td class="cell header time"></td>
       <td class="cell header title">${esc(displayTitle)}</td>
       <td class="cell header category">${cat}</td>
-      <td class="cell header amount">
-        <div class="amt-main mobile-expense-amount" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
-          <button class="fx-btn" type="button" data-fx="1">▾</button>
-          <span class="code">${bidiWrap(curr)}</span> <span class="val">${bidiWrap(amount)}</span>
-        </div>
-      </td>
+      <td class="cell header amount">${buildExpenseAmountMarkup(amount, curr)}</td>
       <td class="cell header currency"></td>
       <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
     `;
@@ -2420,7 +2474,7 @@ function renderJournal(t, order){
     tr1.innerHTML = `
       ${selectCell}
       <td class="cell header date">${bidiWrap(dateStr)}</td>
-      <td class="cell header time">${bidiWrap(timeStr)}</td>
+      <td class="cell header time"></td>
       <td class="cell header location" colspan="4">${esc(displayTitle)}</td>
       <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
     `;
@@ -2434,7 +2488,8 @@ function renderJournal(t, order){
         document.getElementById('rowMenuModal').showModal(); 
     };
   });
-}function appendExpenseRowToTimeline(body, e){
+}
+function appendExpenseRowToTimeline(body, e){
   const d = dayjs(e.dateIso || e.createdAt);
   const amount = Number(e.amount||0).toLocaleString('he-IL', { minimumFractionDigits: 2 });
   const displayTitle = deriveExpenseTitle(e);
@@ -2444,21 +2499,22 @@ function renderJournal(t, order){
   const tr1 = document.createElement('tr');
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'expense';
+  tr1.dataset.mobileLayout = 'expense-two-line';
   tr1.innerHTML = `
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
-    <td class="cell header time">${bidiWrap(d.format('HH:mm'))}</td>
+    <td class="cell header time"></td>
     <td class="cell header title">${esc(displayTitle)}</td>
     <td class="cell header category">${esc(e.category||'')}</td>
-    <td class="cell header amount"><span class="code">${bidiWrap(e.currency||'')}</span> <span class="val">${bidiWrap(amount)}</span></td>
+    <td class="cell header amount">${buildExpenseAmountMarkup(amount, e.currency || '')}</td>
     <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
   tr2.innerHTML = `<td class="cell notes" colspan="6">${desc}</td>`;
   body.appendChild(tr1); body.appendChild(tr2);
-  tr1.querySelector('.menu-btn').onclick = () => { 
-    _rowActionExpense = e; 
-    document.getElementById('rowMenuModal').showModal(); 
+  tr1.querySelector('.menu-btn').onclick = () => {
+    _rowActionExpense = e;
+    document.getElementById('rowMenuModal').showModal();
   };
 }
 function appendJournalRowToTimeline(body, j){
@@ -2472,7 +2528,7 @@ function appendJournalRowToTimeline(body, j){
   tr1.dataset.kind = 'journal';
   tr1.innerHTML = `
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
-    <td class="cell header time">${bidiWrap(d.format('HH:mm'))}</td>
+    <td class="cell header time"></td>
     <td class="cell header location" colspan="3">${esc(displayTitle)}</td>
     <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
   `;
@@ -3648,12 +3704,19 @@ const placeAliasMap = {
   'קפריסין הצפונית':'cyprus','צפון קפריסין':'cyprus'
 };
 countryCapitalMap['andorra'] = { label:'אנדורה', capital:'Andorra la Vella, Andorra', lat:42.5063, lng:1.5218 };
+countryCapitalMap['montenegro'] = { label:'מונטנגרו', capital:'Podgorica, Montenegro', lat:42.4304, lng:19.2594 };
 countryAliasMap['אנדורה'] = 'andorra';
 countryAliasMap['andorra'] = 'andorra';
 countryAliasMap['andorra la vella'] = 'andorra';
+countryAliasMap['מונטנגרו'] = 'montenegro';
+countryAliasMap['montenegro'] = 'montenegro';
+countryAliasMap['podgorica'] = 'montenegro';
 placeAliasMap['אנדורה'] = 'andorra';
 placeAliasMap['andorra'] = 'andorra';
 placeAliasMap['andorra la vella'] = 'andorra';
+placeAliasMap['מונטנגרו'] = 'montenegro';
+placeAliasMap['montenegro'] = 'montenegro';
+placeAliasMap['podgorica'] = 'montenegro';
 const usStateMap = {
   'new york': { label:'ארה"ב - ניו יורק', center:{ lat:42.9538, lng:-75.5268 } },
   'florida': { label:'ארה"ב - פלורידה', center:{ lat:27.6648, lng:-81.5158 } },
@@ -3794,7 +3857,19 @@ function getTripRepresentativeCoords(trip){
 async function reverseGeocodeCountryCached(lat, lng){
   const key = _revKey(lat, lng);
   if(__countryReverseCache.has(key)) return __countryReverseCache.get(key);
-  const prom = Promise.resolve('');
+  const prom = (async()=>{
+    try{
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=5&addressdetails=1&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=en`;
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if(!res.ok) return '';
+      const data = await res.json();
+      return String(data?.address?.country || '').trim();
+    }catch(_){
+      return '';
+    }
+  })();
   __countryReverseCache.set(key, prom);
   return prom;
 }
@@ -3802,7 +3877,26 @@ async function searchPlaceDetailsCached(name){
   const key = String(name || '').trim().toLowerCase();
   if(!key) return null;
   if(__placeSearchCache.has(key)) return __placeSearchCache.get(key);
-  const prom = Promise.resolve(null);
+  const prom = (async()=>{
+    try{
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(name)}&accept-language=en`;
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if(!res.ok) return null;
+      const data = await res.json();
+      const first = Array.isArray(data) ? data[0] : null;
+      if(!first) return null;
+      return {
+        country: String(first?.address?.country || '').trim(),
+        lat: Number(first?.lat),
+        lng: Number(first?.lon),
+        displayName: String(first?.display_name || '').trim()
+      };
+    }catch(_){
+      return null;
+    }
+  })();
   __placeSearchCache.set(key, prom);
   return prom;
 }
@@ -5437,12 +5531,42 @@ function renderExpenseSummary(t){
   const fmt = (n)=> formatInt(Math.round(n));
   const fmtSigned = (n)=> formatIntSigned(Math.round(n));
 
+  const budgetLabel = `${fmt(budgetRaw)} ${cur}`;
+  const paidLabel = `${fmt(paid)} ${cur}`;
+  const balanceLabel = `${fmtSigned(balance)} ${cur}`;
+
   bar.classList.add('budget-bar-structured');
+  if(isMobileViewport()){
+    bar.classList.add('budget-bar-mobile');
+    bar.innerHTML = `
+      <button id="btnBudgetSummaryMobile" type="button" class="btn budget-summary-trigger" aria-label="פתיחת תקציב">
+        <span class="budget-summary-trigger-icon" aria-hidden="true">₪</span>
+        <span class="budget-summary-trigger-text">תקציב</span>
+      </button>
+      <button id="barCurrency" class="btn budget-currency-pill" title="החלף מטבע">${cur}</button>
+      <div class="budget-progress ${band}" aria-label="התקדמות תקציב">
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="pct" aria-hidden="true">${pct}%</div>
+      </div>
+    `;
+    document.getElementById('btnBudgetSummaryMobile')?.addEventListener('click', ()=>{
+      openBudgetSummaryDialog({
+        budget: budgetLabel,
+        paid: paidLabel,
+        balance: balanceLabel,
+        pct,
+        isNeg
+      });
+    });
+    return;
+  }
+
+  bar.classList.remove('budget-bar-mobile');
   bar.innerHTML = `
     <button id="barCurrency" class="btn" title="החלף מטבע">${cur}</button>
-    <div class="kpi"><span class="lbl">תקציב</span><span class="val">${fmt(budgetRaw)} ${cur}</span></div>
-    <div class="kpi"><span class="lbl">שולם</span><span class="val">${fmt(paid)} ${cur}</span></div>
-    <div class="kpi"><span class="lbl">יתרה</span><span class="val bold ${isNeg ? 'neg' : ''}">${fmtSigned(balance)} ${cur}</span></div>
+    <div class="kpi"><span class="lbl">תקציב</span><span class="val">${budgetLabel}</span></div>
+    <div class="kpi"><span class="lbl">שולם</span><span class="val">${paidLabel}</span></div>
+    <div class="kpi"><span class="lbl">יתרה</span><span class="val bold ${isNeg ? 'neg' : ''}">${balanceLabel}</span></div>
     <div class="budget-progress ${band}" aria-label="התקדמות תקציב">
       <div class="track"><div class="fill" style="width:${pct}%"></div></div>
       <div class="pct" aria-hidden="true">${pct}%</div>
