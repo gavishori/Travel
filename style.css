@@ -230,6 +230,8 @@
   dialog.modal[open]{
     inset:0 !important;
     margin:auto !important;
+    left:8px !important;
+    right:8px !important;
     width:min(calc(100vw - 16px), 560px) !important;
     max-width:min(calc(100vw - 16px), 560px) !important;
     max-height:calc(100dvh - 16px) !important;
@@ -273,8 +275,10 @@
   #mobileSectionMenuDialog[open]{
     inset:auto 8px 8px 8px !important;
     margin:0 auto !important;
-    width:auto !important;
-    max-width:none !important;
+    left:8px !important;
+    right:8px !important;
+    width:calc(100vw - 16px) !important;
+    max-width:calc(100vw - 16px) !important;
     border-radius:22px !important;
   }
 
@@ -302,6 +306,41 @@
     background:var(--brand) !important;
     color:#fff !important;
     border-color:transparent !important;
+  }
+}
+
+@media (min-width: 821px) {
+  #tripModal{
+    width:min(680px, calc(100vw - 80px)) !important;
+    max-width:min(680px, calc(100vw - 80px)) !important;
+  }
+
+  #tripModal .body{
+    padding:22px 24px !important;
+  }
+
+  #tripModal .body > label{
+    display:block !important;
+    width:100% !important;
+    margin-bottom:16px !important;
+  }
+
+  #tripModal .body .row{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:16px !important;
+    align-items:end !important;
+  }
+
+  #tripModal .body .row label{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  #tripModal .footer{
+    justify-content:flex-end !important;
+    gap:12px !important;
+    padding:16px 24px 22px !important;
   }
 }
 [data-theme="light"]{

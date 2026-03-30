@@ -1593,30 +1593,203 @@ function cycleCurrency(cur){
 }
 // Firestore: subscribe to user's trips (no orderBy to avoid index; sort client-side)
 let __subTripsTimer=null;
+let __tripListBackfillTimer=null;
+let __subscribeTripsStartedAt = 0;
+let __tripSummaryFallbackStarted = false;
+
+function tripSummaryRef(id){
+  return FB.doc(db, 'tripSummaries', id);
+}
+
+function tripSummaryCacheKey(uid){
+  return `flymily_trip_summaries_${uid || 'anon'}`;
+}
+
+function tripSummaryHydratedKey(uid){
+  return `flymily_trip_summaries_hydrated_${uid || 'anon'}`;
+}
+
+function hasHydratedTripSummaries(uid){
+  try{
+    return localStorage.getItem(tripSummaryHydratedKey(uid)) === '1';
+  }catch(_){
+    return false;
+  }
+}
+
+function markTripSummariesHydrated(uid){
+  try{
+    if(!uid) return;
+    localStorage.setItem(tripSummaryHydratedKey(uid), '1');
+  }catch(_){}
+}
+
+function saveTripSummariesCache(uid, trips){
+  try{
+    if(!uid) return;
+    const payload = {
+      savedAt: new Date().toISOString(),
+      trips: (trips || []).map(t => buildTripSummary(t))
+    };
+    localStorage.setItem(tripSummaryCacheKey(uid), JSON.stringify(payload));
+  }catch(_){}
+}
+
+function loadTripSummariesCache(uid){
+  try{
+    if(!uid) return [];
+    const raw = localStorage.getItem(tripSummaryCacheKey(uid));
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed?.trips)) return [];
+    return parsed.trips.map(t => buildTripSummary(t));
+  }catch(_){
+    return [];
+  }
+}
+
+function buildTripSummary(trip){
+  const normalized = normalizeTripShape(trip || {});
+  return {
+    id: normalized.id || trip?.id || null,
+    ownerUid: normalized.ownerUid || trip?.ownerUid || state?.user?.uid || null,
+    destination: normalized.destination || '',
+    start: normalized.start || '',
+    end: normalized.end || '',
+    localCurrency: normalized.localCurrency || null,
+    people: Array.isArray(normalized.people) ? normalized.people : [],
+    types: Array.isArray(normalized.types) ? normalized.types : [],
+    createdAt: normalized.createdAt || trip?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expenses: {},
+    journal: {}
+  };
+}
+
+async function upsertTripSummary(trip){
+  try{
+    const summary = buildTripSummary(trip);
+    if(!summary.id || !summary.ownerUid) return;
+    await FB.setDoc(tripSummaryRef(summary.id), summary, { merge:true });
+  }catch(_){}
+}
+
+async function deleteTripSummary(id){
+  try{
+    if(!id) return;
+    await FB.deleteDoc(tripSummaryRef(id));
+  }catch(_){}
+}
+
+function normalizeTripSummaryDoc(doc){
+  const raw = doc?.data ? { id: doc.id, ...doc.data() } : doc;
+  return buildTripSummary(raw);
+}
+
+function scheduleTripListBackfill(trips){
+  if(__tripListBackfillTimer){
+    clearTimeout(__tripListBackfillTimer);
+    __tripListBackfillTimer = null;
+  }
+  const targets = (trips || []).filter(trip=>{
+    if(!trip?.id) return false;
+    const missingCurrency = !trip.localCurrency;
+    const missingBudget = !trip.budget || typeof trip.budget !== 'object';
+    const missingRates = !trip.rates || !Number(trip.rates?.USDILS) || !Number(trip.rates?.USDEUR);
+    return missingCurrency || missingBudget || missingRates;
+  }).slice(0, 2);
+  if(!targets.length) return;
+  __tripListBackfillTimer = setTimeout(()=>{
+    targets.forEach(trip => { try{ backfillTripVersionFields(trip); }catch(_){} });
+  }, 1200);
+}
+
+function applyTripsSnapshotPerf(snapAt, snapSize){
+  try{
+    window.__lastTripsSnapshotPerf = {
+      docs: snapSize,
+      subscribeToSnapshotMs: Math.round(snapAt - __subscribeTripsStartedAt)
+    };
+    console.info('[perf] tripsSnapshot', window.__lastTripsSnapshotPerf);
+  }catch(_){}
+}
+
+function subscribeTripsFull(reason='fallback'){
+  try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
+  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
+  state._unsubTripsFallback = FB.onSnapshot(q, (snap)=>{
+    const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+    state.trips = snap.docs
+      .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+    renderTripList();
+    saveTripSummariesCache(state.user?.uid, state.trips);
+    applyTripsSnapshotPerf(snapAt, snap.size);
+    scheduleTripListBackfill(state.trips);
+    state.trips.forEach(trip => { try{ upsertTripSummary(trip); }catch(_){} });
+    markTripSummariesHydrated(state.user?.uid);
+  }, (err)=>{
+    try{ state._unsubTripsFallback && state._unsubTripsFallback(); }catch(_){}
+    if(String(err).includes('Missing or insufficient permissions')){
+      __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
+      return;
+    }
+    console.warn('subscribeTripsFull failed', reason, err);
+    showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
+  });
+}
+
 function subscribeTrips(){
   if(__subTripsTimer){ clearTimeout(__subTripsTimer); __subTripsTimer=null; }
   if (!state.user || !state.user.uid) {
     return;
   }
-  try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
-  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
-  state._unsubTrips = FB.onSnapshot(q, (snap)=>{
-    state.trips = snap.docs
-      .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
-      .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+  __tripSummaryFallbackStarted = false;
+  __subscribeTripsStartedAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+  const cachedTrips = loadTripSummariesCache(state.user.uid)
+    .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+  if(cachedTrips.length){
+    state.trips = cachedTrips;
     renderTripList();
-    state.trips.forEach(trip => { try{ backfillTripVersionFields(trip); }catch(_){} });
-  }, (err)=>{
-    try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
-    // If permissions missing, wait a bit and retry once auth is stable
-    if(String(err).includes('Missing or insufficient permissions')){
-      __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
+  }
+  try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
+  try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
+  const q = FB.query(FB.collection(db, 'tripSummaries'), FB.where('ownerUid', '==', state.user.uid));
+  state._unsubTrips = FB.onSnapshot(q, (snap)=>{
+    const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+    if(snap.size === 0){
+      state.trips = [];
+      renderTripList();
+      applyTripsSnapshotPerf(snapAt, snap.size);
+      if(!__tripSummaryFallbackStarted){
+        __tripSummaryFallbackStarted = true;
+        subscribeTripsFull('empty-tripSummaries');
+      }
       return;
     }
-    showToast('אין הרשאה לקרוא נתונים (בדוק התחברות/חוקי Firestore)');
+    try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
+    state.trips = snap.docs
+      .map(d=> normalizeTripSummaryDoc(d))
+      .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+    renderTripList();
+    saveTripSummariesCache(state.user?.uid, state.trips);
+    applyTripsSnapshotPerf(snapAt, snap.size);
+    if(!hasHydratedTripSummaries(state.user?.uid) && !__tripSummaryFallbackStarted){
+      __tripSummaryFallbackStarted = true;
+      subscribeTripsFull('hydrate-tripSummaries');
+    }
+  }, (err)=>{
+    try{ state._unsubTrips && state._unsubTrips(); }catch(_){}
+    console.warn('tripSummaries subscription failed, falling back to trips', err);
+    if(!__tripSummaryFallbackStarted){
+      __tripSummaryFallbackStarted = true;
+      subscribeTripsFull('tripSummaries-error');
+    }
   });
 }
 async function renderTripList(){
+  const perfNow = ()=> (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+  const renderStart = perfNow();
   const list = $('#tripList');
   syncHomeMapMode();
   const search = $('#searchTrips').value?.trim();
@@ -1649,6 +1822,14 @@ async function renderTripList(){
   }
   ['btnViewGrid','btnViewList','btnViewMap'].forEach(id => document.getElementById(id)?.classList.remove('active'));
   document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
+  try{
+    window.__lastRenderTripListPerf = {
+      items: items.length,
+      mode: state.viewMode,
+      ms: Math.round(perfNow() - renderStart)
+    };
+    console.info('[perf] renderTripList', window.__lastRenderTripListPerf);
+  }catch(_){}
 }
 function cardHTML(t, s){
   const period = `${fmtDate(t.start)} – ${fmtDate(t.end)}`;
@@ -1947,8 +2128,11 @@ async function enrichLegacyExpenses(trip){
   }catch(_){}
 }
 async function loadTrip(){
+  const perfNow = ()=> (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+  const loadPerf = { start: perfNow() };
   const ref = FB.doc(db, 'trips', state.currentTripId);
   const snap = await FB.getDoc(ref);
+  loadPerf.afterFetch = perfNow();
   if(!snap.exists()) return;
   const rawTrip = { id: snap.id, ...snap.data() };
   const t = normalizeTripShape(rawTrip); state._lastTripObj = t;
@@ -1992,17 +2176,36 @@ async function loadTrip(){
   if(t.rates && !missingBaseRates){ state.rates = t.rates; }
   const _r1=$('#rateUSDEUR'); const _r2=$('#rateUSDILS'); if(_r1) _r1.value = state.rates.USDEUR; if(_r2) _r2.value = state.rates.USDILS;
 
-  renderExpenses(t);
-  renderJournal(t);
-  if (typeof renderAllTimeline === 'function') {
-    try { renderAllTimeline(t, state.allSort || 'desc'); } catch(_) {}
-  }
-  const miniEl = document.getElementById('miniMap');
-  if (miniEl && typeof initMiniMap === 'function') {
-    initMiniMap(t);
-    setTimeout(()=> invalidateMap(state.maps?.mini), 80);
-  }
+  const activeViewEl = document.querySelector('.tabview[data-active="1"]:not([hidden])') || document.querySelector('.tabview:not([hidden])');
+  const activeViewId = activeViewEl?.id || 'view-overview';
+  const renderOverviewNow = ()=>{
+    if (typeof renderAllTimeline === 'function') {
+      try { renderAllTimeline(t, state.allSort || 'desc'); } catch(_) {}
+    }
+  };
+  const renderExpensesNow = ()=> renderExpenses(t);
+  const renderJournalNow = ()=> renderJournal(t);
+  const renderMiniMapNow = ()=>{
+    const miniEl = document.getElementById('miniMap');
+    if (miniEl && typeof initMiniMap === 'function') {
+      initMiniMap(t);
+      setTimeout(()=> invalidateMap(state.maps?.mini), 80);
+    }
+  };
+
+  if(activeViewId === 'view-expenses') renderExpensesNow();
+  else setTimeout(()=>{ if(state.currentTripId === t.id) renderExpensesNow(); }, 120);
+
+  if(activeViewId === 'view-journal') renderJournalNow();
+  else setTimeout(()=>{ if(state.currentTripId === t.id) renderJournalNow(); }, 180);
+
+  if(activeViewId === 'view-overview') renderOverviewNow();
+  else setTimeout(()=>{ if(state.currentTripId === t.id) renderOverviewNow(); }, 40);
+
+  if(activeViewId === 'view-meta') renderMiniMapNow();
+  else setTimeout(()=>{ if(state.currentTripId === t.id) renderMiniMapNow(); }, 260);
   renderExpenseSummary(t);
+  loadPerf.afterInitialRender = perfNow();
 
   // If trip dates overlap "today" on open → show quick actions popup
   try{ maybeShowTripTodayPrompt(t); }catch(_){ }
@@ -2039,7 +2242,21 @@ async function loadTrip(){
       if (backgroundRates && missingBaseRates) patch.rates = backgroundRates;
       if (Object.keys(patch).length) await FB.updateDoc(ref, patch);
     }catch(_){}
+
+    try{ await upsertTripSummary(t); }catch(_){}
   }, 0);
+
+  try{
+    loadPerf.end = perfNow();
+    window.__lastLoadTripPerf = {
+      tripId: t.id,
+      fetchMs: Math.round(loadPerf.afterFetch - loadPerf.start),
+      initialRenderMs: Math.round(loadPerf.afterInitialRender - loadPerf.afterFetch),
+      totalMs: Math.round(loadPerf.end - loadPerf.start),
+      activeViewId
+    };
+    console.info('[perf] loadTrip', window.__lastLoadTripPerf);
+  }catch(_){}
 }
 
 // === Trip "today" prompt (Add Journal / Add Expense / Cancel) ===
@@ -2409,6 +2626,19 @@ $('#tripSave').addEventListener('click', async ()=>{
       rates: lockedRates,
       share:{enabled:false}
     });
+    try{
+      await upsertTripSummary({
+        id,
+        ownerUid: state.user.uid,
+        destination: dest,
+        start,
+        end,
+        localCurrency: localCur || null,
+        createdAt: new Date().toISOString(),
+        people: [],
+        types: []
+      });
+    }catch(_){}
 
     $('#tripModal').close(); 
     showToast('נוצרה נסיעה');
@@ -2435,8 +2665,23 @@ $('#btnSaveMeta').addEventListener('click', async ()=>{
   const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
   const types = $$('.metaType').map(b=>b.dataset.value);
   const destination = $('#metaDestination').value.trim();
+  const start = $('#metaStart').value;
+  const end = $('#metaEnd').value;
   const localCur = getLocalCurrency(destination);
-  await FB.updateDoc(ref, { destination, start: $('#metaStart').value, end: $('#metaEnd').value, people, types, localCurrency: localCur });
+  await FB.updateDoc(ref, { destination, start, end, people, types, localCurrency: localCur });
+  try{
+    await upsertTripSummary({
+      id: state.currentTripId,
+      ownerUid: state.user?.uid || state.current?.ownerUid,
+      destination,
+      start,
+      end,
+      localCurrency: localCur,
+      people,
+      types,
+      createdAt: state.current?.createdAt
+    });
+  }catch(_){}
   showToast('נשמר'); loadTrip();
 });
 $('#btnVerifyOnMap').click(() => {
@@ -2934,6 +3179,7 @@ async function deleteTrip(id) {
   if (!id) return;
   const ref = FB.doc(db, 'trips', id);
   await FB.deleteDoc(ref);
+  await deleteTripSummary(id);
   showToast('הטיול נמחק בהצלחה');
   enterHomeMode();
 }
@@ -3401,6 +3647,13 @@ const placeAliasMap = {
   'לימסול':'cyprus','limassol':'cyprus',
   'קפריסין הצפונית':'cyprus','צפון קפריסין':'cyprus'
 };
+countryCapitalMap['andorra'] = { label:'אנדורה', capital:'Andorra la Vella, Andorra', lat:42.5063, lng:1.5218 };
+countryAliasMap['אנדורה'] = 'andorra';
+countryAliasMap['andorra'] = 'andorra';
+countryAliasMap['andorra la vella'] = 'andorra';
+placeAliasMap['אנדורה'] = 'andorra';
+placeAliasMap['andorra'] = 'andorra';
+placeAliasMap['andorra la vella'] = 'andorra';
 const usStateMap = {
   'new york': { label:'ארה"ב - ניו יורק', center:{ lat:42.9538, lng:-75.5268 } },
   'florida': { label:'ארה"ב - פלורידה', center:{ lat:27.6648, lng:-81.5158 } },
@@ -4225,6 +4478,19 @@ async function saveMetaChanges() {
         rates: lockedRates
     });
     showToast('נשמר');
+    try{
+        await upsertTripSummary({
+            id: state.currentTripId,
+            ownerUid: state.user?.uid || state.current?.ownerUid,
+            destination,
+            start: $('#metaStart').value,
+            end: $('#metaEnd').value,
+            localCurrency: localCur,
+            people,
+            types,
+            createdAt: state.current?.createdAt
+        });
+    }catch(_){}
     state.isDirty = false;
     await loadTrip();
 }
