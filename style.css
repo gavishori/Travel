@@ -4136,3 +4136,445 @@ button, .btn, .menu-btn, select, input, textarea {
     overflow-wrap:anywhere !important;
   }
 }
+
+@media (max-width: 820px) {
+  :root{
+    --mobile-gap: 12px;
+    --mobile-radius: 18px;
+  }
+
+  body{
+    overflow-x:hidden !important;
+  }
+
+  #previewRoot,
+  .app,
+  .container,
+  .container.home-mode,
+  .container.trip-mode,
+  .container.trip-mode .content,
+  .content,
+  #main{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
+  }
+
+  header{
+    position:sticky !important;
+    top:0 !important;
+    z-index:30 !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto auto !important;
+    grid-template-areas:
+      "brand controls alltrips"
+      "dest dest dest" !important;
+    gap:10px !important;
+    padding:calc(10px + env(safe-area-inset-top, 0px)) 10px 10px !important;
+    background:var(--brand) !important;
+    border-bottom:none !important;
+    box-shadow:0 10px 24px rgba(15,23,42,.12) !important;
+  }
+
+  header .brand{
+    grid-area:brand !important;
+    min-width:0 !important;
+    color:#fff !important;
+  }
+
+  header .brand img{
+    height:22px !important;
+    width:auto !important;
+  }
+
+  header .brand .brand-text{
+    color:#fff !important;
+    font-size:1.3rem !important;
+    font-weight:800 !important;
+  }
+
+  .header-controls{
+    grid-area:controls !important;
+    justify-self:start !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:8px !important;
+    min-width:0 !important;
+  }
+
+  #btnAllTrips{
+    grid-area:alltrips !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-height:40px !important;
+    padding:0 14px !important;
+    border-radius:999px !important;
+    border:1px solid rgba(255,255,255,.55) !important;
+    background:transparent !important;
+    color:#fff !important;
+    font-weight:700 !important;
+  }
+
+  #btnTheme,
+  #btnLogin{
+    min-width:40px !important;
+    width:40px !important;
+    height:40px !important;
+    padding:0 !important;
+    border-radius:999px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid rgba(255,255,255,.58) !important;
+    color:#fff !important;
+    background:rgba(255,255,255,.08) !important;
+    box-shadow:none !important;
+    font-size:1rem !important;
+    overflow:hidden !important;
+  }
+
+  #btnLogin.is-authenticated{
+    background:#fff !important;
+    color:var(--brand) !important;
+    border-color:#fff !important;
+  }
+
+  #btnLogin:not(.is-authenticated){
+    width:auto !important;
+    min-width:88px !important;
+    padding:0 14px !important;
+    font-size:.95rem !important;
+    font-weight:700 !important;
+  }
+
+  #headerDest{
+    grid-area:dest !important;
+    color:#eaf2ff !important;
+    font-weight:700 !important;
+    font-size:.96rem !important;
+    text-align:right !important;
+  }
+
+  .container,
+  main{
+    padding:0 !important;
+  }
+
+  .sidebar,
+  .content{
+    padding:12px 10px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #homeTripsHeader{
+    align-items:center !important;
+    gap:10px !important;
+  }
+
+  #homeTripsHeader h2{
+    font-size:1.95rem !important;
+    line-height:1.05 !important;
+    margin:0 !important;
+  }
+
+  #btnNewTrip{
+    min-height:40px !important;
+    padding:0 14px !important;
+    border-radius:14px !important;
+    font-weight:800 !important;
+  }
+
+  .section,
+  .trip-card,
+  .card{
+    border-radius:var(--mobile-radius) !important;
+  }
+
+  .input,
+  select.input,
+  input.input,
+  textarea.input{
+    min-height:48px !important;
+    border-radius:14px !important;
+  }
+
+  #tripList.grid,
+  #tripList{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  #tripList .trip-card{
+    display:grid !important;
+    grid-template-columns:52px minmax(0,1fr) !important;
+    grid-template-areas:
+      "menu title"
+      "menu dates"
+      "menu meta" !important;
+    gap:8px 12px !important;
+    align-items:center !important;
+    padding:14px !important;
+    margin:0 !important;
+    width:100% !important;
+  }
+
+  #tripList .trip-card .menu-btn,
+  #tripList .trip-card .trip-menu-btn,
+  #tripList .trip-card button.menu-btn{
+    width:44px !important;
+    height:44px !important;
+    border-radius:14px !important;
+  }
+
+  #view-overview .cards{
+    display:grid !important;
+    grid-template-columns:repeat(4, minmax(0, 1fr)) !important;
+    gap:6px !important;
+    margin-top:10px !important;
+  }
+
+  #view-overview .cards > *{
+    min-width:0 !important;
+    border-radius:16px !important;
+    padding:10px 8px !important;
+    text-align:center !important;
+    overflow:hidden !important;
+  }
+
+  #view-overview .cards .val,
+  #view-overview .cards strong{
+    display:block !important;
+    font-size:1.2rem !important;
+    font-weight:800 !important;
+    line-height:1.1 !important;
+  }
+
+  #view-overview .cards .muted,
+  #view-overview .cards small{
+    font-size:.72rem !important;
+  }
+
+  #view-overview .list-actions,
+  #view-expenses .list-actions,
+  #view-journal .list-actions{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  #view-overview .list-actions > *,
+  #view-expenses .list-actions > *,
+  #view-journal .list-actions > *{
+    min-width:0 !important;
+  }
+
+  #tblAllTimeline,
+  #tblExpenses,
+  #tblJournal{
+    display:block !important;
+    width:100% !important;
+  }
+
+  #tblAllTimeline tr,
+  #tblExpenses tr,
+  #tblJournal tr{
+    display:block !important;
+  }
+
+  #tblAllTimeline td,
+  #tblExpenses td,
+  #tblJournal td{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  #tblAllTimeline tr.exp-item:not(.exp-details),
+  #tblExpenses tr.exp-item:first-child,
+  #tblJournal tr.exp-item:first-child,
+  #view-overview .expenses-table tr.exp-item:not(.exp-details),
+  #view-expenses .expenses-table tr.exp-item:not(.exp-details),
+  #view-journal .expenses-table tr.exp-item:not(.exp-details){
+    display:grid !important;
+    grid-template-columns:44px minmax(0,1fr) !important;
+    grid-template-areas:
+      "menu title"
+      "menu meta"
+      "menu aux" !important;
+    gap:8px 12px !important;
+    align-items:center !important;
+    margin:0 0 2px !important;
+    padding:14px !important;
+    border-radius:18px 18px 0 0 !important;
+    border:1px solid var(--border) !important;
+    box-shadow:0 8px 22px rgba(15,23,42,.06) !important;
+    overflow:hidden !important;
+  }
+
+  #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
+    background:linear-gradient(180deg, #fff9f8 0%, #fff2ef 100%) !important;
+  }
+
+  #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details),
+  #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details){
+    background:linear-gradient(180deg, #f6fff6 0%, #ecfff2 100%) !important;
+  }
+
+  #tblAllTimeline tr.exp-item:not(.exp-details) td,
+  #tblExpenses tr.exp-item:not(.exp-details) td,
+  #tblJournal tr.exp-item:not(.exp-details) td{
+    border:none !important;
+    padding:0 !important;
+    background:transparent !important;
+    min-width:0 !important;
+  }
+
+  #tblAllTimeline td.menu-cell,
+  #tblExpenses td.menu-cell,
+  #tblJournal td.menu-cell{
+    grid-area:menu !important;
+    width:44px !important;
+    min-width:44px !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:center !important;
+  }
+
+  #tblAllTimeline td.menu-cell .menu-btn,
+  #tblExpenses td.menu-cell .menu-btn,
+  #tblJournal td.menu-cell .menu-btn{
+    width:40px !important;
+    height:40px !important;
+    border-radius:12px !important;
+  }
+
+  #tblAllTimeline td.title,
+  #tblExpenses td.title,
+  #tblAllTimeline td.location,
+  #tblJournal td.location{
+    grid-area:title !important;
+    font-size:1.12rem !important;
+    font-weight:800 !important;
+    line-height:1.25 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  #tblAllTimeline td.date,
+  #tblExpenses td.date,
+  #tblJournal td.date{
+    grid-area:meta !important;
+    color:var(--muted) !important;
+    font-size:.96rem !important;
+    white-space:nowrap !important;
+  }
+
+  #tblAllTimeline td.time,
+  #tblExpenses td.time,
+  #tblJournal td.time{
+    display:none !important;
+  }
+
+  #tblAllTimeline td.amount,
+  #tblExpenses td.amount{
+    grid-area:aux !important;
+    font-weight:800 !important;
+    color:var(--ink) !important;
+  }
+
+  #tblAllTimeline td.category,
+  #tblExpenses td.category{
+    grid-area:aux !important;
+    margin-top:4px !important;
+    color:var(--muted) !important;
+  }
+
+  #tblAllTimeline td.currency,
+  #tblExpenses td.currency{
+    display:none !important;
+  }
+
+  #tblAllTimeline tr.exp-item.exp-details,
+  #tblExpenses tr.exp-item.exp-details,
+  #tblJournal tr.exp-item.exp-details,
+  #tblAllTimeline tr.exp-item:has(td.notes),
+  #tblExpenses tr.exp-item:has(td.notes),
+  #tblJournal tr.exp-item:has(td.notes){
+    display:block !important;
+    margin:0 0 12px !important;
+    padding:0 !important;
+    border:1px solid var(--border) !important;
+    border-top:none !important;
+    border-radius:0 0 18px 18px !important;
+    background:#fff !important;
+    box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    overflow:hidden !important;
+  }
+
+  #tblAllTimeline tr.exp-item.exp-details td.notes,
+  #tblExpenses tr.exp-item.exp-details td.notes,
+  #tblJournal tr.exp-item.exp-details td.notes,
+  #tblAllTimeline tr.exp-item:has(td.notes) td.notes,
+  #tblExpenses tr.exp-item:has(td.notes) td.notes,
+  #tblJournal tr.exp-item:has(td.notes) td.notes{
+    display:block !important;
+    width:100% !important;
+    padding:14px !important;
+    border:none !important;
+    background:#fff !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    line-height:1.6 !important;
+  }
+
+  #view-overview.all-collapsed tr.exp-item.exp-details:not(.force-open){
+    display:none !important;
+  }
+
+  .modal{
+    width:min(100vw - 20px, 480px) !important;
+    max-width:min(100vw - 20px, 480px) !important;
+    max-height:calc(100dvh - 20px) !important;
+    border-radius:22px !important;
+  }
+
+  .modal header,
+  .modal .header{
+    padding:14px 16px !important;
+  }
+
+  .modal .body{
+    padding:14px !important;
+    max-height:calc(100dvh - 170px) !important;
+    overflow:auto !important;
+  }
+
+  .modal .body .row{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  #tripModal .body label,
+  #expenseModal .body label,
+  #journalModal .body label{
+    display:block !important;
+    width:100% !important;
+  }
+
+  .modal .footer{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+    padding:14px !important;
+  }
+
+  .modal .footer .btn{
+    width:100% !important;
+    min-height:46px !important;
+  }
+}

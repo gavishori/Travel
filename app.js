@@ -234,6 +234,57 @@ function wireHeaderControls(){
 }
 document.addEventListener('DOMContentLoaded', wireHeaderControls);
 
+function finalMobileThemeSync(){
+  if(!isCompactMobileHeader()) return;
+  const btn = document.getElementById('btnTheme');
+  if(!btn) return;
+  const isLight = document.body.dataset.theme === 'light';
+  btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
+  btn.classList.add('icon-only');
+  btn.setAttribute('aria-label', isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר');
+  btn.title = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
+}
+
+function finalMobileAuthSwap(loggedIn, email=''){
+  if(!isCompactMobileHeader()) return;
+  const old = document.getElementById('btnLogin');
+  if(!old) return;
+  const clone = old.cloneNode(true);
+  old.parentNode.replaceChild(clone, old);
+  const btn = document.getElementById('btnLogin');
+  const emailEl = document.getElementById('accountMenuEmail');
+  if(!btn) return;
+  if(emailEl) emailEl.textContent = email || '';
+  btn.classList.remove('danger', 'icon-only', 'is-authenticated');
+  if(loggedIn){
+    btn.classList.add('icon-only', 'is-authenticated');
+    btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
+    btn.setAttribute('aria-label', 'חשבון מחובר');
+    btn.title = 'חשבון מחובר';
+    bindTap(btn, ()=> openAccountMenu(), 'finalAuthTapWired');
+  }else{
+    btn.textContent = 'התחברות';
+    btn.setAttribute('aria-label', 'התחברות');
+    btn.title = 'התחברות';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(!isCompactMobileHeader()) return;
+  const themeBtn = document.getElementById('btnTheme');
+  if(themeBtn){
+    bindTap(themeBtn, ()=>{
+      document.body.dataset.theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+      finalMobileThemeSync();
+    }, 'finalThemeTapWired');
+    finalMobileThemeSync();
+  }
+
+  window.__authPrimarySwap = finalMobileAuthSwap;
+  const currentUser = (typeof FB !== 'undefined' && FB?.auth?.currentUser) ? FB.auth.currentUser : null;
+  finalMobileAuthSwap(!!currentUser, currentUser?.email || '');
+});
+
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
   document.addEventListener('DOMContentLoaded', ()=>{
