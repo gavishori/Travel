@@ -2378,7 +2378,7 @@ function renderExpenses(t, order){
       <td class="cell header title">${esc(displayTitle)}</td>
       <td class="cell header category">${cat}</td>
       <td class="cell header amount">
-        <div class="amt-main" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+        <div class="amt-main mobile-expense-amount" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
           <button class="fx-btn" type="button" data-fx="1">▾</button>
           <span class="code">${bidiWrap(curr)}</span> <span class="val">${bidiWrap(amount)}</span>
         </div>
@@ -2387,7 +2387,7 @@ function renderExpenses(t, order){
       <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
     `;
     const tr4 = document.createElement('tr');
-    tr4.className = 'exp-item';
+    tr4.className = 'exp-item exp-details';
     tr4.innerHTML = `<td class="cell notes" colspan="7">${desc}</td>`;
     body.appendChild(tr1); body.appendChild(tr4);
 
@@ -2425,7 +2425,7 @@ function renderJournal(t, order){
       <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
     `;
     const tr2 = document.createElement('tr');
-    tr2.className = 'exp-item';
+    tr2.className = 'exp-item exp-details';
     tr2.innerHTML = `<td class="cell notes" colspan="${selectionOn ? 8 : 7}">${text}</td>`;
     body.appendChild(tr1); body.appendChild(tr2);
 

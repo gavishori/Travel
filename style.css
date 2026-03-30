@@ -5079,7 +5079,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
   #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details),
-  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
     grid-template-columns:56px minmax(0,1fr) minmax(0,auto) !important;
     grid-template-areas:
       "menu title date"
@@ -5089,7 +5090,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
   #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
-  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title{
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title{
     grid-area:title !important;
     margin:0 !important;
     font-size:1.02rem !important;
@@ -5099,7 +5101,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
   #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
-  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.date{
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.date{
     grid-area:date !important;
     justify-self:end !important;
     align-self:start !important;
@@ -5110,7 +5113,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
   #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
-  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category{
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category{
     grid-area:category !important;
     align-self:end !important;
     color:var(--muted) !important;
@@ -5120,7 +5124,8 @@ button, .btn, .menu-btn, select, input, textarea {
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
   #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
-  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
     grid-area:amount !important;
     justify-self:end !important;
     align-self:end !important;
@@ -5128,6 +5133,16 @@ button, .btn, .menu-btn, select, input, textarea {
     font-weight:800 !important;
     white-space:nowrap !important;
     margin:0 !important;
+  }
+
+  #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .mobile-expense-amount,
+  #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .mobile-expense-amount,
+  #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .mobile-expense-amount,
+  #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .mobile-expense-amount{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:4px !important;
   }
 
   #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.time,
@@ -5169,8 +5184,14 @@ button, .btn, .menu-btn, select, input, textarea {
   #tripModal[open],
   #expenseModal[open],
   #journalModal[open]{
+    position:fixed !important;
+    top:12px !important;
+    left:8px !important;
+    right:8px !important;
+    transform:none !important;
     width:calc(100vw - 16px) !important;
     max-width:calc(100vw - 16px) !important;
+    max-height:calc(100dvh - 24px) !important;
     border-radius:22px !important;
   }
 
