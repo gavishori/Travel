@@ -5437,6 +5437,7 @@ function renderExpenseSummary(t){
   const fmt = (n)=> formatInt(Math.round(n));
   const fmtSigned = (n)=> formatIntSigned(Math.round(n));
 
+  bar.classList.add('budget-bar-structured');
   bar.innerHTML = `
     <button id="barCurrency" class="btn" title="החלף מטבע">${cur}</button>
     <div class="kpi"><span class="lbl">תקציב</span><span class="val">${fmt(budgetRaw)} ${cur}</span></div>
