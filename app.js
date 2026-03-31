@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(currentSection === 'overview'){
       title.textContent = 'תצוגה ופעולות';
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
-      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'), 'primary');
+      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
       add('מפה', ()=> setOverviewSelectValue('map'));
@@ -588,17 +588,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
     rail.id = 'mobileOverviewActionRail';
     rail.className = 'mobile-overview-action-rail';
     if(menuBtn) rail.appendChild(menuBtn);
-    if(searchInput){
-      searchInput.hidden = false;
-      searchInput.classList.add('mobile-overview-search');
-      rail.appendChild(searchInput);
-    }
     rail.insertAdjacentHTML('beforeend', `
       <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
       <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
       <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
       <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
     `);
+    if(searchInput){
+      searchInput.hidden = false;
+      searchInput.placeholder = 'חיפוש';
+      searchInput.classList.add('mobile-overview-search');
+      rail.appendChild(searchInput);
+    }
     host.prepend(rail);
     rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
     rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
@@ -1490,6 +1491,12 @@ function updateHeaderDestination(){
   try{
     const el = document.getElementById('headerDest');
     if(!el) return;
+    const inTripMode = !!document.querySelector('.container.trip-mode');
+    if(!inTripMode){
+      el.textContent = '';
+      el.style.display = 'none';
+      return;
+    }
     const name = (state && state.current && state.current.destination) ? String(state.current.destination).trim() : '';
     if(name){
       el.textContent = name;
@@ -1901,6 +1908,7 @@ function subscribeTripsFull(reason='fallback'){
       .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
+    setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
     scheduleTripListBackfill(state.trips);
@@ -1929,6 +1937,7 @@ function subscribeTrips(){
   if(cachedTrips.length){
     state.trips = cachedTrips;
     renderTripList();
+    setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
   }
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
   try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
@@ -1950,6 +1959,7 @@ function subscribeTrips(){
       .map(d=> normalizeTripSummaryDoc(d))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
     renderTripList();
+    setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
     if(!hasHydratedTripSummaries(state.user?.uid) && !__tripSummaryFallbackStarted){
@@ -2493,6 +2503,13 @@ function maybeShowTripTodayPrompt(trip){
 
     const dlg = document.getElementById('tripTodayModal');
     if(!dlg || typeof dlg.showModal !== 'function') return;
+    dlg.dataset.tripId = trip.id;
+    const ctx = document.getElementById('tripTodayContext');
+    if(ctx){
+      const destination = String(trip.destination || 'נסיעה ללא שם').trim();
+      const period = `${fmtDate(trip.start)} – ${fmtDate(trip.end)}`;
+      ctx.textContent = `נסיעה פעילה: ${destination} (${period})`;
+    }
     // If another modal is open, don't steal focus
     try{
       const anyOpen = document.querySelector('dialog[open]');
@@ -2502,32 +2519,55 @@ function maybeShowTripTodayPrompt(trip){
   }catch(_){ }
 }
 
+function maybeShowTodayPromptFromTrips(trips){
+  try{
+    const activeTrips = (trips || []).filter(trip => trip?.id && _isTodayWithinTripDates(trip.start, trip.end));
+    if(!activeTrips.length) return;
+    const preferred = (state?.currentTripId && activeTrips.find(trip => trip.id === state.currentTripId))
+      || [...activeTrips].sort((a,b)=> (b.start || '').localeCompare(a.start || ''))[0];
+    maybeShowTripTodayPrompt(preferred);
+  }catch(_){ }
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
   const dlg = document.getElementById('tripTodayModal');
   if(!dlg) return;
   const bJ = document.getElementById('tripTodayAddJournal');
   const bE = document.getElementById('tripTodayAddExpense');
   const bC = document.getElementById('tripTodayCancel');
+  const ensurePromptTripOpen = async ()=>{
+    const promptTripId = dlg.dataset.tripId;
+    if(!promptTripId) return;
+    if(state.currentTripId === promptTripId) return;
+    await openTrip(promptTripId);
+  };
+  dlg.addEventListener('click', (ev)=>{
+    if(ev.target === dlg){
+      try{ dlg.close(); }catch(_){ }
+    }
+  });
 
   if(bJ && !bJ.dataset.wired){
     bJ.dataset.wired='1';
-    bJ.addEventListener('click', ()=>{
+    bindTap(bJ, async ()=>{
       try{ dlg.close(); }catch(_){ }
+      try{ await ensurePromptTripOpen(); }catch(_){ }
       try{ switchToTab('journal'); }catch(_){ }
       try{ openJournalModal(); }catch(_){ }
-    });
+    }, 'tripTodayJournalTap');
   }
   if(bE && !bE.dataset.wired){
     bE.dataset.wired='1';
-    bE.addEventListener('click', ()=>{
+    bindTap(bE, async ()=>{
       try{ dlg.close(); }catch(_){ }
+      try{ await ensurePromptTripOpen(); }catch(_){ }
       try{ switchToTab('expenses'); }catch(_){ }
       try{ openExpenseModal(); }catch(_){ }
-    });
+    }, 'tripTodayExpenseTap');
   }
   if(bC && !bC.dataset.wired){
     bC.dataset.wired='1';
-    bC.addEventListener('click', ()=>{ try{ dlg.close(); }catch(_){ } });
+    bindTap(bC, ()=>{ try{ dlg.close(); }catch(_){ } }, 'tripTodayCancelTap');
   }
 });
 // === End Trip "today" prompt ===

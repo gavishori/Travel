@@ -5466,13 +5466,16 @@ button, .btn, .menu-btn, select, input, textarea {
     gap:8px !important;
     align-items:center !important;
     margin:10px 0 12px !important;
+    direction:ltr !important;
   }
 
   .mobile-overview-search{
     display:block !important;
-    flex:1 1 auto !important;
-    min-width:0 !important;
+    flex:0 0 10ch !important;
+    width:10ch !important;
+    min-width:10ch !important;
     margin:0 !important;
+    text-align:right !important;
   }
 
   .mobile-overview-action-rail #searchAll{
