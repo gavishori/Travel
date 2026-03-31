@@ -834,6 +834,101 @@ function bidiWrap(value, className='bidi-fix'){
 }
 
 
+function formatJournalDateDisplay(isoValue){
+  const m = String(isoValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+function parseJournalDateDisplay(displayValue){
+  const m = String(displayValue || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function journalMobileDateFieldEnabled(){
+  try{ return window.matchMedia('(max-width: 820px)').matches; }catch(_){ return false; }
+}
+
+function syncJournalDateFieldToDisplay(){
+  const el = document.getElementById('jrDate');
+  if(!el || !journalMobileDateFieldEnabled()) return;
+  const iso = el.dataset.iso || parseJournalDateDisplay(el.value) || '';
+  el.dataset.iso = iso;
+  el.type = 'text';
+  el.inputMode = 'numeric';
+  el.placeholder = 'DD/MM/YYYY';
+  el.value = formatJournalDateDisplay(iso);
+}
+
+function enableJournalDatePickerEdit(){
+  const el = document.getElementById('jrDate');
+  if(!el || !journalMobileDateFieldEnabled()) return;
+  const iso = el.dataset.iso || parseJournalDateDisplay(el.value) || '';
+  el.type = 'date';
+  el.inputMode = 'none';
+  el.value = iso || (()=>{
+    const d = new Date();
+    const pad = n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  })();
+  try{ if(typeof el.showPicker === 'function') el.showPicker(); }catch(_){ }
+}
+
+function bindJournalMobileDateField(){
+  const el = document.getElementById('jrDate');
+  if(!el || el.dataset.mobileDateBound === '1') return;
+  el.dataset.mobileDateBound = '1';
+
+  const maybeDisplay = ()=>{
+    if(!journalMobileDateFieldEnabled()) return;
+    if(el.type === 'date'){
+      if(el.value) el.dataset.iso = el.value;
+      setTimeout(syncJournalDateFieldToDisplay, 0);
+    }
+  };
+
+  el.addEventListener('focus', ()=>{
+    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
+  });
+  el.addEventListener('click', ()=>{
+    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
+  });
+  el.addEventListener('touchstart', ()=>{
+    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
+  }, { passive:true });
+  el.addEventListener('change', ()=>{
+    if(el.value) el.dataset.iso = el.value;
+    maybeDisplay();
+  });
+  el.addEventListener('blur', ()=>{
+    if(el.type === 'date') maybeDisplay();
+    else if(journalMobileDateFieldEnabled()){
+      const parsed = parseJournalDateDisplay(el.value);
+      if(parsed) el.dataset.iso = parsed;
+      syncJournalDateFieldToDisplay();
+    }
+  });
+
+  window.addEventListener('resize', ()=>{
+    if(journalMobileDateFieldEnabled()) syncJournalDateFieldToDisplay();
+    else {
+      el.type = 'date';
+      el.value = el.dataset.iso || parseJournalDateDisplay(el.value) || el.value || '';
+      el.inputMode = '';
+      el.placeholder = '';
+    }
+  });
+}
+
+function getJournalDateIsoValue(){
+  const el = document.getElementById('jrDate');
+  if(!el) return '';
+  if(el.type === 'date' && el.value) return el.value;
+  return el.dataset.iso || parseJournalDateDisplay(el.value) || el.value || '';
+}
+
+
 // === Textarea auto-resize + safe Enter handling ===
 (function(){
   function autoResize(el){
@@ -4694,7 +4789,18 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
       tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
     const $d=$('#jrDate'), $t=$('#jrTime');
-    if($d) $d.value=dStr; if($t) $t.value=tStr;
+    if($d){
+      $d.dataset.iso = dStr || '';
+      $d.value = dStr || '';
+      bindJournalMobileDateField();
+      if(journalMobileDateFieldEnabled()) syncJournalDateFieldToDisplay();
+      else {
+        $d.type = 'date';
+        $d.inputMode = '';
+        $d.placeholder = '';
+      }
+    }
+    if($t) $t.value=tStr;
   } catch(_){}
 
   $('#journalModal').showModal();
@@ -4757,8 +4863,9 @@ async function saveJournal() {
   const $jrD = $('#jrDate');
   const $jrT = $('#jrTime');
   let _jr_dateIso;
-  if ($jrD && $jrT && $jrD.value && $jrT.value) {
-    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  const jrDateIsoValue = getJournalDateIsoValue();
+  if ($jrD && $jrT && jrDateIsoValue && $jrT.value) {
+    _jr_dateIso = new Date(`${jrDateIsoValue}T${$jrT.value}:00`).toISOString();
   } else {
     _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
   }
