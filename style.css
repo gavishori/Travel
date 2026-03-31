@@ -5334,6 +5334,19 @@ button, .btn, .menu-btn, select, input, textarea {
     gap:10px;
   }
 
+  .budget-dialog-currencies{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .budget-dialog-currencies .budget-currency-option.active{
+    background:var(--brand) !important;
+    color:#fff !important;
+    border-color:transparent !important;
+  }
+
   .budget-dialog-card{
     padding:14px 12px;
     border:1px solid var(--border);
@@ -5442,5 +5455,35 @@ button, .btn, .menu-btn, select, input, textarea {
     align-items:center !important;
     justify-content:flex-end !important;
     gap:4px !important;
+  }
+
+  .mobile-overview-action-rail{
+    display:flex !important;
+    gap:8px !important;
+    align-items:center !important;
+    margin:10px 0 12px !important;
+  }
+
+  .mobile-overview-icon-btn{
+    width:44px !important;
+    min-width:44px !important;
+    height:44px !important;
+    padding:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:14px !important;
+    font-weight:800 !important;
+  }
+
+  .mobile-overview-action-rail .mobile-section-menu-btn{
+    width:44px !important;
+    min-width:44px !important;
+    height:44px !important;
+    padding:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:14px !important;
   }
 }

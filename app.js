@@ -83,6 +83,11 @@ function openBudgetSummaryDialog(payload){
   const body = dlg.querySelector('#budgetSummaryDialogBody');
   if(!body) return;
   body.innerHTML = `
+    <div class="budget-dialog-currencies">
+      <button type="button" class="btn budget-currency-option ${payload.cur === 'ILS' ? 'active' : ''}" data-budget-currency="ILS">₪</button>
+      <button type="button" class="btn budget-currency-option ${payload.cur === 'USD' ? 'active' : ''}" data-budget-currency="USD">$</button>
+      <button type="button" class="btn budget-currency-option ${payload.cur === 'EUR' ? 'active' : ''}" data-budget-currency="EUR">€</button>
+    </div>
     <div class="budget-dialog-grid">
       <div class="budget-dialog-card">
         <span class="budget-dialog-label">תקציב</span>
@@ -102,6 +107,23 @@ function openBudgetSummaryDialog(payload){
       </div>
     </div>
   `;
+  body.querySelectorAll('[data-budget-currency]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const nextCur = btn.getAttribute('data-budget-currency');
+      if(!nextCur || !state.current) return;
+      setActiveCurrency(nextCur);
+      try{
+        const ref = FB.doc(db,'trips', state.current.id || state.currentTripId);
+        FB.updateDoc(ref, { baseCurrency: nextCur }).catch(()=>{});
+        state.current.baseCurrency = nextCur;
+      }catch(_){}
+      renderExpenseSummary(state.current);
+      openBudgetSummaryDialog({
+        ...payload,
+        cur: nextCur
+      });
+    });
+  });
   if(!dlg.open) dlg.showModal();
 }
 
@@ -477,10 +499,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
       add('מפה', ()=> setOverviewSelectValue('map'));
-      add('+ הוצאה', ()=> triggerButton('btnQuickAddExpense'));
-      add('+ יומן', ()=> triggerButton('btnQuickAddJournal'));
-      add('מיין תצוגה', ()=> triggerButton('btnAllSort'));
-      add('צמצם / פרוס הכל', ()=> triggerButton('btnAllToggle'));
+      add('תקציב', ()=>{
+        if(state.current) renderExpenseSummary(state.current);
+        document.getElementById('btnBudgetSummaryMobile')?.click();
+      });
     } else if(currentSection === 'expenses'){
       title.textContent = 'פעולות הוצאות';
       add('+ הוסף הוצאה', ()=> triggerButton('btnAddExpense'), 'primary');
@@ -516,6 +538,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
     host.prepend(btn);
   }
 
+  function ensureOverviewActionRail(){
+    const host = document.getElementById('view-overview');
+    if(!host) return;
+    let rail = document.getElementById('mobileOverviewActionRail');
+    if(rail) return;
+    const menuBtn = document.getElementById('mobileOverviewMenuBtn');
+    rail = document.createElement('div');
+    rail.id = 'mobileOverviewActionRail';
+    rail.className = 'mobile-overview-action-rail';
+    if(menuBtn) rail.appendChild(menuBtn);
+    rail.insertAdjacentHTML('beforeend', `
+      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
+      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
+      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
+      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
+    `);
+    host.prepend(rail);
+    rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
+    rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
+    rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
+    rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
+  }
+
   function applyMobileLayout(){
     if(!isCompactMobileHeader()) return;
     const newTripBtn = document.getElementById('btnNewTrip');
@@ -541,6 +586,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     ensureMobileSectionMenuDialog();
     ensureSectionButton('#view-overview', 'mobileOverviewMenuBtn', 'פעולות תצוגה', 'overview');
+    ensureOverviewActionRail();
     ensureSectionButton('#view-expenses .list-actions', 'mobileExpensesMenuBtn', 'פעולות הוצאות', 'expenses');
     ensureSectionButton('#view-journal .list-actions', 'mobileJournalMenuBtn', 'פעולות יומן', 'journal');
   }
@@ -5554,6 +5600,7 @@ function renderExpenseSummary(t){
         budget: budgetLabel,
         paid: paidLabel,
         balance: balanceLabel,
+        cur,
         pct,
         isNeg
       });
