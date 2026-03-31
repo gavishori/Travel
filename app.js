@@ -245,6 +245,69 @@ function bindTap(btn, handler, key){
   }, { passive:false });
 }
 
+function wireReliableMobileButton(btn, handler, key='mobileReliableTap'){
+  if(!btn || btn.dataset[key] === '1') return;
+  btn.dataset[key] = '1';
+  let lastTouchTs = 0;
+  const run = async (ev)=>{
+    try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); }catch(_){ }
+    if(ev?.type === 'click' && Date.now() - lastTouchTs < 500) return false;
+    if(ev?.type === 'touchend' || ev?.type === 'pointerup') lastTouchTs = Date.now();
+    await handler(ev);
+    return false;
+  };
+  btn.onclick = run;
+  btn.ontouchend = run;
+  btn.onpointerup = run;
+  btn.style.pointerEvents = 'auto';
+  btn.style.touchAction = 'manipulation';
+  btn.style.webkitTapHighlightColor = 'transparent';
+}
+
+function wireReliableMobileActions(){
+  if(!isMobileViewport()) return;
+  wireReliableMobileButton(document.getElementById('accountMenuCancel'), ()=> closeAccountMenu(), 'accountMenuCancelReliable');
+  wireReliableMobileButton(document.getElementById('accountMenuLogout'), async (ev)=>{
+    closeAccountMenu();
+    await performPrimaryLogout(ev);
+  }, 'accountMenuLogoutReliable');
+  wireReliableMobileButton(document.getElementById('tripTodayCancel'), ()=>{
+    const dlg = document.getElementById('tripTodayModal');
+    try{ dlg?.close(); }catch(_){ }
+  }, 'tripTodayCancelReliable');
+  wireReliableMobileButton(document.getElementById('tripCancel'), ()=>{
+    try{ document.getElementById('tripModal')?.close(); }catch(_){ }
+  }, 'tripCancelReliable');
+  wireReliableMobileButton(document.getElementById('expCancel'), ()=>{
+    try{ document.getElementById('expenseModal')?.close(); }catch(_){ }
+  }, 'expCancelReliable');
+  wireReliableMobileButton(document.getElementById('jrCancel'), ()=>{
+    try{ document.getElementById('journalModal')?.close(); }catch(_){ }
+  }, 'jrCancelReliable');
+  wireReliableMobileButton(document.getElementById('selectMapCancel'), ()=>{
+    try{ document.getElementById('mapSelectModal')?.close(); }catch(_){ }
+  }, 'mapCancelReliable');
+  wireReliableMobileButton(document.getElementById('unsavedCancel'), ()=>{
+    try{ document.getElementById('unsavedChangesModal')?.close(); }catch(_){ }
+  }, 'unsavedCancelReliable');
+  wireReliableMobileButton(document.getElementById('tripTodayAddExpense'), async ()=>{
+    const dlg = document.getElementById('tripTodayModal');
+    const promptTripId = dlg?.dataset.tripId || '';
+    try{ dlg?.close(); }catch(_){ }
+    if(promptTripId && state.currentTripId !== promptTripId){
+      try{ await openTrip(promptTripId); }catch(_){ }
+    }
+    try{ switchToTab('expenses'); }catch(_){ }
+    try{ openExpenseModal(); }catch(_){ }
+  }, 'tripTodayExpenseReliable');
+  wireReliableMobileButton(document.getElementById('btnAddExpense'), ()=>{
+    try{ openExpenseModal(); }catch(_){ }
+  }, 'btnAddExpenseReliable');
+  wireReliableMobileButton(document.getElementById('btnQuickAddExpense'), ()=>{
+    try{ openExpenseModal(); }catch(_){ }
+  }, 'btnQuickAddExpenseReliable');
+}
+
 function refreshHeaderAuthUi(forcedUser){
   try{
     if(typeof window.__authPrimarySwap !== 'function') return;
@@ -356,6 +419,7 @@ function wireHeaderControls(){
   refreshHeaderAuthUi();
 }
 document.addEventListener('DOMContentLoaded', wireHeaderControls);
+document.addEventListener('DOMContentLoaded', wireReliableMobileActions);
 
 function finalMobileThemeSync(){
   if(!isCompactMobileHeader()) return;
