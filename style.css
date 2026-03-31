@@ -5279,6 +5279,10 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 }
 @media (max-width: 820px){
+  #view-overview .overview-budget-wrap{
+    display:none !important;
+  }
+
   #expenseSummary.budget-bar-mobile{
     display:grid !important;
     grid-template-columns:1fr auto !important;
@@ -5462,6 +5466,17 @@ button, .btn, .menu-btn, select, input, textarea {
     gap:8px !important;
     align-items:center !important;
     margin:10px 0 12px !important;
+  }
+
+  .mobile-overview-search{
+    display:block !important;
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    margin:0 !important;
+  }
+
+  .mobile-overview-action-rail #searchAll{
+    display:block !important;
   }
 
   .mobile-overview-icon-btn{

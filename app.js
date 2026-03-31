@@ -118,10 +118,7 @@ function openBudgetSummaryDialog(payload){
         state.current.baseCurrency = nextCur;
       }catch(_){}
       renderExpenseSummary(state.current);
-      openBudgetSummaryDialog({
-        ...payload,
-        cur: nextCur
-      });
+      openCurrentBudgetSummary();
     });
   });
   if(!dlg.open) dlg.showModal();
@@ -134,6 +131,51 @@ function buildExpenseAmountMarkup(amount, currency){
       <span class="code">${bidiWrap(currency || '')}</span>
     </div>
   `;
+}
+
+function buildBudgetSummaryPayload(t, forcedCur){
+  if(!t) return null;
+  const cur = forcedCur || getActiveCurrencyFromTrip(t);
+  const budgetObj = t.budget || {};
+  function getBudget(localCur){
+    const direct = Number(budgetObj[localCur] || 0);
+    if(direct) return direct;
+    const tryUSD = budgetObj.USD ? convertAmount(budgetObj.USD,'USD',localCur,state.rates) : 0;
+    const tryEUR = budgetObj.EUR ? convertAmount(budgetObj.EUR,'EUR',localCur,state.rates) : 0;
+    const tryILS = budgetObj.ILS ? convertAmount(budgetObj.ILS,'ILS',localCur,state.rates) : 0;
+    return Number(tryUSD || tryEUR || tryILS || 0);
+  }
+  const budgetRaw = getBudget(cur);
+  let paid = 0;
+  const ex = t.expenses || {};
+  for(const id in ex){
+    const e = ex[id] || {};
+    const amt = Number(e.amount || 0);
+    const from = e.currency || cur;
+    const localRates = e.rates || state.rates || {};
+    paid += convertAmount(amt, from, cur, localRates);
+  }
+  const balance = budgetRaw - paid;
+  const isNeg = balance < 0;
+  let pct = 0;
+  if (budgetRaw > 0) pct = Math.max(0, Math.round((paid / budgetRaw) * 100));
+  else if (budgetRaw === 0 && paid > 0) pct = 100;
+  return {
+    cur,
+    pct,
+    isNeg,
+    band: paid > budgetRaw ? 'danger' : (pct >= 80 ? 'warn' : 'ok'),
+    budget: `${formatInt(Math.round(budgetRaw))} ${cur}`,
+    paid: `${formatInt(Math.round(paid))} ${cur}`,
+    balance: `${formatIntSigned(Math.round(balance))} ${cur}`
+  };
+}
+
+function openCurrentBudgetSummary(){
+  if(!state.current) return;
+  const payload = buildBudgetSummaryPayload(state.current);
+  if(!payload) return;
+  openBudgetSummaryDialog(payload);
 }
 
 function syncThemeToggleButton(){
@@ -494,15 +536,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     if(currentSection === 'overview'){
       title.textContent = 'תצוגה ופעולות';
+      add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'), 'primary');
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
-      add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
       add('מפה', ()=> setOverviewSelectValue('map'));
-      add('תקציב', ()=>{
-        if(state.current) renderExpenseSummary(state.current);
-        document.getElementById('btnBudgetSummaryMobile')?.click();
-      });
+      add('תקציב', ()=> openCurrentBudgetSummary());
     } else if(currentSection === 'expenses'){
       title.textContent = 'פעולות הוצאות';
       add('+ הוסף הוצאה', ()=> triggerButton('btnAddExpense'), 'primary');
@@ -544,10 +583,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     let rail = document.getElementById('mobileOverviewActionRail');
     if(rail) return;
     const menuBtn = document.getElementById('mobileOverviewMenuBtn');
+    const searchInput = document.getElementById('searchAll');
     rail = document.createElement('div');
     rail.id = 'mobileOverviewActionRail';
     rail.className = 'mobile-overview-action-rail';
     if(menuBtn) rail.appendChild(menuBtn);
+    if(searchInput){
+      searchInput.hidden = false;
+      searchInput.classList.add('mobile-overview-search');
+      rail.appendChild(searchInput);
+    }
     rail.insertAdjacentHTML('beforeend', `
       <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
       <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
@@ -1753,6 +1798,34 @@ function loadTripSummariesCache(uid){
   }
 }
 
+function tripCacheKey(uid, tripId){
+  return `flymily_trip_cache_${uid || 'anon'}_${tripId || 'none'}`;
+}
+
+function saveTripCache(uid, trip){
+  try{
+    if(!uid || !trip?.id) return;
+    const payload = {
+      savedAt: new Date().toISOString(),
+      trip: normalizeTripShape(trip)
+    };
+    localStorage.setItem(tripCacheKey(uid, trip.id), JSON.stringify(payload));
+  }catch(_){}
+}
+
+function loadTripCache(uid, tripId){
+  try{
+    if(!uid || !tripId) return null;
+    const raw = localStorage.getItem(tripCacheKey(uid, tripId));
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed?.trip) return null;
+    return normalizeTripShape(parsed.trip);
+  }catch(_){
+    return null;
+  }
+}
+
 function buildTripSummary(trip){
   const normalized = normalizeTripShape(trip || {});
   return {
@@ -2010,6 +2083,16 @@ async function openTrip(id){
   state.overviewMode = 'all';
   try { localStorage.setItem('overviewMode', 'all'); } catch (_) {}
   try { syncOverviewTabLabel(); } catch (_) {}
+  try{
+    const cachedTrip = loadTripCache(state.user?.uid, id);
+    if(cachedTrip){
+      state.current = { ...cachedTrip, id };
+      state._lastTripObj = state.current;
+      updateHeaderDestination();
+      renderAllTimeline(state.current, state.allSort || 'desc');
+      renderExpenseSummary(state.current);
+    }
+  }catch(_){}
   await loadTrip();
 }
 
@@ -2242,6 +2325,7 @@ async function loadTrip(){
   const rawTrip = { id: snap.id, ...snap.data() };
   const t = normalizeTripShape(rawTrip); state._lastTripObj = t;
   state.current = t;
+  try{ saveTripCache(state.user?.uid, t); }catch(_){}
   try { globalThis.state = state; window.state = state; } catch(_) {}
   updateHeaderDestination();
   const inferredLocalCurrency = t.localCurrency;
@@ -5539,75 +5623,19 @@ function renderExpenseSummary(t){
   const bar = document.getElementById('expenseSummary');
   if(!bar || !t) return;
 
-  const cur = getActiveCurrencyFromTrip(t);
-
-  const budgetObj = t.budget || {};
-  function getBudget(cur){
-    const direct = Number(budgetObj[cur] || 0);
-    if(direct) return direct;
-    const tryUSD = budgetObj.USD ? convertAmount(budgetObj.USD,'USD',cur,state.rates) : 0;
-    const tryEUR = budgetObj.EUR ? convertAmount(budgetObj.EUR,'EUR',cur,state.rates) : 0;
-    const tryILS = budgetObj.ILS ? convertAmount(budgetObj.ILS,'ILS',cur,state.rates) : 0;
-    return Number(tryUSD || tryEUR || tryILS || 0);
-  }
-  const budgetRaw = getBudget(cur);
-
-  let paid = 0;
-  const ex = t.expenses || {};
-  for(const id in ex){
-    const e = ex[id] || {};
-    const amt = Number(e.amount || 0);
-    const from = e.currency || cur;
-    const localRates = e.rates || state.rates || {};
-    paid += convertAmount(amt, from, cur, localRates);
-  }
-
-  const balance = budgetRaw - paid;
-  const isNeg = balance < 0;
-
-  let pct = 0;
-  if (budgetRaw > 0) {
-    pct = Math.max(0, Math.round((paid / budgetRaw) * 100));
-  } else if (budgetRaw === 0 && paid > 0) {
-    pct = 100;
-  }
-  const over = paid > budgetRaw;
-  const band = over ? 'danger' : (pct >= 80 ? 'warn' : 'ok');
-
-  const fmt = (n)=> formatInt(Math.round(n));
-  const fmtSigned = (n)=> formatIntSigned(Math.round(n));
-
-  const budgetLabel = `${fmt(budgetRaw)} ${cur}`;
-  const paidLabel = `${fmt(paid)} ${cur}`;
-  const balanceLabel = `${fmtSigned(balance)} ${cur}`;
+  const payload = buildBudgetSummaryPayload(t);
+  if(!payload) return;
+  const { cur, pct, isNeg, band, budget: budgetLabel, paid: paidLabel, balance: balanceLabel } = payload;
 
   bar.classList.add('budget-bar-structured');
   if(isMobileViewport()){
     bar.classList.add('budget-bar-mobile');
-    bar.innerHTML = `
-      <button id="btnBudgetSummaryMobile" type="button" class="btn budget-summary-trigger" aria-label="פתיחת תקציב">
-        <span class="budget-summary-trigger-icon" aria-hidden="true">₪</span>
-        <span class="budget-summary-trigger-text">תקציב</span>
-      </button>
-      <button id="barCurrency" class="btn budget-currency-pill" title="החלף מטבע">${cur}</button>
-      <div class="budget-progress ${band}" aria-label="התקדמות תקציב">
-        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
-        <div class="pct" aria-hidden="true">${pct}%</div>
-      </div>
-    `;
-    document.getElementById('btnBudgetSummaryMobile')?.addEventListener('click', ()=>{
-      openBudgetSummaryDialog({
-        budget: budgetLabel,
-        paid: paidLabel,
-        balance: balanceLabel,
-        cur,
-        pct,
-        isNeg
-      });
-    });
+    bar.hidden = true;
+    bar.innerHTML = '';
     return;
   }
 
+  bar.hidden = false;
   bar.classList.remove('budget-bar-mobile');
   bar.innerHTML = `
     <button id="barCurrency" class="btn" title="החלף מטבע">${cur}</button>
