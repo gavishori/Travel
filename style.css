@@ -5625,3 +5625,73 @@ button, .btn, .menu-btn, select, input, textarea {
     border-radius:14px !important;
   }
 }
+
+/* === Mobile journal meta row hard fix: keep date, time, location on one line === */
+@media (max-width: 820px){
+  #journalModal .body .journal-meta-row,
+  #journalModal .journal-meta-row{
+    display:flex !important;
+    flex-direction:row !important;
+    flex-wrap:nowrap !important;
+    align-items:flex-end !important;
+    gap:8px !important;
+  }
+
+  #journalModal .body .journal-meta-row > .jr-date-col,
+  #journalModal .body .journal-meta-row > .jr-time-col,
+  #journalModal .body .journal-meta-row > .jr-location-col,
+  #journalModal .journal-meta-row > .jr-date-col,
+  #journalModal .journal-meta-row > .jr-time-col,
+  #journalModal .journal-meta-row > .jr-location-col{
+    flex:1 1 0 !important;
+    width:0 !important;
+    min-width:0 !important;
+    max-width:none !important;
+    margin:0 !important;
+  }
+
+  #journalModal .body .journal-meta-row > .jr-date-col,
+  #journalModal .body .journal-meta-row > .jr-time-col,
+  #journalModal .journal-meta-row > .jr-date-col,
+  #journalModal .journal-meta-row > .jr-time-col{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:6px !important;
+  }
+
+  #journalModal .body .journal-meta-row > .jr-location-col,
+  #journalModal .journal-meta-row > .jr-location-col{
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-end !important;
+    gap:6px !important;
+  }
+
+  #journalModal .body .journal-meta-row input,
+  #journalModal .body .journal-meta-row button,
+  #journalModal .journal-meta-row input,
+  #journalModal .journal-meta-row button{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+    height:44px !important;
+  }
+
+  #journalModal #jrDate,
+  #journalModal #jrTime,
+  #journalModal #btnEditJrLocation{
+    padding:0 8px !important;
+    font-size:15px !important;
+  }
+
+  #journalModal #btnEditJrLocation{
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  #journalModal #jrLocationPreview{
+    display:none !important;
+  }
+}
