@@ -661,6 +661,10 @@ dialog.modal{border:1px solid var(--border);border-radius:16px;background:var(--
 .login-card{width:min(420px,92vw);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .login-card h1{font-size:1.6rem;margin:.2rem 0 .4rem}
 .login-card .input{width:100%}
+body[data-authstate="out"] .container{display:none !important}
+body[data-authstate="out"] #loginScreen{display:grid !important}
+body[data-authstate="in"] #loginScreen{display:none !important}
+body[data-authstate="in"] .container{display:grid !important}
 
 /* user badge */
 #userBadge{padding:6px 10px;border:1px solid var(--border);border-radius:999px}

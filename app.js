@@ -308,6 +308,49 @@ function wireReliableMobileActions(){
   }, 'btnQuickAddExpenseReliable');
 }
 
+function applyAuthShellState(user){
+  const loginScreen = document.getElementById('loginScreen');
+  const appContainer = document.querySelector('.container');
+  const appEl = document.querySelector('.app');
+  const authModal = document.getElementById('authModal');
+  const mobileOverlay = document.getElementById('mobileAuthOverlay');
+  const emailSpan = document.getElementById('currentUserEmail');
+  const isLoggedIn = !!user;
+
+  document.body.dataset.authstate = isLoggedIn ? 'in' : 'out';
+  if(appEl) appEl.style.display = 'grid';
+
+  if(emailSpan){
+    emailSpan.textContent = isLoggedIn ? (user.email || '') : '';
+    emailSpan.style.display = 'none';
+  }
+
+  if(typeof window.__authPrimarySwap === 'function'){
+    try{ window.__authPrimarySwap(isLoggedIn, user?.email || ''); }catch(_){ }
+  }
+
+  if(isLoggedIn){
+    if(loginScreen) loginScreen.style.display = 'none';
+    if(appContainer) appContainer.style.display = 'grid';
+    try{ if(authModal?.open) authModal.close(); }catch(_){ }
+    if(mobileOverlay) mobileOverlay.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }else{
+    if(loginScreen) loginScreen.style.display = 'grid';
+    if(appContainer) appContainer.style.display = 'none';
+    try{ if(authModal?.open) authModal.close(); }catch(_){ }
+    if(mobileOverlay) mobileOverlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+window.__applyAuthShellState = applyAuthShellState;
+try{
+  if(document.body && !document.body.dataset.authstate){
+    document.body.dataset.authstate = 'out';
+  }
+}catch(_){ }
+
 function refreshHeaderAuthUi(forcedUser){
   try{
     if(typeof window.__authPrimarySwap !== 'function') return;
@@ -3283,6 +3326,18 @@ $('#lsReset').addEventListener('click', async ()=>{
 
   bindTap($('#loginBtn'), ()=>doLogin('#lsEmail', '#lsPass', '#lsError'));
   bindTap($('#authSignIn'), ()=>doLogin('#authEmail', '#authPass', '#authError'));
+  const loginBtn = $('#loginBtn');
+  if(loginBtn && loginBtn.dataset.directAuthBound !== '1'){
+    loginBtn.dataset.directAuthBound = '1';
+    loginBtn.onclick = ()=>doLogin('#lsEmail', '#lsPass', '#lsError');
+    loginBtn.ontouchend = (ev)=>{ ev.preventDefault(); doLogin('#lsEmail', '#lsPass', '#lsError'); return false; };
+  }
+  const authSignInBtn = $('#authSignIn');
+  if(authSignInBtn && authSignInBtn.dataset.directAuthBound !== '1'){
+    authSignInBtn.dataset.directAuthBound = '1';
+    authSignInBtn.onclick = ()=>doLogin('#authEmail', '#authPass', '#authError');
+    authSignInBtn.ontouchend = (ev)=>{ ev.preventDefault(); doLogin('#authEmail', '#authPass', '#authError'); return false; };
+  }
 
   ['#lsEmail', '#lsPass'].forEach((sel)=>{
     const el = $(sel);
@@ -5188,80 +5243,15 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
   FB.onAuthStateChanged(FB.auth, (user) => {
     if((user?.uid||null)===__lastAuthUid){ return; }
     __lastAuthUid = user?.uid||null;
-    
-    const emailSpan = document.getElementById('currentUserEmail'); // הספאן שהוספנו ב-index.html
-    const loginScreen = document.getElementById('loginScreen');
-    const appContainer = document.querySelector('.container');
-    const appEl = document.querySelector('.app');
-    const authModal = document.getElementById('authModal'); // מודל ההתחברות
-
-    if (appEl) appEl.style.display = 'grid'; 
-    const isMobileAuthView = typeof window.__isMobileViewport === 'function'
-      ? window.__isMobileViewport()
-      : (window.innerWidth <= 820);
-
+    applyAuthShellState(user);
     if (user) {
-      // --- משתמש מחובר ---
-      if(emailSpan){
-        emailSpan.textContent = user.email || '';
-        emailSpan.style.display='none';
-      }
-      // קרא לפונקציה שמחליפה את הכפתור ל"ניתוק"
-      if (typeof window.__authPrimarySwap === 'function') {
-        window.__authPrimarySwap(true, user.email || '');
-      }
-      
-      if (loginScreen) loginScreen.style.display = 'none';
-      if (appContainer) appContainer.style.display = 'grid'; 
-      if (authModal) authModal.close(); // סגור את מודל ההתחברות אם פתוח
-      
       state.user = user;
       try { subscribeTrips(user.uid); } catch(e){ /*log removed*/ }
-    
     } else {
-      // --- משתמש מנותק ---
-      if(emailSpan){ 
-        emailSpan.textContent=''; 
-        emailSpan.style.display='none'; 
-      }
-      // קרא לפונקציה שמחליפה את הכפתור ל"התחברות"
-      if (typeof window.__authPrimarySwap === 'function') {
-        window.__authPrimarySwap(false, '');
-      }
-
-      if (authModal && !authModal.open) authModal.showModal(); // הצג את מודל ההתחברות
-      if (appContainer) appContainer.style.display = 'none'; 
-      
       state.user = null;
     }
   });
 }try { /*log removed*/ } catch(e){}
-
-// Force a stable auth UI on mobile: use the login screen, not the desktop modal.
-if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
-  FB.onAuthStateChanged(FB.auth, (user) => {
-    const isMobileAuthView = typeof window.__isMobileViewport === 'function'
-      ? window.__isMobileViewport()
-      : (window.innerWidth <= 820);
-    if (!isMobileAuthView) return;
-
-    const loginScreen = document.getElementById('loginScreen');
-    const appContainer = document.querySelector('.container');
-    const authModal = document.getElementById('authModal');
-
-    try{
-      if (authModal?.open) authModal.close();
-    }catch(e){ console.warn('mobile auth modal close skipped', e); }
-
-    if (user) {
-      if (loginScreen) loginScreen.style.display = 'none';
-      if (appContainer) appContainer.style.display = 'grid';
-    } else {
-      if (loginScreen) loginScreen.style.display = 'grid';
-      if (appContainer) appContainer.style.display = 'none';
-    }
-  });
-}
 
 
 // === Mobile Preview Presets & Rotation ===
@@ -8154,28 +8144,18 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
       pass.addEventListener('keydown', submitOnEnter);
     }
     try{
-      const FBNS = window.FB;
-      const auth = window.auth || (FBNS && FBNS.auth);
-      // בתוך פונקציית ה-wire ב-app.js
-FBNS?.onAuthStateChanged?.(auth, (u) => {
-  const overlay = document.getElementById('mobileAuthOverlay');
-  if (u) {
-    // אם המשתמש מחובר - אנחנו מעיפים את החסימה מיד
-    if(overlay) {
-       overlay.style.setProperty('display', 'none', 'important');
-    }
-    document.body.dataset.authstate = 'in';
-    // חשוב: מחזירים את הגלילה למסך
-    document.body.style.overflow = 'auto'; 
-  } else {
-    // אם לא מחובר וזה מובייל - מציגים את ה-Login
-    if (isMobile() && overlay) {
-       overlay.style.display = 'flex';
-       document.body.style.overflow = 'hidden'; // מונע גלילה כשיש לוגין
-    }
-    document.body.dataset.authstate = 'out';
-  }
-});
+      const currentUser = (window.auth || window.FB?.auth)?.currentUser || null;
+      if(typeof window.__applyAuthShellState === 'function'){
+        window.__applyAuthShellState(currentUser);
+      }else{
+        if(currentUser){
+          overlay.style.display = 'none';
+          document.body.dataset.authstate = 'in';
+        }else{
+          overlay.style.display = 'none';
+          document.body.dataset.authstate = 'out';
+        }
+      }
     }catch(err){
       console.error('Mobile auth wire error:', err);
     }
