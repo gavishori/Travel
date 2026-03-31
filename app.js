@@ -4706,10 +4706,43 @@ async function saveJournal() {
 // ---------------------------------------
   const t = snap.exists() ? (snap.data() || {}) : {};
 
-  const id = $('#journalModal').dataset.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+  const existingId = $('#journalModal').dataset.id || '';
+  const isInitialCreate = !existingId;
+  const id = existingId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   t.journal = t.journal || {};
 
   const prev = t.journal[id] || {};
+
+  const getCurrentLocationOnce = ()=> new Promise((resolve, reject)=>{
+    try{
+      if(!navigator.geolocation){
+        reject(new Error('Geolocation unsupported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position)=> resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        }),
+        (error)=> reject(error),
+        { enableHighAccuracy:true, timeout:8000, maximumAge:60000 }
+      );
+    }catch(err){ reject(err); }
+  });
+
+  if(
+    isInitialCreate &&
+    !($('#jrPlaceName')?.value || '').trim() &&
+    !numOrNull($('#jrLat').value) &&
+    !numOrNull($('#jrLng').value)
+  ){
+    try{
+      const currentLoc = await getCurrentLocationOnce();
+      let displayName = '';
+      try{ displayName = await reverseGeocode(currentLoc.lat, currentLoc.lng); }catch(_){ }
+      await setJournalLocation(currentLoc.lat, currentLoc.lng, displayName, {persist:true});
+    }catch(_){ }
+  }
 
   t.journal[id] = {
     text: (document.getElementById('jrText').innerText || '').trim(),

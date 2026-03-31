@@ -466,19 +466,17 @@ id="expenseModal" class="modal">
     <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
   </div>
 </div>
-      <div class="row">
-        <label>תאריך
+      <div class="row journal-meta-row">
+        <label class="jr-date-col">תאריך
           <input type="date" id="jrDate" class="input">
         </label>
-        <label>שעה
+        <label class="jr-time-col">שעה
           <input type="time" id="jrTime" class="input">
         </label>
-      </div>
-
-      <!-- מיקום: נשמר אוטומטית. לעריכה - לחיצה על "מיקום" -->
-      <div class="row location-compact">
-        <button id="btnEditJrLocation" class="btn location-btn" type="button">מיקום</button>
-        <div id="jrLocationPreview" class="muted" aria-live="polite"></div>
+        <div class="jr-location-col location-compact">
+          <button id="btnEditJrLocation" class="btn location-btn" type="button">מיקום / עריכה</button>
+          <div id="jrLocationPreview" class="muted" aria-live="polite"></div>
+        </div>
         <input id="jrPlaceName" autocomplete="off" class="input" style="display:none" />
         <input type="hidden" id="jrLat" />
         <input type="hidden" id="jrLng" />
