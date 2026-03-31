@@ -4173,7 +4173,7 @@ button, .btn, .menu-btn, select, input, textarea {
 @media (max-width: 820px){
   #journalModal .journal-meta-row{
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) minmax(0,.82fr) minmax(0,1.15fr) !important;
+    grid-template-columns:minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.15fr) !important;
     gap:8px !important;
     align-items:end !important;
   }
@@ -4186,11 +4186,10 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 
   #journalModal .journal-meta-row .location-compact{
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) !important;
-    gap:6px !important;
-    align-items:center !important;
+    display:flex !important;
+    align-items:end !important;
     margin-top:0 !important;
+    min-width:0 !important;
   }
 
   #journalModal #btnEditJrLocation{
@@ -4200,13 +4199,7 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 
   #journalModal #jrLocationPreview{
-    min-width:0 !important;
-    font-size:.82rem !important;
-    line-height:1.2 !important;
-    text-align:center !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:nowrap !important;
+    display:none !important;
   }
 
   .account-menu-dialog .btn,
