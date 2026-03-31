@@ -2636,6 +2636,39 @@ function maybeShowTodayPromptFromTrips(trips){
   }catch(_){ }
 }
 
+async function runTripTodayPromptAction(kind){
+  const dlg = document.getElementById('tripTodayModal');
+  if(!dlg) return false;
+  const promptTripId = dlg.dataset.tripId || '';
+  const ensurePromptTripOpen = async ()=>{
+    if(!promptTripId) return;
+    if(state.currentTripId === promptTripId) return;
+    await openTrip(promptTripId);
+  };
+  try{
+    if(kind === 'cancel'){
+      try{ dlg.close(); }catch(_){ }
+      return false;
+    }
+    try{ dlg.close(); }catch(_){ }
+    try{ await ensurePromptTripOpen(); }catch(_){ }
+    if(kind === 'journal'){
+      try{ switchToTab('journal'); }catch(_){ }
+      try{ openJournalModal(); }catch(_){ }
+    }
+    if(kind === 'expense'){
+      try{ switchToTab('expenses'); }catch(_){ }
+      try{ openExpenseModal(); }catch(_){ }
+    }
+  }catch(_){ }
+  return false;
+}
+
+window.__tripTodayPromptAction = function(kind){
+  runTripTodayPromptAction(kind);
+  return false;
+};
+
 document.addEventListener('DOMContentLoaded', ()=>{
   const dlg = document.getElementById('tripTodayModal');
   if(!dlg) return;
@@ -2658,12 +2691,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.style.pointerEvents = 'auto';
     btn.style.touchAction = 'manipulation';
   };
-  const ensurePromptTripOpen = async ()=>{
-    const promptTripId = dlg.dataset.tripId;
-    if(!promptTripId) return;
-    if(state.currentTripId === promptTripId) return;
-    await openTrip(promptTripId);
-  };
   dlg.addEventListener('click', (ev)=>{
     if(ev.target === dlg){
       try{ dlg.close(); }catch(_){ }
@@ -2672,25 +2699,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   if(bJ && !bJ.dataset.wired){
     bJ.dataset.wired='1';
-    wirePromptButton(bJ, 'tripTodayJournalTap', async ()=>{
-      try{ dlg.close(); }catch(_){ }
-      try{ await ensurePromptTripOpen(); }catch(_){ }
-      try{ switchToTab('journal'); }catch(_){ }
-      try{ openJournalModal(); }catch(_){ }
-    });
+    wirePromptButton(bJ, 'tripTodayJournalTap', async ()=> runTripTodayPromptAction('journal'));
   }
   if(bE && !bE.dataset.wired){
     bE.dataset.wired='1';
-    wirePromptButton(bE, 'tripTodayExpenseTap', async ()=>{
-      try{ dlg.close(); }catch(_){ }
-      try{ await ensurePromptTripOpen(); }catch(_){ }
-      try{ switchToTab('expenses'); }catch(_){ }
-      try{ openExpenseModal(); }catch(_){ }
-    });
+    wirePromptButton(bE, 'tripTodayExpenseTap', async ()=> runTripTodayPromptAction('expense'));
   }
   if(bC && !bC.dataset.wired){
     bC.dataset.wired='1';
-    wirePromptButton(bC, 'tripTodayCancelTap', async ()=>{ try{ dlg.close(); }catch(_){ } });
+    wirePromptButton(bC, 'tripTodayCancelTap', async ()=> runTripTodayPromptAction('cancel'));
   }
 });
 // === End Trip "today" prompt ===
