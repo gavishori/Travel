@@ -2155,14 +2155,23 @@ html, body { overflow-x:hidden; }
   /* --- Journal: Header Row (tr1) --- */
   #view-journal .expenses-table tr.exp-item:has(td.header),
   #view-overview .expenses-table tr.exp-item[data-kind="journal"]:has(td.header){ 
-    grid-template-columns: 1fr 1fr 1fr auto;
-    grid-template-areas: "date time menu"
-                         "location location menu";
-    gap: 0; 
+    /* הגדרת 4 עמודות: תאריך, שעה, יעד/מיקום, ותפריט(כפתור) */
+    grid-template-columns: auto auto 1fr auto;
+    /* הצבה של כולם בשורה אחת רציפה */
+    grid-template-areas: "date time location menu";
+    gap: 8px; /* מרווח קל בין הפריטים בשורה */
     background: rgba(140, 255, 140, 0.20) !important;
     padding: 0;
-    margin-bottom: 0; /* No margin-bottom, notes row will handle spacing */
+    margin-bottom: 0; 
     border-radius: 8px;
+  }
+  
+  /* וידוא שהטקסט של המיקום לא ידחוף את הכפתור החוצה במקרה של טקסט ארוך */
+  #view-journal .expenses-table td.header.location,
+  #view-overview .expenses-table td.header.location {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
   }
   
   /* Cells inside journal header row */
