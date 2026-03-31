@@ -2535,6 +2535,22 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const bJ = document.getElementById('tripTodayAddJournal');
   const bE = document.getElementById('tripTodayAddExpense');
   const bC = document.getElementById('tripTodayCancel');
+  const wirePromptButton = (btn, key, handler)=>{
+    if(!btn || btn.dataset[key] === '1') return;
+    btn.dataset[key] = '1';
+    let lastTouchTs = 0;
+    const run = async (ev)=>{
+      try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); }catch(_){ }
+      if(ev?.type === 'click' && Date.now() - lastTouchTs < 500) return;
+      if(ev?.type === 'touchend') lastTouchTs = Date.now();
+      await handler();
+      return false;
+    };
+    btn.onclick = run;
+    btn.ontouchend = run;
+    btn.style.pointerEvents = 'auto';
+    btn.style.touchAction = 'manipulation';
+  };
   const ensurePromptTripOpen = async ()=>{
     const promptTripId = dlg.dataset.tripId;
     if(!promptTripId) return;
@@ -2549,25 +2565,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   if(bJ && !bJ.dataset.wired){
     bJ.dataset.wired='1';
-    bindTap(bJ, async ()=>{
+    wirePromptButton(bJ, 'tripTodayJournalTap', async ()=>{
       try{ dlg.close(); }catch(_){ }
       try{ await ensurePromptTripOpen(); }catch(_){ }
       try{ switchToTab('journal'); }catch(_){ }
       try{ openJournalModal(); }catch(_){ }
-    }, 'tripTodayJournalTap');
+    });
   }
   if(bE && !bE.dataset.wired){
     bE.dataset.wired='1';
-    bindTap(bE, async ()=>{
+    wirePromptButton(bE, 'tripTodayExpenseTap', async ()=>{
       try{ dlg.close(); }catch(_){ }
       try{ await ensurePromptTripOpen(); }catch(_){ }
       try{ switchToTab('expenses'); }catch(_){ }
       try{ openExpenseModal(); }catch(_){ }
-    }, 'tripTodayExpenseTap');
+    });
   }
   if(bC && !bC.dataset.wired){
     bC.dataset.wired='1';
-    bindTap(bC, ()=>{ try{ dlg.close(); }catch(_){ } }, 'tripTodayCancelTap');
+    wirePromptButton(bC, 'tripTodayCancelTap', async ()=>{ try{ dlg.close(); }catch(_){ } });
   }
 });
 // === End Trip "today" prompt ===
