@@ -72,7 +72,7 @@
           <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
         </div>
         <div class="list-actions" id="tripSearchActions">
-          <input id="searchTrips" class="input" type="search" name="trip-search" placeholder="חפש נסיעה / מילה" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" />
+          <input id="searchTrips" class="input" placeholder="חפש נסיעה / מילה" />
           <button id="btnSortTrips" class="btn">מיין תאריך יציאה</button>
         </div>
         <div class="list-actions" id="tripViewActions">
@@ -99,6 +99,12 @@
             <span id="allHitCount" class="muted hits">0/0</span>
             <button id="btnAllPrev" class="btn nav-btn" type="button" aria-label="תוצאה קודמת">↑</button>
             <button id="btnAllNext" class="btn nav-btn" type="button" aria-label="תוצאה הבאה">↓</button>
+            <!-- mode selector moved into the Overview tab dropdown (overviewTabSelect) -->
+            <select id="overviewMode" class="input mode-select" dir="rtl" aria-label="סינון להצג הכל" hidden>
+              <option value="all">הצג הכל</option>
+              <option value="expenses">הצג הוצאות</option>
+              <option value="journal">הצג יומן</option>
+            </select>
             <input id="searchAll" class="input search-input" type="search" placeholder="חיפוש בכל ההצג הכל" dir="rtl" autocomplete="off">
             <div class="overview-quick">
               <button id="btnOverviewDeleteSelectedJournal" class="btn danger" type="button" hidden>מחק נבחרים</button>
@@ -567,7 +573,7 @@ id="expenseModal" class="modal">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./script.js"></script>
   <script src="./mobile-auth.js" defer></script>
 
 <dialog id="confirmDeleteModal" class="modal">

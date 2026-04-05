@@ -71,14 +71,42 @@ function normalizeMobileOverviewHeader(){
   try{
     const tabs = document.getElementById('tabs');
     const headerBar = document.getElementById('overviewHeaderBar');
+    const select = document.getElementById('overviewTabSelect');
+    const wrap = select?.closest('.tab-select-wrap');
     const overviewHidden = !document.getElementById('view-overview') || document.getElementById('view-overview').hidden;
+    const store = window.__overviewTabWrapStore || (window.__overviewTabWrapStore = {});
 
     if(!isMobileViewport()){
       if(tabs) tabs.classList.remove('mobile-tabs-compact');
+      if(!wrap && store.parent && store.node){
+        try{
+          if(store.nextSibling && store.nextSibling.parentNode === store.parent){
+            store.parent.insertBefore(store.node, store.nextSibling);
+          }else{
+            store.parent.appendChild(store.node);
+          }
+        }catch(_){ }
+      }
+      const restoredWrap = document.getElementById('overviewTabSelect')?.closest('.tab-select-wrap');
+      if(restoredWrap){
+        restoredWrap.hidden = false;
+        restoredWrap.removeAttribute('aria-hidden');
+        restoredWrap.style.display = '';
+      }
       if(headerBar) headerBar.hidden = overviewHidden;
       return;
     }
 
+    if(wrap){
+      store.parent = wrap.parentNode;
+      store.nextSibling = wrap.nextSibling;
+      store.node = wrap;
+      try{ wrap.remove(); }catch(_){
+        wrap.hidden = false;
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.style.display = 'none';
+      }
+    }
     if(tabs) tabs.classList.add('mobile-tabs-compact');
     if(headerBar) headerBar.hidden = true;
   }catch(err){
@@ -355,15 +383,6 @@ function applyAuthShellState(user){
   if(typeof window.__authPrimarySwap === 'function'){
     try{ window.__authPrimarySwap(isLoggedIn, user?.email || ''); }catch(_){ }
   }
-
-  try{
-    const tripSearch = document.getElementById('searchTrips');
-    const currentEmail = String(user?.email || '').trim().toLowerCase();
-    const currentValue = String(tripSearch?.value || '').trim().toLowerCase();
-    if(tripSearch && currentEmail && currentValue === currentEmail){
-      tripSearch.value = '';
-    }
-  }catch(_){}
 
   if(isLoggedIn){
     if(loginScreen) loginScreen.style.display = 'none';
@@ -708,12 +727,18 @@ function syncJournalSelectionUi(){
         if (overviewEl) { setActiveTab(overviewEl); showView('overview'); }
       } catch (_) {}
 
-      try {
-        const nextMode = (v === 'mix') ? 'all' : v;
-        state.overviewMode = nextMode;
-        localStorage.setItem('overviewMode', nextMode);
-        if (state.current) renderAllTimeline(state.current, state.allSort);
-      } catch (_) {}
+      const modeSel = document.getElementById('overviewMode');
+      if (modeSel) {
+        modeSel.value = (v === 'mix') ? 'all' : v;
+        modeSel.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        try {
+          const nextMode = (v === 'mix') ? 'all' : v;
+          state.overviewMode = nextMode;
+          localStorage.setItem('overviewMode', nextMode);
+          if (state.current) renderAllTimeline(state.current, state.allSort);
+        } catch (_) {}
+      }
       return;
     }
 
@@ -753,6 +778,12 @@ function syncJournalSelectionUi(){
   }
 
   function setOverviewSelectValue(value){
+    const select = document.getElementById('overviewTabSelect');
+    if(select){
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles:true }));
+      return;
+    }
     applyOverviewSelection(value);
   }
 
@@ -834,6 +865,7 @@ function syncJournalSelectionUi(){
     const host = document.getElementById('view-overview');
     if(!host) return;
     let rail = document.getElementById('mobileOverviewActionRail');
+    if(rail) return;
     const menuBtn = document.getElementById('mobileOverviewMenuBtn');
     const searchInput = document.getElementById('searchAll');
     rail = document.createElement('div');
@@ -841,10 +873,10 @@ function syncJournalSelectionUi(){
     rail.className = 'mobile-overview-action-rail';
     if(menuBtn) rail.appendChild(menuBtn);
     rail.insertAdjacentHTML('beforeend', `
-      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
-      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
       <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
       <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
+      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
+      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
     `);
     if(searchInput){
       searchInput.hidden = false;
@@ -1570,11 +1602,12 @@ function initMiniMap(t){
     state.maps.layers.miniGroup = group;
 
     const pts = [];
+    const mapNumbers = buildTripMapNumberLookup(t);
     // Expenses markers
     Object.entries(t.expenses||{}).forEach(([id,e])=>{
       if(typeof e.lat==='number' && typeof e.lng==='number'){
         pts.push([e.lat, e.lng]);
-        L.circleMarker([e.lat,e.lng], { radius:4, color:'#1a73e8' }).addTo(group);
+        _numberedMarker(e.lat, e.lng, mapNumbers.expense.get(String(id)), 'expense').addTo(group);
       }
     });
    // Journal markers (and paths)
@@ -1588,12 +1621,12 @@ function initMiniMap(t){
           
           // הוסף מרקר בנקודת ההתחלה עם פופאפ
           if (typeof j.lat === 'number' && typeof j.lng === 'number') {
-              ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
+              ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))( _numberedMarker(j.lat, j.lng, mapNumbers.journal.get(String(id)), 'journal') )
           }
       } else if (typeof j.lat==='number' && typeof j.lng==='number') {
         // התנהגות רגילה עבור נקודות יומן בודדות
         pts.push([j.lat, j.lng]);
-        ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))(L.circleMarker([j.lat,j.lng], { radius:4, color:'#34a853' }))
+        ((m=>{attachMapPopup(m,'journal', id, j); m.addTo(group);}))( _numberedMarker(j.lat, j.lng, mapNumbers.journal.get(String(id)), 'journal') )
       }
     });
 
@@ -1715,6 +1748,38 @@ function _numberedMarker(lat, lng, n, kind){
   const html = `<div class="num-pin ${cls}">${n}</div>`;
   const icon = L.divIcon({ className:'', html, iconSize:[28,28], iconAnchor:[14,28] });
   return L.marker([lat,lng], { icon: icon });
+}
+
+function buildTripMapNumberLookup(trip){
+  const lookup = { expense: new Map(), journal: new Map() };
+  let expenseIndex = 1;
+  let journalIndex = 1;
+
+  _sortByCreated(Object.entries(trip?.expenses || {})).forEach(([id, e])=>{
+    if(Number.isFinite(+e?.lat) && Number.isFinite(+e?.lng)){
+      lookup.expense.set(String(id), expenseIndex++);
+    }
+  });
+  _sortByCreated(Object.entries(trip?.journal || {})).forEach(([id, j])=>{
+    if(Number.isFinite(+j?.lat) && Number.isFinite(+j?.lng)){
+      lookup.journal.set(String(id), journalIndex++);
+    }
+  });
+
+  return lookup;
+}
+
+function buildMapActionButton(type, id, index){
+  const badge = Number.isFinite(+index) ? `<span class="map-action-badge">${esc(String(index))}</span>` : '';
+  return `<button class="btn small journal-map-btn map-action-btn" type="button" data-map-item="${esc(type)}" data-id="${esc(id)}" aria-label="מפה ${Number.isFinite(+index) ? esc(String(index)) : ''}">
+    <span class="map-action-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M12 21s6-5.33 6-11a6 6 0 1 0-12 0c0 5.67 6 11 6 11Zm0-8.25A2.75 2.75 0 1 1 12 7.25a2.75 2.75 0 0 1 0 5.5Z"/>
+      </svg>
+    </span>
+    <span class="map-action-label">מפה</span>
+    ${badge}
+  </button>`;
 }
 // Sort items by created timestamp if possible (fallback to key)
 function _sortByCreated(entries){
@@ -1851,7 +1916,7 @@ function enterTripMode(){
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
   syncHomeMapMode();
-  if(!isMobileViewport()) $('#tabs').style.display = 'flex';
+  $('#tabs').style.display = 'flex';
   $('#btnAllTrips').style.display = 'inline-block';
   updateHeaderDestination();
 }
@@ -1909,6 +1974,15 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
   if(nextTab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
 
+// Overview tab dropdown (All / Expenses / Journal)
+(function bindOverviewTabSelect(){
+  // Header dropdown ("הצג") that navigates to main tabs
+  const sel = document.getElementById('overviewTabSelect');
+  if(!sel || sel.dataset.bound) return;
+  sel.dataset.bound = '1';
+
+  sel.addEventListener('change', ()=> applyOverviewSelection(sel.value));
+})();
 // (old Auth UI block removed – using unified handler below)
 
 // Handle share link mode (read-only)
@@ -1921,7 +1995,7 @@ if (token && tripId) {
   $('#sidebar').style.display = 'none';
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
-  if(!isMobileViewport()) $('#tabs').style.display = 'flex';
+  $('#tabs').style.display = 'flex';
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
   container.classList.remove('home-mode'); container.classList.add('trip-mode');
@@ -2262,15 +2336,8 @@ async function renderTripList(){
   const perfNow = ()=> (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
   const renderStart = perfNow();
   const list = $('#tripList');
-  if(!list) return;
   syncHomeMapMode();
-  const searchInput = $('#searchTrips');
-  const rawSearch = searchInput?.value?.trim() || '';
-  const userEmail = String(state.user?.email || '').trim().toLowerCase();
-  const search = rawSearch.toLowerCase() === userEmail ? '' : rawSearch;
-  if(searchInput && rawSearch && !search){
-    searchInput.value = '';
-  }
+  const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
   let s = null;
   if(search){
@@ -2282,27 +2349,6 @@ async function renderTripList(){
   state._tripListRenderToken = (state._tripListRenderToken || 0) + 1;
   const renderToken = state._tripListRenderToken;
   list.className = state.viewMode === 'map' ? 'map-view' : (state.viewMode==='grid' ? 'grid' : 'list');
-  if(state.viewMode !== 'map' && items.length === 0){
-    const msg = search
-      ? 'לא נמצאו נסיעות שמתאימות לחיפוש.'
-      : 'התחברת בהצלחה. עדיין אין נסיעות בחשבון הזה.';
-    list.innerHTML = `
-      <div class="trip-list-empty" role="status" aria-live="polite">
-        <strong>${msg}</strong>
-        <span>אפשר ללחוץ על "נסיעה חדשה +" כדי ליצור נסיעה ראשונה.</span>
-      </div>`;
-    ['btnViewGrid','btnViewList','btnViewMap'].forEach(id => document.getElementById(id)?.classList.remove('active'));
-    document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
-    try{
-      window.__lastRenderTripListPerf = {
-        items: items.length,
-        mode: state.viewMode,
-        ms: Math.round(perfNow() - renderStart)
-      };
-      console.info('[perf] renderTripList', window.__lastRenderTripListPerf);
-    }catch(_){}
-    return;
-  }
   if(state.viewMode === 'map'){
     await renderTripMapView(items, renderToken);
   } else {
@@ -2399,9 +2445,7 @@ async function openTrip(id){
   enterTripMode();
   $$('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
-  if(first){
-    first.classList.add('active');
-  }
+  first.classList.add('active');
   showView('overview');
   state.overviewMode = 'all';
   try { localStorage.setItem('overviewMode', 'all'); } catch (_) {}
@@ -2976,6 +3020,7 @@ function renderJournal(t, order){
   body.innerHTML = '';
   state.journalSelectedIds = state.journalSelectedIds || new Set();
   const selectionOn = !!state.journalSelectionMode;
+  const mapNumbers = buildTripMapNumberLookup(t);
   let arr = Object.entries(t?.journal || {}).map(([id,j])=>({id, ...j}))
     .sort((a,b)=> ((state.journalSort||'desc') === 'asc' ? 1 : -1) * (expenseSortKey(a) - expenseSortKey(b)));
 
@@ -2991,8 +3036,9 @@ function renderJournal(t, order){
     const checkedAttr = selectionOn && state.journalSelectedIds.has(j.id) ? 'checked' : '';
     const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : "";
     const hasMapPoint = Number.isFinite(+j.lat) && Number.isFinite(+j.lng);
+    const mapIndex = mapNumbers.journal.get(String(j.id));
     const mapActionCell = hasMapPoint
-      ? `<td class="cell header menu-cell"><button class="btn small journal-map-btn" type="button" data-map-item="journal" data-id="${esc(j.id)}">מפה</button></td>`
+      ? `<td class="cell header menu-cell map-cell">${buildMapActionButton('journal', j.id, mapIndex)}</td>`
       : "";
     
     const displayTitle = deriveJournalTitle(j);
@@ -3048,7 +3094,7 @@ function appendExpenseRowToTimeline(body, e){
     document.getElementById('rowMenuModal').showModal();
   };
 }
-function appendJournalRowToTimeline(body, j){
+function appendJournalRowToTimeline(body, j, mapIndex){
   const d = dayjs(j.dateIso || j.createdAt);
   const displayTitle = deriveJournalTitle(j);
   const text = (j.html && /(<a|link-icon|<br|<div|<p|<span)/i.test(j.html))
@@ -3065,7 +3111,7 @@ function appendJournalRowToTimeline(body, j){
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
     <td class="cell header time"></td>
     <td class="cell header location" colspan="${hasMapPoint ? 2 : 3}">${esc(displayTitle)}</td>
-    ${hasMapPoint ? `<td class="cell header menu-cell"><button class="btn small journal-map-btn" type="button" data-map-item="journal" data-id="${esc(j.id)}">מפה</button></td>` : ''}
+    ${hasMapPoint ? `<td class="cell header menu-cell map-cell">${buildMapActionButton('journal', j.id, mapIndex)}</td>` : ''}
     <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
   `;
   const tr2 = document.createElement('tr');
@@ -3096,6 +3142,7 @@ function renderAllTimeline(t, order){
   const body = document.getElementById('tblAllTimeline');
   if (!body) return;
   state.journalSelectedIds = state.journalSelectedIds || new Set();
+  const mapNumbers = buildTripMapNumberLookup(t);
 
   const dir = (order || state.allSort || 'desc') === 'asc' ? 1 : -1;
   const mode = getOverviewMode();
@@ -3123,7 +3170,7 @@ function renderAllTimeline(t, order){
   const frag = document.createDocumentFragment();
   for (const item of items) {
     if (item.kind === 'expense') appendExpenseRowToTimeline(frag, item.payload);
-    else appendJournalRowToTimeline(frag, item.payload);
+    else appendJournalRowToTimeline(frag, item.payload, mapNumbers.journal.get(String(item.id)));
   }
 
   body.replaceChildren(frag);
@@ -3135,6 +3182,13 @@ function renderAllTimeline(t, order){
 }
 
 function syncOverviewTabLabel(){
+  const select = document.getElementById('overviewTabSelect');
+  if (!select) return;
+  const mode = getOverviewMode();
+  const nextValue = mode === 'all' ? 'mix' : mode;
+  if ([...select.options].some(o => o.value === nextValue)) {
+    select.value = nextValue;
+  }
   syncOverviewJournalBulkUi();
 }
 
@@ -6617,20 +6671,17 @@ window.initMiniMap = function(t){
     state.maps.layers.miniGroup = group;
 
     const pts = [];
+    const mapNumbers = buildTripMapNumberLookup(t);
     (Object.entries(t.expenses||{})).forEach(([id,e])=>{
       if(typeof e.lat==='number' && typeof e.lng==='number'){
         pts.push([e.lat,e.lng]);
-        L.circleMarker([e.lat,e.lng], { radius:4 }).addTo(group);
+        _numberedMarker(e.lat, e.lng, mapNumbers.expense.get(String(id)), 'expense').addTo(group);
       }
     });
     (Object.entries(t.journal||{})).forEach(([id,j])=>{
       if(typeof j.lat==='number' && typeof j.lng==='number'){
         pts.push([j.lat,j.lng]);
-        const isGpxPoint = j && j.gpxType === 'point';
-        L.circleMarker([j.lat,j.lng], isGpxPoint
-          ? { radius:4, color:'#7c3aed', fillColor:'#a855f7', fillOpacity:0.9, weight:2 }
-          : { radius:4, color:'#3b82f6', fillColor:'#93c5fd', fillOpacity:0.9, weight:2 }
-        ).addTo(group);
+        _numberedMarker(j.lat, j.lng, mapNumbers.journal.get(String(id)), 'journal').addTo(group);
       }
     });
     if(pts.length){
@@ -6671,40 +6722,31 @@ window.initBigMap = function(){
     state.maps.layers.gpxPoints = gpxPointsLG;
 
     const t = state._lastTripObj || {};
+    const mapNumbers = buildTripMapNumberLookup(t);
     const pts = [];
 
     Object.entries(t.expenses||{}).forEach(([id,e])=>{
       if(typeof e.lat==='number' && typeof e.lng==='number'){
         pts.push([e.lat,e.lng]);
-        const marker = L.circleMarker([e.lat,e.lng], { radius:5 });
+        const marker = _numberedMarker(e.lat, e.lng, mapNumbers.expense.get(String(id)), 'expense');
         marker.__itemType = 'expense';
         marker.__itemId = id;
+        attachMapPopup(marker, 'expense', id, e);
         marker.addTo(expensesLG);
       }
     });
     Object.entries(t.journal||{}).forEach(([id,j])=>{
       if(typeof j.lat==='number' && typeof j.lng==='number'){
         pts.push([j.lat,j.lng]);
+        const markerIndex = mapNumbers.journal.get(String(id));
         if(j && j.gpxType === 'point'){
-          const marker = L.circleMarker([j.lat,j.lng], {
-            radius:6,
-            color:'#6d28d9',
-            fillColor:'#8b5cf6',
-            fillOpacity:0.95,
-            weight:2
-          });
+          const marker = _numberedMarker(j.lat, j.lng, markerIndex, 'journal');
           marker.__itemType = 'journal';
           marker.__itemId = id;
           attachMapPopup(marker, 'journal', id, j);
           marker.addTo(gpxPointsLG);
         }else{
-          const marker = L.circleMarker([j.lat,j.lng], {
-            radius:5,
-            color:'#2563eb',
-            fillColor:'#93c5fd',
-            fillOpacity:0.95,
-            weight:2
-          });
+          const marker = _numberedMarker(j.lat, j.lng, markerIndex, 'journal');
           marker.__itemType = 'journal';
           marker.__itemId = id;
           attachMapPopup(marker, 'journal', id, j);
@@ -7185,6 +7227,8 @@ function renderCategoryBreakdownNode(targetId){
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && dlg.open) closeBreakdown(); });
       document.addEventListener('click', (e)=>{
         if(!dlg.open) return;
+        // Ignore clicks from the nav dropdown — they triggered the open and must not close it
+        if(e.target && e.target.closest && e.target.closest('#overviewTabSelect')) return;
         const r = dlg.getBoundingClientRect();
         const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
         if(!inside) closeBreakdown();
@@ -8201,18 +8245,13 @@ function __refreshGpxFromCurrent(){
 
   const t = state.current || {};
   const journal = t.journal || {};
+  const mapNumbers = buildTripMapNumberLookup(t);
 
   for(const id of Object.keys(journal)){
     const j = journal[id] || {};
     if(j.gpxType === 'point' && Number.isFinite(+j.lat) && Number.isFinite(+j.lng)){
       const layer = L.featureGroup();
-      const marker = L.circleMarker([+j.lat, +j.lng], {
-        radius: 6,
-        color: '#6d28d9',
-        fillColor: j.gpxColor || '#8b5cf6',
-        fillOpacity: 0.95,
-        weight: 2
-      });
+      const marker = _numberedMarker(+j.lat, +j.lng, mapNumbers.journal.get(String(id)), 'journal');
       marker.__itemType = 'journal';
       marker.__itemId = id;
       attachMapPopup(marker, 'journal', id, j);
@@ -8565,6 +8604,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     if (!root) return;
 
     const input = document.getElementById('searchAll');
+    const modeSel = document.getElementById('overviewMode');
     const count = document.getElementById('allHitCount');
     const prev = document.getElementById('btnAllPrev');
     const next = document.getElementById('btnAllNext');
@@ -8572,11 +8612,37 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
 
     if (!input || !count || !prev || !next || !toggle) return;
 
-    try{
-      const stored = localStorage.getItem('overviewMode');
-      if (stored) state.overviewMode = stored;
-    }catch(_){ }
-    if (!state.overviewMode) state.overviewMode = 'all';
+    // Overview filter mode (default: show all)
+    (function bindMode(){
+      if (!modeSel) return;
+      // load preference
+      try{
+        const stored = localStorage.getItem('overviewMode');
+        if (stored) state.overviewMode = stored;
+      }catch(_){ }
+      if (!state.overviewMode) state.overviewMode = 'all';
+      modeSel.value = String(state.overviewMode);
+
+      if (!modeSel.dataset.bound){
+        modeSel.addEventListener('change', ()=>{
+          const v = (modeSel.value || 'all');
+          if (v !== 'journal') {
+            state.journalSelectionMode = false;
+            state.journalSelectedIds = new Set();
+            state._jrLastIndex = null;
+          }
+          state.overviewMode = v;
+          try{ localStorage.setItem('overviewMode', v); }catch(_){ }
+          try{ syncOverviewTabLabel(); }catch(_){ }
+          // re-render timeline with the new filter
+          try{ if (state.current) renderAllTimeline(state.current, state.allSort); }catch(_){ }
+          // reapply collapse button text + rerun search (if any)
+          try{ applyCollapsedUI(); }catch(_){ }
+          try{ runSearch(); }catch(_){ }
+        });
+        modeSel.dataset.bound = '1';
+      }
+    })();
 
     // In global-collapsed mode, clicking a header row should toggle ONLY its own details row
     const tbody = document.getElementById('tblAllTimeline');
