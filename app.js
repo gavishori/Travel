@@ -64,7 +64,6 @@ function syncViewportModeClasses(){
     const isMobile = isMobileViewport();
     document.body.classList.toggle('mobile-ui', !!isMobile);
     document.body.classList.toggle('desktop-ui', !isMobile);
-    document.body.classList.toggle('mobile-shell-v2', !!isMobile);
   }catch(_){ }
 }
 
@@ -85,38 +84,6 @@ function normalizeMobileOverviewHeader(){
   }catch(err){
     console.error('normalizeMobileOverviewHeader failed', err);
   }
-}
-
-function purgeOverviewNavSelect(){
-  try{
-    const wrap = document.querySelector('.tab-select-wrap[data-tab="overview"]')
-      || document.getElementById('overviewTabSelect')?.closest('.tab-select-wrap');
-    const select = document.getElementById('overviewTabSelect');
-    if(wrap){
-      try{ wrap.remove(); }catch(_){
-        wrap.style.display = 'none';
-        wrap.setAttribute('aria-hidden', 'true');
-      }
-    }
-    if(select && !wrap){
-      try{ select.remove(); }catch(_){
-        select.style.display = 'none';
-        select.setAttribute('aria-hidden', 'true');
-      }
-    }
-  }catch(_){}
-}
-
-function ensureOverviewNavSelectRemoved(){
-  try{
-    purgeOverviewNavSelect();
-    if(window.__overviewNavSelectObserverBound) return;
-    const root = document.body || document.documentElement;
-    if(!root || typeof MutationObserver === 'undefined') return;
-    const obs = new MutationObserver(()=> purgeOverviewNavSelect());
-    obs.observe(root, { childList:true, subtree:true });
-    window.__overviewNavSelectObserverBound = '1';
-  }catch(_){}
 }
 
 function ensureBudgetSummaryDialog(){
@@ -858,65 +825,38 @@ function syncJournalSelectionUi(){
     btn.id = buttonId;
     btn.className = 'btn mobile-section-menu-btn';
     btn.setAttribute('aria-label', label);
-    btn.dataset.mobileSection = section || '';
-    btn.innerHTML = section === 'overview'
-      ? '<span class="mobile-btn-label">עוד</span>'
-      : '<span aria-hidden="true">&#9776;</span>';
+    btn.innerHTML = '<span aria-hidden="true">&#9776;</span>';
     btn.addEventListener('click', ()=> openMobileSectionMenu(section));
     host.prepend(btn);
-  }
-
-  function scrubLegacyMobileOverviewNodes(){
-    if(!isCompactMobileHeader()) return;
-    const host = document.getElementById('view-overview');
-    if(!host) return;
-    Array.from(host.children).forEach((child)=>{
-      if(!child || child.id === 'mobileOverviewActionRail') return;
-      if(child.matches?.('select, input') || child.classList?.contains('tab-select-wrap')){
-        try{ child.remove(); }catch(_){ child.style.display = 'none'; }
-      }
-    });
   }
 
   function ensureOverviewActionRail(){
     const host = document.getElementById('view-overview');
     if(!host) return;
     let rail = document.getElementById('mobileOverviewActionRail');
-    if(!rail){
-      rail = document.createElement('section');
-      rail.id = 'mobileOverviewActionRail';
-      rail.className = 'mobile-overview-action-rail';
-      rail.innerHTML = `
-        <div class="mobile-overview-action-rail__search"></div>
-        <div class="mobile-overview-action-rail__buttons">
-          <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-chip" aria-label="מיון">מיון</button>
-          <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-chip" aria-label="צמצם או פרוס">פריסה</button>
-          <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-chip accent" aria-label="הוסף הוצאה">הוצאה</button>
-          <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-chip accent-alt" aria-label="הוסף יומן">יומן</button>
-        </div>
-      `;
-      host.prepend(rail);
-      rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
-      rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
-      rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
-      rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
-    }
     const menuBtn = document.getElementById('mobileOverviewMenuBtn');
     const searchInput = document.getElementById('searchAll');
-    const searchSlot = rail.querySelector('.mobile-overview-action-rail__search');
-    const buttonsRow = rail.querySelector('.mobile-overview-action-rail__buttons');
-    if(menuBtn && buttonsRow && menuBtn.parentElement !== buttonsRow){
-      menuBtn.classList.add('mobile-overview-chip', 'mobile-overview-menu');
-      menuBtn.innerHTML = '<span class="mobile-btn-label">עוד</span>';
-      buttonsRow.prepend(menuBtn);
-    }
+    rail = document.createElement('div');
+    rail.id = 'mobileOverviewActionRail';
+    rail.className = 'mobile-overview-action-rail';
+    if(menuBtn) rail.appendChild(menuBtn);
+    rail.insertAdjacentHTML('beforeend', `
+      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
+      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
+      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
+      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
+    `);
     if(searchInput){
       searchInput.hidden = false;
-      searchInput.placeholder = 'חיפוש ביומן ובהוצאות';
+      searchInput.placeholder = 'חיפוש';
       searchInput.classList.add('mobile-overview-search');
-      if(searchSlot && searchInput.parentElement !== searchSlot) searchSlot.appendChild(searchInput);
+      if(searchInput.parentElement !== rail) rail.appendChild(searchInput);
     }
-    scrubLegacyMobileOverviewNodes();
+    host.prepend(rail);
+    rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
+    rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
+    rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
+    rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
   }
 
   function syncMobileViewportVars(){
@@ -981,10 +921,9 @@ function syncJournalSelectionUi(){
 
   function applyMobileLayout(){
     if(!isCompactMobileHeader()) return;
-    document.body.classList.add('mobile-shell-v2');
     const newTripBtn = document.getElementById('btnNewTrip');
     if(newTripBtn){
-      newTripBtn.textContent = 'נסיעה חדשה';
+      newTripBtn.textContent = '+';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
     }
@@ -994,29 +933,14 @@ function syncJournalSelectionUi(){
       state.lastNonMapView = 'list';
     }
 
-    const gridBtn = document.getElementById('btnViewGrid');
-    const listBtn = document.getElementById('btnViewList');
-    const mapBtn = document.getElementById('btnViewMap');
-    if(gridBtn){
-      gridBtn.disabled = true;
-      gridBtn.setAttribute('aria-hidden', 'true');
-      gridBtn.tabIndex = -1;
-      gridBtn.style.display = 'none';
-    }
-    if(listBtn){
-      listBtn.textContent = 'רשימה';
-      listBtn.classList.add('active');
-    }
-    if(mapBtn){
-      mapBtn.disabled = false;
-      mapBtn.removeAttribute('aria-hidden');
-      mapBtn.tabIndex = 0;
-      mapBtn.textContent = 'מפה';
-    }
-    const sortTripsBtn = document.getElementById('btnSortTrips');
-    if(sortTripsBtn) sortTripsBtn.textContent = 'מיון';
-    const tripSearch = document.getElementById('searchTrips');
-    if(tripSearch) tripSearch.placeholder = 'חיפוש נסיעות';
+    document.getElementById('btnViewList')?.classList.add('active');
+    ['btnViewGrid','btnViewMap'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.disabled = true;
+      el.setAttribute('aria-hidden', 'true');
+      el.tabIndex = -1;
+    });
 
     ensureMobileSectionMenuDialog();
     ensureSectionButton('#view-overview', 'mobileOverviewMenuBtn', 'פעולות תצוגה', 'overview');
@@ -1985,7 +1909,6 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
   if(nextTab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
 
-ensureOverviewNavSelectRemoved();
 // (old Auth UI block removed – using unified handler below)
 
 // Handle share link mode (read-only)
