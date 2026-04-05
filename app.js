@@ -114,6 +114,15 @@ function normalizeMobileOverviewHeader(){
   }
 }
 
+function syncOverviewSelectActiveState(view){
+  try{
+    const wrap = document.getElementById('overviewTabSelect')?.closest('.tab-select-wrap');
+    if(!wrap) return;
+    const modeViews = new Set(['overview', 'meta', 'map', 'share']);
+    wrap.classList.toggle('active', modeViews.has(String(view || '')));
+  }catch(_){}
+}
+
 function ensureBudgetSummaryDialog(){
   let dlg = document.getElementById('budgetSummaryDialog');
   if(dlg) return dlg;
@@ -722,11 +731,8 @@ function syncJournalSelectionUi(){
     }catch(_){}
 
     if (v === 'journal' || v === 'expenses' || v === 'mix') {
-      try {
-        const overviewEl = document.querySelector('#tabs [data-tab="overview"]');
-        if (overviewEl) { setActiveTab(overviewEl); showView('overview'); }
-      } catch (_) {}
-
+      const select = document.getElementById('overviewTabSelect');
+      if(select && select.value !== v) select.value = v;
       const modeSel = document.getElementById('overviewMode');
       if (modeSel) {
         modeSel.value = (v === 'mix') ? 'all' : v;
@@ -739,6 +745,8 @@ function syncJournalSelectionUi(){
           if (state.current) renderAllTimeline(state.current, state.allSort);
         } catch (_) {}
       }
+      showView('overview');
+      syncOverviewSelectActiveState('overview');
       return;
     }
 
@@ -763,12 +771,11 @@ function syncJournalSelectionUi(){
     }
 
     if (v === 'meta' || v === 'map' || v === 'share') {
-      try {
-        const overviewWrap = document.querySelector('#tabs [data-tab="overview"]');
-        if (overviewWrap) setActiveTab(overviewWrap);
-      } catch (_e) {}
-
-      showView(v);
+      const select = document.getElementById('overviewTabSelect');
+      if(select && select.value !== v) select.value = v;
+      if (typeof switchToTab === 'function') switchToTab(v);
+      else showView(v);
+      syncOverviewSelectActiveState(v);
       if (v === 'map') setTimeout(initBigMap, 50);
       return;
     }
@@ -786,6 +793,9 @@ function syncJournalSelectionUi(){
     }
     applyOverviewSelection(value);
   }
+
+  window.applyOverviewSelection = applyOverviewSelection;
+  window.setOverviewSelectValue = setOverviewSelectValue;
 
   function getMobileVisibleSection(){
     if(!document.getElementById('view-overview')?.hidden) return 'overview';
@@ -2451,6 +2461,7 @@ function showView(view){
       const hb = document.getElementById('overviewHeaderBar');
       if (hb) hb.hidden = isMobileViewport() ? true : (view !== 'overview');
     } catch(_e){}
+    syncOverviewSelectActiveState(view);
   } catch(e){ /*log removed*/ }
 }
 
@@ -3199,8 +3210,13 @@ function renderAllTimeline(t, order){
 function syncOverviewTabLabel(){
   const select = document.getElementById('overviewTabSelect');
   if (!select) return;
+  const activeView =
+    (!document.getElementById('view-meta')?.hidden && 'meta') ||
+    (!document.getElementById('view-map')?.hidden && 'map') ||
+    (!document.getElementById('view-share')?.hidden && 'share') ||
+    null;
   const mode = getOverviewMode();
-  const nextValue = mode === 'all' ? 'mix' : mode;
+  const nextValue = activeView || (mode === 'all' ? 'mix' : mode);
   if ([...select.options].some(o => o.value === nextValue)) {
     select.value = nextValue;
   }
