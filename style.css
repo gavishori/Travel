@@ -7210,3 +7210,341 @@ button, .btn, .menu-btn, select, input, textarea {
     display:none !important;
   }
 }
+
+/* ===== Mobile refresh ===== */
+@media (max-width: 820px){
+  :root{
+    --mobile-surface: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(246,250,255,.94) 100%);
+    --mobile-stroke: color-mix(in oklab, var(--border) 68%, white 32%);
+    --mobile-shadow: 0 14px 36px rgba(15, 23, 42, .10);
+  }
+
+  body.mobile-ui{
+    background:
+      radial-gradient(circle at top left, rgba(37, 99, 235, .10), transparent 34%),
+      radial-gradient(circle at top right, rgba(16, 185, 129, .08), transparent 28%),
+      linear-gradient(180deg, #eef5ff 0%, #f8fbff 52%, #f3fbf8 100%) !important;
+  }
+
+  body.mobile-ui header{
+    padding-inline:12px !important;
+    box-shadow:0 10px 24px rgba(37, 99, 235, .16) !important;
+  }
+
+  body.mobile-ui #btnTheme,
+  body.mobile-ui #btnLogin,
+  body.mobile-ui #btnAllTrips{
+    min-height:44px !important;
+    border-radius:16px !important;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+
+  body.mobile-ui #btnAllTrips{
+    padding-inline:16px !important;
+    font-weight:800 !important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+  }
+
+  body.mobile-ui .sidebar,
+  body.mobile-ui .content{
+    padding:14px 12px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.mobile-ui #homeTripsHeader{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:12px !important;
+    margin-bottom:10px !important;
+    padding:6px 2px 2px !important;
+  }
+
+  body.mobile-ui #homeTripsHeader h2{
+    font-size:1.55rem !important;
+    line-height:1.05 !important;
+    letter-spacing:-.02em;
+  }
+
+  body.mobile-ui #btnNewTrip{
+    width:auto !important;
+    min-width:110px !important;
+    height:46px !important;
+    min-height:46px !important;
+    padding:0 16px !important;
+    font-size:.98rem !important;
+    border-radius:16px !important;
+    box-shadow:0 10px 22px rgba(22, 163, 74, .18);
+  }
+
+  body.mobile-ui #tripSearchActions{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:10px !important;
+    padding:8px !important;
+    margin-bottom:12px !important;
+    background:var(--mobile-surface) !important;
+    border:1px solid var(--mobile-stroke) !important;
+    border-radius:20px !important;
+    box-shadow:var(--mobile-shadow) !important;
+  }
+
+  body.mobile-ui #searchTrips{
+    min-height:48px !important;
+    border-radius:16px !important;
+    background:rgba(255,255,255,.9) !important;
+  }
+
+  body.mobile-ui #btnSortTrips{
+    width:auto !important;
+    min-width:88px !important;
+    height:48px !important;
+    padding:0 14px !important;
+    font-size:.94rem !important;
+    font-weight:700 !important;
+    border-radius:16px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #btnSortTrips::before{
+    content:"⇅";
+    font-size:18px !important;
+    font-weight:800 !important;
+    margin:0 !important;
+  }
+
+  body.mobile-ui #tripList,
+  body.mobile-ui #tripList.grid{
+    gap:14px !important;
+  }
+
+  body.mobile-ui #tripList .trip-card,
+  body.mobile-ui #tripList .trip-row{
+    position:relative;
+    overflow:hidden;
+    background:var(--mobile-surface) !important;
+    border:1px solid var(--mobile-stroke) !important;
+    box-shadow:var(--mobile-shadow) !important;
+    border-radius:24px !important;
+    padding:16px !important;
+  }
+
+  body.mobile-ui #tripList .trip-card::before,
+  body.mobile-ui #tripList .trip-row::before{
+    content:"";
+    position:absolute;
+    inset:0 auto 0 0;
+    width:4px;
+    background:linear-gradient(180deg, #1d4ed8 0%, #16a34a 100%);
+    opacity:.9;
+  }
+
+  body.mobile-ui #tripList .trip-card{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    grid-template-areas:
+      "title menu"
+      "dates menu"
+      "meta menu" !important;
+    align-items:start !important;
+    gap:10px 12px !important;
+  }
+
+  body.mobile-ui #tripList .trip-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:start !important;
+    gap:8px 12px !important;
+  }
+
+  body.mobile-ui #tripList .trip-card strong,
+  body.mobile-ui #tripList .trip-row strong{
+    display:block;
+    font-size:1.12rem !important;
+    font-weight:800 !important;
+    line-height:1.25 !important;
+    letter-spacing:-.02em;
+  }
+
+  body.mobile-ui #tripList .trip-card .muted,
+  body.mobile-ui #tripList .trip-row .muted{
+    color:color-mix(in oklab, var(--muted) 88%, #1f2937 12%) !important;
+    font-size:.92rem !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .trip-footer-grid{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:10px !important;
+    grid-area:meta !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .types-pill,
+  body.mobile-ui #tripList .trip-row .types-pill{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-height:34px !important;
+    padding:0 12px !important;
+    border-radius:999px !important;
+    background:rgba(29, 78, 216, .08) !important;
+    color:#1d4ed8 !important;
+    font-weight:700 !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .menu-btn,
+  body.mobile-ui #tripList .trip-row .menu-btn{
+    width:42px !important;
+    height:42px !important;
+    border-radius:14px !important;
+    background:rgba(255,255,255,.88) !important;
+  }
+
+  body.mobile-ui #view-overview{
+    padding-top:0 !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail,
+  body.mobile-ui .mobile-overview-action-rail{
+    display:grid !important;
+    grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+    grid-template-areas:
+      "search search search search"
+      "menu expense journal sort"
+      "toggle toggle toggle toggle" !important;
+    gap:10px !important;
+    margin:0 0 14px !important;
+    padding:10px !important;
+    background:var(--mobile-surface) !important;
+    border:1px solid var(--mobile-stroke) !important;
+    border-radius:22px !important;
+    box-shadow:var(--mobile-shadow) !important;
+  }
+
+  body.mobile-ui #mobileOverviewMenuBtn{
+    position:static !important;
+    margin:0 !important;
+    grid-area:menu !important;
+  }
+
+  body.mobile-ui #mobileOverviewExpenseBtn{ grid-area:expense !important; }
+  body.mobile-ui #mobileOverviewJournalBtn{ grid-area:journal !important; }
+  body.mobile-ui #mobileOverviewSortBtn{ grid-area:sort !important; }
+  body.mobile-ui #mobileOverviewToggleBtn{ grid-area:toggle !important; }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-search,
+  body.mobile-ui #mobileOverviewActionRail #searchAll{
+    grid-area:search !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    margin:0 !important;
+    min-height:48px !important;
+    border-radius:16px !important;
+    background:rgba(255,255,255,.92) !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-icon-btn,
+  body.mobile-ui #mobileOverviewActionRail .mobile-section-menu-btn{
+    width:100% !important;
+    min-width:0 !important;
+    min-height:48px !important;
+    height:auto !important;
+    padding:10px 12px !important;
+    border-radius:16px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    font-size:.92rem !important;
+    font-weight:700 !important;
+    background:rgba(255,255,255,.84) !important;
+  }
+
+  body.mobile-ui .mobile-action-glyph{
+    font-size:1.05rem !important;
+    line-height:1 !important;
+    font-weight:800 !important;
+  }
+
+  body.mobile-ui .mobile-action-text{
+    font-size:.86rem !important;
+    line-height:1.1 !important;
+    white-space:nowrap !important;
+  }
+
+  body.mobile-ui #mobileOverviewToggleBtn{
+    justify-content:center !important;
+    background:linear-gradient(180deg, rgba(29,78,216,.08), rgba(22,163,74,.08)) !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar{
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    margin-bottom:12px !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar > *,
+  body.mobile-ui #expenseSummary.budget-bar .col,
+  body.mobile-ui #expenseSummary.budget-bar .kpi,
+  body.mobile-ui #expenseSummary.budget-bar .badge{
+    background:var(--mobile-surface) !important;
+    border:1px solid var(--mobile-stroke) !important;
+    box-shadow:var(--mobile-shadow) !important;
+    border-radius:18px !important;
+  }
+
+  body.mobile-ui #tblAllTimeline tr.exp-item:not(.exp-details),
+  body.mobile-ui #tblExpenses tr.exp-item:not(.exp-details),
+  body.mobile-ui #tblJournal tr.exp-item:not(.exp-details){
+    border:1px solid var(--mobile-stroke) !important;
+    box-shadow:var(--mobile-shadow) !important;
+    border-radius:22px !important;
+    margin:0 0 12px !important;
+    padding:16px !important;
+  }
+
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
+    background:linear-gradient(180deg, #fff7ef 0%, #fff1e4 100%) !important;
+  }
+
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details){
+    background:linear-gradient(180deg, #eef6ff 0%, #e6f4ff 100%) !important;
+  }
+
+  body.mobile-ui #tblAllTimeline td.title,
+  body.mobile-ui #tblAllTimeline td.location,
+  body.mobile-ui #tblExpenses td.title,
+  body.mobile-ui #tblJournal td.location{
+    font-size:1.06rem !important;
+    font-weight:800 !important;
+  }
+
+  body.mobile-ui #tblAllTimeline tr.exp-item.exp-details,
+  body.mobile-ui #tblExpenses tr.exp-item.exp-details,
+  body.mobile-ui #tblJournal tr.exp-item.exp-details{
+    border-radius:0 0 20px 20px !important;
+    margin:-6px 0 12px !important;
+    border:1px solid var(--mobile-stroke) !important;
+    box-shadow:var(--mobile-shadow) !important;
+  }
+
+  body.mobile-ui dialog.modal[open]{
+    border-radius:26px !important;
+    box-shadow:0 22px 50px rgba(15,23,42,.18) !important;
+  }
+
+  body.mobile-ui .modal .header,
+  body.mobile-ui .modal header{
+    background:rgba(255,255,255,.88) !important;
+    border-bottom:1px solid rgba(148,163,184,.18) !important;
+  }
+
+  body.mobile-ui .modal .footer{
+    background:rgba(255,255,255,.92) !important;
+  }
+}

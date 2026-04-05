@@ -856,7 +856,10 @@ function syncJournalSelectionUi(){
     btn.id = buttonId;
     btn.className = 'btn mobile-section-menu-btn';
     btn.setAttribute('aria-label', label);
-    btn.innerHTML = '<span aria-hidden="true">&#9776;</span>';
+    btn.innerHTML = `
+      <span class="mobile-action-glyph" aria-hidden="true">&#9776;</span>
+      <span class="mobile-action-text">פעולות</span>
+    `;
     btn.addEventListener('click', ()=> openMobileSectionMenu(section));
     host.prepend(btn);
   }
@@ -873,10 +876,22 @@ function syncJournalSelectionUi(){
     rail.className = 'mobile-overview-action-rail';
     if(menuBtn) rail.appendChild(menuBtn);
     rail.insertAdjacentHTML('beforeend', `
-      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
-      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
-      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
-      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
+      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה">
+        <span class="mobile-action-glyph" aria-hidden="true">+$</span>
+        <span class="mobile-action-text">הוצאה</span>
+      </button>
+      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן">
+        <span class="mobile-action-glyph" aria-hidden="true">+✎</span>
+        <span class="mobile-action-text">יומן</span>
+      </button>
+      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון">
+        <span class="mobile-action-glyph" aria-hidden="true">⇅</span>
+        <span class="mobile-action-text">מיון</span>
+      </button>
+      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס">
+        <span class="mobile-action-glyph" aria-hidden="true">↕</span>
+        <span class="mobile-action-text">פריסה</span>
+      </button>
     `);
     if(searchInput){
       searchInput.hidden = false;
@@ -955,7 +970,7 @@ function syncJournalSelectionUi(){
     if(!isCompactMobileHeader()) return;
     const newTripBtn = document.getElementById('btnNewTrip');
     if(newTripBtn){
-      newTripBtn.textContent = '+';
+      newTripBtn.textContent = 'חדשה +';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
     }
