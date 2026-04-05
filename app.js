@@ -59,6 +59,66 @@ function isMobileViewport(){
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.innerWidth <= 820;
 }
 
+function syncViewportModeClasses(){
+  try{
+    const isMobile = isMobileViewport();
+    document.body.classList.toggle('mobile-ui', !!isMobile);
+    document.body.classList.toggle('desktop-ui', !isMobile);
+    document.body.classList.toggle('mobile-shell-v2', !!isMobile);
+  }catch(_){ }
+}
+
+function normalizeMobileOverviewHeader(){
+  try{
+    const tabs = document.getElementById('tabs');
+    const headerBar = document.getElementById('overviewHeaderBar');
+    const overviewHidden = !document.getElementById('view-overview') || document.getElementById('view-overview').hidden;
+
+    if(!isMobileViewport()){
+      if(tabs) tabs.classList.remove('mobile-tabs-compact');
+      if(headerBar) headerBar.hidden = overviewHidden;
+      return;
+    }
+
+    if(tabs) tabs.classList.add('mobile-tabs-compact');
+    if(headerBar) headerBar.hidden = true;
+  }catch(err){
+    console.error('normalizeMobileOverviewHeader failed', err);
+  }
+}
+
+function purgeOverviewNavSelect(){
+  try{
+    const wrap = document.querySelector('.tab-select-wrap[data-tab="overview"]')
+      || document.getElementById('overviewTabSelect')?.closest('.tab-select-wrap');
+    const select = document.getElementById('overviewTabSelect');
+    if(wrap){
+      try{ wrap.remove(); }catch(_){
+        wrap.style.display = 'none';
+        wrap.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if(select && !wrap){
+      try{ select.remove(); }catch(_){
+        select.style.display = 'none';
+        select.setAttribute('aria-hidden', 'true');
+      }
+    }
+  }catch(_){}
+}
+
+function ensureOverviewNavSelectRemoved(){
+  try{
+    purgeOverviewNavSelect();
+    if(window.__overviewNavSelectObserverBound) return;
+    const root = document.body || document.documentElement;
+    if(!root || typeof MutationObserver === 'undefined') return;
+    const obs = new MutationObserver(()=> purgeOverviewNavSelect());
+    obs.observe(root, { childList:true, subtree:true });
+    window.__overviewNavSelectObserverBound = '1';
+  }catch(_){}
+}
+
 function ensureBudgetSummaryDialog(){
   let dlg = document.getElementById('budgetSummaryDialog');
   if(dlg) return dlg;
@@ -329,6 +389,15 @@ function applyAuthShellState(user){
     try{ window.__authPrimarySwap(isLoggedIn, user?.email || ''); }catch(_){ }
   }
 
+  try{
+    const tripSearch = document.getElementById('searchTrips');
+    const currentEmail = String(user?.email || '').trim().toLowerCase();
+    const currentValue = String(tripSearch?.value || '').trim().toLowerCase();
+    if(tripSearch && currentEmail && currentValue === currentEmail){
+      tripSearch.value = '';
+    }
+  }catch(_){}
+
   if(isLoggedIn){
     if(loginScreen) loginScreen.style.display = 'none';
     if(appContainer) appContainer.style.display = 'grid';
@@ -345,6 +414,34 @@ function applyAuthShellState(user){
 }
 
 window.__applyAuthShellState = applyAuthShellState;
+function openAuthEntryPoint(){
+  const mobileOverlay = document.getElementById('mobileAuthOverlay');
+  const authModal = document.getElementById('authModal');
+  const lsEmail = document.getElementById('lsEmail');
+  const mEmail = document.getElementById('mEmail');
+  const authEmail = document.getElementById('authEmail');
+  const isMobile = isMobileViewport();
+
+  try{
+    if(isMobile && mobileOverlay){
+      mobileOverlay.style.display = 'flex';
+      mobileOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      setTimeout(()=>{ try{ (mEmail || lsEmail || authEmail)?.focus(); }catch(_){ } }, 30);
+      return;
+    }
+    if(authModal?.showModal){
+      authModal.showModal();
+      setTimeout(()=>{ try{ (authEmail || lsEmail || mEmail)?.focus(); }catch(_){ } }, 30);
+      return;
+    }
+  }catch(err){
+    console.error('openAuthEntryPoint failed', err);
+  }
+
+  try{ (lsEmail || mEmail || authEmail)?.focus(); }catch(_){ }
+}
+window.__openAuthEntryPoint = openAuthEntryPoint;
 try{
   if(document.body && !document.body.dataset.authstate){
     document.body.dataset.authstate = 'out';
@@ -418,7 +515,8 @@ function wireHeaderControls(){
     } else {
       target.textContent = 'התחברות';
       target.setAttribute('aria-label', 'התחברות');
-      target.removeAttribute('title');
+      target.title = 'התחברות';
+      bindTap(target, ()=> openAuthEntryPoint(), 'authOpenTapWired');
     }
   };
 
@@ -448,7 +546,8 @@ function wireHeaderControls(){
     } else {
       target.textContent = 'התחברות';
       target.setAttribute('aria-label', 'התחברות');
-      target.removeAttribute('title');
+      target.title = 'התחברות';
+      bindTap(target, ()=> openAuthEntryPoint(), 'authOpenTapWired');
     }
   };
 
@@ -463,6 +562,12 @@ function wireHeaderControls(){
 }
 document.addEventListener('DOMContentLoaded', wireHeaderControls);
 document.addEventListener('DOMContentLoaded', wireReliableMobileActions);
+document.addEventListener('DOMContentLoaded', syncViewportModeClasses);
+document.addEventListener('DOMContentLoaded', normalizeMobileOverviewHeader);
+window.addEventListener('resize', syncViewportModeClasses);
+window.addEventListener('resize', normalizeMobileOverviewHeader);
+window.addEventListener('pageshow', syncViewportModeClasses);
+window.addEventListener('pageshow', normalizeMobileOverviewHeader);
 
 function finalMobileThemeSync(){
   if(!isCompactMobileHeader()) return;
@@ -496,6 +601,7 @@ function finalMobileAuthSwap(loggedIn, email=''){
     btn.textContent = 'התחברות';
     btn.setAttribute('aria-label', 'התחברות');
     btn.title = 'התחברות';
+    bindTap(btn, ()=> openAuthEntryPoint(), 'finalAuthOpenTapWired');
   }
 }
 
@@ -539,8 +645,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
         actions.insertBefore(cancelBtn, btn.nextSibling);
       }
     }
+    syncJournalSelectionUi();
   });
 })();
+
+function syncJournalSelectionUi(){
+  const btn = document.getElementById('btnDeleteSelectedJournal');
+  const cancelBtn = document.getElementById('btnCancelSelectionJournal');
+  const selectionOn = !!state.journalSelectionMode;
+  const count = state.journalSelectedIds ? state.journalSelectedIds.size : 0;
+
+  if(btn) btn.textContent = selectionOn ? `מחק (${count})` : 'מחק נבחרים';
+  if(cancelBtn) cancelBtn.style.display = selectionOn ? 'inline-flex' : 'none';
+}
 
 /* ---------- Final mobile-only shell overrides ---------- */
 (function(){
@@ -565,16 +682,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const emailEl = document.getElementById('accountMenuEmail');
     if(!btn) return;
     if(emailEl) emailEl.textContent = email || '';
-    btn.classList.remove('danger');
-    btn.classList.add('icon-only');
-    btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
-    btn.setAttribute('aria-label', loggedIn ? 'חשבון מחובר' : 'התחברות');
-    btn.title = loggedIn ? 'חשבון מחובר' : 'התחברות';
+    btn.classList.remove('danger', 'icon-only', 'is-authenticated');
     if(loggedIn){
+      btn.classList.add('icon-only', 'is-authenticated');
+      btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
+      btn.setAttribute('aria-label', 'חשבון מחובר');
+      btn.title = 'חשבון מחובר';
       btn.classList.add('is-authenticated');
       bindTap(btn, ()=> openAccountMenu(), 'mobileFinalAuthTap');
     }else{
-      btn.classList.remove('is-authenticated');
+      btn.textContent = 'התחברות';
+      btn.setAttribute('aria-label', 'התחברות');
+      btn.title = 'התחברות';
+      bindTap(btn, ()=> openAuthEntryPoint(), 'mobileFinalAuthOpenTap');
     }
   }
 
@@ -603,11 +723,70 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById(id)?.click();
   }
 
+  function applyOverviewSelection(value){
+    const v = (value || '').trim();
+    if(!v) return;
+
+    try{
+      const currentTab = document.querySelector('#tabs [data-tab].active')?.dataset?.tab;
+      if(currentTab === 'meta' && state?.isDirty && typeof showUnsavedChangesAlert === 'function'){
+        showUnsavedChangesAlert(v);
+        return;
+      }
+    }catch(_){}
+
+    if (v === 'journal' || v === 'expenses' || v === 'mix') {
+      try {
+        const overviewEl = document.querySelector('#tabs [data-tab="overview"]');
+        if (overviewEl) { setActiveTab(overviewEl); showView('overview'); }
+      } catch (_) {}
+
+      try {
+        const nextMode = (v === 'mix') ? 'all' : v;
+        state.overviewMode = nextMode;
+        localStorage.setItem('overviewMode', nextMode);
+        if (state.current) renderAllTimeline(state.current, state.allSort);
+      } catch (_) {}
+      return;
+    }
+
+    if (v === 'breakdown') {
+      setTimeout(() => {
+        if (typeof window.__openBreakdownDialog === 'function') {
+          window.__openBreakdownDialog();
+          return;
+        }
+        try {
+          const dlg = document.getElementById('breakdownDialog');
+          if (dlg) {
+            if (typeof renderCategoryBreakdownNode === 'function')
+              renderCategoryBreakdownNode('categoryBreakdownDialog');
+            if (!dlg.open) {
+              if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+            }
+          }
+        } catch (_) {}
+      }, 0);
+      return;
+    }
+
+    if (v === 'meta' || v === 'map' || v === 'share') {
+      try {
+        const overviewWrap = document.querySelector('#tabs [data-tab="overview"]');
+        if (overviewWrap) setActiveTab(overviewWrap);
+      } catch (_e) {}
+
+      showView(v);
+      if (v === 'map') setTimeout(initBigMap, 50);
+      return;
+    }
+
+    const tabEl = document.querySelector(`#tabs [data-tab="${v}"]`);
+    if (tabEl) tabEl.click();
+  }
+
   function setOverviewSelectValue(value){
-    const select = document.getElementById('overviewTabSelect');
-    if(!select) return;
-    select.value = value;
-    select.dispatchEvent(new Event('change', { bubbles:true }));
+    applyOverviewSelection(value);
   }
 
   function getMobileVisibleSection(){
@@ -679,46 +858,133 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.id = buttonId;
     btn.className = 'btn mobile-section-menu-btn';
     btn.setAttribute('aria-label', label);
-    btn.innerHTML = '<span aria-hidden="true">&#9776;</span>';
+    btn.dataset.mobileSection = section || '';
+    btn.innerHTML = section === 'overview'
+      ? '<span class="mobile-btn-label">עוד</span>'
+      : '<span aria-hidden="true">&#9776;</span>';
     btn.addEventListener('click', ()=> openMobileSectionMenu(section));
     host.prepend(btn);
+  }
+
+  function scrubLegacyMobileOverviewNodes(){
+    if(!isCompactMobileHeader()) return;
+    const host = document.getElementById('view-overview');
+    if(!host) return;
+    Array.from(host.children).forEach((child)=>{
+      if(!child || child.id === 'mobileOverviewActionRail') return;
+      if(child.matches?.('select, input') || child.classList?.contains('tab-select-wrap')){
+        try{ child.remove(); }catch(_){ child.style.display = 'none'; }
+      }
+    });
   }
 
   function ensureOverviewActionRail(){
     const host = document.getElementById('view-overview');
     if(!host) return;
     let rail = document.getElementById('mobileOverviewActionRail');
-    if(rail) return;
+    if(!rail){
+      rail = document.createElement('section');
+      rail.id = 'mobileOverviewActionRail';
+      rail.className = 'mobile-overview-action-rail';
+      rail.innerHTML = `
+        <div class="mobile-overview-action-rail__search"></div>
+        <div class="mobile-overview-action-rail__buttons">
+          <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-chip" aria-label="מיון">מיון</button>
+          <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-chip" aria-label="צמצם או פרוס">פריסה</button>
+          <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-chip accent" aria-label="הוסף הוצאה">הוצאה</button>
+          <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-chip accent-alt" aria-label="הוסף יומן">יומן</button>
+        </div>
+      `;
+      host.prepend(rail);
+      rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
+      rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
+      rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
+      rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
+    }
     const menuBtn = document.getElementById('mobileOverviewMenuBtn');
     const searchInput = document.getElementById('searchAll');
-    rail = document.createElement('div');
-    rail.id = 'mobileOverviewActionRail';
-    rail.className = 'mobile-overview-action-rail';
-    if(menuBtn) rail.appendChild(menuBtn);
-    rail.insertAdjacentHTML('beforeend', `
-      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון"><span aria-hidden="true">⇅</span></button>
-      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס"><span aria-hidden="true">↕</span></button>
-      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה"><span aria-hidden="true">+$</span></button>
-      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן"><span aria-hidden="true">+✎</span></button>
-    `);
+    const searchSlot = rail.querySelector('.mobile-overview-action-rail__search');
+    const buttonsRow = rail.querySelector('.mobile-overview-action-rail__buttons');
+    if(menuBtn && buttonsRow && menuBtn.parentElement !== buttonsRow){
+      menuBtn.classList.add('mobile-overview-chip', 'mobile-overview-menu');
+      menuBtn.innerHTML = '<span class="mobile-btn-label">עוד</span>';
+      buttonsRow.prepend(menuBtn);
+    }
     if(searchInput){
       searchInput.hidden = false;
-      searchInput.placeholder = 'חיפוש';
+      searchInput.placeholder = 'חיפוש ביומן ובהוצאות';
       searchInput.classList.add('mobile-overview-search');
-      rail.appendChild(searchInput);
+      if(searchSlot && searchInput.parentElement !== searchSlot) searchSlot.appendChild(searchInput);
     }
-    host.prepend(rail);
-    rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
-    rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
-    rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
-    rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
+    scrubLegacyMobileOverviewNodes();
+  }
+
+  function syncMobileViewportVars(){
+    if(!isCompactMobileHeader()) return;
+    const vv = window.visualViewport;
+    const height = vv?.height || window.innerHeight || 0;
+    const offsetTop = vv?.offsetTop || 0;
+    document.documentElement.style.setProperty('--vvh', `${height}px`);
+    document.documentElement.style.setProperty('--vv-top', `${offsetTop}px`);
+    document.body.classList.toggle('mobile-keyboard-open', !!vv && vv.height < window.innerHeight - 120);
+  }
+
+  function scrollFieldIntoView(target){
+    if(!target || !isCompactMobileHeader()) return;
+    const modalBody = target.closest('.modal .body');
+    const scroller = modalBody || document.scrollingElement || document.documentElement;
+    setTimeout(()=>{
+      try{
+        target.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+      }catch(_){
+        try{ target.scrollIntoView(); }catch(__){}
+      }
+      if(modalBody){
+        try{
+          const bodyRect = modalBody.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          const delta = targetRect.top - bodyRect.top - Math.max(16, (bodyRect.height - targetRect.height) / 2);
+          modalBody.scrollTop += delta;
+        }catch(_){}
+      }else if(scroller){
+        try{ scroller.scrollTop = Math.max(0, scroller.scrollTop - 24); }catch(_){}
+      }
+    }, 120);
+  }
+
+  function wireMobileFieldComfort(){
+    if(!isCompactMobileHeader()) return;
+    const selectors = [
+      '#lsEmail','#lsPass','#searchTrips','#searchAll',
+      '#tripDest','#tripStart','#tripEnd',
+      '#metaDestination','#metaStart','#metaEnd','#metaPeople',
+      '#expTitle','#expAmount','#expDate','#expTime','#expLocationName',
+      '#jrTitle','#jrDate','#jrTime','#jrPlaceName',
+      '#authEmail','#authPass','#suEmail','#suPass','#rsEmail',
+      '#mEmail','#mPass'
+    ];
+    selectors.forEach((sel)=>{
+      const el = document.querySelector(sel);
+      if(!el || el.dataset.mobileComfortWired === '1') return;
+      el.dataset.mobileComfortWired = '1';
+      el.addEventListener('focus', ()=> scrollFieldIntoView(el), { passive:true });
+      el.addEventListener('click', ()=> scrollFieldIntoView(el), { passive:true });
+    });
+    ['#expText','#jrText'].forEach((sel)=>{
+      const el = document.querySelector(sel);
+      if(!el || el.dataset.mobileComfortWired === '1') return;
+      el.dataset.mobileComfortWired = '1';
+      el.addEventListener('focus', ()=> scrollFieldIntoView(el), { passive:true });
+      el.addEventListener('click', ()=> scrollFieldIntoView(el), { passive:true });
+    });
   }
 
   function applyMobileLayout(){
     if(!isCompactMobileHeader()) return;
+    document.body.classList.add('mobile-shell-v2');
     const newTripBtn = document.getElementById('btnNewTrip');
     if(newTripBtn){
-      newTripBtn.textContent = '+';
+      newTripBtn.textContent = 'נסיעה חדשה';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
     }
@@ -728,20 +994,37 @@ document.addEventListener('DOMContentLoaded', ()=>{
       state.lastNonMapView = 'list';
     }
 
-    document.getElementById('btnViewList')?.classList.add('active');
-    ['btnViewGrid','btnViewMap'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.disabled = true;
-      el.setAttribute('aria-hidden', 'true');
-      el.tabIndex = -1;
-    });
+    const gridBtn = document.getElementById('btnViewGrid');
+    const listBtn = document.getElementById('btnViewList');
+    const mapBtn = document.getElementById('btnViewMap');
+    if(gridBtn){
+      gridBtn.disabled = true;
+      gridBtn.setAttribute('aria-hidden', 'true');
+      gridBtn.tabIndex = -1;
+      gridBtn.style.display = 'none';
+    }
+    if(listBtn){
+      listBtn.textContent = 'רשימה';
+      listBtn.classList.add('active');
+    }
+    if(mapBtn){
+      mapBtn.disabled = false;
+      mapBtn.removeAttribute('aria-hidden');
+      mapBtn.tabIndex = 0;
+      mapBtn.textContent = 'מפה';
+    }
+    const sortTripsBtn = document.getElementById('btnSortTrips');
+    if(sortTripsBtn) sortTripsBtn.textContent = 'מיון';
+    const tripSearch = document.getElementById('searchTrips');
+    if(tripSearch) tripSearch.placeholder = 'חיפוש נסיעות';
 
     ensureMobileSectionMenuDialog();
     ensureSectionButton('#view-overview', 'mobileOverviewMenuBtn', 'פעולות תצוגה', 'overview');
     ensureOverviewActionRail();
     ensureSectionButton('#view-expenses .list-actions', 'mobileExpensesMenuBtn', 'פעולות הוצאות', 'expenses');
     ensureSectionButton('#view-journal .list-actions', 'mobileJournalMenuBtn', 'פעולות יומן', 'journal');
+    syncMobileViewportVars();
+    wireMobileFieldComfort();
   }
 
   function wire(){
@@ -760,12 +1043,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const currentUser = getCurrentAuthUser();
     mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
     applyMobileLayout();
+    syncMobileViewportVars();
+    wireMobileFieldComfort();
+
+    if(window.visualViewport && !window.visualViewport.__mobileViewportWired){
+      window.visualViewport.__mobileViewportWired = true;
+      window.visualViewport.addEventListener('resize', syncMobileViewportVars);
+      window.visualViewport.addEventListener('scroll', syncMobileViewportVars);
+    }
 
     window.addEventListener('pageshow', ()=>{
       if(!isCompactMobileHeader()) return;
       const currentUser = getCurrentAuthUser();
       mobileApplyThemeButton();
       mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
+      applyMobileLayout();
+    });
+    window.addEventListener('resize', ()=>{
+      if(!isCompactMobileHeader()) return;
+      syncMobileViewportVars();
       applyMobileLayout();
     });
     window.addEventListener('focus', ()=>{
@@ -831,101 +1127,6 @@ window.safeInitMap = function(containerId, opts){
 function bidiWrap(value, className='bidi-fix'){
   const safe = esc(value == null ? '' : String(value));
   return `<span class="${className}">${safe}</span>`;
-}
-
-
-function formatJournalDateDisplay(isoValue){
-  const m = String(isoValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return '';
-  return `${m[3]}/${m[2]}/${m[1]}`;
-}
-
-function parseJournalDateDisplay(displayValue){
-  const m = String(displayValue || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if(!m) return '';
-  return `${m[3]}-${m[2]}-${m[1]}`;
-}
-
-function journalMobileDateFieldEnabled(){
-  try{ return window.matchMedia('(max-width: 820px)').matches; }catch(_){ return false; }
-}
-
-function syncJournalDateFieldToDisplay(){
-  const el = document.getElementById('jrDate');
-  if(!el || !journalMobileDateFieldEnabled()) return;
-  const iso = el.dataset.iso || parseJournalDateDisplay(el.value) || '';
-  el.dataset.iso = iso;
-  el.type = 'text';
-  el.inputMode = 'numeric';
-  el.placeholder = 'DD/MM/YYYY';
-  el.value = formatJournalDateDisplay(iso);
-}
-
-function enableJournalDatePickerEdit(){
-  const el = document.getElementById('jrDate');
-  if(!el || !journalMobileDateFieldEnabled()) return;
-  const iso = el.dataset.iso || parseJournalDateDisplay(el.value) || '';
-  el.type = 'date';
-  el.inputMode = 'none';
-  el.value = iso || (()=>{
-    const d = new Date();
-    const pad = n=>String(n).padStart(2,'0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  })();
-  try{ if(typeof el.showPicker === 'function') el.showPicker(); }catch(_){ }
-}
-
-function bindJournalMobileDateField(){
-  const el = document.getElementById('jrDate');
-  if(!el || el.dataset.mobileDateBound === '1') return;
-  el.dataset.mobileDateBound = '1';
-
-  const maybeDisplay = ()=>{
-    if(!journalMobileDateFieldEnabled()) return;
-    if(el.type === 'date'){
-      if(el.value) el.dataset.iso = el.value;
-      setTimeout(syncJournalDateFieldToDisplay, 0);
-    }
-  };
-
-  el.addEventListener('focus', ()=>{
-    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
-  });
-  el.addEventListener('click', ()=>{
-    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
-  });
-  el.addEventListener('touchstart', ()=>{
-    if(journalMobileDateFieldEnabled() && el.type !== 'date') enableJournalDatePickerEdit();
-  }, { passive:true });
-  el.addEventListener('change', ()=>{
-    if(el.value) el.dataset.iso = el.value;
-    maybeDisplay();
-  });
-  el.addEventListener('blur', ()=>{
-    if(el.type === 'date') maybeDisplay();
-    else if(journalMobileDateFieldEnabled()){
-      const parsed = parseJournalDateDisplay(el.value);
-      if(parsed) el.dataset.iso = parsed;
-      syncJournalDateFieldToDisplay();
-    }
-  });
-
-  window.addEventListener('resize', ()=>{
-    if(journalMobileDateFieldEnabled()) syncJournalDateFieldToDisplay();
-    else {
-      el.type = 'date';
-      el.value = el.dataset.iso || parseJournalDateDisplay(el.value) || el.value || '';
-      el.inputMode = '';
-      el.placeholder = '';
-    }
-  });
-}
-
-function getJournalDateIsoValue(){
-  const el = document.getElementById('jrDate');
-  if(!el) return '';
-  if(el.type === 'date' && el.value) return el.value;
-  return el.dataset.iso || parseJournalDateDisplay(el.value) || el.value || '';
 }
 
 
@@ -1176,7 +1377,7 @@ function switchToTab(tab){
     if(tab==='map') setTimeout(initBigMap,50);
     try{
       const hb = document.getElementById('overviewHeaderBar');
-      if(hb) hb.hidden = (tab !== 'overview');
+      if(hb) hb.hidden = isMobileViewport() ? true : (tab !== 'overview');
     }catch(e){}
 /* patched switchToTab */
 try{
@@ -1231,6 +1432,34 @@ function focusItemInTab(type, id){
   }, 150);
 }
 
+function focusItemOnMap(type, id){
+  switchToTab('map');
+  setTimeout(()=>{
+    try{ initBigMap(); }catch(_){}
+    const map = state?.maps?.big;
+    if(!map || !id) return;
+    let targetLayer = null;
+    map.eachLayer(layer=>{
+      if(targetLayer) return;
+      if(layer && layer.__itemType === type && String(layer.__itemId) === String(id)){
+        targetLayer = layer;
+      }
+    });
+    if(!targetLayer) return;
+    try{
+      if(typeof targetLayer.getBounds === 'function'){
+        const bounds = targetLayer.getBounds();
+        if(bounds?.isValid?.()) map.fitBounds(bounds.pad(0.2));
+      }else if(typeof targetLayer.getLatLng === 'function'){
+        map.flyTo(targetLayer.getLatLng(), Math.max(map.getZoom?.() || 12, 15), { duration: 0.45 });
+      }
+      if(typeof targetLayer.openPopup === 'function'){
+        setTimeout(()=>{ try{ targetLayer.openPopup(); }catch(_){} }, 180);
+      }
+    }catch(_){}
+  }, 180);
+}
+
 function attachMapPopup(marker, type, id, dataObj){
   try{
     const isExp = (type==='expense');
@@ -1263,6 +1492,7 @@ function attachMapPopup(marker, type, id, dataObj){
         <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem; justify-content: flex-end;">
           <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">הצג</button>
           ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">ערוך</button>`}
+          ${state.shared.readOnly ? '' : `<button class="btn small danger" data-act="delete" data-type="${isExp?'expense':'journal'}" data-id="${id}">מחק</button>`}
         </div>
       </div>`;
 
@@ -1319,6 +1549,20 @@ function attachMapPopup(marker, type, id, dataObj){
           } else {
             openJournalModal({ ...obj, id });
           }
+        });
+      }
+      const deleteBtn = root.querySelector('button[data-act="delete"]');
+      if(deleteBtn){
+        deleteBtn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          marker.closePopup?.();
+          routeDelete({
+            type: deleteBtn.dataset.type,
+            id,
+            message: deleteBtn.dataset.type === 'expense'
+              ? 'האם אתה בטוח שברצונך למחוק הוצאה זו?'
+              : 'האם אתה בטוח שברצונך למחוק רישום זה?'
+          });
         });
       }
     });
@@ -1683,7 +1927,7 @@ function enterTripMode(){
   container.classList.add('trip-mode');
   container.classList.remove('home-mode');
   syncHomeMapMode();
-  $('#tabs').style.display = 'flex';
+  if(!isMobileViewport()) $('#tabs').style.display = 'flex';
   $('#btnAllTrips').style.display = 'inline-block';
   updateHeaderDestination();
 }
@@ -1741,93 +1985,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
   if(nextTab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
 }));
 
-// Overview tab dropdown (All / Expenses / Journal)
-(function bindOverviewTabSelect(){
-  // Header dropdown ("הצג") that navigates to main tabs
-  const sel = document.getElementById('overviewTabSelect');
-  if(!sel || sel.dataset.bound) return;
-  sel.dataset.bound = '1';
-
-  sel.addEventListener('change', ()=>{
-    const v = sel.value;
-    if(!v) return;
-
-    // If leaving meta while there are unsaved changes, use existing modal flow
-    try{
-      const currentTab = document.querySelector('#tabs [data-tab].active')?.dataset?.tab;
-      if(currentTab === 'meta' && state?.isDirty && typeof showUnsavedChangesAlert === 'function'){
-        showUnsavedChangesAlert(v);
-        return;
-      }
-    }catch(_){}
-
-    // Actions inside the "הצג" dropdown:
-    // journal/expenses change the internal filter of the Overview timeline.
-    // mix resets the filter to show both (journal + expenses) together, sorted by time.
-    if (v === 'journal' || v === 'expenses' || v === 'mix') {
-      // Keep the Overview view active and change its internal filter
-      try {
-        const overviewEl = document.querySelector('#tabs [data-tab="overview"]');
-        if (overviewEl) { setActiveTab(overviewEl); showView('overview'); }
-      } catch (_) {}
-
-      const modeSel = document.getElementById('overviewMode');
-      if (modeSel) {
-        modeSel.value = (v === 'mix') ? 'all' : v;
-        modeSel.dispatchEvent(new Event('change', { bubbles: true }));
-      } else {
-        try {
-          const nextMode = (v === 'mix') ? 'all' : v;
-          state.overviewMode = nextMode;
-          localStorage.setItem('overviewMode', nextMode);
-          if (state.current) renderAllTimeline(state.current, state.allSort);
-        } catch (_) {}
-      }
-      return;
-    }
-
-    if (v === 'breakdown') {
-      try { sel.value = 'breakdown'; } catch (_) {}
-      // setTimeout(0) lets the select's click event finish propagating before the dialog
-      // opens — otherwise the document click-outside listener closes it immediately.
-      setTimeout(() => {
-        if (typeof window.__openBreakdownDialog === 'function') {
-          window.__openBreakdownDialog();
-          return;
-        }
-        try {
-          const dlg = document.getElementById('breakdownDialog');
-          if (dlg) {
-            if (typeof renderCategoryBreakdownNode === 'function')
-              renderCategoryBreakdownNode('categoryBreakdownDialog');
-            if (!dlg.open) {
-              if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
-            }
-          }
-        } catch (_) {}
-      }, 0);
-      return;
-    }
-
-    // Primary tabs that should open a dedicated view.
-    // Keep the dropdown itself as the active tab control and only switch the content view.
-    if (v === 'meta' || v === 'map' || v === 'share') {
-      try {
-        const overviewWrap = document.querySelector('#tabs [data-tab="overview"]');
-        if (overviewWrap) setActiveTab(overviewWrap);
-        sel.value = v;
-      } catch (_e) {}
-
-      showView(v);
-      if (v === 'map') setTimeout(initBigMap, 50);
-      return;
-    }
-
-    // Navigate to main tabs when option value matches a tab
-    const tabEl = document.querySelector(`#tabs [data-tab="${v}"]`);
-    if (tabEl) tabEl.click();
-  });
-})();
+ensureOverviewNavSelectRemoved();
 // (old Auth UI block removed – using unified handler below)
 
 // Handle share link mode (read-only)
@@ -1840,7 +1998,7 @@ if (token && tripId) {
   $('#sidebar').style.display = 'none';
   $('#btnLogin').style.display = 'none';
   $('#btnLogout').style.display = 'none';
-  $('#tabs').style.display = 'flex';
+  if(!isMobileViewport()) $('#tabs').style.display = 'flex';
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
   container.classList.remove('home-mode'); container.classList.add('trip-mode');
@@ -1896,7 +2054,7 @@ const __baseXErr = xErr;
 xErr = function(e){
   const msg = e?.message || String(e);
   if (msg.includes('auth/too-many-requests')) return 'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות';
-  if (msg.includes('auth/network-request-failed')) return 'בעיית רשת. בדוק חיבור ונסה שוב';
+  if (msg.includes('auth/network-request-failed') || msg.includes('ERR_CONNECTION_CLOSED')) return 'לא ניתן להגיע לשרתי Firebase. בדוק חיבור, VPN, חומת אש, אנטי-וירוס או תוסף דפדפן שחוסם בקשות ל-googleapis.com';
   if (msg.includes('auth/user-disabled')) return 'המשתמש הזה הושבת';
   if (msg.includes('auth/operation-not-allowed')) return 'שיטת ההתחברות הזו לא פעילה ב-Firebase';
   if (msg.includes('auth/unauthorized-domain')) return 'הדומיין הזה לא מורשה ב-Firebase Auth';
@@ -2181,8 +2339,15 @@ async function renderTripList(){
   const perfNow = ()=> (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
   const renderStart = perfNow();
   const list = $('#tripList');
+  if(!list) return;
   syncHomeMapMode();
-  const search = $('#searchTrips').value?.trim();
+  const searchInput = $('#searchTrips');
+  const rawSearch = searchInput?.value?.trim() || '';
+  const userEmail = String(state.user?.email || '').trim().toLowerCase();
+  const search = rawSearch.toLowerCase() === userEmail ? '' : rawSearch;
+  if(searchInput && rawSearch && !search){
+    searchInput.value = '';
+  }
   let items = [...state.trips];
   let s = null;
   if(search){
@@ -2194,6 +2359,27 @@ async function renderTripList(){
   state._tripListRenderToken = (state._tripListRenderToken || 0) + 1;
   const renderToken = state._tripListRenderToken;
   list.className = state.viewMode === 'map' ? 'map-view' : (state.viewMode==='grid' ? 'grid' : 'list');
+  if(state.viewMode !== 'map' && items.length === 0){
+    const msg = search
+      ? 'לא נמצאו נסיעות שמתאימות לחיפוש.'
+      : 'התחברת בהצלחה. עדיין אין נסיעות בחשבון הזה.';
+    list.innerHTML = `
+      <div class="trip-list-empty" role="status" aria-live="polite">
+        <strong>${msg}</strong>
+        <span>אפשר ללחוץ על "נסיעה חדשה +" כדי ליצור נסיעה ראשונה.</span>
+      </div>`;
+    ['btnViewGrid','btnViewList','btnViewMap'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
+    try{
+      window.__lastRenderTripListPerf = {
+        items: items.length,
+        mode: state.viewMode,
+        ms: Math.round(perfNow() - renderStart)
+      };
+      console.info('[perf] renderTripList', window.__lastRenderTripListPerf);
+    }catch(_){}
+    return;
+  }
   if(state.viewMode === 'map'){
     await renderTripMapView(items, renderToken);
   } else {
@@ -2279,7 +2465,7 @@ function showView(view){
     // but we do not want it visible in other tabs.
     try {
       const hb = document.getElementById('overviewHeaderBar');
-      if (hb) hb.hidden = (view !== 'overview');
+      if (hb) hb.hidden = isMobileViewport() ? true : (view !== 'overview');
     } catch(_e){}
   } catch(e){ /*log removed*/ }
 }
@@ -2290,7 +2476,9 @@ async function openTrip(id){
   enterTripMode();
   $$('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
-  first.classList.add('active');
+  if(first){
+    first.classList.add('active');
+  }
   showView('overview');
   state.overviewMode = 'all';
   try { localStorage.setItem('overviewMode', 'all'); } catch (_) {}
@@ -2329,6 +2517,7 @@ const localCurrencyMap = {
   "נורווגיה":"NOK","Norway":"NOK","norway":"NOK",
   "דנמרק":"DKK","Denmark":"DKK","denmark":"DKK",
   "סרביה":"RSD","Serbia":"RSD","serbia":"RSD",
+  "ישראל":"ILS","Israel":"ILS","israel":"ILS",
 
   // Asia / Middle East
   "תאילנד":"THB","Thailand":"THB","thailand":"THB",
@@ -2540,7 +2729,7 @@ async function loadTrip(){
   try{ saveTripCache(state.user?.uid, t); }catch(_){}
   try { globalThis.state = state; window.state = state; } catch(_) {}
   updateHeaderDestination();
-  const inferredLocalCurrency = t.localCurrency;
+  const inferredLocalCurrency = t.localCurrency || getLocalCurrency(t.destination) || null;
   state.current.localCurrency = inferredLocalCurrency;
 
   let effectiveRates = (t.rates && typeof t.rates === 'object') ? { ...t.rates } : null;
@@ -2609,7 +2798,7 @@ async function loadTrip(){
   loadPerf.afterInitialRender = perfNow();
 
   // If trip dates overlap "today" on open → show quick actions popup
-  try{ maybeShowTripTodayPrompt(t); }catch(_){ }
+  try{ maybeShowTripTodayPrompt(t, { source:'trip' }); }catch(_){ }
   
   // Reset dirty state on successful load
   state.isDirty = false;
@@ -2690,8 +2879,9 @@ function _isTodayWithinTripDates(startYMD, endYMD){
   return x >= lo && x <= hi;
 }
 
-function maybeShowTripTodayPrompt(trip){
+function maybeShowTripTodayPrompt(trip, opts){
   try{
+    const source = opts?.source || 'trip';
     if(!trip || !trip.id) return;
     // Avoid prompts on shared read-only views
     if(state?.shared?.readOnly) return;
@@ -2699,13 +2889,13 @@ function maybeShowTripTodayPrompt(trip){
     const end   = trip.end;
     if(!_isTodayWithinTripDates(start, end)) return;
 
-    const key = `tripTodayPrompt_${trip.id}_${_todayKey()}`;
-    if (sessionStorage.getItem(key) === '1') return;
-    sessionStorage.setItem(key, '1');
+    const homeKey = (source === 'home') ? `tripTodayPrompt_${trip.id}_${_todayKey()}_home` : '';
+    if(homeKey && sessionStorage.getItem(homeKey) === '1') return;
 
     const dlg = document.getElementById('tripTodayModal');
     if(!dlg || typeof dlg.showModal !== 'function') return;
     dlg.dataset.tripId = trip.id;
+    dlg.dataset.source = source;
     const ctx = document.getElementById('tripTodayContext');
     if(ctx){
       const destination = String(trip.destination || 'נסיעה ללא שם').trim();
@@ -2715,9 +2905,10 @@ function maybeShowTripTodayPrompt(trip){
     // If another modal is open, don't steal focus
     try{
       const anyOpen = document.querySelector('dialog[open]');
-      if(anyOpen) return;
+      if(anyOpen && anyOpen !== dlg) return;
     }catch(_){ }
     dlg.showModal();
+    if(homeKey) sessionStorage.setItem(homeKey, '1');
   }catch(_){ }
 }
 
@@ -2727,7 +2918,7 @@ function maybeShowTodayPromptFromTrips(trips){
     if(!activeTrips.length) return;
     const preferred = (state?.currentTripId && activeTrips.find(trip => trip.id === state.currentTripId))
       || [...activeTrips].sort((a,b)=> (b.start || '').localeCompare(a.start || ''))[0];
-    maybeShowTripTodayPrompt(preferred);
+    maybeShowTripTodayPrompt(preferred, { source:'home' });
   }catch(_){ }
 }
 
@@ -2860,6 +3051,7 @@ function renderJournal(t, order){
   const body = document.querySelector('#tblJournal');
   if (!body) return;
   body.innerHTML = '';
+  state.journalSelectedIds = state.journalSelectedIds || new Set();
   const selectionOn = !!state.journalSelectionMode;
   let arr = Object.entries(t?.journal || {}).map(([id,j])=>({id, ...j}))
     .sort((a,b)=> ((state.journalSort||'desc') === 'asc' ? 1 : -1) * (expenseSortKey(a) - expenseSortKey(b)));
@@ -2873,14 +3065,20 @@ function renderJournal(t, order){
     const tr1 = document.createElement('tr');
     tr1.className = 'exp-item';
     tr1.dataset.kind = 'journal'; // מחזיר את הצבע הירוק
-    const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select"></td>` : "";
+    const checkedAttr = selectionOn && state.journalSelectedIds.has(j.id) ? 'checked' : '';
+    const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : "";
+    const hasMapPoint = Number.isFinite(+j.lat) && Number.isFinite(+j.lng);
+    const mapActionCell = hasMapPoint
+      ? `<td class="cell header menu-cell"><button class="btn small journal-map-btn" type="button" data-map-item="journal" data-id="${esc(j.id)}">מפה</button></td>`
+      : "";
     
     const displayTitle = deriveJournalTitle(j);
     tr1.innerHTML = `
       ${selectCell}
       <td class="cell header date">${bidiWrap(dateStr)}</td>
       <td class="cell header time"></td>
-      <td class="cell header location" colspan="4">${esc(displayTitle)}</td>
+      <td class="cell header location" colspan="${hasMapPoint ? 3 : 4}">${esc(displayTitle)}</td>
+      ${mapActionCell}
       <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
     `;
     const tr2 = document.createElement('tr');
@@ -2892,7 +3090,12 @@ function renderJournal(t, order){
         _rowActionJournal = j; 
         document.getElementById('rowMenuModal').showModal(); 
     };
+    tr1.querySelector('.journal-map-btn')?.addEventListener('click', (ev)=>{
+      ev.preventDefault();
+      focusItemOnMap('journal', j.id);
+    });
   });
+  syncJournalSelectionUi();
 }
 function appendExpenseRowToTimeline(body, e){
   const d = dayjs(e.dateIso || e.createdAt);
@@ -2928,23 +3131,32 @@ function appendJournalRowToTimeline(body, j){
   const text = (j.html && /(<a|link-icon|<br|<div|<p|<span)/i.test(j.html))
     ? j.html
     : linkifyToIcons(j.html || j.text || '');
+  const selectionOn = getOverviewMode() === 'journal' && !!state.journalSelectionMode;
+  const checkedAttr = selectionOn && state.journalSelectedIds && state.journalSelectedIds.has(j.id) ? 'checked' : '';
+  const hasMapPoint = Number.isFinite(+j.lat) && Number.isFinite(+j.lng);
   const tr1 = document.createElement('tr');
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'journal';
   tr1.innerHTML = `
+    ${selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : ''}
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
     <td class="cell header time"></td>
-    <td class="cell header location" colspan="3">${esc(displayTitle)}</td>
+    <td class="cell header location" colspan="${hasMapPoint ? 2 : 3}">${esc(displayTitle)}</td>
+    ${hasMapPoint ? `<td class="cell header menu-cell"><button class="btn small journal-map-btn" type="button" data-map-item="journal" data-id="${esc(j.id)}">מפה</button></td>` : ''}
     <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
-  tr2.innerHTML = `<td class="cell notes" colspan="6">${text}</td>`;
+  tr2.innerHTML = `<td class="cell notes" colspan="${selectionOn ? 7 : 6}">${text}</td>`;
   body.appendChild(tr1); body.appendChild(tr2);
   tr1.querySelector('.menu-btn').onclick = () => { 
     _rowActionJournal = j; 
     document.getElementById('rowMenuModal').showModal(); 
   };
+  tr1.querySelector('.journal-map-btn')?.addEventListener('click', (ev)=>{
+    ev.preventDefault();
+    focusItemOnMap('journal', j.id);
+  });
 }
 function getOverviewMode(){
   const allowed = new Set(['all', 'expenses', 'journal']);
@@ -2960,6 +3172,7 @@ function getOverviewMode(){
 function renderAllTimeline(t, order){
   const body = document.getElementById('tblAllTimeline');
   if (!body) return;
+  state.journalSelectedIds = state.journalSelectedIds || new Set();
 
   const dir = (order || state.allSort || 'desc') === 'asc' ? 1 : -1;
   const mode = getOverviewMode();
@@ -2991,6 +3204,7 @@ function renderAllTimeline(t, order){
   }
 
   body.replaceChildren(frag);
+  syncOverviewJournalBulkUi();
 
   if (typeof window.__overviewApplyAfterRender === 'function') {
     try { window.__overviewApplyAfterRender(); } catch (_) {}
@@ -2998,12 +3212,25 @@ function renderAllTimeline(t, order){
 }
 
 function syncOverviewTabLabel(){
-  const select = document.getElementById('overviewTabSelect');
-  if (!select) return;
+  syncOverviewJournalBulkUi();
+}
+
+function syncOverviewJournalBulkUi(){
   const mode = getOverviewMode();
-  const nextValue = mode === 'all' ? 'mix' : mode;
-  if ([...select.options].some(o => o.value === nextValue)) {
-    select.value = nextValue;
+  const deleteBtn = document.getElementById('btnOverviewDeleteSelectedJournal');
+  const cancelBtn = document.getElementById('btnOverviewCancelSelectionJournal');
+  const isJournalOverview = mode === 'journal';
+  const selectionOn = isJournalOverview && !!state.journalSelectionMode;
+  const count = state.journalSelectedIds ? state.journalSelectedIds.size : 0;
+
+  if(deleteBtn){
+    deleteBtn.hidden = !isJournalOverview;
+    deleteBtn.style.display = isJournalOverview ? '' : 'none';
+    deleteBtn.textContent = selectionOn ? `מחק (${count})` : 'מחק נבחרים';
+  }
+  if(cancelBtn){
+    cancelBtn.hidden = !selectionOn;
+    cancelBtn.style.display = selectionOn ? '' : 'none';
   }
 }
 
@@ -3121,30 +3348,6 @@ $('#btnViewList').addEventListener('click', ()=>{ state.lastNonMapView='list'; s
 $('#btnViewMap').addEventListener('click', ()=>{ if(state.viewMode !== 'map') state.lastNonMapView = state.viewMode === 'list' ? 'list' : 'grid'; state.viewMode='map'; renderTripList(); });
 
 // Meta save, verify, budgets
-$('#btnSaveMeta').addEventListener('click', async ()=>{
-  const ref = FB.doc(db, 'trips', state.currentTripId);
-  const people = $('#metaPeople').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const types = $$('.metaType').map(b=>b.dataset.value);
-  const destination = $('#metaDestination').value.trim();
-  const start = $('#metaStart').value;
-  const end = $('#metaEnd').value;
-  const localCur = getLocalCurrency(destination);
-  await FB.updateDoc(ref, { destination, start, end, people, types, localCurrency: localCur });
-  try{
-    await upsertTripSummary({
-      id: state.currentTripId,
-      ownerUid: state.user?.uid || state.current?.ownerUid,
-      destination,
-      start,
-      end,
-      localCurrency: localCur,
-      people,
-      types,
-      createdAt: state.current?.createdAt
-    });
-  }catch(_){}
-  showToast('נשמר'); loadTrip();
-});
 $('#btnVerifyOnMap').click(() => {
   // ...
 });
@@ -3183,6 +3386,46 @@ $('#btnAddExpense').addEventListener('click', ()=> openExpenseModal());
 $('#expCancel').addEventListener('click', ()=> $('#expenseModal').close());
 $('#expSave').addEventListener('click', saveExpense);
 
+const EXPENSE_BASE_CURRENCIES = ['USD', 'EUR', 'ILS'];
+const EXPENSE_CURRENCY_SYMBOLS = {
+  USD:'$',
+  EUR:'€',
+  ILS:'₪',
+  THB:'฿',
+  GBP:'£',
+  JPY:'¥'
+};
+function getExpenseCurrencyOrder(){
+  const localCur = (state.current?.localCurrency || getLocalCurrency(state.current?.destination) || 'USD').toString().toUpperCase();
+  return [...new Set([localCur, ...EXPENSE_BASE_CURRENCIES].filter(Boolean))];
+}
+function getExpenseDefaultCurrency(){
+  return getExpenseCurrencyOrder()[0] || 'USD';
+}
+function syncExpenseCurrencyButton(cur){
+  const normalized = String(cur || getExpenseDefaultCurrency()).toUpperCase();
+  const order = getExpenseCurrencyOrder();
+  const finalCur = order.includes(normalized) ? normalized : getExpenseDefaultCurrency();
+  const input = $('#expCurr');
+  const btn = $('#expCurrBtn');
+  if(input) input.value = finalCur;
+  if(btn){
+    btn.textContent = EXPENSE_CURRENCY_SYMBOLS[finalCur] || finalCur;
+    btn.dataset.currency = finalCur;
+    btn.setAttribute('aria-label', `מטבע ${finalCur}`);
+    btn.title = `מטבע ${finalCur}`;
+  }
+  return finalCur;
+}
+function cycleExpenseCurrency(){
+  const order = getExpenseCurrencyOrder();
+  const current = ($('#expCurr')?.value || getExpenseDefaultCurrency()).toString().toUpperCase();
+  const currentIndex = order.indexOf(current);
+  const nextCur = order[(currentIndex + 1 + order.length) % order.length];
+  return syncExpenseCurrencyButton(nextCur);
+}
+$('#expCurrBtn')?.addEventListener('click', cycleExpenseCurrency);
+
 function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
 
   /*__OPEN_EXP_PREFILL__*/
@@ -3202,49 +3445,19 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
   if(window._bindTextareasForModals) window._bindTextareasForModals();
 
   seedExpenseCategories();
-  const curSelect = $('#expCurr');
-  curSelect.innerHTML = '';
-  const currencies = ['USD', 'EUR', 'ILS'];
-  const localCur = state.current?.localCurrency;
-  if(localCur && !currencies.includes(localCur)){
-      currencies.unshift(localCur);
-  }
-  currencies.forEach(c=>{
-    const opt = document.createElement('option');
-    opt.value = opt.textContent = c;
-    curSelect.appendChild(opt);
-  });
 
    $('#expenseModal').dataset.id = e?.id||'';
   try{ const tEl=document.getElementById("expTitle"); if(tEl) tEl.value = e?.title || ""; }catch(_){ }
   $('#expText').innerHTML = (e?.descHtml || (e?.desc ? linkifyText(e.desc,'קישור') : '')) || '';
   enableLinkRemoval(document.getElementById('expText')); $('#expCat').value = e?.category||''; $('#expAmount').value = e?.amount||'';
-  const __defCur = (e && e.currency) ? e.currency : (state.current?.localCurrency || 'USD');
-  $('#expCurr').value = __defCur;
+  const __defCur = (e && e.currency) ? e.currency : getExpenseDefaultCurrency();
+  syncExpenseCurrencyButton(__defCur);
 	  $('#expLat').value = e?.lat||''; $('#expLng').value = e?.lng||'';
 	document.getElementById('expLocationName').value = e?.locationName || '';
   if (typeof updateLocLabelState === 'function') updateLocLabelState('exp'); // <--- תיקון: עדכון תצוגת התווית
 $('#expLocationName').value = e?.locationName || '';
   updateLocLabelState('exp'); // <--- שורה חדשה שנוספה
 	  try{ updateExpLocationPreview(); }catch(_){ }
-
-	  // Auto-save current location for NEW expenses (prefill quickly, then refresh in background)
-	  try{
-	    const isNew = !e;
-	    if(isNew){
-	      const cached = loadLastLocation();
-	      if(cached && !$('#expLat').value && !$('#expLng').value){
-	        setExpenseLocation(cached.lat, cached.lng, cached.name||'', {persist:false});
-	      }
-	      // Refresh from device (non-blocking)
-	      getCurrentLocation(async (lat, lng)=>{
-	        // Do not overwrite if user already typed something manually
-	        const curName = (document.getElementById('expLocationName')?.value||'').trim();
-	        const name = curName || await reverseGeocode(lat, lng);
-	        await setExpenseLocation(lat, lng, name, {persist:true});
-	      });
-	    }
-	  }catch(_){ }
   $('#expDelete').style.display = e? 'inline-block':'none';
   // Prefill expDate/expTime (enrich)
   try {
@@ -3360,32 +3573,6 @@ $('#lsReset').addEventListener('click', async ()=>{
 
   try{ await FB.sendPasswordResetEmail(auth, $('#lsEmail').value.trim()); showToast('נשלח מייל לאיפוס'); }catch(e){ $('#lsError').textContent = xErr(e); showMobileAuthDebug(e); }
 });
-// ---- Missing sign-in button wiring (added) ----
-(function(){
-  const $ = (sel)=>document.querySelector(sel);
-  const doLogin = async (emailSel, passSel, errSel)=>{
-    const email = $(emailSel)?.value?.trim();
-    const pass  = $(passSel)?.value;
-    if(!email || !pass){ if($(errSel)) $(errSel).textContent = 'אנא מלא אימייל וסיסמה'; return; }
-    try{
-      await FB.signInWithEmailAndPassword(auth, email, pass);
-      if($(errSel)) $(errSel).textContent = '';
-    }catch(e){
-      if($(errSel)) $(errSel).textContent = xErr(e);
-      showMobileAuthDebug(e);
-      console.error('login failed', e);
-    }
-  };
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const btn1 = $('#loginBtn');
-    if(btn1 && !btn1.dataset.wired){ btn1.dataset.wired='1'; btn1.addEventListener('click', ()=>doLogin('#lsEmail','#lsPass','#lsError')); }
-    const btn2 = $('#authSignIn');
-    if(btn2 && !btn2.dataset.wired){ btn2.dataset.wired='1'; btn2.addEventListener('click', ()=>doLogin('#authEmail','#authPass','#authError')); }
-  });
-})();
-
-// ---- end wiring ----
-
 // ---- Mobile-safe auth wiring ----
 (function(){
   const $ = (sel)=>document.querySelector(sel);
@@ -3438,18 +3625,6 @@ $('#lsReset').addEventListener('click', async ()=>{
 
   bindTap($('#loginBtn'), ()=>doLogin('#lsEmail', '#lsPass', '#lsError'));
   bindTap($('#authSignIn'), ()=>doLogin('#authEmail', '#authPass', '#authError'));
-  const loginBtn = $('#loginBtn');
-  if(loginBtn && loginBtn.dataset.directAuthBound !== '1'){
-    loginBtn.dataset.directAuthBound = '1';
-    loginBtn.onclick = ()=>doLogin('#lsEmail', '#lsPass', '#lsError');
-    loginBtn.ontouchend = (ev)=>{ ev.preventDefault(); doLogin('#lsEmail', '#lsPass', '#lsError'); return false; };
-  }
-  const authSignInBtn = $('#authSignIn');
-  if(authSignInBtn && authSignInBtn.dataset.directAuthBound !== '1'){
-    authSignInBtn.dataset.directAuthBound = '1';
-    authSignInBtn.onclick = ()=>doLogin('#authEmail', '#authPass', '#authError');
-    authSignInBtn.ontouchend = (ev)=>{ ev.preventDefault(); doLogin('#authEmail', '#authPass', '#authError'); return false; };
-  }
 
   ['#lsEmail', '#lsPass'].forEach((sel)=>{
     const el = $(sel);
@@ -3710,6 +3885,13 @@ async function deleteJournalBulkLocal(ids){
   }
   // 2) Instant re-render (no network)
   renderJournal(state.current, state.journalSort);
+  try{ renderAllTimeline(state.current, state.allSort); }catch(_){}
+  try{
+    if(state.gpx?.enabled){
+      __refreshGpxFromCurrent();
+      __renderGpxPanel();
+    }
+  }catch(_){}
   showToast(`נמחקו ${removed} רישומים`);
   // 3) Background sync (best-effort)
   try{
@@ -3727,6 +3909,13 @@ async function deleteJournal(id){
     if(state.current && state.current.journal && state.current.journal[id]){
       delete state.current.journal[id];
       renderJournal(state.current, state.journalSort);
+      try{ renderAllTimeline(state.current, state.allSort); }catch(_){}
+      try{
+        if(state.gpx?.enabled){
+          __refreshGpxFromCurrent();
+          __renderGpxPanel();
+        }
+      }catch(_){}
     }
   }catch(_){}
 
@@ -3739,6 +3928,12 @@ async function deleteJournal(id){
     await FB.updateDoc(ref, { journal: t.journal });
     showToast('רישום יומן נמחק');
     await loadTrip();
+    try{
+      if(state.gpx?.enabled){
+        __refreshGpxFromCurrent();
+        __renderGpxPanel();
+      }
+    }catch(_){}
   }
 }
 
@@ -4193,6 +4388,15 @@ function getUsStateKeyFromText(raw){
   }
   return '';
 }
+function splitDestinationCountries(raw){
+  return String(raw || '')
+    .split(/\s*[,;]\s*/)
+    .map(s=>_cleanCountryLabel(s))
+    .filter(Boolean);
+}
+function isUsaCountryToken(value){
+  return normalizeCountryKey(value) === 'usa';
+}
 function _splitPlaceParts(raw){
   return String(raw || '')
     .split(/\s*,\s*|\s*-\s*|\s*\|\s*/)
@@ -4207,10 +4411,7 @@ function extractCountryFromPlace(raw){
 function extractCountriesFromDestination(raw){
   const text = String(raw || '').trim();
   if(!text) return [];
-  const parts = text
-    .split(/\s*,\s*|\s*-\s*|\s*\|\s*|\s*\/\s*|\s*&\s*|\s*\+\s*/)
-    .map(s=>_cleanCountryLabel(s))
-    .filter(Boolean);
+  const parts = splitDestinationCountries(text);
   const found = new Map();
   const aliasEntries = Object.entries(countryAliasMap).sort((a,b)=> b[0].length - a[0].length);
   parts.forEach(part=>{
@@ -4234,8 +4435,10 @@ function extractCountriesFromDestination(raw){
   return [{ key: meta.key, country: meta.label, capital: meta.capital }];
 }
 function buildUsStateGroup(trip){
-  const destination = String(trip?.destination || '');
-  const stateKey = getUsStateKeyFromText(destination);
+  const parts = splitDestinationCountries(trip?.destination || '');
+  if(parts.length < 2) return null;
+  if(!isUsaCountryToken(parts[0])) return null;
+  const stateKey = getUsStateKeyFromText(parts.slice(1).join(', '));
   if(!stateKey) return null;
   const stateMeta = usStateMap[stateKey];
   if(!stateMeta) return null;
@@ -4340,16 +4543,53 @@ function makeCountryMarkerIcon(count){
     popupAnchor: [0, -18]
   });
 }
+function getTripMapDedupKey(trip){
+  const id = String(trip?.id || '').trim();
+  const destination = String(trip?.destination || '').trim().toLowerCase();
+  const start = String(trip?.start || '').trim();
+  const end = String(trip?.end || '').trim();
+  if(destination || start || end){
+    return `trip:${destination}|${start}|${end}`;
+  }
+  return `trip-id:${id}`;
+}
+function getTripCountryBaseKey(trip){
+  const raw = String(trip?.destination || '').trim().toLowerCase();
+  if(!raw) return '';
+  return raw
+    .split(/\s*-\s*/)[0]
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function dedupeCountryTrips(trips){
+  const picked = new Map();
+  for(const trip of (trips || [])){
+    const baseKey = getTripCountryBaseKey(trip) || getTripMapDedupKey(trip);
+    const current = picked.get(baseKey);
+    if(!current){
+      picked.set(baseKey, trip);
+      continue;
+    }
+    const currentStart = String(current?.start || '');
+    const nextStart = String(trip?.start || '');
+    if(nextStart && (!currentStart || nextStart < currentStart)){
+      picked.set(baseKey, trip);
+    }
+  }
+  return Array.from(picked.values())
+    .sort((a,b)=> String(b?.start || '').localeCompare(String(a?.start || '')));
+}
 async function buildTripCountryGroups(trips){
   const groups = new Map();
   for(const trip of trips || []){
+    const tripDedupKey = getTripMapDedupKey(trip);
     const usStateGroup = buildUsStateGroup(trip);
     if(usStateGroup){
       if(!groups.has(usStateGroup.key)){
         groups.set(usStateGroup.key, { ...usStateGroup, trips: [] });
       }
       const usaGroup = groups.get(usStateGroup.key);
-      if(!usaGroup.trips.some(existing => existing.id === trip.id)){
+      if(!usaGroup.trips.some(existing => getTripMapDedupKey(existing) === tripDedupKey)){
         usaGroup.trips.push(trip);
       }
       continue;
@@ -4378,16 +4618,20 @@ async function buildTripCountryGroups(trips){
         groups.set(key, { key, country: countryEntry.country, center, trips: [] });
       }
       const group = groups.get(key);
-      if(!group.trips.some(existing => existing.id === trip.id)){
+      if(!group.trips.some(existing => getTripMapDedupKey(existing) === tripDedupKey)){
         group.trips.push(trip);
       }
     }
   }
   return Array.from(groups.values())
-    .map(group=>({
-      ...group,
-      count: group.trips.length
-    }))
+    .map(group=>{
+      const uniqueTrips = dedupeCountryTrips(group.trips);
+      return {
+        ...group,
+        trips: uniqueTrips,
+        count: uniqueTrips.length
+      };
+    })
     .sort((a,b)=> b.count - a.count || a.country.localeCompare(b.country, 'he'));
 }
 function bindCountryListActions(root){
@@ -4789,18 +5033,7 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
       tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
     const $d=$('#jrDate'), $t=$('#jrTime');
-    if($d){
-      $d.dataset.iso = dStr || '';
-      $d.value = dStr || '';
-      bindJournalMobileDateField();
-      if(journalMobileDateFieldEnabled()) syncJournalDateFieldToDisplay();
-      else {
-        $d.type = 'date';
-        $d.inputMode = '';
-        $d.placeholder = '';
-      }
-    }
-    if($t) $t.value=tStr;
+    if($d) $d.value=dStr; if($t) $t.value=tStr;
   } catch(_){}
 
   $('#journalModal').showModal();
@@ -4863,9 +5096,8 @@ async function saveJournal() {
   const $jrD = $('#jrDate');
   const $jrT = $('#jrTime');
   let _jr_dateIso;
-  const jrDateIsoValue = getJournalDateIsoValue();
-  if ($jrD && $jrT && jrDateIsoValue && $jrT.value) {
-    _jr_dateIso = new Date(`${jrDateIsoValue}T${$jrT.value}:00`).toISOString();
+  if ($jrD && $jrT && $jrD.value && $jrT.value) {
+    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
   } else {
     _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
   }
@@ -5003,52 +5235,62 @@ $('#unsavedCancel').addEventListener('click', () => {
     $('#unsavedChangesModal').close();
 });
 async function saveMetaChanges() {
-    const ref = FB.doc(db, 'trips', state.currentTripId);
-    const people = $('#metaPeople').value.split(',').map(s => s.trim()).filter(Boolean);
-    const types = $$('.metaType.active').map(b => b.dataset.value);
-    const destination = $('#metaDestination').value.trim();
-    const localCur = getLocalCurrency(destination);
-    
-    const budget = {
-        USD: parseIntSafe($('#bUSD').value),
-        EUR: parseIntSafe($('#bEUR').value),
-        ILS: parseIntSafe($('#bILS').value)
-    };
-
-    const live = await fetchRatesOnce();
-    const lockedRates = {
-        USDILS: live.USDILS,
-        USDEUR: live.USDEUR,
-        lockedAt: live.lockedAt
-    };
-    if (live.USDLocal) lockedRates.USDLocal = live.USDLocal;
-
-    await FB.updateDoc(ref, {
-        destination,
-        start: $('#metaStart').value,
-        end: $('#metaEnd').value,
-        people,
-        types,
-        localCurrency: localCur,
-        budget,
-        rates: lockedRates
-    });
-    showToast('נשמר');
     try{
-        await upsertTripSummary({
-            id: state.currentTripId,
-            ownerUid: state.user?.uid || state.current?.ownerUid,
+        if(!state.currentTripId){
+            showToast('לא נבחרה נסיעה לשמירה');
+            return;
+        }
+        const ref = FB.doc(db, 'trips', state.currentTripId);
+        const people = $('#metaPeople').value.split(',').map(s => s.trim()).filter(Boolean);
+        const types = $$('.metaType.active').map(b => b.dataset.value);
+        const destination = $('#metaDestination').value.trim();
+        const localCur = getLocalCurrency(destination);
+        
+        const budget = {
+            USD: parseIntSafe($('#bUSD').value),
+            EUR: parseIntSafe($('#bEUR').value),
+            ILS: parseIntSafe($('#bILS').value)
+        };
+
+        const live = await fetchRatesOnce();
+        const lockedRates = {
+            USDILS: Number(live?.USDILS) || Number(state.rates?.USDILS) || 3.7,
+            USDEUR: Number(live?.USDEUR) || Number(state.rates?.USDEUR) || 0.92,
+            lockedAt: live?.lockedAt || new Date().toISOString()
+        };
+        if (live?.USDLocal) lockedRates.USDLocal = live.USDLocal;
+
+        await FB.updateDoc(ref, {
             destination,
             start: $('#metaStart').value,
             end: $('#metaEnd').value,
-            localCurrency: localCur,
             people,
             types,
-            createdAt: state.current?.createdAt
+            localCurrency: localCur,
+            budget,
+            rates: lockedRates
         });
-    }catch(_){}
-    state.isDirty = false;
-    await loadTrip();
+        try{
+            await upsertTripSummary({
+                id: state.currentTripId,
+                ownerUid: state.user?.uid || state.current?.ownerUid,
+                destination,
+                start: $('#metaStart').value,
+                end: $('#metaEnd').value,
+                localCurrency: localCur,
+                people,
+                types,
+                createdAt: state.current?.createdAt
+            });
+        }catch(_){}
+        state.isDirty = false;
+        await loadTrip();
+        try{ switchToTab('overview'); }catch(_){}
+        showToast('נשמר');
+    }catch(err){
+        console.error('saveMetaChanges failed', err);
+        showToast('שמירת נתוני הנסיעה נכשלה');
+    }
 }
 // Override default save button to use the new function
 $('#btnSaveMeta').addEventListener('click', saveMetaChanges);
@@ -5916,6 +6158,69 @@ function renderExpenseSummary(t){
   `;
 }
 
+function __textQualityScore(text){
+  const s = String(text || '');
+  const hebrew = (s.match(/[\u0590-\u05FF]/g) || []).length;
+  const printable = (s.match(/[A-Za-z0-9 .,;:!?\-_/()[\]{}"'@\n\r]/g) || []).length;
+  const suspicious = (s.match(/(?:Ã.|×.|�)/g) || []).length;
+  return (hebrew * 4) + (printable * 0.05) - (suspicious * 6);
+}
+
+function __repairUtf8Mojibake(text){
+  try{
+    const src = String(text || '');
+    const bytes = Uint8Array.from(Array.from(src, ch => ch.charCodeAt(0) & 255));
+    return new TextDecoder('utf-8', { fatal:false }).decode(bytes);
+  }catch(_){
+    return String(text || '');
+  }
+}
+
+function __normalizeImportedText(text){
+  const src = String(text || '').trim();
+  if(!src) return '';
+  const repaired = __repairUtf8Mojibake(src).trim();
+  return __textQualityScore(repaired) > __textQualityScore(src) ? repaired : src;
+}
+
+async function __readXmlFileText(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const decoders = [];
+  const seen = new Set();
+
+  function addDecoder(label){
+    if(!label || seen.has(label)) return;
+    seen.add(label);
+    try{
+      decoders.push({ label, decoder: new TextDecoder(label, { fatal:false }) });
+    }catch(_){}
+  }
+
+  addDecoder('utf-8');
+  addDecoder('windows-1255');
+  addDecoder('iso-8859-8');
+
+  let probe = '';
+  try{ probe = new TextDecoder('utf-8', { fatal:false }).decode(bytes.slice(0, 256)); }catch(_){}
+  const encMatch = probe.match(/encoding\s*=\s*["']([^"']+)["']/i);
+  if(encMatch && encMatch[1]) addDecoder(String(encMatch[1]).trim().toLowerCase());
+
+  let best = '';
+  let bestScore = -Infinity;
+  for(const { decoder } of decoders){
+    let decoded = '';
+    try{ decoded = decoder.decode(bytes); }catch(_){ continue; }
+    const normalized = __normalizeImportedText(decoded);
+    const score = __textQualityScore(normalized);
+    if(score > bestScore){
+      best = normalized;
+      bestScore = score;
+    }
+  }
+
+  return best || new TextDecoder('utf-8', { fatal:false }).decode(bytes);
+}
+
 
 // === GPX Import (to Journal) [FIXED for Namespaces, v2] ===
 importGPXFromFile = async function(file, opts={}){
@@ -5923,7 +6228,7 @@ importGPXFromFile = async function(file, opts={}){
     if(!file){ if(typeof toast==='function') toast('לא נבחר קובץ'); return; }
     const tid = state.currentTripId;
     if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
-    const xmlText = await file.text();
+    const xmlText = await __readXmlFileText(file);
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, 'application/xml');
     const gpxNamespace = 'http://www.topografix.com/GPX/1/1';
@@ -5938,9 +6243,6 @@ importGPXFromFile = async function(file, opts={}){
     let wpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'wpt'));
     if (wpts.length === 0) wpts = Array.from(xml.getElementsByTagName('wpt'));
     
-    let trkpts = Array.from(xml.getElementsByTagNameNS(gpxNamespace, 'trkpt'));
-    if (trkpts.length === 0) trkpts = Array.from(xml.getElementsByTagName('trkpt'));
-
     const points = [];
 
     // --- פונקציית עזר מתוקנת v2 ---
@@ -5948,7 +6250,7 @@ importGPXFromFile = async function(file, opts={}){
       if (!el) return '';
       let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
       if (!t) t = el.getElementsByTagName(name)[0]; // Fallback
-      return t ? (t.textContent || '').trim() : '';
+      return t ? __normalizeImportedText(t.textContent || '') : '';
     }
     // --- פונקציית עזר מתוקנת v2 ---
     function getExt(el, name){
@@ -5959,7 +6261,7 @@ importGPXFromFile = async function(file, opts={}){
       let found = exts.getElementsByTagNameNS(gpxNamespace, name)[0];
       if (!found) found = exts.getElementsByTagName(name)[0];
       
-      return found ? (found.textContent || '').trim() : '';
+      return found ? __normalizeImportedText(found.textContent || '') : '';
     }
 
     wpts.forEach(el=>{
@@ -5975,19 +6277,6 @@ importGPXFromFile = async function(file, opts={}){
         });
       }
     });
-    trkpts.forEach((el,i)=>{
-      const lat = Number(el.getAttribute('lat'));
-      const lng = Number(el.getAttribute('lon'));
-      if(Number.isFinite(lat) && Number.isFinite(lng)){
-        points.push({
-          lat, lng,
-          _name: 'מסלול',
-          _desc: '',
-          _time: getTag(el,'time'),
-          _source: 'journal'
-        });
-      }
-    });
 
     if(!points.length){ if(typeof toast==='function') toast('לא נמצאו נקודות GPX'); return; }
 
@@ -5996,6 +6285,7 @@ importGPXFromFile = async function(file, opts={}){
     const t = snap.exists() ? (snap.data() || {}) : {};
     t.journal = t.journal || {};
 
+    const journalPatch = {};
     let added = 0;
     points.forEach(p=>{
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
@@ -6006,22 +6296,24 @@ importGPXFromFile = async function(file, opts={}){
       const __dateStr = `${pad2(__dt.getDate())}/${pad2(__dt.getMonth()+1)}/${__dt.getFullYear()}`;
       const __timeStr = `${pad2(__dt.getHours())}:${pad2(__dt.getMinutes())}`;
 
-      t.journal[id] = {
+      journalPatch[`journal.${id}`] = {
         text: p._desc || '',
         placeName: p._name || 'נקודת מסלול',
         placeUrl: '',
         lat: p.lat, 
         lng: p.lng,
+        gpxType: 'point',
+        gpxFileName: (file && file.name ? String(file.name) : 'Point GPX'),
+        gpxColor: '#7c3aed',
         createdAt: _point_dateIso,
         dateIso: _point_dateIso,
         date: __dateStr,
         time: __timeStr
       };
-      
       added++;
     });
 
-    await FB.updateDoc(ref, { [`journal.${id}`]: t.journal[id] });
+    await FB.updateDoc(ref, journalPatch);
     if(typeof toast==='function') toast(`ייבוא GPX הושלם — נוספו ${added} נקודות ליומן`);
     if(!opts.suppressReload){
       await loadTrip();
@@ -6041,7 +6333,7 @@ importGPXAsTrek = async function(file, opts){
     const tid = state.currentTripId;
     if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
 
-    const xmlText = await file.text();
+    const xmlText = await __readXmlFileText(file);
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, 'application/xml');
     const gpxNamespace = 'http://www.topografix.com/GPX/1/1';
@@ -6073,7 +6365,7 @@ importGPXAsTrek = async function(file, opts){
       if (!el) return '';
       let t = el.getElementsByTagNameNS(gpxNamespace, name)[0];
       if (!t) t = el.getElementsByTagName(name)[0]; // Fallback
-      return t ? (t.textContent || '').trim() : '';
+      return t ? __normalizeImportedText(t.textContent || '') : '';
     }
 
     // נתוני נקודות קצה ושם
@@ -6087,7 +6379,7 @@ importGPXAsTrek = async function(file, opts){
     // --- שליפת שם מתוקנת v2 ---
     let trackNameEl = xml.getElementsByTagNameNS(gpxNamespace, 'name')[0];
     if (!trackNameEl) trackNameEl = xml.getElementsByTagName('name')[0]; // Fallback
-    const trackName = (trackNameEl?.textContent || 'מסלול GPX').trim();
+    const trackName = __normalizeImportedText(trackNameEl?.textContent || 'מסלול GPX');
     
     // --- שליפת זמן מתוקנת v2 ---
     const startTime = getTag(firstPtEl, 'time') || new Date().toISOString();
@@ -6147,14 +6439,15 @@ document.addEventListener('click', async (e)=>{
     state.journalSelectedIds = new Set();
     state._jrLastIndex = null;
     state.journalSelectionMode = true;
-    if(btn) btn.textContent = 'מחק (0)';
+    syncJournalSelectionUi();
     if(state.current) renderJournal(state.current, state.journalSort);
     return;
   }
   const count = state.journalSelectedIds ? state.journalSelectedIds.size : 0;
   if(count === 0){
     state.journalSelectionMode = false;
-    if(btn) btn.textContent = 'מחק נבחרים';
+    state.journalSelectedIds = new Set();
+    syncJournalSelectionUi();
     if(state.current) renderJournal(state.current, state.journalSort);
     return;
   }
@@ -6164,11 +6457,84 @@ document.addEventListener('click', async (e)=>{
     state.journalSelectionMode = false;
     state.journalSelectedIds = new Set();
     state._jrLastIndex = null;
-    if(btn) btn.textContent = 'מחק נבחרים';
+    syncJournalSelectionUi();
     document.getElementById('confirmDeleteModal')?.close?.();
   });
 });
 // --- end delegated handler ---
+
+document.addEventListener('click', async (e)=>{
+  const btn = e.target && e.target.closest && e.target.closest('#btnOverviewDeleteSelectedJournal');
+  if(!btn) return;
+  e.preventDefault();
+  if(getOverviewMode() !== 'journal') return;
+  if(!state.journalSelectionMode){
+    state.journalSelectedIds = new Set();
+    state._jrLastIndex = null;
+    state.journalSelectionMode = true;
+    syncOverviewJournalBulkUi();
+    if(state.current) renderAllTimeline(state.current, state.allSort);
+    return;
+  }
+  const count = state.journalSelectedIds ? state.journalSelectedIds.size : 0;
+  if(count === 0){
+    state.journalSelectionMode = false;
+    state.journalSelectedIds = new Set();
+    state._jrLastIndex = null;
+    syncOverviewJournalBulkUi();
+    if(state.current) renderAllTimeline(state.current, state.allSort);
+    return;
+  }
+  showConfirm(`למחוק ${count} רשומות?`, async ()=>{
+    const ids = Array.from(state.journalSelectedIds);
+    try{ await deleteJournalBulkLocal(ids); }catch(_){}
+    state.journalSelectionMode = false;
+    state.journalSelectedIds = new Set();
+    state._jrLastIndex = null;
+    syncOverviewJournalBulkUi();
+    document.getElementById('confirmDeleteModal')?.close?.();
+    if(state.current) renderAllTimeline(state.current, state.allSort);
+  });
+});
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target && e.target.closest && e.target.closest('#btnOverviewCancelSelectionJournal');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  state.journalSelectionMode = false;
+  state.journalSelectedIds = new Set();
+  state._jrLastIndex = null;
+  syncOverviewJournalBulkUi();
+  if(state.current) renderAllTimeline(state.current, state.allSort);
+});
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target && e.target.closest && e.target.closest('#btnCancelSelectionJournal');
+  if(!btn) return;
+  e.preventDefault();
+  state.journalSelectionMode = false;
+  state.journalSelectedIds = new Set();
+  state._jrLastIndex = null;
+  syncJournalSelectionUi();
+  if(state.current) renderJournal(state.current, state.journalSort);
+});
+
+document.addEventListener('change', (e)=>{
+  const target = e.target;
+  if(!(target instanceof HTMLInputElement)) return;
+  if(!target.matches('#view-journal .jr-select, #view-overview .jr-select')) return;
+
+  state.journalSelectedIds = state.journalSelectedIds || new Set();
+  const id = (target.dataset.id || '').trim();
+  if(!id) return;
+
+  if(target.checked) state.journalSelectedIds.add(id);
+  else state.journalSelectedIds.delete(id);
+
+  syncJournalSelectionUi();
+  syncOverviewJournalBulkUi();
+});
 
 
 // === Logout wiring ===
@@ -6337,7 +6703,11 @@ window.initMiniMap = function(t){
     (Object.entries(t.journal||{})).forEach(([id,j])=>{
       if(typeof j.lat==='number' && typeof j.lng==='number'){
         pts.push([j.lat,j.lng]);
-        L.circleMarker([j.lat,j.lng], { radius:4 }).addTo(group);
+        const isGpxPoint = j && j.gpxType === 'point';
+        L.circleMarker([j.lat,j.lng], isGpxPoint
+          ? { radius:4, color:'#7c3aed', fillColor:'#a855f7', fillOpacity:0.9, weight:2 }
+          : { radius:4, color:'#3b82f6', fillColor:'#93c5fd', fillOpacity:0.9, weight:2 }
+        ).addTo(group);
       }
     });
     if(pts.length){
@@ -6356,15 +6726,26 @@ window.initBigMap = function(){
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' })
         .addTo(state.maps.big);
     }
+    try{
+      state.maps.big.eachLayer(layer=>{
+        const isTile = layer instanceof L.TileLayer;
+        if(!isTile){
+          try{ state.maps.big.removeLayer(layer); }catch(_){}
+        }
+      });
+    }catch(_){}
     // clear old layers
     state.maps.layers = state.maps.layers || {};
     if(state.maps.layers.expenses) state.maps.big.removeLayer(state.maps.layers.expenses);
     if(state.maps.layers.journal)  state.maps.big.removeLayer(state.maps.layers.journal);
+    if(state.maps.layers.gpxPoints) state.maps.big.removeLayer(state.maps.layers.gpxPoints);
 
     const expensesLG = L.layerGroup().addTo(state.maps.big);
     const journalLG  = L.layerGroup().addTo(state.maps.big);
+    const gpxPointsLG = L.layerGroup().addTo(state.maps.big);
     state.maps.layers.expenses = expensesLG;
     state.maps.layers.journal  = journalLG;
+    state.maps.layers.gpxPoints = gpxPointsLG;
 
     const t = state._lastTripObj || {};
     const pts = [];
@@ -6372,15 +6753,86 @@ window.initBigMap = function(){
     Object.entries(t.expenses||{}).forEach(([id,e])=>{
       if(typeof e.lat==='number' && typeof e.lng==='number'){
         pts.push([e.lat,e.lng]);
-        L.circleMarker([e.lat,e.lng], { radius:5 }).addTo(expensesLG);
+        const marker = L.circleMarker([e.lat,e.lng], { radius:5 });
+        marker.__itemType = 'expense';
+        marker.__itemId = id;
+        marker.addTo(expensesLG);
       }
     });
     Object.entries(t.journal||{}).forEach(([id,j])=>{
       if(typeof j.lat==='number' && typeof j.lng==='number'){
         pts.push([j.lat,j.lng]);
-        L.circleMarker([j.lat,j.lng], { radius:5 }).addTo(journalLG);
+        if(j && j.gpxType === 'point'){
+          const marker = L.circleMarker([j.lat,j.lng], {
+            radius:6,
+            color:'#6d28d9',
+            fillColor:'#8b5cf6',
+            fillOpacity:0.95,
+            weight:2
+          });
+          marker.__itemType = 'journal';
+          marker.__itemId = id;
+          attachMapPopup(marker, 'journal', id, j);
+          marker.addTo(gpxPointsLG);
+        }else{
+          const marker = L.circleMarker([j.lat,j.lng], {
+            radius:5,
+            color:'#2563eb',
+            fillColor:'#93c5fd',
+            fillOpacity:0.95,
+            weight:2
+          });
+          marker.__itemType = 'journal';
+          marker.__itemId = id;
+          attachMapPopup(marker, 'journal', id, j);
+          marker.addTo(journalLG);
+        }
       }
     });
+
+    const btnSpent = document.getElementById('btnToggleSpent');
+    const btnVisited = document.getElementById('btnToggleVisited');
+
+    if(btnSpent && !btnSpent.classList.contains('active')) btnSpent.classList.add('active');
+    if(btnVisited && !btnVisited.classList.contains('active')) btnVisited.classList.add('active');
+
+    function applyMapToolbarVisibility(){
+      const showSpent = !btnSpent || btnSpent.classList.contains('active');
+      const showVisited = !btnVisited || btnVisited.classList.contains('active');
+
+      if(showSpent){
+        if(!state.maps.big.hasLayer(expensesLG)) state.maps.big.addLayer(expensesLG);
+      }else{
+        if(state.maps.big.hasLayer(expensesLG)) state.maps.big.removeLayer(expensesLG);
+      }
+
+      if(showVisited){
+        if(!state.maps.big.hasLayer(journalLG)) state.maps.big.addLayer(journalLG);
+        if(!state.gpx?.enabled && !state.maps.big.hasLayer(gpxPointsLG)) state.maps.big.addLayer(gpxPointsLG);
+      }else{
+        if(state.maps.big.hasLayer(journalLG)) state.maps.big.removeLayer(journalLG);
+        if(state.maps.big.hasLayer(gpxPointsLG)) state.maps.big.removeLayer(gpxPointsLG);
+      }
+
+      try{ __syncManagedGpxWithVisited(); }catch(_){}
+
+      invalidateMap(state.maps.big);
+    }
+
+    if(btnSpent){
+      btnSpent.onclick = ()=>{
+        btnSpent.classList.toggle('active');
+        applyMapToolbarVisibility();
+      };
+    }
+    if(btnVisited){
+      btnVisited.onclick = ()=>{
+        btnVisited.classList.toggle('active');
+        applyMapToolbarVisibility();
+      };
+    }
+
+    applyMapToolbarVisibility();
 
     if(pts.length){
       state.maps.big.fitBounds(L.latLngBounds(pts).pad(0.2));
@@ -6398,7 +6850,7 @@ async function importKMLFromFile(file){
     const tid = state.currentTripId;
     if(!tid){ if(typeof toast==='function') toast('פתח נסיעה לפני ייבוא'); return; }
 
-    const xmlText = await file.text();
+    const xmlText = await __readXmlFileText(file);
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlText, 'application/xml');
 
@@ -6414,7 +6866,7 @@ async function importKMLFromFile(file){
     }
     function getText(el, tag){
       const t = el.getElementsByTagName(tag)[0];
-      return t ? (t.textContent || '').trim() : '';
+      return t ? __normalizeImportedText(t.textContent || '') : '';
     }
 
     const placemarks = Array.from(xml.getElementsByTagName('Placemark'));
@@ -6499,16 +6951,20 @@ async function importKMLFromFile(file){
   let lastIndex = null;
 
   function getJournalCheckboxes(){
-    const view = document.getElementById('view-journal');
-    if(!view) return [];
-    return Array.from(view.querySelectorAll('input[type="checkbox"]')).filter(cb=>!cb.disabled);
+    const selectors = [
+      '#view-journal .jr-select',
+      '#view-overview .jr-select'
+    ];
+    return selectors
+      .flatMap(sel => Array.from(document.querySelectorAll(sel)))
+      .filter(cb => cb instanceof HTMLInputElement && !cb.disabled && cb.offsetParent !== null);
   }
 
   // Use capture on 'click' so we can see e.shiftKey reliably
   document.addEventListener('click', function(e){
     const target = e.target;
     if(!(target instanceof HTMLElement)) return;
-    if(target.matches('#view-journal input[type="checkbox"]')){
+    if(target.matches('#view-journal .jr-select, #view-overview .jr-select')){
       const boxes = getJournalCheckboxes();
       const idx = boxes.indexOf(target);
       if(idx === -1) return;
@@ -6806,8 +7262,6 @@ function renderCategoryBreakdownNode(targetId){
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && dlg.open) closeBreakdown(); });
       document.addEventListener('click', (e)=>{
         if(!dlg.open) return;
-        // Ignore clicks from the nav dropdown — they triggered the open and must not close it
-        if(e.target && e.target.closest && e.target.closest('#overviewTabSelect')) return;
         const r = dlg.getBoundingClientRect();
         const inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
         if(!inside) closeBreakdown();
@@ -7755,6 +8209,26 @@ function __downsamplePath(path, maxPoints){
   }
 }
 
+function __isVisitedLayerEnabled(){
+  const btnVisited = document.getElementById('btnToggleVisited');
+  return !btnVisited || btnVisited.classList.contains('active');
+}
+
+function __syncManagedGpxWithVisited(){
+  const map = state.maps && state.maps.big;
+  if(!map || !state.gpx?.files) return;
+  const allowVisited = __isVisitedLayerEnabled();
+  for(const id of state.gpx.order || []){
+    const f = state.gpx.files.get(id);
+    if(!f) continue;
+    if(f.visible && allowVisited){
+      if(!map.hasLayer(f.layer)) map.addLayer(f.layer);
+    }else{
+      if(map.hasLayer(f.layer)) map.removeLayer(f.layer);
+    }
+  }
+}
+
 function __initGpxManager(){
   state.gpx = state.gpx || { files:new Map(), order:[], enabled:false };
   const btn = document.getElementById('btnToggleGPX');
@@ -7762,12 +8236,22 @@ function __initGpxManager(){
   if(!btn || !panel) return;
 
   btn.addEventListener('click', ()=>{
+    const isPanelHidden = !!panel.hidden;
+    if(state.gpx.enabled && isPanelHidden){
+      panel.hidden = false;
+      btn.classList.add('active');
+      __renderGpxPanel();
+      return;
+    }
+
     state.gpx.enabled = !state.gpx.enabled;
     btn.classList.toggle('active', state.gpx.enabled);
     panel.hidden = !state.gpx.enabled;
     if(state.gpx.enabled){
       __refreshGpxFromCurrent();
       __renderGpxPanel();
+    }else{
+      try{ initBigMap(); }catch(e){ console.error('initBigMap refresh failed', e); }
     }
   });
 }
@@ -7775,6 +8259,11 @@ function __initGpxManager(){
 function __refreshGpxFromCurrent(){
   const map = state.maps && state.maps.big;
   if(!map) return;
+
+  try{
+    const inlineGpxPoints = state.maps.layers && state.maps.layers.gpxPoints;
+    if(inlineGpxPoints && map.hasLayer(inlineGpxPoints)) map.removeLayer(inlineGpxPoints);
+  }catch(_){}
 
   // clear old layers
   try{
@@ -7792,6 +8281,43 @@ function __refreshGpxFromCurrent(){
 
   for(const id of Object.keys(journal)){
     const j = journal[id] || {};
+    if(j.gpxType === 'point' && Number.isFinite(+j.lat) && Number.isFinite(+j.lng)){
+      const layer = L.featureGroup();
+      const marker = L.circleMarker([+j.lat, +j.lng], {
+        radius: 6,
+        color: '#6d28d9',
+        fillColor: j.gpxColor || '#8b5cf6',
+        fillOpacity: 0.95,
+        weight: 2
+      });
+      marker.__itemType = 'journal';
+      marker.__itemId = id;
+      attachMapPopup(marker, 'journal', id, j);
+      marker.addTo(layer);
+      layer.addTo(map);
+
+      let bounds = null;
+      try{
+        const b = layer.getBounds();
+        if(b && b.isValid && b.isValid()) bounds = b;
+      }catch(_){}
+
+      const fileName = (j.gpxFileName || 'Point GPX').toString().trim() || 'Point GPX';
+      const pointName = (j.placeName || j.text || 'נקודת GPX').toString().trim() || 'נקודת GPX';
+      const rowName = `${fileName} / ${pointName}`;
+      state.gpx.files.set(id, {
+        id,
+        name: rowName,
+        type: 'point',
+        ids: [id],
+        layer,
+        bounds,
+        visible: true
+      });
+      state.gpx.order.push(id);
+      continue;
+    }
+
     const path = Array.isArray(j.path) ? j.path : null;
     if(!path || path.length < 2) continue;
 
@@ -7804,7 +8330,9 @@ function __refreshGpxFromCurrent(){
     }
     if(latlngs.length < 2) continue;
 
-    L.polyline(latlngs, {weight:4}).addTo(layer);
+    const polyline = L.polyline(latlngs, { color:'#7c3aed', weight:4, opacity:0.95 }).addTo(layer);
+    polyline.__itemType = 'journal';
+    polyline.__itemId = id;
     layer.addTo(map);
 
     let bounds = null;
@@ -7813,9 +8341,12 @@ function __refreshGpxFromCurrent(){
       if(b && b.isValid && b.isValid()) bounds = b;
     }catch(_){}
 
-    state.gpx.files.set(id, { id, name, layer, bounds, visible:true });
+    state.gpx.files.set(id, { id, name, type:'track', ids:[id], layer, bounds, visible:true });
     state.gpx.order.push(id);
   }
+
+  try{ __syncManagedGpxWithVisited(); }catch(_){}
+
 }
 
 function __renderGpxPanel(){
@@ -7826,11 +8357,12 @@ function __renderGpxPanel(){
 
   panel.innerHTML = `
     <div class="gpx-head">
+      <button class="btn small gpx-close" id="gpxClosePanel" aria-label="סגור">×</button>
       <button class="btn small" id="gpxShowAll">הצג הכל</button>
       <button class="btn small" id="gpxHideAll">הסתר הכל</button>
       <button class="btn small" id="gpxFitAll">זום להכל</button>
       <button class="btn small danger" id="gpxClearAll">מחק הכל</button>
-      <div class="gpx-count">${count} מסלולים</div>
+      <div class="gpx-count">${count} פריטי GPX</div>
     </div>
     <div class="gpx-list">
       ${ids.map(id=>{
@@ -7852,6 +8384,10 @@ function __renderGpxPanel(){
     </div>
   `;
 
+  panel.querySelector('#gpxClosePanel')?.addEventListener('click', ()=>{
+    panel.hidden = true;
+    document.getElementById('btnToggleGPX')?.classList.add('active');
+  });
   panel.querySelector('#gpxShowAll')?.addEventListener('click', ()=>{ __setAllGpx(true); __renderGpxPanel(); });
   panel.querySelector('#gpxHideAll')?.addEventListener('click', ()=>{ __setAllGpx(false); __renderGpxPanel(); });
   panel.querySelector('#gpxFitAll')?.addEventListener('click', ()=>{ __fitAllGpx(); });
@@ -7877,7 +8413,7 @@ function __setGpxVisible(id, on){
   const f = state.gpx.files.get(id);
   if(!f) return;
   f.visible = !!on;
-  if(f.visible){
+  if(f.visible && __isVisitedLayerEnabled()){
     if(!map.hasLayer(f.layer)) map.addLayer(f.layer);
   }else{
     if(map.hasLayer(f.layer)) map.removeLayer(f.layer);
@@ -7926,14 +8462,28 @@ async function __deleteGpx(id){
 
   try{
     const ref = FB.doc(db, 'trips', state.currentTripId);
-    await FB.updateDoc(ref, { [`journal.${id}`]: FB.deleteField() });
+    const patch = {};
+    const ids = Array.isArray(f.ids) && f.ids.length ? f.ids : [id];
+    ids.forEach(journalId => { patch[`journal.${journalId}`] = FB.deleteField(); });
+    await FB.updateDoc(ref, patch);
   }catch(e){
     console.error('delete gpx failed', e);
   }
 
   state.gpx.files.delete(id);
   state.gpx.order = state.gpx.order.filter(x=>x!==id);
-  try{ if(state.current && state.current.journal) delete state.current.journal[id]; }catch(_){}
+  try{
+    if(state.current && state.current.journal){
+      const ids = Array.isArray(f.ids) && f.ids.length ? f.ids : [id];
+      ids.forEach(journalId => { delete state.current.journal[journalId]; });
+    }
+  }catch(_){}
+  try{
+    if(state.current) renderJournal(state.current, state.journalSort);
+  }catch(_){}
+  try{
+    if(state.current) renderAllTimeline(state.current, state.allSort);
+  }catch(_){}
   if(typeof toast==='function') toast('נמחק');
   __renderGpxPanel();
 }
@@ -8092,7 +8642,6 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     if (!root) return;
 
     const input = document.getElementById('searchAll');
-    const modeSel = document.getElementById('overviewMode');
     const count = document.getElementById('allHitCount');
     const prev = document.getElementById('btnAllPrev');
     const next = document.getElementById('btnAllNext');
@@ -8100,32 +8649,11 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
 
     if (!input || !count || !prev || !next || !toggle) return;
 
-    // Overview filter mode (default: show all)
-    (function bindMode(){
-      if (!modeSel) return;
-      // load preference
-      try{
-        const stored = localStorage.getItem('overviewMode');
-        if (stored) state.overviewMode = stored;
-      }catch(_){ }
-      if (!state.overviewMode) state.overviewMode = 'all';
-      modeSel.value = String(state.overviewMode);
-
-      if (!modeSel.dataset.bound){
-        modeSel.addEventListener('change', ()=>{
-          const v = (modeSel.value || 'all');
-          state.overviewMode = v;
-          try{ localStorage.setItem('overviewMode', v); }catch(_){ }
-          try{ syncOverviewTabLabel(); }catch(_){ }
-          // re-render timeline with the new filter
-          try{ if (state.current) renderAllTimeline(state.current, state.allSort); }catch(_){ }
-          // reapply collapse button text + rerun search (if any)
-          try{ applyCollapsedUI(); }catch(_){ }
-          try{ runSearch(); }catch(_){ }
-        });
-        modeSel.dataset.bound = '1';
-      }
-    })();
+    try{
+      const stored = localStorage.getItem('overviewMode');
+      if (stored) state.overviewMode = stored;
+    }catch(_){ }
+    if (!state.overviewMode) state.overviewMode = 'all';
 
     // In global-collapsed mode, clicking a header row should toggle ONLY its own details row
     const tbody = document.getElementById('tblAllTimeline');
@@ -8324,3 +8852,12 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
     wire();
   }
 })();
+
+
+/* === responsive repair override === */
+document.addEventListener('DOMContentLoaded', ()=>{
+  try{ normalizeMobileOverviewHeader(); }catch(_){}
+});
+window.addEventListener('resize', ()=>{
+  try{ normalizeMobileOverviewHeader(); }catch(_){}
+});

@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">  <title>FLYMILY — מנהל נסיעות</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">  <title>FLYMILY — מנהל נסיעות</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,7 +72,7 @@
           <button id="btnNewTrip" class="btn primary">+ נסיעה חדשה</button>
         </div>
         <div class="list-actions" id="tripSearchActions">
-          <input id="searchTrips" class="input" placeholder="חפש נסיעה / מילה" />
+          <input id="searchTrips" class="input" type="search" name="trip-search" placeholder="חפש נסיעה / מילה" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" />
           <button id="btnSortTrips" class="btn">מיין תאריך יציאה</button>
         </div>
         <div class="list-actions" id="tripViewActions">
@@ -85,19 +85,6 @@
 
       <main class="content" id="main">
         <nav class="tabs" id="tabs" style="display:none">
-          
-          <!-- Overview tab as dropdown: All / Expenses / Journal -->
-          <div class="tab-select-wrap active" data-tab="overview" aria-label="בחירת תצוגה">
-            <select id="overviewTabSelect" class="tab-select" dir="rtl" aria-label="בחירת תצוגה">
-              <option value="meta">נתוני נסיעה</option>
-              <option value="mix" selected>הצג יומן + הוצאות</option>
-              <option value="journal">הצג יומן</option>
-              <option value="expenses">הצג הוצאות</option>
-              <option value="map">מפה</option>
-              <option value="share">ייבוא / ייצוא / שיתוף</option>
-              <option value="breakdown">פילוח</option>
-            </select>
-          </div>
           
           <button data-tab="meta">נתוני נסיעה</button>
           
@@ -112,14 +99,10 @@
             <span id="allHitCount" class="muted hits">0/0</span>
             <button id="btnAllPrev" class="btn nav-btn" type="button" aria-label="תוצאה קודמת">↑</button>
             <button id="btnAllNext" class="btn nav-btn" type="button" aria-label="תוצאה הבאה">↓</button>
-            <!-- mode selector moved into the Overview tab dropdown (overviewTabSelect) -->
-            <select id="overviewMode" class="input mode-select" dir="rtl" aria-label="סינון להצג הכל" hidden>
-              <option value="all">הצג הכל</option>
-              <option value="expenses">הצג הוצאות</option>
-              <option value="journal">הצג יומן</option>
-            </select>
             <input id="searchAll" class="input search-input" type="search" placeholder="חיפוש בכל ההצג הכל" dir="rtl" autocomplete="off">
             <div class="overview-quick">
+              <button id="btnOverviewDeleteSelectedJournal" class="btn danger" type="button" hidden>מחק נבחרים</button>
+              <button id="btnOverviewCancelSelectionJournal" class="btn" type="button" hidden>בטל בחירה</button>
               <button id="btnQuickAddExpense" class="btn danger" type="button">+ הוצאה</button>
               <button id="btnQuickAddJournal" class="btn success" type="button">+ יומן</button>
 </div>
@@ -200,6 +183,8 @@
           <div class="list-actions">
             <button id="btnAddJournal" class="btn primary">הוסף רישום</button>
             <button id="btnSortJournal" class="btn">מיין</button>
+            <button id="btnDeleteSelectedJournal" class="btn danger">מחק נבחרים</button>
+            <button id="btnCancelSelectionJournal" class="btn" style="display:none">בטל בחירה</button>
             <button id="btnToggleJournalDetails" class="btn">צמצם הכל</button>
           </div>
           <div class="card expenses-table-container" style="padding:0">
@@ -354,38 +339,52 @@ id="expenseModal" class="modal">
       <label>כותרת<input id="expTitle" autocomplete="off" class="input" placeholder="כותרת להוצאה"/></label>
       <label>תיאור<div id="expText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true" placeholder="כתוב תיאור ההוצאה."></div></label>
 <div id="rtfBubbleExp" class="rtf-bubble" hidden><div class="colors"><button class="dot" data-color="#FFD60A" title="צהוב"></button><button class="dot" data-color="#E53935" title="אדום"></button><button class="dot" data-color="#1E88E5" title="כחול"></button><button class="dot" data-color="#34A853" title="ירוק"></button><button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button></div><div class="styles"><button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button><button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button><button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button></div></div>
-      <label>קטגוריה
-        <select id="expCat" class="input">
-          <option value="">בחר...</option>
-          <option>טיסה</option>
-          <option>לינה</option>
-          <option>תקשורת</option>
-          <option>תחבורה</option>
-          <option>ביטוח בריאות</option>
-          <option>מזון - מסעדות / סופר</option>
-          <option>קניות</option>
-          <option>אטרקציות</option>
-          <option>אחר</option>
-        </select>
-      </label>
-      <div class="row"><label>סכום<input id="expAmount" type="number" class="input money" inputmode="decimal" enterkeyhint="done" step="0.01" autocomplete="off"></label><label>מטבע<select id="expCurr" class="input"><option>USD</option><option>EUR</option><option>ILS</option></select></label></div>
-      <div class="row">
-        <label>תאריך
-          <input type="date" id="expDate" class="input">
+      <div class="row expense-main-row">
+        <label class="expense-cat-col">קטגוריה
+          <select id="expCat" class="input">
+            <option value="">בחר...</option>
+            <option>טיסה</option>
+            <option>לינה</option>
+            <option>תקשורת</option>
+            <option>תחבורה</option>
+            <option>ביטוח בריאות</option>
+            <option>מזון - מסעדות / סופר</option>
+            <option>קניות</option>
+            <option>אטרקציות</option>
+            <option>אחר</option>
+          </select>
         </label>
-        <label>שעה
-          <input type="time" id="expTime" class="input">
+        <label class="expense-amount-col">סכום<input id="expAmount" type="number" class="input money" inputmode="decimal" enterkeyhint="done" step="0.01" autocomplete="off"></label>
+        <label class="expense-currency-col">מטבע
+          <button id="expCurrBtn" type="button" class="input expense-currency-button" aria-label="מטבע" title="החלפת מטבע">¤</button>
+          <input id="expCurr" type="hidden" value="">
         </label>
       </div>
-
-	      <!-- מיקום: נשמר אוטומטית. לעריכה - לחיצה על "מיקום" -->
-	      <div class="row location-compact">
-	        <button id="btnEditExpLocation" class="btn location-btn" type="button">מיקום</button>
-	        <div id="expLocationPreview" class="muted" aria-live="polite"></div>
-	        <input id="expLocationName" autocomplete="off" class="input" style="display:none" />
-	        <input type="hidden" id="expLat" />
-	        <input type="hidden" id="expLng" />
-	      </div>
+      <div class="row expense-meta-row">
+        <label class="exp-date-col">תאריך
+          <input type="date" id="expDate" class="input">
+        </label>
+        <label class="exp-time-col">שעה
+          <input type="time" id="expTime" class="input">
+        </label>
+        <div class="exp-location-col location-compact">
+          <button id="btnEditExpLocation" class="btn location-btn journal-location-trigger expense-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">
+            <span class="journal-location-trigger-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-hidden="true">
+                <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z"></path>
+                <path d="M9 4v13.5"></path>
+                <path d="M15 6.5V20"></path>
+                <path d="M12 11.4a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8Z"></path>
+              </svg>
+            </span>
+            <span class="journal-location-trigger-label">מיקום / עריכה</span>
+          </button>
+          <div id="expLocationPreview" class="muted" aria-live="polite"></div>
+          <input id="expLocationName" autocomplete="off" class="input" style="display:none" />
+          <input type="hidden" id="expLat" />
+          <input type="hidden" id="expLng" />
+        </div>
+      </div>
     </div>
     <div class="footer">
       <button id="expSave" class="btn primary">שמור</button>
@@ -474,7 +473,17 @@ id="expenseModal" class="modal">
           <input type="time" id="jrTime" class="input">
         </label>
         <div class="jr-location-col location-compact">
-          <button id="btnEditJrLocation" class="btn location-btn" type="button">מיקום / עריכה</button>
+          <button id="btnEditJrLocation" class="btn location-btn journal-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">
+            <span class="journal-location-trigger-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-hidden="true">
+                <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z"></path>
+                <path d="M9 4v13.5"></path>
+                <path d="M15 6.5V20"></path>
+                <path d="M12 11.4a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8Z"></path>
+              </svg>
+            </span>
+            <span class="journal-location-trigger-label">מיקום / עריכה</span>
+          </button>
           <div id="jrLocationPreview" class="muted" aria-live="polite"></div>
         </div>
         <input id="jrPlaceName" autocomplete="off" class="input" style="display:none" />
