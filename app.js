@@ -2445,7 +2445,7 @@ async function openTrip(id){
   enterTripMode();
   $$('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
-  first.classList.add('active');
+  if(first) first.classList.add('active');
   showView('overview');
   state.overviewMode = 'all';
   try { localStorage.setItem('overviewMode', 'all'); } catch (_) {}

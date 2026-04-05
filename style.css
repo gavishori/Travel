@@ -1831,6 +1831,25 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
   line-height:1;
 }
 
+@media (min-width: 721px){
+  #view-overview .expenses-table td.map-cell,
+  #view-journal .expenses-table td.map-cell,
+  #tblAllTimeline td.map-cell,
+  #tblJournal td.map-cell{
+    width:120px !important;
+    padding-inline:14px 6px !important;
+    text-align:center !important;
+  }
+
+  #view-overview .expenses-table .map-action-btn,
+  #view-journal .expenses-table .map-action-btn,
+  #tblAllTimeline .map-action-btn,
+  #tblJournal .map-action-btn{
+    min-width:74px;
+    padding:6px 8px;
+  }
+}
+
 
 /* highlight on 'הצג' focus */
 .pulse { outline: 2px solid #ff9800; box-shadow: 0 0 0 4px rgba(255,152,0,.3); transition: box-shadow .3s; }
