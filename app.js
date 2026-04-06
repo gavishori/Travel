@@ -1489,21 +1489,30 @@ function attachMapPopup(marker, type, id, dataObj){
     const descLine = rawDesc ? `<div style="margin-top:4px; word-break: break-word;"><strong>תיאור:</strong> <span class="muted">${linkifyText(rawDesc)}</span></div>` : '';
 
     const html = `
-      <div class="map-popup" style="direction: rtl; text-align: right;">
-        <div><strong>${isExp?'הוצאה':'יומן'}</strong></div>
-        <div><strong>תאריך:</strong> ${esc(date||'')}</div>
-        ${amountLine}
-        ${catLine}
-        <div><strong>מקום:</strong> ${place}</div>
-        ${descLine}
-        <div class="popup-actions" style="display:flex;gap:.5rem;margin-top:.5rem; justify-content: flex-end;">
+      <div class="map-popup" dir="rtl">
+        <div class="map-popup-body">
+          <div class="map-popup-line"><strong>${isExp?'הוצאה':'יומן'}</strong></div>
+          <div class="map-popup-line"><strong>תאריך:</strong> ${esc(date||'')}</div>
+          ${amountLine ? `<div class="map-popup-line">${amountLine.replace(/^<div>|<\/div>$/g, '')}</div>` : ''}
+          ${catLine ? `<div class="map-popup-line">${catLine.replace(/^<div>|<\/div>$/g, '')}</div>` : ''}
+          <div class="map-popup-line"><strong>מקום:</strong> ${place}</div>
+          ${rawDesc ? `<div class="map-popup-desc"><strong>תיאור:</strong> <span class="muted">${linkifyText(rawDesc)}</span></div>` : ''}
+        </div>
+        <div class="popup-actions">
           <button class="btn small" data-act="show" data-type="${isExp?'expense':'journal'}" data-id="${id}">הצג</button>
           ${state.shared.readOnly ? '' : `<button class="btn small" data-act="edit" data-type="${isExp?'expense':'journal'}" data-id="${id}">ערוך</button>`}
           ${state.shared.readOnly ? '' : `<button class="btn small danger" data-act="delete" data-type="${isExp?'expense':'journal'}" data-id="${id}">מחק</button>`}
         </div>
       </div>`;
 
-    marker.bindPopup(html);
+    marker.bindPopup(html, {
+      className: 'map-popup-shell',
+      maxWidth: Math.min(((window.visualViewport && window.visualViewport.width) || window.innerWidth || 520) - 24, 520),
+      minWidth: 260,
+      autoPan: true,
+      autoPanPaddingTopLeft: [16, 16],
+      autoPanPaddingBottomRight: [16, 16]
+    });
     marker.on('popupopen', (ev)=>{
       const root = ev.popup.getElement();
       if(!root) return;

@@ -1854,6 +1854,66 @@ header .btn:has(svg rect[x="5"][y="2"][width="14"][height="20"]) { display:none 
 /* highlight on 'הצג' focus */
 .pulse { outline: 2px solid #ff9800; box-shadow: 0 0 0 4px rgba(255,152,0,.3); transition: box-shadow .3s; }
 .map-popup .btn.small { font-size:.85rem; padding:.25rem .5rem; }
+.map-popup-shell .leaflet-popup-content-wrapper{
+  border-radius:18px;
+  padding:0;
+}
+.map-popup-shell .leaflet-popup-content{
+  margin:0 !important;
+  width:min(520px, calc(100vw - 40px)) !important;
+}
+.map-popup{
+  direction:rtl;
+  text-align:right;
+  display:flex;
+  flex-direction:column;
+  max-height:min(70vh, calc(var(--vvh, 100dvh) - 180px));
+}
+.map-popup-body{
+  padding:14px 16px 10px;
+  overflow-y:auto;
+  max-height:calc(min(70vh, calc(var(--vvh, 100dvh) - 180px)) - 56px);
+}
+.map-popup-line{
+  margin:0 0 6px;
+  line-height:1.5;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.map-popup-desc{
+  margin-top:8px;
+  line-height:1.65;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+.map-popup .popup-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  padding:10px 16px 14px;
+  border-top:1px solid var(--border);
+  background:var(--card);
+  position:sticky;
+  bottom:0;
+}
+
+@media (max-width: 820px){
+  .map-popup-shell .leaflet-popup-content{
+    width:calc(100vw - 28px) !important;
+  }
+  .map-popup{
+    max-height:calc(var(--vvh, 100dvh) - 148px);
+  }
+  .map-popup-body{
+    max-height:calc(var(--vvh, 100dvh) - 214px);
+    padding:12px 14px 8px;
+  }
+  .map-popup .popup-actions{
+    padding:10px 14px 12px;
+    flex-wrap:wrap;
+  }
+}
 
 
 /* Auto-resize helper for textareas */
@@ -8835,7 +8895,7 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 
   /* GPX button: subtle */
-  body.mobile-ui .map-toolbar #btnImportGpx {
+  body.mobile-ui .map-toolbar #btnToggleGPX {
     background: #fff !important;
     border: 1.5px solid #dde3ee !important;
     color: #3a4a5e !important;
@@ -8847,5 +8907,175 @@ button, .btn, .menu-btn, select, input, textarea {
     min-height: 360px !important;
     border-radius: 20px !important;
     overflow: hidden !important;
+  }
+}
+
+/* ================================================================
+   MOBILE SANITY FINAL
+   ================================================================ */
+@media (max-width: 820px){
+  html, body{
+    overflow-x:hidden !important;
+  }
+
+  body.mobile-ui{
+    min-height:100dvh !important;
+    overflow-y:auto !important;
+  }
+
+  body.mobile-ui .container,
+  body.mobile-ui .container.trip-mode,
+  body.mobile-ui .container.home-mode{
+    min-height:calc(var(--vvh, 100dvh) - 56px) !important;
+    height:auto !important;
+  }
+
+  body.mobile-ui .content{
+    overflow:visible !important;
+    min-height:0 !important;
+  }
+
+  body.mobile-ui .tabview{
+    max-width:100% !important;
+    overflow:visible !important;
+  }
+
+  body.mobile-ui .card,
+  body.mobile-ui .expenses-table-container,
+  body.mobile-ui .share-card,
+  body.mobile-ui .meta-single{
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui dialog.modal[open]{
+    width:min(96vw, 560px) !important;
+    max-width:min(96vw, 560px) !important;
+    max-height:calc(var(--vvh, 100dvh) - 12px - env(safe-area-inset-bottom, 0px)) !important;
+    margin:auto !important;
+  }
+
+  body.mobile-ui .modal .body{
+    max-height:calc(var(--vvh, 100dvh) - 156px - env(safe-area-inset-bottom, 0px)) !important;
+    overflow:auto !important;
+    overscroll-behavior:contain !important;
+  }
+
+  body.mobile-ui .modal .footer{
+    position:sticky !important;
+    bottom:0 !important;
+    z-index:2 !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr) 72px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 104px 44px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row > label,
+  body.mobile-ui #journalModal .journal-meta-row > label{
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-location-col.location-compact,
+  body.mobile-ui #journalModal .jr-location-col.location-compact{
+    grid-column:auto !important;
+    display:flex !important;
+    align-items:flex-end !important;
+    justify-content:center !important;
+    padding-top:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-date-col input,
+  body.mobile-ui #journalModal .jr-date-col input{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:42px !important;
+    min-height:42px !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-time-col input,
+  body.mobile-ui #journalModal .jr-time-col input{
+    width:104px !important;
+    min-width:104px !important;
+    max-width:104px !important;
+    height:42px !important;
+    min-height:42px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:44px !important;
+    min-width:44px !important;
+    max-width:44px !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    justify-content:center !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-location-trigger .journal-location-trigger-label,
+  body.mobile-ui #journalModal .journal-location-trigger .journal-location-trigger-label{
+    display:none !important;
+  }
+
+  body.mobile-ui #expenseModal #expLocationPreview,
+  body.mobile-ui #journalModal #jrLocationPreview{
+    display:none !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table,
+  body.mobile-ui #view-expenses .expenses-table,
+  body.mobile-ui #view-journal .expenses-table,
+  body.mobile-ui #tblAllTimeline,
+  body.mobile-ui #tblExpenses,
+  body.mobile-ui #tblJournal{
+    width:100% !important;
+  }
+}
+
+@media (max-width: 560px){
+  body.mobile-ui #expenseModal .expense-main-row{
+    grid-template-columns:minmax(0,1fr) minmax(0,.9fr) 64px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    grid-template-columns:minmax(0,1fr) 92px 40px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-time-col input,
+  body.mobile-ui #journalModal .jr-time-col input{
+    width:92px !important;
+    min-width:92px !important;
+    max-width:92px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:40px !important;
+    min-width:40px !important;
+    max-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+  }
+
+  body.mobile-ui #bigMap{
+    height:calc(var(--vvh, 100dvh) - 198px) !important;
+    min-height:260px !important;
   }
 }
