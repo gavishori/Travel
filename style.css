@@ -8334,3 +8334,313 @@ button, .btn, .menu-btn, select, input, textarea {
     line-height:1.35 !important;
   }
 }
+
+
+/* ================================================================
+   MOBILE VISUAL PATCH v2 – מסך נתוני נסיעה + סרגל כפתורי מפה
+   ================================================================ */
+
+@media (max-width: 820px) {
+
+  /* ────────────────────────────────────────────────────────────
+     SCREEN 1 — נתוני נסיעה (trip meta form)
+  ──────────────────────────────────────────────────────────── */
+
+  /* Card wrapper: tighter, clean */
+  body.mobile-ui #view-meta .meta-single {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body.mobile-ui #view-meta .card {
+    background: #fff !important;
+    border-radius: 24px !important;
+    border: none !important;
+    box-shadow: 0 2px 16px rgba(15,23,42,.07) !important;
+    padding: 20px 18px 18px !important;
+    gap: 14px !important;
+    margin-bottom: 14px !important;
+  }
+
+  /* Section heading */
+  body.mobile-ui #view-meta h2 {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    padding-inline-start: 0 !important;
+    margin: 0 0 4px !important;
+    color: #0f1115 !important;
+  }
+
+  /* Destination row */
+  body.mobile-ui #view-meta .dest-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row .dest-col {
+    font-size: .82rem !important;
+    font-weight: 600 !important;
+    color: #7a8899 !important;
+    margin-bottom: 6px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row input,
+  body.mobile-ui #view-meta .dest-row .input {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    height: 50px !important;
+    border-radius: 16px !important;
+    padding: 12px 14px !important;
+    background: #f6f8fb !important;
+    border: 1px solid #e5eaf1 !important;
+  }
+
+  /* Map verify button: hide entirely on mobile — takes up space for no benefit */
+  body.mobile-ui #view-meta .btn.map-btn,
+  body.mobile-ui #btnVerifyOnMap {
+    display: none !important;
+  }
+
+  /* Date row: 2 columns */
+  body.mobile-ui #view-meta .date-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .people-input {
+    grid-column: 1 / -1 !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .multi-types {
+    grid-column: 1 / -1 !important;
+    margin-top: 2px !important;
+  }
+
+  /* Label text */
+  body.mobile-ui #view-meta label {
+    font-size: .8rem !important;
+    font-weight: 600 !important;
+    color: #7a8899 !important;
+    gap: 5px !important;
+    letter-spacing: .01em !important;
+  }
+
+  /* All inputs */
+  body.mobile-ui #view-meta .input,
+  body.mobile-ui #view-meta input[type="date"],
+  body.mobile-ui #view-meta select {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 10px 14px !important;
+    font-size: .97rem !important;
+    border-radius: 14px !important;
+    background: #f6f8fb !important;
+    border: 1px solid #e5eaf1 !important;
+    width: 100% !important;
+  }
+
+  /* Chips — trip type selector */
+  body.mobile-ui #view-meta .date-row .multi-types .lbl {
+    font-size: .8rem !important;
+    font-weight: 600 !important;
+    color: #7a8899 !important;
+    margin-bottom: 4px !important;
+  }
+
+  body.mobile-ui #view-meta .chips {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 14px !important;
+    font-size: .86rem !important;
+    font-weight: 600 !important;
+    border-radius: 999px !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    border: 1.5px solid #dde3ee !important;
+    background: #f6f8fb !important;
+    color: #3a4a5e !important;
+    transition: background .15s, border-color .15s, color .15s !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip.active {
+    background: #1a56e8 !important;
+    border-color: #1a56e8 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(26,86,232,.25) !important;
+  }
+
+  /* Budget block */
+  body.mobile-ui #view-meta .budget-block {
+    background: #f6f8fb !important;
+    border: 1px solid #e5eaf1 !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+    gap: 12px !important;
+    margin-top: 0 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-block h3 {
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 4px !important;
+    color: #0f1115 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row label {
+    align-items: flex-end !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row .input {
+    background: #fff !important;
+    border: 1px solid #dde3ee !important;
+    text-align: right !important;
+    font-weight: 700 !important;
+    color: #1a2030 !important;
+    width: 100% !important;
+  }
+
+  /* Save + Cancel buttons: clean full-width side by side */
+  body.mobile-ui #view-meta .budget-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin: 4px 0 0 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-actions-row .btn {
+    width: 100% !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    border-radius: 16px !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+  }
+
+  /* Save button: green, Cancel: subtle */
+  body.mobile-ui #view-meta .budget-actions-row .btn.primary,
+  body.mobile-ui #view-meta .budget-actions-row .btn[id*="save"],
+  body.mobile-ui #view-meta .budget-actions-row .btn[id*="Save"] {
+    background: #19a65a !important;
+    border-color: #19a65a !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgba(25,166,90,.28) !important;
+    order: 2 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-actions-row .btn:not(.primary):not([id*="save"]):not([id*="Save"]) {
+    background: #fff !important;
+    border: 1.5px solid #dde3ee !important;
+    color: #3a4a5e !important;
+    order: 1 !important;
+  }
+
+  /* Hide the standalone save row (above budget) — we use budget-actions-row */
+  body.mobile-ui #view-meta .row:has(#btnSaveMeta) {
+    display: none !important;
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     SCREEN 2 — Map toolbar buttons (אייפה טיילתי / ביזבזתי)
+  ──────────────────────────────────────────────────────────── */
+
+  body.mobile-ui .map-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 0 0 10px 0 !important;
+    padding-inline-start: 54px !important;
+    margin: 0 0 10px !important;
+    width: 100% !important;
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 1200 !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  body.mobile-ui .map-toolbar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    font-size: .88rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,.12) !important;
+    letter-spacing: .01em !important;
+  }
+
+  /* Override the inline-start padding pill shapes for visited/spent */
+  body.mobile-ui .map-toolbar #btnToggleVisited {
+    border: 2px solid #34a853 !important;
+    color: #34a853 !important;
+    background: #fff !important;
+  }
+  body.mobile-ui .map-toolbar #btnToggleVisited.active {
+    background: #34a853 !important;
+    color: #fff !important;
+    border-color: #34a853 !important;
+    box-shadow: 0 3px 12px rgba(52,168,83,.32) !important;
+  }
+
+  body.mobile-ui .map-toolbar #btnToggleSpent {
+    border: 2px solid #e53935 !important;
+    color: #e53935 !important;
+    background: #fff !important;
+  }
+  body.mobile-ui .map-toolbar #btnToggleSpent.active {
+    background: #e53935 !important;
+    color: #fff !important;
+    border-color: #e53935 !important;
+    box-shadow: 0 3px 12px rgba(229,57,53,.32) !important;
+  }
+
+  /* GPX button: subtle */
+  body.mobile-ui .map-toolbar #btnImportGpx {
+    background: #fff !important;
+    border: 1.5px solid #dde3ee !important;
+    color: #3a4a5e !important;
+  }
+
+  /* Large bottom gap after map on mobile: fix */
+  body.mobile-ui #bigMap {
+    height: calc(var(--vvh, 100dvh) - 220px) !important;
+    min-height: 360px !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+  }
+}
