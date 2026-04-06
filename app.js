@@ -836,6 +836,29 @@ function syncJournalSelectionUi(){
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
       add('מפה', ()=> setOverviewSelectValue('map'));
       add('תקציב', ()=> openCurrentBudgetSummary());
+    } else if(currentSection === 'meta'){
+      title.textContent = 'נתוני נסיעה';
+      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
+      add('הצג יומן', ()=> setOverviewSelectValue('journal'));
+      add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
+      add('מפה', ()=> setOverviewSelectValue('map'));
+      add('ייבוא / ייצוא / שיתוף', ()=> setOverviewSelectValue('share'));
+      add('בדוק במפה', ()=> triggerButton('btnVerifyOnMap'));
+    } else if(currentSection === 'map'){
+      title.textContent = 'מפה';
+      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
+      add('הצג יומן', ()=> setOverviewSelectValue('journal'));
+      add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
+      add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
+      add('ייבוא / ייצוא / שיתוף', ()=> setOverviewSelectValue('share'));
+      add('איפה ביקרתי', ()=> triggerButton('btnToggleVisited'));
+      add('איפה ביזבזתי', ()=> triggerButton('btnToggleSpent'));
+      add('GPX', ()=> triggerButton('btnToggleGPX'));
+    } else if(currentSection === 'share'){
+      title.textContent = 'ייבוא / ייצוא / שיתוף';
+      add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
+      add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
+      add('מפה', ()=> setOverviewSelectValue('map'));
     } else if(currentSection === 'expenses'){
       title.textContent = 'פעולות הוצאות';
       add('+ הוסף הוצאה', ()=> triggerButton('btnAddExpense'), 'primary');
@@ -1002,8 +1025,11 @@ function syncJournalSelectionUi(){
     ensureMobileSectionMenuDialog();
     ensureSectionButton('#view-overview', 'mobileOverviewMenuBtn', 'פעולות תצוגה', 'overview');
     ensureOverviewActionRail();
+    ensureSectionButton('#view-meta .meta-single', 'mobileMetaMenuBtn', 'פעולות נתוני נסיעה', 'meta');
     ensureSectionButton('#view-expenses .list-actions', 'mobileExpensesMenuBtn', 'פעולות הוצאות', 'expenses');
     ensureSectionButton('#view-journal .list-actions', 'mobileJournalMenuBtn', 'פעולות יומן', 'journal');
+    ensureSectionButton('#view-map', 'mobileMapMenuBtn', 'פעולות מפה', 'map');
+    ensureSectionButton('#view-share .share-page', 'mobileShareMenuBtn', 'פעולות שיתוף', 'share');
     syncMobileViewportVars();
     wireMobileFieldComfort();
   }

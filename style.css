@@ -8123,3 +8123,214 @@ button, .btn, .menu-btn, select, input, textarea {
     border-radius: 14px !important;
   }
 }
+
+/* ============================================================
+   MOBILE DENSITY PATCH - meta/map/share screens
+   ============================================================ */
+@media (max-width: 820px){
+  body.mobile-ui .tabview{
+    padding-top:10px !important;
+  }
+
+  body.mobile-ui #view-meta,
+  body.mobile-ui #view-map,
+  body.mobile-ui #view-share{
+    padding-top:8px !important;
+  }
+
+  body.mobile-ui #mobileMetaMenuBtn,
+  body.mobile-ui #mobileMapMenuBtn,
+  body.mobile-ui #mobileShareMenuBtn{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:6px !important;
+    min-width:44px !important;
+    width:44px !important;
+    height:44px !important;
+    min-height:44px !important;
+    padding:0 !important;
+    border-radius:14px !important;
+    font-size:17px !important;
+    background:rgba(255,255,255,.88) !important;
+    box-shadow:var(--mobile-shadow) !important;
+  }
+
+  body.mobile-ui #mobileMetaMenuBtn .mobile-action-text,
+  body.mobile-ui #mobileMapMenuBtn .mobile-action-text,
+  body.mobile-ui #mobileShareMenuBtn .mobile-action-text{
+    display:none !important;
+  }
+
+  body.mobile-ui #view-meta .meta-single,
+  body.mobile-ui #view-share .share-page{
+    position:relative !important;
+  }
+
+  body.mobile-ui #view-meta .meta-single{
+    padding:12px !important;
+    border-radius:20px !important;
+  }
+
+  body.mobile-ui #view-meta .meta-single > #mobileMetaMenuBtn{
+    position:absolute !important;
+    top:12px !important;
+    left:12px !important;
+    z-index:3 !important;
+  }
+
+  body.mobile-ui #view-meta h2,
+  body.mobile-ui #view-share h2{
+    margin:0 0 10px !important;
+    padding-inline-start:54px !important;
+    font-size:1.5rem !important;
+    line-height:1.05 !important;
+  }
+
+  body.mobile-ui #view-meta .card .row,
+  body.mobile-ui #view-meta .date-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    margin:0 0 10px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 112px !important;
+    align-items:end !important;
+    gap:10px !important;
+    margin:0 0 10px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row .dest-col{
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .people-input{
+    grid-column:1 / -1 !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .multi-types{
+    grid-column:1 / -1 !important;
+    margin-top:0 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-block{
+    margin-top:8px !important;
+    padding:10px !important;
+    border-radius:18px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-block h3{
+    margin:0 0 8px !important;
+    font-size:1.15rem !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row{
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin:0 0 8px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-actions-row{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+    margin:0 !important;
+  }
+
+  body.mobile-ui #view-meta label{
+    font-size:.9rem !important;
+    gap:5px !important;
+  }
+
+  body.mobile-ui #view-meta .input,
+  body.mobile-ui #view-meta input[type="date"],
+  body.mobile-ui #view-meta .btn.map-btn,
+  body.mobile-ui #view-meta .budget-actions-row .btn{
+    width:100% !important;
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:8px 10px !important;
+    font-size:.95rem !important;
+    border-radius:14px !important;
+  }
+
+  body.mobile-ui #view-meta .chips{
+    display:grid !important;
+    grid-template-columns:repeat(5, minmax(0,1fr)) !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip{
+    min-width:0 !important;
+    height:38px !important;
+    min-height:38px !important;
+    padding:6px 4px !important;
+    font-size:.84rem !important;
+    border-radius:999px !important;
+  }
+
+  body.mobile-ui #view-map{
+    position:relative !important;
+  }
+
+  body.mobile-ui #view-map > #mobileMapMenuBtn{
+    position:absolute !important;
+    top:12px !important;
+    left:12px !important;
+    z-index:1301 !important;
+  }
+
+  body.mobile-ui .map-toolbar{
+    position:relative !important;
+    inset:auto !important;
+    left:auto !important;
+    top:auto !important;
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin:0 0 10px !important;
+    padding-inline-start:56px !important;
+    z-index:1200 !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    width:100% !important;
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:0 8px !important;
+    border-radius:14px !important;
+    font-size:.88rem !important;
+    line-height:1.1 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  body.mobile-ui #bigMap{
+    height:calc(var(--vvh, 100dvh) - 250px) !important;
+    min-height:360px !important;
+    border-radius:20px !important;
+  }
+
+  body.mobile-ui #view-share .share-head{
+    margin-bottom:10px !important;
+    padding-inline-start:54px !important;
+  }
+
+  body.mobile-ui #view-share .share-head h2{
+    padding-inline-start:0 !important;
+    font-size:1.42rem !important;
+  }
+
+  body.mobile-ui #view-share .share-head .muted{
+    margin-top:4px !important;
+    font-size:.88rem !important;
+    line-height:1.35 !important;
+  }
+}
