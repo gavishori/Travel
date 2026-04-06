@@ -8335,6 +8335,211 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 }
 
+/* ============================================================
+   MOBILE META/MAP COMPACT FINAL OVERRIDE
+   ============================================================ */
+@media (max-width: 820px){
+  body.mobile-ui #view-meta,
+  body.mobile-ui #view-map,
+  body.mobile-ui #view-share{
+    padding:8px 10px 12px !important;
+  }
+
+  body.mobile-ui #view-meta h2,
+  body.mobile-ui #view-map h2,
+  body.mobile-ui #view-share h2{
+    margin:0 0 8px !important;
+    font-size:1.32rem !important;
+    line-height:1.05 !important;
+  }
+
+  body.mobile-ui #view-meta .card.meta-single{
+    padding:10px !important;
+    border-radius:18px !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 92px !important;
+    gap:8px !important;
+    align-items:end !important;
+    margin:0 0 8px !important;
+  }
+
+  body.mobile-ui #view-meta .date-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin:0 0 8px !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .people-input,
+  body.mobile-ui #view-meta .date-row .multi-types{
+    grid-column:1 / -1 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-block{
+    padding:8px !important;
+    margin-top:6px !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-block h3{
+    margin:0 0 6px !important;
+    font-size:1rem !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row{
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin:0 0 8px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-actions-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin:0 !important;
+  }
+
+  body.mobile-ui #view-meta label{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:4px !important;
+    font-size:.82rem !important;
+    line-height:1.1 !important;
+  }
+
+  body.mobile-ui #view-meta .input,
+  body.mobile-ui #view-meta input[type="date"],
+  body.mobile-ui #view-meta .btn.map-btn,
+  body.mobile-ui #view-meta .budget-actions-row .btn{
+    height:38px !important;
+    min-height:38px !important;
+    padding:6px 10px !important;
+    border-radius:12px !important;
+    font-size:.9rem !important;
+  }
+
+  body.mobile-ui #view-meta .chips{
+    display:grid !important;
+    grid-template-columns:repeat(5, minmax(0,1fr)) !important;
+    gap:6px !important;
+    margin-top:2px !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip{
+    height:34px !important;
+    min-height:34px !important;
+    padding:4px 2px !important;
+    font-size:.78rem !important;
+    border-radius:999px !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .multi-types .lbl{
+    margin-bottom:4px !important;
+    font-size:.82rem !important;
+  }
+
+  body.mobile-ui #view-map > #mobileMapMenuBtn{
+    top:8px !important;
+    left:8px !important;
+  }
+
+  body.mobile-ui .map-toolbar{
+    grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+    gap:8px !important;
+    padding-inline-start:52px !important;
+    margin:0 0 8px !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    height:38px !important;
+    min-height:38px !important;
+    padding:0 6px !important;
+    border-radius:12px !important;
+    font-size:.8rem !important;
+    font-weight:700 !important;
+  }
+
+  body.mobile-ui #bigMap{
+    height:calc(var(--vvh, 100dvh) - 205px) !important;
+    min-height:300px !important;
+  }
+
+  body.mobile-ui #view-share .share-page{
+    padding:0 !important;
+  }
+
+  body.mobile-ui #view-share .share-grid{
+    gap:10px !important;
+  }
+
+  body.mobile-ui #view-share .share-card{
+    padding:12px !important;
+    border-radius:18px !important;
+  }
+
+  body.mobile-ui #view-share .share-actions{
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-share .share-actions .btn{
+    height:40px !important;
+    min-height:40px !important;
+    border-radius:12px !important;
+    font-size:.9rem !important;
+  }
+}
+
+@media (max-width: 560px){
+  body.mobile-ui #view-meta .card.meta-single{
+    padding:8px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row{
+    grid-template-columns:minmax(0,1fr) 84px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #view-meta .date-row,
+  body.mobile-ui #view-meta .budget-row,
+  body.mobile-ui #view-meta .budget-actions-row{
+    gap:6px !important;
+  }
+
+  body.mobile-ui #view-meta label{
+    font-size:.78rem !important;
+  }
+
+  body.mobile-ui #view-meta .input,
+  body.mobile-ui #view-meta input[type="date"],
+  body.mobile-ui #view-meta .btn.map-btn,
+  body.mobile-ui #view-meta .budget-actions-row .btn{
+    height:36px !important;
+    min-height:36px !important;
+    padding:5px 8px !important;
+    font-size:.84rem !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip{
+    height:32px !important;
+    min-height:32px !important;
+    font-size:.74rem !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    font-size:.74rem !important;
+  }
+
+  body.mobile-ui #bigMap{
+    height:calc(var(--vvh, 100dvh) - 190px) !important;
+    min-height:280px !important;
+  }
+}
+
 
 /* ================================================================
    MOBILE VISUAL PATCH v2 – מסך נתוני נסיעה + סרגל כפתורי מפה
