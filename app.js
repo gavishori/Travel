@@ -1034,6 +1034,12 @@ function syncJournalSelectionUi(){
     wireMobileFieldComfort();
   }
 
+  window.__refreshMobileShell = function(){
+    if(!isCompactMobileHeader()) return;
+    syncMobileViewportVars();
+    applyMobileLayout();
+  };
+
   function wire(){
     if(!isCompactMobileHeader()) return;
     const themeBtn = document.getElementById('btnTheme');
@@ -1439,28 +1445,103 @@ function focusItemInTab(type, id){
   }, 150);
 }
 
+function findMapItemLayer(type, id, root){
+  let found = null;
+  const visit = (layer)=>{
+    if(!layer || found) return;
+    if(layer.__itemType === type && String(layer.__itemId) === String(id)){
+      found = layer;
+      return;
+    }
+    if(typeof layer.eachLayer === 'function'){
+      try{ layer.eachLayer(child => visit(child)); }catch(_){}
+    }
+  };
+  if(root && typeof root.eachLayer === 'function'){
+    try{ root.eachLayer(layer => visit(layer)); }catch(_){}
+  }
+  return found;
+}
+
+function ensureMobileMapInfoDialog(){
+  let dlg = document.getElementById('mobileMapInfoDialog');
+  if(dlg) return dlg;
+  dlg = document.createElement('dialog');
+  dlg.id = 'mobileMapInfoDialog';
+  dlg.className = 'modal mobile-map-info-dialog';
+  dlg.innerHTML = `
+    <header>
+      <strong>פרטי נקודה במפה</strong>
+      <button type="button" class="btn" data-close-map-info>סגור</button>
+    </header>
+    <div class="body" id="mobileMapInfoBody"></div>
+  `;
+  document.body.appendChild(dlg);
+  dlg.querySelector('[data-close-map-info]')?.addEventListener('click', ()=> dlg.close());
+  dlg.addEventListener('click', (ev)=>{
+    if(ev.target === dlg) dlg.close();
+  });
+  dlg.addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('button[data-act]');
+    if(!btn) return;
+    ev.preventDefault();
+    const act = btn.dataset.act;
+    const type = btn.dataset.type;
+    const id = btn.dataset.id;
+    if(act === 'show'){
+      dlg.close();
+      focusItemInTab(type, id);
+      return;
+    }
+    if(act === 'edit'){
+      dlg.close();
+      const srcCollection = type === 'expense' ? state._lastTripObj?.expenses : state._lastTripObj?.journal;
+      const obj = srcCollection && srcCollection[id];
+      if(!obj) return;
+      if(type === 'expense') openExpenseModal({ ...obj, id });
+      else openJournalModal({ ...obj, id });
+      return;
+    }
+    if(act === 'delete'){
+      dlg.close();
+      routeDelete({
+        type,
+        id,
+        message: type === 'expense'
+          ? 'האם אתה בטוח שברצונך למחוק הוצאה זו?'
+          : 'האם אתה בטוח שברצונך למחוק רישום זה?'
+      });
+    }
+  });
+  return dlg;
+}
+
+function openMobileMapInfo(html){
+  const dlg = ensureMobileMapInfoDialog();
+  const body = dlg.querySelector('#mobileMapInfoBody');
+  if(!body) return;
+  body.innerHTML = html || '';
+  if(!dlg.open) dlg.showModal();
+}
+
 function focusItemOnMap(type, id){
   switchToTab('map');
   setTimeout(()=>{
     try{ initBigMap(); }catch(_){}
     const map = state?.maps?.big;
     if(!map || !id) return;
-    let targetLayer = null;
-    map.eachLayer(layer=>{
-      if(targetLayer) return;
-      if(layer && layer.__itemType === type && String(layer.__itemId) === String(id)){
-        targetLayer = layer;
-      }
-    });
+    const targetLayer = findMapItemLayer(type, id, map);
     if(!targetLayer) return;
     try{
       if(typeof targetLayer.getBounds === 'function'){
         const bounds = targetLayer.getBounds();
         if(bounds?.isValid?.()) map.fitBounds(bounds.pad(0.2));
       }else if(typeof targetLayer.getLatLng === 'function'){
-        map.flyTo(targetLayer.getLatLng(), Math.max(map.getZoom?.() || 12, 15), { duration: 0.45 });
+        map.flyTo(targetLayer.getLatLng(), 17, { duration: 0.45 });
       }
-      if(typeof targetLayer.openPopup === 'function'){
+      if(isMobileViewport?.() && targetLayer.__popupHtml){
+        setTimeout(()=> openMobileMapInfo(targetLayer.__popupHtml), 180);
+      }else if(typeof targetLayer.openPopup === 'function'){
         setTimeout(()=>{ try{ targetLayer.openPopup(); }catch(_){} }, 180);
       }
     }catch(_){}
@@ -1469,6 +1550,8 @@ function focusItemOnMap(type, id){
 
 function attachMapPopup(marker, type, id, dataObj){
   try{
+    marker.__itemType = type;
+    marker.__itemId = id;
     const isExp = (type==='expense');
     const date = fmtDateTime(dataObj.dateIso || dataObj.createdAt || dataObj.ts || dataObj.date);
     
@@ -1505,6 +1588,7 @@ function attachMapPopup(marker, type, id, dataObj){
         </div>
       </div>`;
 
+    marker.__popupHtml = html;
     marker.bindPopup(html, {
       className: 'map-popup-shell',
       maxWidth: Math.min(((window.visualViewport && window.visualViewport.width) || window.innerWidth || 520) - 24, 520),
@@ -1514,6 +1598,11 @@ function attachMapPopup(marker, type, id, dataObj){
       autoPanPaddingBottomRight: [16, 16]
     });
     marker.on('popupopen', (ev)=>{
+      if(isMobileViewport?.()){
+        try{ ev.popup?.remove?.(); }catch(_){}
+        openMobileMapInfo(html);
+        return;
+      }
       const root = ev.popup.getElement();
       if(!root) return;
       const showBtn = root.querySelector('button[data-act="show"]');
@@ -2522,6 +2611,14 @@ async function openTrip(id){
     }
   }catch(_){}
   await loadTrip();
+  try{
+    if(isMobileViewport?.() && typeof window.__refreshMobileShell === 'function'){
+      requestAnimationFrame(()=>{
+        window.__refreshMobileShell();
+        setTimeout(()=> window.__refreshMobileShell(), 120);
+      });
+    }
+  }catch(_){}
 }
 
 // Function to map destination/country to currency (supports Hebrew + English + common variants)
@@ -3067,6 +3164,7 @@ function renderExpenses(t, order){
     const tr4 = document.createElement('tr');
     tr4.className = 'exp-item exp-details';
     tr4.innerHTML = `<td class="cell notes" colspan="7">${desc}</td>`;
+    if(isMobileViewport?.()) tr4.hidden = true;
     body.appendChild(tr1); body.appendChild(tr4);
 
     tr1.querySelector('.menu-btn').onclick = () => { 
@@ -3114,6 +3212,7 @@ function renderJournal(t, order){
     const tr2 = document.createElement('tr');
     tr2.className = 'exp-item exp-details';
     tr2.innerHTML = `<td class="cell notes" colspan="${selectionOn ? 8 : 7}">${text}</td>`;
+    if(isMobileViewport?.()) tr2.hidden = true;
     body.appendChild(tr1); body.appendChild(tr2);
 
     tr1.querySelector('.menu-btn').onclick = () => { 
@@ -3122,10 +3221,16 @@ function renderJournal(t, order){
     };
     tr1.querySelector('.journal-map-btn')?.addEventListener('click', (ev)=>{
       ev.preventDefault();
+      ev.stopPropagation();
       focusItemOnMap('journal', j.id);
     });
   });
   syncJournalSelectionUi();
+  try{
+    if(isMobileViewport?.() && typeof window.__refreshMobileShell === 'function'){
+      requestAnimationFrame(()=> window.__refreshMobileShell());
+    }
+  }catch(_){}
 }
 function appendExpenseRowToTimeline(body, e){
   const d = dayjs(e.dateIso || e.createdAt);
@@ -3149,6 +3254,7 @@ function appendExpenseRowToTimeline(body, e){
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
   tr2.innerHTML = `<td class="cell notes" colspan="6">${desc}</td>`;
+  if(isMobileViewport?.()) tr2.hidden = true;
   body.appendChild(tr1); body.appendChild(tr2);
   tr1.querySelector('.menu-btn').onclick = () => {
     _rowActionExpense = e;
@@ -3178,6 +3284,7 @@ function appendJournalRowToTimeline(body, j, mapIndex){
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
   tr2.innerHTML = `<td class="cell notes" colspan="${selectionOn ? 7 : 6}">${text}</td>`;
+  if(isMobileViewport?.()) tr2.hidden = true;
   body.appendChild(tr1); body.appendChild(tr2);
   tr1.querySelector('.menu-btn').onclick = () => { 
     _rowActionJournal = j; 
@@ -3185,6 +3292,7 @@ function appendJournalRowToTimeline(body, j, mapIndex){
   };
   tr1.querySelector('.journal-map-btn')?.addEventListener('click', (ev)=>{
     ev.preventDefault();
+    ev.stopPropagation();
     focusItemOnMap('journal', j.id);
   });
 }
@@ -3240,6 +3348,11 @@ function renderAllTimeline(t, order){
   if (typeof window.__overviewApplyAfterRender === 'function') {
     try { window.__overviewApplyAfterRender(); } catch (_) {}
   }
+  try{
+    if(isMobileViewport?.() && typeof window.__refreshMobileShell === 'function'){
+      requestAnimationFrame(()=> window.__refreshMobileShell());
+    }
+  }catch(_){}
 }
 
 function syncOverviewTabLabel(){
