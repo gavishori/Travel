@@ -2501,18 +2501,48 @@ async function renderTripList(){
   if(state.viewMode === 'map'){
     await renderTripMapView(items, renderToken);
   } else {
-    list.innerHTML = items.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
-    if(renderToken !== state._tripListRenderToken) return;
-    list.querySelectorAll('[data-trip]').forEach(el=>{
-      el.addEventListener('click', ()=> openTrip(el.dataset.trip));
-    });
-    list.querySelectorAll('.menu-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        _rowActionTrip = state.trips.find(t => t.id === btn.dataset.id);
-        $('#rowMenuModal').showModal();
+    const buildTripMarkup = (chunk)=> chunk.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
+    const bindTripListInteractions = (root)=>{
+      root.querySelectorAll('[data-trip]').forEach(el=>{
+        if(el.dataset.tripBound === '1') return;
+        el.dataset.tripBound = '1';
+        el.addEventListener('click', ()=> openTrip(el.dataset.trip));
       });
-    });
+      root.querySelectorAll('.menu-btn').forEach(btn => {
+        if(btn.dataset.menuBound === '1') return;
+        btn.dataset.menuBound = '1';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          _rowActionTrip = state.trips.find(t => t.id === btn.dataset.id);
+          $('#rowMenuModal').showModal();
+        });
+      });
+    };
+
+    const useChunkedMobileRender = isMobileViewport() && !search && items.length > 14;
+    if(!useChunkedMobileRender){
+      list.innerHTML = buildTripMarkup(items);
+      if(renderToken !== state._tripListRenderToken) return;
+      bindTripListInteractions(list);
+    } else {
+      const firstBatchSize = 10;
+      const chunkSize = 14;
+      list.innerHTML = buildTripMarkup(items.slice(0, firstBatchSize));
+      if(renderToken !== state._tripListRenderToken) return;
+      bindTripListInteractions(list);
+
+      let offset = firstBatchSize;
+      const pump = ()=>{
+        if(renderToken !== state._tripListRenderToken) return;
+        const chunk = items.slice(offset, offset + chunkSize);
+        if(!chunk.length) return;
+        list.insertAdjacentHTML('beforeend', buildTripMarkup(chunk));
+        bindTripListInteractions(list);
+        offset += chunk.length;
+        setTimeout(pump, 16);
+      };
+      setTimeout(pump, 0);
+    }
   }
   ['btnViewGrid','btnViewList','btnViewMap'].forEach(id => document.getElementById(id)?.classList.remove('active'));
   document.getElementById(`btnView${state.viewMode==='grid' ? 'Grid' : state.viewMode==='list' ? 'List' : 'Map'}`)?.classList.add('active');
@@ -2893,6 +2923,17 @@ async function loadTrip(){
 
   const activeViewEl = document.querySelector('.tabview[data-active="1"]:not([hidden])') || document.querySelector('.tabview:not([hidden])');
   const activeViewId = activeViewEl?.id || 'view-overview';
+  const compactMobileLoad = isMobileViewport();
+  const scheduleViewRender = (targetViewId, renderFn, desktopDelay, mobileDelay)=>{
+    if(activeViewId === targetViewId){
+      renderFn();
+      return;
+    }
+    const delay = compactMobileLoad ? mobileDelay : desktopDelay;
+    setTimeout(()=>{
+      if(state.currentTripId === t.id) renderFn();
+    }, delay);
+  };
   const renderOverviewNow = ()=>{
     if (typeof renderAllTimeline === 'function') {
       try { renderAllTimeline(t, state.allSort || 'desc'); } catch(_) {}
@@ -2908,17 +2949,10 @@ async function loadTrip(){
     }
   };
 
-  if(activeViewId === 'view-expenses') renderExpensesNow();
-  else setTimeout(()=>{ if(state.currentTripId === t.id) renderExpensesNow(); }, 120);
-
-  if(activeViewId === 'view-journal') renderJournalNow();
-  else setTimeout(()=>{ if(state.currentTripId === t.id) renderJournalNow(); }, 180);
-
-  if(activeViewId === 'view-overview') renderOverviewNow();
-  else setTimeout(()=>{ if(state.currentTripId === t.id) renderOverviewNow(); }, 40);
-
-  if(activeViewId === 'view-meta') renderMiniMapNow();
-  else setTimeout(()=>{ if(state.currentTripId === t.id) renderMiniMapNow(); }, 260);
+  scheduleViewRender('view-overview', renderOverviewNow, 40, 40);
+  scheduleViewRender('view-expenses', renderExpensesNow, 120, 360);
+  scheduleViewRender('view-journal', renderJournalNow, 180, 500);
+  scheduleViewRender('view-meta', renderMiniMapNow, 260, 720);
   renderExpenseSummary(t);
   loadPerf.afterInitialRender = perfNow();
 
@@ -3192,6 +3226,7 @@ function renderJournal(t, order){
     const tr1 = document.createElement('tr');
     tr1.className = 'exp-item';
     tr1.dataset.kind = 'journal'; // מחזיר את הצבע הירוק
+    tr1.dataset.mobileLayout = 'journal-card';
     const checkedAttr = selectionOn && state.journalSelectedIds.has(j.id) ? 'checked' : '';
     const selectCell = selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : "";
     const hasMapPoint = Number.isFinite(+j.lat) && Number.isFinite(+j.lng);
@@ -3273,6 +3308,7 @@ function appendJournalRowToTimeline(body, j, mapIndex){
   const tr1 = document.createElement('tr');
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'journal';
+  tr1.dataset.mobileLayout = 'journal-card';
   tr1.innerHTML = `
     ${selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : ''}
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>

@@ -9127,3 +9127,743 @@ button, .btn, .menu-btn, select, input, textarea {
     min-height:260px !important;
   }
 }
+
+/* ================================================================
+   MOBILE AUTHORITATIVE OVERRIDES
+   ================================================================ */
+@media (max-width: 820px){
+  body.mobile-ui{
+    --mobile-gap: 10px;
+    --mobile-control-h: 46px;
+    --mobile-icon-btn: 48px;
+    --mobile-card-radius: 24px;
+  }
+
+  body.mobile-ui .tabview{
+    width:100% !important;
+    max-width:100% !important;
+    padding:12px !important;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow:visible !important;
+  }
+
+  body.mobile-ui #view-overview,
+  body.mobile-ui #view-expenses,
+  body.mobile-ui #view-journal,
+  body.mobile-ui #view-meta,
+  body.mobile-ui #view-map,
+  body.mobile-ui #view-share{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail,
+  body.mobile-ui .mobile-overview-action-rail{
+    display:grid !important;
+    grid-template-columns:repeat(5, var(--mobile-icon-btn)) minmax(96px, 1fr) !important;
+    align-items:center !important;
+    gap:8px !important;
+    padding:12px !important;
+    margin:0 0 12px !important;
+    border-radius:28px !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-icon-btn,
+  body.mobile-ui #mobileOverviewActionRail .mobile-section-menu-btn{
+    width:var(--mobile-icon-btn) !important;
+    min-width:var(--mobile-icon-btn) !important;
+    max-width:var(--mobile-icon-btn) !important;
+    height:var(--mobile-icon-btn) !important;
+    min-height:var(--mobile-icon-btn) !important;
+    padding:0 !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-action-text{
+    display:none !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-search,
+  body.mobile-ui #mobileOverviewActionRail #searchAll{
+    width:100% !important;
+    min-width:0 !important;
+    height:var(--mobile-control-h) !important;
+    min-height:var(--mobile-control-h) !important;
+    padding-inline:14px !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #view-overview .overview-budget-wrap,
+  body.mobile-ui #view-expenses .expenses-table-container,
+  body.mobile-ui #view-journal .expenses-table-container,
+  body.mobile-ui #view-meta .meta-single,
+  body.mobile-ui #view-share .share-page{
+    margin-top:0 !important;
+  }
+
+  body.mobile-ui #view-expenses .list-actions,
+  body.mobile-ui #view-journal .list-actions{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:0 !important;
+    padding:0 !important;
+    margin:0 0 12px !important;
+    background:transparent !important;
+    border:none !important;
+    box-shadow:none !important;
+  }
+
+  body.mobile-ui #view-expenses .list-actions > :not(.mobile-section-menu-btn),
+  body.mobile-ui #view-journal .list-actions > :not(.mobile-section-menu-btn){
+    display:none !important;
+  }
+
+  body.mobile-ui #mobileExpensesMenuBtn,
+  body.mobile-ui #mobileJournalMenuBtn,
+  body.mobile-ui #mobileMetaMenuBtn,
+  body.mobile-ui #mobileShareMenuBtn{
+    width:52px !important;
+    min-width:52px !important;
+    height:48px !important;
+    min-height:48px !important;
+    padding:0 !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #mobileExpensesMenuBtn .mobile-action-text,
+  body.mobile-ui #mobileJournalMenuBtn .mobile-action-text,
+  body.mobile-ui #mobileMetaMenuBtn .mobile-action-text,
+  body.mobile-ui #mobileShareMenuBtn .mobile-action-text{
+    display:none !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar{
+    display:grid !important;
+    grid-template-columns:repeat(4, minmax(0, 1fr)) 72px !important;
+    gap:8px !important;
+    align-items:stretch !important;
+    padding:12px !important;
+    border-radius:var(--mobile-card-radius) !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar .col,
+  body.mobile-ui #expenseSummary.budget-bar .kpi,
+  body.mobile-ui #expenseSummary.budget-bar .badge{
+    min-width:0 !important;
+    padding:8px 6px !important;
+    border-radius:16px !important;
+    font-size:14px !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar .value,
+  body.mobile-ui #expenseSummary.budget-bar strong{
+    font-size:16px !important;
+    line-height:1.15 !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table-container,
+  body.mobile-ui #view-expenses .expenses-table-container,
+  body.mobile-ui #view-journal .expenses-table-container{
+    padding:12px !important;
+    overflow:visible !important;
+    border-radius:28px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table,
+  body.mobile-ui #view-expenses .expenses-table,
+  body.mobile-ui #view-journal .expenses-table,
+  body.mobile-ui #tblAllTimeline,
+  body.mobile-ui #tblExpenses,
+  body.mobile-ui #tblJournal{
+    width:100% !important;
+    table-layout:fixed !important;
+    border-collapse:separate !important;
+    border-spacing:0 12px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item.exp-details,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item.exp-details,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item.exp-details,
+  body.mobile-ui #tblAllTimeline tr.exp-item.exp-details,
+  body.mobile-ui #tblExpenses tr.exp-item.exp-details,
+  body.mobile-ui #tblJournal tr.exp-item.exp-details{
+    display:none !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details){
+    display:grid !important;
+    grid-template-columns:56px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "menu title title"
+      "date date map" !important;
+    gap:12px 14px !important;
+    align-items:center !important;
+    padding:14px !important;
+    border-radius:24px !important;
+    border:1.5px solid rgba(87, 110, 143, 0.26) !important;
+    background:#edf5ff !important;
+    box-shadow:none !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details){
+    display:grid !important;
+    grid-template-columns:56px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "menu title amount"
+      "date category amount" !important;
+    gap:12px 14px !important;
+    align-items:center !important;
+    padding:14px !important;
+    border-radius:24px !important;
+    border:1.5px solid rgba(87, 110, 143, 0.26) !important;
+    background:#edf5ff !important;
+    box-shadow:none !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind]:not(.exp-details) > td,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind]:not(.exp-details) > td,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind]:not(.exp-details) > td,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind]:not(.exp-details) > td,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind]:not(.exp-details) > td,
+  body.mobile-ui #tblJournal tr.exp-item[data-kind]:not(.exp-details) > td{
+    display:block !important;
+    min-width:0 !important;
+    padding:0 !important;
+    border:none !important;
+    background:transparent !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #tblJournal tr.exp-item[data-kind]:not(.exp-details) td.time,
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.currency,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.currency,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.currency,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.currency{
+    display:none !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details) td.location{
+    grid-area:title !important;
+    align-self:start !important;
+    text-align:right !important;
+    font-size:18px !important;
+    font-weight:800 !important;
+    line-height:1.28 !important;
+    word-break:break-word !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.title{
+    grid-area:title !important;
+    align-self:start !important;
+    text-align:right !important;
+    font-size:18px !important;
+    font-weight:800 !important;
+    line-height:1.28 !important;
+    word-break:break-word !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.date,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.date,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind]:not(.exp-details) td.date,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind]:not(.exp-details) td.date,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind]:not(.exp-details) td.date,
+  body.mobile-ui #tblJournal tr.exp-item[data-kind]:not(.exp-details) td.date{
+    grid-area:date !important;
+    align-self:end !important;
+    text-align:left !important;
+    font-size:14px !important;
+    color:var(--muted) !important;
+    white-space:nowrap !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.category{
+    grid-area:category !important;
+    align-self:end !important;
+    text-align:right !important;
+    font-size:14px !important;
+    color:var(--muted) !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
+    grid-area:amount !important;
+    align-self:stretch !important;
+    justify-self:end !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    min-width:92px !important;
+    font-size:15px !important;
+    font-weight:800 !important;
+    white-space:nowrap !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell,
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell,
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell{
+    grid-area:menu !important;
+    justify-self:start !important;
+    align-self:start !important;
+    width:56px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.map-cell,
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.map-cell,
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details) td.map-cell,
+  body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details) td.map-cell{
+    grid-area:map !important;
+    justify-self:end !important;
+    align-self:end !important;
+    width:auto !important;
+    overflow:visible !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table .menu-btn,
+  body.mobile-ui #view-expenses .expenses-table .menu-btn,
+  body.mobile-ui #view-journal .expenses-table .menu-btn,
+  body.mobile-ui #tblAllTimeline .menu-btn,
+  body.mobile-ui #tblExpenses .menu-btn,
+  body.mobile-ui #tblJournal .menu-btn{
+    width:48px !important;
+    min-width:48px !important;
+    height:48px !important;
+    min-height:48px !important;
+    padding:0 !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table .map-action-btn,
+  body.mobile-ui #view-journal .expenses-table .map-action-btn,
+  body.mobile-ui #tblAllTimeline .map-action-btn,
+  body.mobile-ui #tblJournal .map-action-btn{
+    min-width:120px !important;
+    height:46px !important;
+    padding:0 14px !important;
+    border-radius:999px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table .map-action-badge,
+  body.mobile-ui #view-journal .expenses-table .map-action-badge,
+  body.mobile-ui #tblAllTimeline .map-action-badge,
+  body.mobile-ui #tblJournal .map-action-badge{
+    width:28px !important;
+    height:28px !important;
+    min-width:28px !important;
+    font-size:15px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table .map-action-label,
+  body.mobile-ui #view-journal .expenses-table .map-action-label,
+  body.mobile-ui #tblAllTimeline .map-action-label,
+  body.mobile-ui #tblJournal .map-action-label{
+    display:inline !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+  }
+
+  body.mobile-ui #view-map{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    min-height:calc(var(--vvh, 100dvh) - 136px) !important;
+  }
+
+  body.mobile-ui #view-map > #mobileMapMenuBtn{
+    align-self:flex-start !important;
+    width:52px !important;
+    min-width:52px !important;
+    height:48px !important;
+    min-height:48px !important;
+    padding:0 !important;
+    border-radius:16px !important;
+    margin:0 !important;
+  }
+
+  body.mobile-ui #view-map > #mobileMapMenuBtn .mobile-action-text{
+    display:none !important;
+  }
+
+  body.mobile-ui #view-map > div:first-of-type{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    min-height:calc(var(--vvh, 100dvh) - 194px) !important;
+  }
+
+  body.mobile-ui .map-toolbar{
+    position:static !important;
+    left:auto !important;
+    top:auto !important;
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:8px !important;
+    padding:10px !important;
+    margin:0 !important;
+    border-radius:24px !important;
+    overflow:visible !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    width:100% !important;
+    min-width:0 !important;
+    height:46px !important;
+    min-height:46px !important;
+    padding:0 10px !important;
+    border-radius:16px !important;
+    font-size:14px !important;
+    white-space:nowrap !important;
+  }
+
+  body.mobile-ui #bigMap{
+    flex:1 1 auto !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:calc(var(--vvh, 100dvh) - 316px) !important;
+    max-height:calc(var(--vvh, 100dvh) - 316px) !important;
+    border-radius:24px !important;
+  }
+
+  body.mobile-ui #view-meta .meta-single{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    padding:14px !important;
+    border-radius:28px !important;
+    max-height:calc(var(--vvh, 100dvh) - 136px) !important;
+    overflow:auto !important;
+  }
+
+  body.mobile-ui #view-meta h2,
+  body.mobile-ui #view-share h2{
+    margin:0 0 6px !important;
+    font-size:20px !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row{
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) 96px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #view-meta .date-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #view-meta .date-row .people-input,
+  body.mobile-ui #view-meta .date-row .multi-types{
+    grid-column:1 / -1 !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row{
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-actions-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-meta label{
+    gap:4px !important;
+    font-size:13px !important;
+  }
+
+  body.mobile-ui #view-meta .input,
+  body.mobile-ui #view-meta input[type="date"],
+  body.mobile-ui #view-meta .btn.map-btn,
+  body.mobile-ui #view-meta .budget-actions-row .btn{
+    width:100% !important;
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:0 12px !important;
+    border-radius:14px !important;
+    font-size:14px !important;
+  }
+
+  body.mobile-ui #view-meta .chips{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #view-meta .chips .chip{
+    height:36px !important;
+    min-height:36px !important;
+    padding:0 12px !important;
+    font-size:13px !important;
+    border-radius:999px !important;
+  }
+
+  body.mobile-ui #view-share .share-page{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    padding:14px !important;
+    border-radius:28px !important;
+  }
+
+  body.mobile-ui #view-share .share-grid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  body.mobile-ui #view-share .share-actions{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #view-share .share-actions .btn,
+  body.mobile-ui #view-share .share-inline .input{
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    border-radius:14px !important;
+  }
+
+  body.mobile-ui dialog.modal[open]{
+    width:min(96vw, 560px) !important;
+    max-width:min(96vw, 560px) !important;
+    height:auto !important;
+    max-height:calc(var(--vvh, 100dvh) - 8px - env(safe-area-inset-bottom, 0px)) !important;
+    display:flex !important;
+    flex-direction:column !important;
+    border-radius:24px !important;
+  }
+
+  body.mobile-ui .modal header,
+  body.mobile-ui .modal .header{
+    padding:12px 14px !important;
+    min-height:0 !important;
+  }
+
+  body.mobile-ui .modal .body{
+    flex:1 1 auto !important;
+    display:block !important;
+    max-height:none !important;
+    overflow:auto !important;
+    padding:12px !important;
+  }
+
+  body.mobile-ui .modal .footer{
+    display:grid !important;
+    grid-auto-flow:column !important;
+    grid-auto-columns:minmax(0, 1fr) !important;
+    gap:8px !important;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    background:inherit !important;
+  }
+
+  body.mobile-ui #tripModal .body .row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui #tripModal .body label,
+  body.mobile-ui #expenseModal .body label,
+  body.mobile-ui #journalModal .body label{
+    gap:4px !important;
+    font-size:13px !important;
+  }
+
+  body.mobile-ui #tripModal .input,
+  body.mobile-ui #expenseModal .input,
+  body.mobile-ui #journalModal .input,
+  body.mobile-ui #tripModal input[type="date"],
+  body.mobile-ui #expenseModal input[type="date"],
+  body.mobile-ui #journalModal input[type="date"],
+  body.mobile-ui #expenseModal input[type="time"],
+  body.mobile-ui #journalModal input[type="time"]{
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    border-radius:14px !important;
+    padding-inline:12px !important;
+    font-size:15px !important;
+  }
+
+  body.mobile-ui #expenseModal .input.rtf,
+  body.mobile-ui #journalModal .input.rtf{
+    min-height:108px !important;
+    max-height:22vh !important;
+    padding:10px 12px !important;
+    overflow:auto !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row{
+    display:grid !important;
+    grid-template-columns:minmax(0, 1.15fr) minmax(0, .9fr) 64px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) 92px 42px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-currency-button,
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:42px !important;
+    min-width:42px !important;
+    max-width:42px !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:0 !important;
+    border-radius:14px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-location-trigger .journal-location-trigger-label,
+  body.mobile-ui #journalModal .journal-location-trigger .journal-location-trigger-label,
+  body.mobile-ui #expenseModal #expLocationPreview,
+  body.mobile-ui #journalModal #jrLocationPreview{
+    display:none !important;
+  }
+
+  body.mobile-ui #expLocationModal .location-row,
+  body.mobile-ui #jrLocationModal .location-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:8px !important;
+  }
+}
+
+@media (max-width: 560px){
+  body.mobile-ui #mobileOverviewActionRail,
+  body.mobile-ui .mobile-overview-action-rail{
+    grid-template-columns:repeat(5, 44px) minmax(84px, 1fr) !important;
+    padding:10px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-icon-btn,
+  body.mobile-ui #mobileOverviewActionRail .mobile-section-menu-btn{
+    width:44px !important;
+    min-width:44px !important;
+    max-width:44px !important;
+    height:44px !important;
+    min-height:44px !important;
+  }
+
+  body.mobile-ui #expenseSummary.budget-bar{
+    grid-template-columns:repeat(2, minmax(0, 1fr)) 64px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details),
+  body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
+  body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details){
+    padding:12px !important;
+    gap:10px 12px !important;
+  }
+
+  body.mobile-ui #view-overview .expenses-table .map-action-btn,
+  body.mobile-ui #view-journal .expenses-table .map-action-btn,
+  body.mobile-ui #tblAllTimeline .map-action-btn,
+  body.mobile-ui #tblJournal .map-action-btn{
+    min-width:110px !important;
+    height:42px !important;
+    padding:0 12px !important;
+  }
+
+  body.mobile-ui .map-toolbar{
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:6px !important;
+    padding:8px !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    font-size:13px !important;
+    padding:0 8px !important;
+  }
+
+  body.mobile-ui #bigMap{
+    min-height:calc(var(--vvh, 100dvh) - 298px) !important;
+    max-height:calc(var(--vvh, 100dvh) - 298px) !important;
+  }
+
+  body.mobile-ui #view-meta .dest-row{
+    grid-template-columns:minmax(0, 1fr) 88px !important;
+  }
+
+  body.mobile-ui #view-meta .budget-row{
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row{
+    grid-template-columns:minmax(0, 1fr) minmax(0, .9fr) 58px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    grid-template-columns:minmax(0, 1fr) 88px 40px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-currency-button,
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:40px !important;
+    min-width:40px !important;
+    max-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+  }
+}
