@@ -1003,9 +1003,10 @@ function syncJournalSelectionUi(){
     if(!isCompactMobileHeader()) return;
     const newTripBtn = document.getElementById('btnNewTrip');
     if(newTripBtn){
-      newTripBtn.textContent = 'חדשה +';
+      newTripBtn.textContent = '+';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
+      newTripBtn.classList.add('mobile-icon-button');
     }
 
     if(typeof state === 'object'){
@@ -2519,7 +2520,7 @@ async function renderTripList(){
       });
     };
 
-    const useChunkedMobileRender = isMobileViewport() && !search && items.length > 14;
+    const useChunkedMobileRender = false;
     if(!useChunkedMobileRender){
       list.innerHTML = buildTripMarkup(items);
       if(renderToken !== state._tripListRenderToken) return;
@@ -9065,3 +9066,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
 window.addEventListener('resize', ()=>{
   try{ normalizeMobileOverviewHeader(); }catch(_){}
 });
+
+
+(function(){
+  function stabilizeMobileShell(){
+    if(!isMobileViewport()) return;
+    try{
+      const allTripsBtn = document.getElementById('btnAllTrips');
+      const loginBtn = document.getElementById('btnLogin');
+      const themeBtn = document.getElementById('btnTheme');
+      if(allTripsBtn){
+        allTripsBtn.classList.add('mobile-header-trip-switch');
+        allTripsBtn.setAttribute('aria-label','כל הנסיעות');
+      }
+      if(loginBtn){
+        loginBtn.classList.add('mobile-header-account');
+      }
+      if(themeBtn){
+        themeBtn.classList.add('mobile-header-theme');
+      }
+    }catch(_){ }
+  }
+  document.addEventListener('DOMContentLoaded', stabilizeMobileShell);
+  window.addEventListener('resize', stabilizeMobileShell);
+  window.addEventListener('pageshow', stabilizeMobileShell);
+})();
+// === End mobile stabilization patch ===
