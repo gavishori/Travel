@@ -9065,3 +9065,38 @@ document.addEventListener('DOMContentLoaded', ()=>{
 window.addEventListener('resize', ()=>{
   try{ normalizeMobileOverviewHeader(); }catch(_){}
 });
+
+
+/* === Focused mobile fixes: stable close button label === */
+(function(){
+  function syncMobileMapInfoCloseButton(){
+    try{
+      const btn = document.querySelector('#mobileMapInfoDialog [data-close-map-info], .mobile-map-info-dialog [data-close-map-info]');
+      if(!btn) return;
+      btn.textContent = 'סגור';
+      btn.setAttribute('aria-label', 'סגור');
+      btn.setAttribute('title', 'סגור');
+      btn.style.color = 'var(--ink)';
+      btn.style.fontSize = '0.95rem';
+      btn.style.lineHeight = '1';
+      btn.style.display = 'inline-flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.whiteSpace = 'nowrap';
+      btn.style.opacity = '1';
+    }catch(_){ }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', syncMobileMapInfoCloseButton);
+  }else{
+    syncMobileMapInfoCloseButton();
+  }
+  window.addEventListener('pageshow', syncMobileMapInfoCloseButton);
+  window.addEventListener('resize', syncMobileMapInfoCloseButton);
+  document.addEventListener('click', (ev)=>{
+    const trigger = ev.target.closest?.('[data-close-map-info], [data-act], .menu-btn, .leaflet-popup-content-wrapper');
+    if(!trigger) return;
+    setTimeout(syncMobileMapInfoCloseButton, 0);
+  }, true);
+})();

@@ -10044,3 +10044,91 @@ button, .btn, .menu-btn, select, input, textarea {
     overflow-wrap:anywhere !important;
   }
 }
+
+
+/* === Focused mobile fixes: stable close button + compact modal layout === */
+@media (max-width: 820px){
+  body.mobile-ui .mobile-map-info-dialog header{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:center !important;
+    gap:10px !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog header strong{
+    min-width:0 !important;
+    font-size:1rem !important;
+    line-height:1.25 !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog [data-close-map-info]{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:72px !important;
+    height:38px !important;
+    padding:0 12px !important;
+    border-radius:12px !important;
+    font-size:.95rem !important;
+    line-height:1 !important;
+    color:var(--ink) !important;
+    background:var(--card) !important;
+    border:1px solid var(--border) !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    text-indent:0 !important;
+    opacity:1 !important;
+  }
+
+  body.mobile-ui #tripModal .body .date-row,
+  body.mobile-ui #expenseModal .body .date-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #journalModal .journal-meta-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #journalModal .journal-meta-row > .jr-location-col,
+  body.mobile-ui #journalModal .journal-meta-row > .location-compact,
+  body.mobile-ui #journalModal .journal-meta-row > label:has(#jrPlace),
+  body.mobile-ui #journalModal .journal-meta-row > label:has(#jrLoc){
+    grid-column:1 / -1 !important;
+  }
+
+  body.mobile-ui #tripModal .body .date-row > *,
+  body.mobile-ui #expenseModal .body .date-row > *,
+  body.mobile-ui #journalModal .journal-meta-row > *{
+    min-width:0 !important;
+  }
+
+  body.mobile-ui .modal .footer{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    align-items:center !important;
+  }
+
+  body.mobile-ui .modal .footer .btn{
+    width:100% !important;
+    min-width:0 !important;
+    min-height:46px !important;
+    height:46px !important;
+    padding:0 12px !important;
+    border-radius:14px !important;
+    font-size:1rem !important;
+    line-height:1 !important;
+  }
+
+  body.mobile-ui .modal .footer .btn.primary,
+  body.mobile-ui .modal .footer .btn.danger:only-child,
+  body.mobile-ui #rowMenuModal .footer #rowMenuDelete{
+    grid-column:1 / -1 !important;
+  }
+}
