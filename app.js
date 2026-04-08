@@ -909,21 +909,32 @@ function syncJournalSelectionUi(){
     rail.className = 'mobile-overview-action-rail';
     if(menuBtn) rail.appendChild(menuBtn);
     rail.insertAdjacentHTML('beforeend', `
-      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה" title="הוצאה חדשה">
+      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה">
         <span class="mobile-action-glyph" aria-hidden="true">+$</span>
+        <span class="mobile-action-text">הוצאה</span>
       </button>
-      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף רישום" title="רישום חדש">
+      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן">
         <span class="mobile-action-glyph" aria-hidden="true">+✎</span>
+        <span class="mobile-action-text">יומן</span>
+      </button>
+      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון">
+        <span class="mobile-action-glyph" aria-hidden="true">⇅</span>
+        <span class="mobile-action-text">מיון</span>
+      </button>
+      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס">
+        <span class="mobile-action-glyph" aria-hidden="true">↕</span>
+        <span class="mobile-action-text">פריסה</span>
       </button>
     `);
     if(searchInput){
       searchInput.hidden = false;
       searchInput.placeholder = 'חיפוש';
       searchInput.classList.add('mobile-overview-search');
-      searchInput.setAttribute('aria-label', 'חיפוש ברשימה');
       if(searchInput.parentElement !== rail) rail.appendChild(searchInput);
     }
     host.prepend(rail);
+    rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
+    rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
     rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
     rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
   }
@@ -992,10 +1003,9 @@ function syncJournalSelectionUi(){
     if(!isCompactMobileHeader()) return;
     const newTripBtn = document.getElementById('btnNewTrip');
     if(newTripBtn){
-      newTripBtn.textContent = '+';
+      newTripBtn.textContent = 'חדשה +';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
-      newTripBtn.classList.add('mobile-icon-button');
     }
 
     if(typeof state === 'object'){
@@ -2509,7 +2519,7 @@ async function renderTripList(){
       });
     };
 
-    const useChunkedMobileRender = false;
+    const useChunkedMobileRender = isMobileViewport() && !search && items.length > 14;
     if(!useChunkedMobileRender){
       list.innerHTML = buildTripMarkup(items);
       if(renderToken !== state._tripListRenderToken) return;
@@ -9055,29 +9065,3 @@ document.addEventListener('DOMContentLoaded', ()=>{
 window.addEventListener('resize', ()=>{
   try{ normalizeMobileOverviewHeader(); }catch(_){}
 });
-
-
-(function(){
-  function stabilizeMobileShell(){
-    if(!isMobileViewport()) return;
-    try{
-      const allTripsBtn = document.getElementById('btnAllTrips');
-      const loginBtn = document.getElementById('btnLogin');
-      const themeBtn = document.getElementById('btnTheme');
-      if(allTripsBtn){
-        allTripsBtn.classList.add('mobile-header-trip-switch');
-        allTripsBtn.setAttribute('aria-label','כל הנסיעות');
-      }
-      if(loginBtn){
-        loginBtn.classList.add('mobile-header-account');
-      }
-      if(themeBtn){
-        themeBtn.classList.add('mobile-header-theme');
-      }
-    }catch(_){ }
-  }
-  document.addEventListener('DOMContentLoaded', stabilizeMobileShell);
-  window.addEventListener('resize', stabilizeMobileShell);
-  window.addEventListener('pageshow', stabilizeMobileShell);
-})();
-// === End mobile stabilization patch ===
