@@ -10273,3 +10273,478 @@ button, .btn, .menu-btn, select, input, textarea {
     border-radius:14px !important;
   }
 }
+
+
+/* ===== MOBILE UX PATCH v2 ===== */
+@media (max-width: 820px){
+  :root{
+    --mobile-rail-h: 40px;
+    --mobile-gap: 8px;
+  }
+
+  body.mobile-ui header{
+    gap:10px !important;
+    padding:12px 14px !important;
+    align-items:center !important;
+  }
+
+  body.mobile-ui #btnAllTrips{
+    min-width:auto !important;
+    width:auto !important;
+    max-width:9.5rem !important;
+    min-height:42px !important;
+    padding:0 14px !important;
+    border-radius:16px !important;
+    font-size:.96rem !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail,
+  body.mobile-ui .mobile-overview-action-rail{
+    display:grid !important;
+    grid-template-columns:40px 40px 40px minmax(0,1fr) !important;
+    grid-template-areas:"menu expense journal search" !important;
+    gap:8px !important;
+    align-items:center !important;
+    margin:0 0 12px !important;
+    padding:8px !important;
+    background:rgba(255,255,255,.72) !important;
+    border:1px solid rgba(148,163,184,.28) !important;
+    border-radius:18px !important;
+    box-shadow:0 10px 24px rgba(15,23,42,.08) !important;
+    backdrop-filter:blur(14px) !important;
+    -webkit-backdrop-filter:blur(14px) !important;
+  }
+
+  body.mobile-ui #mobileOverviewMenuBtn{ grid-area:menu !important; }
+  body.mobile-ui #mobileOverviewExpenseBtn{ grid-area:expense !important; }
+  body.mobile-ui #mobileOverviewJournalBtn{ grid-area:journal !important; }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-icon-btn,
+  body.mobile-ui #mobileOverviewActionRail .mobile-section-menu-btn,
+  body.mobile-ui .mobile-overview-action-rail .mobile-overview-icon-btn,
+  body.mobile-ui .mobile-overview-action-rail .mobile-section-menu-btn{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    font-size:17px !important;
+    line-height:1 !important;
+    box-shadow:none !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-action-text,
+  body.mobile-ui .mobile-overview-action-rail .mobile-action-text{
+    display:none !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-action-glyph,
+  body.mobile-ui .mobile-overview-action-rail .mobile-action-glyph{
+    font-size:17px !important;
+    line-height:1 !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-search,
+  body.mobile-ui #mobileOverviewActionRail #searchAll,
+  body.mobile-ui .mobile-overview-action-rail .mobile-overview-search,
+  body.mobile-ui .mobile-overview-action-rail #searchAll{
+    grid-area:search !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:40px !important;
+    min-height:40px !important;
+    margin:0 !important;
+    padding:0 12px !important;
+    border-radius:12px !important;
+    font-size:.96rem !important;
+  }
+
+  body.mobile-ui #tripList .trip-card,
+  body.mobile-ui #tripList .trip-row{
+    position:relative !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 40px !important;
+    grid-template-areas:
+      "main menu"
+      "meta menu"
+      "footer footer" !important;
+    gap:8px 10px !important;
+    align-items:start !important;
+    padding:16px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #tripList .trip-card > div:first-child,
+  body.mobile-ui #tripList .trip-row .row-main-content{
+    grid-area:main !important;
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #tripList .trip-card > .muted,
+  body.mobile-ui #tripList .trip-row .row-main-content > .muted{
+    grid-area:meta !important;
+    min-width:0 !important;
+    font-size:.95rem !important;
+    line-height:1.35 !important;
+    white-space:normal !important;
+  }
+
+  body.mobile-ui #tripList .trip-card strong,
+  body.mobile-ui #tripList .trip-row strong{
+    display:block !important;
+    min-width:0 !important;
+    font-size:1.14rem !important;
+    line-height:1.28 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+    text-wrap:pretty !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .trip-footer-grid,
+  body.mobile-ui #tripList .trip-row .pill,
+  body.mobile-ui #tripList .trip-row [style*="grid-column:1/-1"]{
+    grid-area:footer !important;
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .trip-footer-grid{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:10px !important;
+    flex-wrap:wrap !important;
+  }
+
+  body.mobile-ui #tripList .types-pill,
+  body.mobile-ui #tripList .hl-pill{
+    max-width:100% !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+  }
+
+  body.mobile-ui #tripList .trip-card .menu-btn,
+  body.mobile-ui #tripList .trip-row .menu-btn{
+    grid-area:menu !important;
+    position:static !important;
+    transform:none !important;
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    justify-self:end !important;
+    align-self:start !important;
+  }
+
+  body.mobile-ui #rowMenuModal[open],
+  body.mobile-ui #mobileSectionMenuDialog[open]{
+    top:50% !important;
+    right:auto !important;
+    left:50% !important;
+    bottom:auto !important;
+    inset:auto !important;
+    transform:translate(-50%, -50%) !important;
+    width:min(calc(100vw - 28px), 360px) !important;
+    max-width:min(calc(100vw - 28px), 360px) !important;
+    max-height:calc(100dvh - 40px) !important;
+    margin:0 !important;
+    border-radius:24px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #rowMenuModal header,
+  body.mobile-ui #mobileSectionMenuDialog header{
+    padding:14px 16px !important;
+    justify-content:center !important;
+  }
+
+  body.mobile-ui #rowMenuModal .body,
+  body.mobile-ui #mobileSectionMenuDialog .body{
+    padding:14px 16px !important;
+  }
+
+  body.mobile-ui #rowMenuModal .footer,
+  body.mobile-ui #mobileSectionMenuDialog .footer,
+  body.mobile-ui .mobile-section-menu-body{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  body.mobile-ui .mobile-sheet-action,
+  body.mobile-ui #rowMenuModal .footer .btn,
+  body.mobile-ui #mobileSectionMenuDialog .footer .btn{
+    min-height:44px !important;
+    border-radius:14px !important;
+    font-size:1rem !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog[open]{
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translate(-50%, -50%) !important;
+    width:min(calc(100vw - 28px), 390px) !important;
+    max-width:min(calc(100vw - 28px), 390px) !important;
+    max-height:calc(100dvh - 44px) !important;
+    border-radius:24px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog header{
+    justify-content:center !important;
+    padding:14px 18px !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .body{
+    padding:16px !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .map-popup{
+    width:100% !important;
+    padding:0 !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .map-popup-body{
+    display:grid !important;
+    gap:10px !important;
+    padding:0 !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .map-popup-line,
+  body.mobile-ui .mobile-map-info-dialog .map-popup-desc{
+    font-size:1rem !important;
+    line-height:1.5 !important;
+    text-align:right !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .map-popup .popup-actions{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+    margin-top:14px !important;
+  }
+
+  body.mobile-ui .mobile-map-info-dialog .map-popup .popup-actions .btn{
+    min-height:44px !important;
+    border-radius:14px !important;
+    font-size:1rem !important;
+    padding:0 12px !important;
+  }
+
+  body.mobile-ui #expenseModal[open],
+  body.mobile-ui #journalModal[open],
+  body.mobile-ui #tripModal[open]{
+    width:min(calc(100vw - 18px), 430px) !important;
+    max-width:min(calc(100vw - 18px), 430px) !important;
+    max-height:calc(100dvh - 18px) !important;
+    border-radius:24px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #expenseModal .body,
+  body.mobile-ui #journalModal .body,
+  body.mobile-ui #tripModal .body{
+    padding:14px !important;
+    overflow:auto !important;
+  }
+
+  body.mobile-ui #expenseModal .body .row,
+  body.mobile-ui #journalModal .body .row,
+  body.mobile-ui #tripModal .body .row,
+  body.mobile-ui #expenseModal .body .date-row,
+  body.mobile-ui #journalModal .body .date-row,
+  body.mobile-ui #tripModal .body .date-row{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+    gap:10px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row{
+    display:grid !important;
+    grid-template-columns:1.15fr .85fr !important;
+    gap:10px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-currency-button,
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:100% !important;
+    min-height:42px !important;
+    border-radius:14px !important;
+    justify-content:center !important;
+  }
+
+  body.mobile-ui #expenseModal .input,
+  body.mobile-ui #journalModal .input,
+  body.mobile-ui #tripModal .input,
+  body.mobile-ui #expenseModal select,
+  body.mobile-ui #journalModal select,
+  body.mobile-ui #tripModal select,
+  body.mobile-ui #expenseModal input,
+  body.mobile-ui #journalModal input,
+  body.mobile-ui #tripModal input{
+    min-height:42px !important;
+    height:42px !important;
+    padding:8px 12px !important;
+    border-radius:14px !important;
+    font-size:1rem !important;
+  }
+
+  body.mobile-ui #expenseModal textarea,
+  body.mobile-ui #journalModal textarea,
+  body.mobile-ui #tripModal textarea,
+  body.mobile-ui #expenseModal .input.rtf,
+  body.mobile-ui #journalModal .input.rtf{
+    min-height:118px !important;
+    height:auto !important;
+  }
+
+  body.mobile-ui #expenseModal .modal .footer,
+  body.mobile-ui #journalModal .modal .footer,
+  body.mobile-ui #tripModal .modal .footer,
+  body.mobile-ui #expenseModal .footer,
+  body.mobile-ui #journalModal .footer,
+  body.mobile-ui #tripModal .footer{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.mobile-ui #expenseModal .footer .btn,
+  body.mobile-ui #journalModal .footer .btn,
+  body.mobile-ui #tripModal .footer .btn{
+    width:100% !important;
+    min-height:46px !important;
+    border-radius:16px !important;
+  }
+
+  body.mobile-ui #expenseModal .rtf-bubble,
+  body.mobile-ui #journalModal .rtf-bubble{
+    position:sticky !important;
+    right:0 !important;
+    left:0 !important;
+    bottom:8px !important;
+    transform:none !important;
+    width:100% !important;
+    max-width:none !important;
+    margin:8px 0 0 !important;
+    padding:8px !important;
+    display:grid !important;
+    grid-template-columns:auto 1fr !important;
+    align-items:center !important;
+    gap:8px !important;
+    border-radius:18px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #expenseModal .rtf-bubble .styles,
+  body.mobile-ui #expenseModal .rtf-bubble .colors,
+  body.mobile-ui #journalModal .rtf-bubble .styles,
+  body.mobile-ui #journalModal .rtf-bubble .colors{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+    align-items:center !important;
+    min-width:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+  }
+
+  body.mobile-ui #expenseModal .rtf-bubble .fmt,
+  body.mobile-ui #journalModal .rtf-bubble .fmt{
+    min-width:40px !important;
+    height:40px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    font-size:1.05rem !important;
+  }
+
+  body.mobile-ui #expenseModal .rtf-bubble .dot,
+  body.mobile-ui #journalModal .rtf-bubble .dot{
+    width:34px !important;
+    min-width:34px !important;
+    height:34px !important;
+  }
+
+  body.mobile-ui .map-toolbar{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+    top:10px !important;
+    left:10px !important;
+    right:10px !important;
+    overflow-x:auto !important;
+    padding:0 !important;
+  }
+
+  body.mobile-ui .map-toolbar .btn{
+    min-width:auto !important;
+    width:auto !important;
+    min-height:42px !important;
+    height:42px !important;
+    padding:0 12px !important;
+    border-radius:14px !important;
+    white-space:nowrap !important;
+    font-size:.96rem !important;
+    box-shadow:0 8px 18px rgba(15,23,42,.08) !important;
+  }
+}
+
+@media (max-width: 520px){
+  body.mobile-ui #expenseModal .body .row,
+  body.mobile-ui #journalModal .body .row,
+  body.mobile-ui #tripModal .body .row,
+  body.mobile-ui #expenseModal .body .date-row,
+  body.mobile-ui #journalModal .body .date-row,
+  body.mobile-ui #tripModal .body .date-row,
+  body.mobile-ui #expenseModal .expense-main-row,
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail,
+  body.mobile-ui .mobile-overview-action-rail{
+    grid-template-columns:38px 38px 38px minmax(0,1fr) !important;
+    gap:6px !important;
+    padding:6px !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail .mobile-overview-icon-btn,
+  body.mobile-ui #mobileOverviewActionRail .mobile-section-menu-btn{
+    width:38px !important;
+    min-width:38px !important;
+    height:38px !important;
+    min-height:38px !important;
+  }
+
+  body.mobile-ui #mobileOverviewActionRail #searchAll{
+    height:38px !important;
+    min-height:38px !important;
+  }
+}
