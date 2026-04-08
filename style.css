@@ -8363,7 +8363,7 @@ button, .btn, .menu-btn, select, input, textarea {
     height:42px !important;
     min-height:42px !important;
     padding:8px 10px !important;
-    font-size:.95rem !important;
+    font-size:16px !important;
     border-radius:14px !important;
   }
 
@@ -8528,7 +8528,7 @@ button, .btn, .menu-btn, select, input, textarea {
     min-height:38px !important;
     padding:6px 10px !important;
     border-radius:12px !important;
-    font-size:.9rem !important;
+    font-size:16px !important;
   }
 
   body.mobile-ui #view-meta .chips{
@@ -8629,7 +8629,7 @@ button, .btn, .menu-btn, select, input, textarea {
     height:36px !important;
     min-height:36px !important;
     padding:5px 8px !important;
-    font-size:.84rem !important;
+    font-size:16px !important;
   }
 
   body.mobile-ui #view-meta .chips .chip{
@@ -8752,7 +8752,7 @@ button, .btn, .menu-btn, select, input, textarea {
     height: 48px !important;
     min-height: 48px !important;
     padding: 10px 14px !important;
-    font-size: .97rem !important;
+    font-size: 16px !important;
     border-radius: 14px !important;
     background: #f6f8fb !important;
     border: 1px solid #e5eaf1 !important;
@@ -9726,7 +9726,7 @@ button, .btn, .menu-btn, select, input, textarea {
     min-height:42px !important;
     border-radius:14px !important;
     padding-inline:12px !important;
-    font-size:15px !important;
+    font-size:16px !important;
   }
 
   body.mobile-ui #expenseModal .input.rtf,

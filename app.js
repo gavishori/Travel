@@ -397,13 +397,13 @@ function applyAuthShellState(user){
     if(loginScreen) loginScreen.style.display = 'none';
     if(appContainer) appContainer.style.display = 'grid';
     try{ if(authModal?.open) authModal.close(); }catch(_){ }
-    if(mobileOverlay) mobileOverlay.style.display = 'none';
+    if(mobileOverlay){ mobileOverlay.style.display = 'none'; mobileOverlay.setAttribute('aria-hidden', 'true'); }
     document.body.style.overflow = 'auto';
   }else{
     if(loginScreen) loginScreen.style.display = 'grid';
     if(appContainer) appContainer.style.display = 'none';
     try{ if(authModal?.open) authModal.close(); }catch(_){ }
-    if(mobileOverlay) mobileOverlay.style.display = 'none';
+    if(mobileOverlay){ mobileOverlay.style.display = 'none'; mobileOverlay.setAttribute('aria-hidden', 'true'); }
     document.body.style.overflow = '';
   }
 }
@@ -422,6 +422,25 @@ function openAuthEntryPoint(){
       mobileOverlay.style.display = 'flex';
       mobileOverlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      // Attach close handlers once (backdrop click + Escape)
+      if(!mobileOverlay._authCloseWired){
+        mobileOverlay._authCloseWired = true;
+        mobileOverlay.addEventListener('click', function(ev){
+          const card = document.getElementById('mobileAuthCard');
+          if(card && !card.contains(ev.target)){
+            mobileOverlay.style.display = 'none';
+            mobileOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+          }
+        });
+        document.addEventListener('keydown', function mobileOverlayEsc(ev){
+          if(ev.key === 'Escape' && mobileOverlay.style.display !== 'none'){
+            mobileOverlay.style.display = 'none';
+            mobileOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+          }
+        });
+      }
       setTimeout(()=>{ try{ (mEmail || lsEmail || authEmail)?.focus(); }catch(_){ } }, 30);
       return;
     }
@@ -2229,10 +2248,10 @@ function ensureMobileAuthDebug(){
   return root;
 }
 function showMobileAuthDebug(error){
-  const isMobileViewport = typeof window.__isMobileViewport === 'function'
+  const isMobileViewportResult = typeof window.__isMobileViewport === 'function'
     ? window.__isMobileViewport()
-    : (window.innerWidth <= 820);
-  if(!isMobileViewport) return;
+    : isMobileViewport();
+  if(!isMobileViewportResult) return;
   const root = ensureMobileAuthDebug();
   const pretty = xErr(error);
   const raw = (error?.code ? `${error.code}\n` : '') + (error?.message || String(error || 'Unknown auth error'));
@@ -2536,7 +2555,10 @@ async function renderTripList(){
         if(renderToken !== state._tripListRenderToken) return;
         const chunk = items.slice(offset, offset + chunkSize);
         if(!chunk.length) return;
-        list.insertAdjacentHTML('beforeend', buildTripMarkup(chunk));
+        // Insert into a temporary container so we bind only new nodes
+        const tmp = document.createElement('div');
+        tmp.innerHTML = buildTripMarkup(chunk);
+        while(tmp.firstChild) list.appendChild(tmp.firstChild);
         bindTripListInteractions(list);
         offset += chunk.length;
         setTimeout(pump, 16);
@@ -8974,7 +8996,7 @@ document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }ca
 
 // --- Auth Fallback (Fixed for reliable login) ---
 (function(){
-  const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 820;
+  const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 820;
   function $q(s){ return document.querySelector(s); }
   function on(el, ev, fn){ el && el.addEventListener(ev, fn, {passive:false}); }
   function bindTap(el, fn){

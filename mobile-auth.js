@@ -1,30 +1,20 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const modalIds = [
-    'authModal',
-    'tripModal',
-    'expenseModal',
-    'journalModal',
-    'confirmDeleteModal',
-    'filterModal',
-    'breakdownDialog',
-    'unsavedChangesModal',
-    'mapSelectModal',
-    'tripTodayModal'
-  ];
-
-  modalIds.forEach((id) => {
-    const dialog = document.getElementById(id);
-    if (!dialog) return;
-
-    const header = dialog.querySelector('header') || dialog.querySelector('.header');
-    if (!header || header.querySelector('.btn-logout-mobile')) return;
-
-    const button = document.createElement('button');
-    button.className = 'btn danger btn-logout-mobile';
-    button.setAttribute('aria-label', 'התנתקות');
-    button.style.display = 'none';
-    button.style.marginInlineStart = '.5rem';
-    button.textContent = 'התנתקות';
-    header.appendChild(button);
+  // Wire logout buttons that already exist in modal headers (visible only when logged in).
+  // Buttons with class .btn-logout-mobile are declared in index.html;
+  // visibility is controlled by app.js via onAuthStateChanged.
+  document.querySelectorAll('.btn-logout-mobile').forEach(function (btn) {
+    if (btn.dataset.logoutBound === '1') return;
+    btn.dataset.logoutBound = '1';
+    btn.addEventListener('click', function () {
+      try {
+        if (typeof window.hardSignOut === 'function') {
+          window.hardSignOut();
+        } else if (window.FB && typeof window.FB.signOut === 'function') {
+          window.FB.signOut(window.FB.auth);
+        }
+      } catch (e) {
+        console.warn('logout failed', e);
+      }
+    });
   });
 });
