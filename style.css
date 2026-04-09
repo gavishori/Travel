@@ -32,12 +32,13 @@
     font-size:18px !important;
   }
 
-  #homeTripsHeader{
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) auto !important;
-    align-items:center !important;
-    gap:10px !important;
-  }
+ #homeTripsHeader {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 60px !important; /* זה מה שימנע את הדריסה */
+}
 
   #homeTripsHeader .spacer{
     display:none !important;
@@ -10130,5 +10131,291 @@ button, .btn, .menu-btn, select, input, textarea {
   body.mobile-ui .modal .footer .btn.danger:only-child,
   body.mobile-ui #rowMenuModal .footer #rowMenuDelete{
     grid-column:1 / -1 !important;
+  }
+/* Focused mobile sizing for expense + journal modals */
+  body.mobile-ui #expenseModal[open],
+  body.mobile-ui #journalModal[open]{
+    max-height:calc((var(--vvh, 100dvh) - env(safe-area-inset-bottom, 0px)) * .54) !important;
+    height:auto !important;
+    top:auto !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #expenseModal header,
+  body.mobile-ui #journalModal header{
+    padding:10px 12px !important;
+  }
+
+  body.mobile-ui #expenseModal .body,
+  body.mobile-ui #journalModal .body{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:6px 8px !important;
+    padding:10px 12px !important;
+    overflow:hidden !important;
+    align-content:start !important;
+  }
+
+  body.mobile-ui #expenseModal .body > label:has(#expTitle),
+  body.mobile-ui #expenseModal .body > label:has(#expText),
+  body.mobile-ui #expenseModal .body > #rtfBubbleExp,
+  body.mobile-ui #expenseModal .body > .expense-main-row,
+  body.mobile-ui #expenseModal .body > .expense-meta-row,
+  body.mobile-ui #journalModal .body > label:has(#jrTitle),
+  body.mobile-ui #journalModal .body > label:has(#jrText),
+  body.mobile-ui #journalModal .body > #rtfBubble,
+  body.mobile-ui #journalModal .body > .journal-meta-row{
+    grid-column:1 / -1 !important;
+  }
+
+  body.mobile-ui #expenseModal .body > label,
+  body.mobile-ui #journalModal .body > label{
+    margin:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .body > label,
+  body.mobile-ui #journalModal .body > label,
+  body.mobile-ui #expenseModal .expense-main-row > label,
+  body.mobile-ui #expenseModal .expense-meta-row > label,
+  body.mobile-ui #journalModal .journal-meta-row > label{
+    gap:2px !important;
+    font-size:12px !important;
+  }
+
+  body.mobile-ui #expenseModal .input,
+  body.mobile-ui #expenseModal select,
+  body.mobile-ui #journalModal .input,
+  body.mobile-ui #journalModal select{
+    height:36px !important;
+    min-height:36px !important;
+    padding:6px 10px !important;
+    font-size:14px !important;
+    margin-top:0 !important;
+    border-radius:12px !important;
+  }
+
+  body.mobile-ui #expenseModal .input.rtf,
+  body.mobile-ui #journalModal .input.rtf{
+    min-height:64px !important;
+    max-height:64px !important;
+    padding:8px 10px !important;
+    overflow:hidden !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row{
+    grid-template-columns:minmax(0, 1fr) minmax(0, .9fr) 52px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    grid-template-columns:minmax(0, 1fr) 78px 36px !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-currency-button,
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:36px !important;
+    min-width:36px !important;
+    max-width:36px !important;
+    height:36px !important;
+    min-height:36px !important;
+    border-radius:12px !important;
+  }
+
+  body.mobile-ui #expenseModal #rtfBubbleExp,
+  body.mobile-ui #journalModal #rtfBubble{
+    padding:6px 8px !important;
+    margin:0 !important;
+    gap:6px !important;
+  }
+
+  body.mobile-ui #expenseModal #rtfBubbleExp .dot,
+  body.mobile-ui #journalModal #rtfBubble .dot{
+    width:24px !important;
+    height:24px !important;
+  }
+
+  body.mobile-ui #expenseModal #rtfBubbleExp .fmt,
+  body.mobile-ui #journalModal #rtfBubble .fmt{
+    min-width:24px !important;
+    height:24px !important;
+    padding:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .footer,
+  body.mobile-ui #journalModal .footer{
+    gap:8px !important;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.mobile-ui #expenseModal .footer .btn,
+  body.mobile-ui #journalModal .footer .btn{
+    min-height:40px !important;
+    height:40px !important;
+    font-size:.95rem !important;
+    margin:0 !important;
+  }
+}
+
+/* === EXACT MOBILE MODAL OVERRIDE V3 (Top 50vh, Side-by-Side, Zero Scroll) === */
+@media (max-width: 820px) {
+  /* 1. מיקום המודל בדיוק בחצי העליון של המסך ומניעת גלילה */
+  html body dialog#expenseModal[open],
+  html body dialog#journalModal[open] {
+    position: fixed !important;
+    inset: 0 0 auto 0 !important; /* נצמד למעלה, ימינה ושמאלה */
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 50vh !important;
+    min-height: 50vh !important;
+    max-height: 50vh !important;
+    transform: none !important;
+    border-radius: 0 0 24px 24px !important; /* עיגול פינות רק בחלק התחתון */
+    overflow: hidden !important; /* נעילת גלילה לחלוטין */
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    z-index: 99999 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. אזור הכותרת (Header) - קומפקטי וצר */
+  html body dialog#expenseModal > header,
+  html body dialog#journalModal > header {
+    padding: 8px 12px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  html body dialog#expenseModal > header strong,
+  html body dialog#journalModal > header strong {
+    font-size: 14px !important;
+  }
+
+  /* 3. אזור התוכן (Body) - יצירת גריד שטוח שבו כולם שכנים */
+  html body dialog#expenseModal > .body,
+  html body dialog#journalModal > .body {
+    flex: 1 !important;
+    overflow: hidden !important; /* אין גלילה פנימית! הכל חייב להיכנס */
+    padding: 8px !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important; /* 4 עמודות שוות */
+    gap: 6px !important;
+    align-content: start !important;
+  }
+
+  /* "פירוק" שורות פנימיות כדי שכל השדות ישבו באותו גריד אם יש עטיפות HTML */
+  html body #expenseModal .body .row,
+  html body #journalModal .body .row,
+  html body #expenseModal .expense-main-row,
+  html body #expenseModal .expense-meta-row,
+  html body #journalModal .journal-meta-row,
+  html body #tripModal .body .date-row,
+  html body #expenseModal .body .date-row,
+  html body #journalModal .body .date-row {
+    display: contents !important;
+  }
+
+  /* 4. העלמת התוויות (Labels) כדי להסתמך רק על אייקונים/Placeholders */
+  html body #expenseModal .body label,
+  html body #journalModal .body label {
+    display: block !important;
+    margin: 0 !important;
+  }
+  
+  html body #expenseModal .body label > span,
+  html body #journalModal .body label > span,
+  html body #expenseModal .body .lbl,
+  html body #journalModal .body .lbl {
+    display: none !important; /* העלמת הטקסט המלווה את השדה */
+  }
+
+  /* 5. עיצוב השדות עצמם - גובה צר ואחיד */
+  html body #expenseModal .input,
+  html body #expenseModal select,
+  html body #journalModal .input,
+  html body #journalModal select,
+  html body #expenseModal input[type="date"],
+  html body #expenseModal input[type="time"],
+  html body #journalModal input[type="date"],
+  html body #journalModal input[type="time"] {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* כותרת או הערות ארוכות - תופסות שורה שלמה בגריד (4 עמודות) */
+  html body #expenseModal label:has(#expTitle),
+  html body #journalModal label:has(#jrTitle),
+  html body #expenseModal label:has(#expText),
+  html body #journalModal label:has(#jrText) {
+    grid-column: 1 / -1 !important; 
+  }
+
+  /* הקטנת אזור הטקסט החופשי כדי שלא ידחוף אלמנטים למטה */
+  html body #expText,
+  html body #jrText {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+  }
+  
+  /* הסתרת בועת העיצוב (RTF) במסך הוספה כדי לחסוך מקום פנוי */
+  html body #rtfBubbleExp,
+  html body #rtfBubble {
+    display: none !important;
+  }
+
+  /* אייקוני מיקום / מטבע - מרובעים וישבו בתוך תא אחד בגריד */
+  html body #expenseModal .expense-currency-button,
+  html body #expenseModal .expense-location-trigger,
+  html body #journalModal .journal-location-trigger {
+    grid-column: span 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 10px !important;
+  }
+
+  /* העלמת טקסט מכפתור מיקום במידה ויש */
+  html body #expenseModal .expense-location-trigger .journal-location-trigger-label,
+  html body #journalModal .journal-location-trigger .journal-location-trigger-label,
+  html body #expLocationPreview,
+  html body #jrLocationPreview {
+    display: none !important;
+  }
+
+  /* 6. אזור הכפתורים (Footer) מתיישר לשורה אחת שטוחה בסוף המודל */
+  html body #expenseModal > .footer,
+  html body #journalModal > .footer {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 8px 12px 14px 12px !important;
+    background: var(--card) !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  html body #expenseModal > .footer .btn,
+  html body #journalModal > .footer .btn {
+    flex: 1 !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
   }
 }
