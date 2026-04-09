@@ -10259,24 +10259,30 @@ button, .btn, .menu-btn, select, input, textarea {
   }
 }
 
-/* === EXACT MOBILE MODAL OVERRIDE V4 (Fixed Width & Perfect Rows) === */
+/* === EXACT MOBILE MODAL OVERRIDE V5 (No X-Scroll, Y-Scroll ONLY on Textarea) === */
 @media (max-width: 820px) {
-  /* 1. תיקון רוחב ומיקום - התאמה מושלמת למסך בלי לחרוג */
+  /* הבטחה הרמטית למניעת גלילה אופקית בכל המסכים באפליקציה */
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* 1. מודל - ללא חריגות רוחב ונעילת גלילה */
   html body dialog#expenseModal[open],
   html body dialog#journalModal[open] {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    width: 100% !important; /* תוקן כדי למנוע גלילה אופקית או חריגה */
-    max-width: 100% !important;
+    width: 100vw !important; /* קיבוע לרוחב המסך בדיוק */
+    max-width: 100vw !important;
     height: 50vh !important;
     min-height: 50vh !important;
     max-height: 50vh !important;
     margin: 0 !important;
     transform: none !important;
     border-radius: 0 0 24px 24px !important;
-    overflow: hidden !important;
+    overflow: hidden !important; /* חסימת כל גלילה שזולגת מהמודל */
     display: flex !important;
     flex-direction: column !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
@@ -10284,7 +10290,7 @@ button, .btn, .menu-btn, select, input, textarea {
     box-sizing: border-box !important;
   }
 
-  /* 2. אזור הכותרת */
+  /* 2. כותרת המודל */
   html body dialog#expenseModal > header,
   html body dialog#journalModal > header {
     padding: 8px 12px !important;
@@ -10294,6 +10300,7 @@ button, .btn, .menu-btn, select, input, textarea {
     display: flex !important;
     align-items: center !important;
     box-sizing: border-box !important;
+    width: 100% !important;
   }
   
   html body dialog#expenseModal > header strong,
@@ -10301,20 +10308,21 @@ button, .btn, .menu-btn, select, input, textarea {
     font-size: 14px !important;
   }
 
-  /* 3. יצירת גריד של 6 עמודות לשליטה מוחלטת על השורות */
+  /* 3. אזור התוכן (Body) - גריד 6 עמודות */
   html body dialog#expenseModal > .body,
   html body dialog#journalModal > .body {
     flex: 1 !important;
-    overflow: hidden !important;
+    overflow: hidden !important; /* חסימה מוחלטת של גלילה אנכית ואופקית פה */
     padding: 8px 12px !important;
     display: grid !important;
-    grid-template-columns: repeat(6, minmax(0, 1fr)) !important; /* 6 עמודות */
-    gap: 8px 6px !important; /* מרווח אנכי 8, אופקי 6 */
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 8px 6px !important;
     align-content: start !important;
     box-sizing: border-box !important;
+    width: 100% !important;
   }
 
-  /* ביטול עטיפות HTML (כולל Labels) כדי שהפקדים ישבו ישירות בגריד */
+  /* ביטול עטיפות HTML כדי שהפקדים ייכנסו לגריד */
   html body #expenseModal .body .row,
   html body #journalModal .body .row,
   html body #expenseModal .expense-main-row,
@@ -10327,7 +10335,7 @@ button, .btn, .menu-btn, select, input, textarea {
     display: contents !important;
   }
 
-  /* העלמת טקסטים של Labels לחסכון במקום */
+  /* העלמת טקסטים של Labels */
   html body #expenseModal .body label > span,
   html body #journalModal .body label > span,
   html body #expenseModal .body .lbl,
@@ -10335,7 +10343,7 @@ button, .btn, .menu-btn, select, input, textarea {
     display: none !important;
   }
 
-  /* עיצוב אחיד לכל שדות הקלט */
+  /* עיצוב אחיד וחסימת חריגות בשדות הקלט */
   html body #expenseModal .input,
   html body #expenseModal select,
   html body #expenseModal input,
@@ -10351,23 +10359,22 @@ button, .btn, .menu-btn, select, input, textarea {
     font-size: 14px !important;
     border-radius: 10px !important;
     box-sizing: border-box !important;
+    overflow: hidden !important; /* מונע כל גלילה בתוך האינפוט */
   }
 
+  /* --- סידור השורות בגריד 6 (מותאם בדיוק למסך) --- */
 
-  /* --- סידור השורות המדויק (כל שורה צריכה להגיע לסכום של 6) --- */
-
-  /* שורה 1: קטגוריה (3) + סכום (2) + מטבע (1) = 6 */
   html body #expenseModal select,
   html body #journalModal select {
-    grid-column: span 3 !important; /* חצי מסך */
+    grid-column: span 3 !important;
   }
   
   html body #expenseModal input[type="number"] {
-    grid-column: span 2 !important; /* שליש מסך */
+    grid-column: span 2 !important;
   }
   
   html body #expenseModal .expense-currency-button {
-    grid-column: span 1 !important; /* שישית מסך */
+    grid-column: span 1 !important;
     height: 38px !important;
     border-radius: 10px !important;
     padding: 0 !important;
@@ -10376,7 +10383,6 @@ button, .btn, .menu-btn, select, input, textarea {
     justify-content: center !important;
   }
 
-  /* שורה 2: תאריך (3) + שעה (2) + מיקום (1) = 6 */
   html body #expenseModal input[type="date"],
   html body #journalModal input[type="date"] {
     grid-column: span 3 !important;
@@ -10398,22 +10404,25 @@ button, .btn, .menu-btn, select, input, textarea {
     justify-content: center !important;
   }
 
-  /* שורות 3 ו-4: כותרת והערות - תופסות רוחב מלא (6 עמודות) */
+  /* כותרת רגילה - תופסת שורה מלאה */
   html body #expTitle,
-  html body #jrTitle,
-  html body #expText,
-  html body #jrText {
+  html body #jrTitle {
     grid-column: 1 / -1 !important; 
   }
 
+  /* --- אזור ההערות: המקום היחיד שבו מותרת גלילה אנכית --- */
   html body #expText,
   html body #jrText {
-    height: 40px !important;
-    min-height: 40px !important;
-    max-height: 40px !important;
+    grid-column: 1 / -1 !important; 
+    height: 50px !important; /* גובה מעט גדול יותר כדי לאפשר כתיבה נוחה */
+    min-height: 50px !important;
+    max-height: 60px !important;
+    overflow-y: auto !important; /* גלילה אנכית מאושרת רק כאן */
+    overflow-x: hidden !important; /* אין גלילה אופקית פה בשום מצב */
+    resize: none !important; /* חסימת אפשרות הרחבה ידנית ע"י המשתמש */
   }
 
-  /* העלמת אלמנטים מיותרים בתוך המיקום ובועת ה-RTF */
+  /* העלמת אלמנטים מיותרים */
   html body #expenseModal .expense-location-trigger .journal-location-trigger-label,
   html body #journalModal .journal-location-trigger .journal-location-trigger-label,
   html body #expLocationPreview,
@@ -10423,7 +10432,7 @@ button, .btn, .menu-btn, select, input, textarea {
     display: none !important;
   }
 
-  /* אזור הכפתורים למטה (Footer) */
+  /* Footer - כפתורי פעולה */
   html body #expenseModal > .footer,
   html body #journalModal > .footer {
     display: flex !important;
@@ -10433,6 +10442,8 @@ button, .btn, .menu-btn, select, input, textarea {
     background: var(--card) !important;
     border-top: 1px solid var(--border) !important;
     box-sizing: border-box !important;
+    width: 100% !important;
+    overflow: hidden !important;
   }
 
   html body #expenseModal > .footer .btn,
@@ -10443,5 +10454,6 @@ button, .btn, .menu-btn, select, input, textarea {
     margin: 0 !important;
     border-radius: 12px !important;
     font-size: 15px !important;
+    overflow: hidden !important;
   }
 }
