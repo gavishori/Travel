@@ -51,6 +51,14 @@ function legacyWireAuthPrimaryButton(){
     }
   };
 }
+function debounceFrame(fn){
+  let raf = 0;
+  return function(...args){
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=>{ raf = 0; fn.apply(this,args); });
+  };
+}
+
 function isCompactMobileHeader(){
   return window.matchMedia('(max-width: 820px)').matches;
 }
@@ -74,41 +82,25 @@ function normalizeMobileOverviewHeader(){
     const select = document.getElementById('overviewTabSelect');
     const wrap = select?.closest('.tab-select-wrap');
     const overviewHidden = !document.getElementById('view-overview') || document.getElementById('view-overview').hidden;
-    const store = window.__overviewTabWrapStore || (window.__overviewTabWrapStore = {});
 
     if(!isMobileViewport()){
       if(tabs) tabs.classList.remove('mobile-tabs-compact');
-      if(!wrap && store.parent && store.node){
-        try{
-          if(store.nextSibling && store.nextSibling.parentNode === store.parent){
-            store.parent.insertBefore(store.node, store.nextSibling);
-          }else{
-            store.parent.appendChild(store.node);
-          }
-        }catch(_){ }
-      }
-      const restoredWrap = document.getElementById('overviewTabSelect')?.closest('.tab-select-wrap');
-      if(restoredWrap){
-        restoredWrap.hidden = false;
-        restoredWrap.removeAttribute('aria-hidden');
-        restoredWrap.style.display = '';
+      if(wrap){
+        wrap.hidden = false;
+        wrap.removeAttribute('aria-hidden');
+        wrap.style.display = '';
       }
       if(headerBar) headerBar.hidden = overviewHidden;
       return;
     }
 
-    if(wrap){
-      store.parent = wrap.parentNode;
-      store.nextSibling = wrap.nextSibling;
-      store.node = wrap;
-      try{ wrap.remove(); }catch(_){
-        wrap.hidden = false;
-        wrap.setAttribute('aria-hidden', 'true');
-        wrap.style.display = 'none';
-      }
-    }
     if(tabs) tabs.classList.add('mobile-tabs-compact');
-    if(headerBar) headerBar.hidden = true;
+    if(wrap){
+      wrap.hidden = false;
+      wrap.removeAttribute('aria-hidden');
+      wrap.style.display = '';
+    }
+    if(headerBar) headerBar.hidden = overviewHidden;
   }catch(err){
     console.error('normalizeMobileOverviewHeader failed', err);
   }
@@ -520,12 +512,9 @@ function wireHeaderControls(){
     if(loggedIn){
       target.classList.add('is-authenticated', 'icon-only');
       target.innerHTML = '<span aria-hidden="true">⇦</span>';
-      target.setAttribute('aria-label', 'חשבון מחובר');
-      target.title = 'חשבון מחובר';
-      target.addEventListener('click', (ev)=>{
-        ev.preventDefault();
-        openAccountMenu();
-      }, {passive:false});
+      target.setAttribute('aria-label', 'יציאה');
+      target.title = 'יציאה';
+      target.addEventListener('click', performPrimaryLogout, {passive:false});
     } else {
       target.textContent = 'התחברות';
       target.setAttribute('aria-label', 'התחברות');
@@ -554,9 +543,9 @@ function wireHeaderControls(){
     if(loggedIn){
       target.classList.add('is-authenticated', 'icon-only');
       target.innerHTML = '<span aria-hidden="true">&#10140;</span>';
-      target.setAttribute('aria-label', 'חשבון מחובר');
-      target.title = 'חשבון מחובר';
-      bindTap(target, ()=> openAccountMenu(), 'authTapWired');
+      target.setAttribute('aria-label', 'יציאה');
+      target.title = 'יציאה';
+      bindTap(target, performPrimaryLogout, 'authTapWired');
     } else {
       target.textContent = 'התחברות';
       target.setAttribute('aria-label', 'התחברות');
@@ -578,8 +567,8 @@ document.addEventListener('DOMContentLoaded', wireHeaderControls);
 document.addEventListener('DOMContentLoaded', wireReliableMobileActions);
 document.addEventListener('DOMContentLoaded', syncViewportModeClasses);
 document.addEventListener('DOMContentLoaded', normalizeMobileOverviewHeader);
-window.addEventListener('resize', syncViewportModeClasses);
-window.addEventListener('resize', normalizeMobileOverviewHeader);
+window.addEventListener('resize', debounceFrame(syncViewportModeClasses));
+window.addEventListener('resize', debounceFrame(normalizeMobileOverviewHeader));
 window.addEventListener('pageshow', syncViewportModeClasses);
 window.addEventListener('pageshow', normalizeMobileOverviewHeader);
 
@@ -608,9 +597,9 @@ function finalMobileAuthSwap(loggedIn, email=''){
   if(loggedIn){
     btn.classList.add('icon-only', 'is-authenticated');
     btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
-    btn.setAttribute('aria-label', 'חשבון מחובר');
-    btn.title = 'חשבון מחובר';
-    bindTap(btn, ()=> openAccountMenu(), 'finalAuthTapWired');
+    btn.setAttribute('aria-label', 'יציאה');
+    btn.title = 'יציאה';
+    bindTap(btn, performPrimaryLogout, 'finalAuthTapWired');
   }else{
     btn.textContent = 'התחברות';
     btn.setAttribute('aria-label', 'התחברות');
@@ -855,6 +844,8 @@ function syncJournalSelectionUi(){
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
       add('מפה', ()=> setOverviewSelectValue('map'));
       add('תקציב', ()=> openCurrentBudgetSummary());
+      add('מיין', ()=> triggerButton('btnAllSort'));
+      add('פתח / צמצם הכל', ()=> triggerButton('btnAllToggle'));
     } else if(currentSection === 'meta'){
       title.textContent = 'נתוני נסיעה';
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
@@ -870,8 +861,8 @@ function syncJournalSelectionUi(){
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
       add('ייבוא / ייצוא / שיתוף', ()=> setOverviewSelectValue('share'));
-      add('איפה ביקרתי', ()=> triggerButton('btnToggleVisited'));
-      add('איפה ביזבזתי', ()=> triggerButton('btnToggleSpent'));
+      add('איפה טיילתי', ()=> triggerButton('btnToggleVisited'));
+      add('איפה בזבזתי', ()=> triggerButton('btnToggleSpent'));
       add('GPX', ()=> triggerButton('btnToggleGPX'));
     } else if(currentSection === 'share'){
       title.textContent = 'ייבוא / ייצוא / שיתוף';
@@ -917,45 +908,63 @@ function syncJournalSelectionUi(){
   }
 
   function ensureOverviewActionRail(){
-    const host = document.getElementById('view-overview');
-    if(!host) return;
+    if(!isCompactMobileHeader()) return;
+    const view = document.getElementById('view-overview');
+    const header = document.getElementById('overviewHeaderBar');
+    if(!view || !header) return;
+
+    const standaloneMenu = document.querySelector('#view-overview > #mobileOverviewMenuBtn');
+    if(standaloneMenu) standaloneMenu.remove();
+
     let rail = document.getElementById('mobileOverviewActionRail');
-    if(rail) return;
-    const menuBtn = document.getElementById('mobileOverviewMenuBtn');
-    const searchInput = document.getElementById('searchAll');
-    rail = document.createElement('div');
-    rail.id = 'mobileOverviewActionRail';
-    rail.className = 'mobile-overview-action-rail';
-    if(menuBtn) rail.appendChild(menuBtn);
-    rail.insertAdjacentHTML('beforeend', `
-      <button type="button" id="mobileOverviewExpenseBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף הוצאה">
-        <span class="mobile-action-glyph" aria-hidden="true">+$</span>
-        <span class="mobile-action-text">הוצאה</span>
-      </button>
-      <button type="button" id="mobileOverviewJournalBtn" class="btn mobile-overview-icon-btn" aria-label="הוסף יומן">
-        <span class="mobile-action-glyph" aria-hidden="true">+✎</span>
-        <span class="mobile-action-text">יומן</span>
-      </button>
-      <button type="button" id="mobileOverviewSortBtn" class="btn mobile-overview-icon-btn" aria-label="מיון">
-        <span class="mobile-action-glyph" aria-hidden="true">⇅</span>
-        <span class="mobile-action-text">מיון</span>
-      </button>
-      <button type="button" id="mobileOverviewToggleBtn" class="btn mobile-overview-icon-btn" aria-label="צמצם או פרוס">
-        <span class="mobile-action-glyph" aria-hidden="true">↕</span>
-        <span class="mobile-action-text">פריסה</span>
-      </button>
-    `);
-    if(searchInput){
-      searchInput.hidden = false;
-      searchInput.placeholder = 'חיפוש';
-      searchInput.classList.add('mobile-overview-search');
-      if(searchInput.parentElement !== rail) rail.appendChild(searchInput);
+    if(!rail){
+      rail = document.createElement('div');
+      rail.id = 'mobileOverviewActionRail';
+      rail.className = 'mobile-overview-action-rail';
+      rail.setAttribute('aria-label', 'פעולות הצג הכל');
+
+      const makeProxy = (id, glyph, label) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = id;
+        btn.className = 'btn mobile-overview-icon-btn';
+        btn.setAttribute('aria-label', label);
+        btn.innerHTML = `<span class="mobile-action-glyph" aria-hidden="true">${glyph}</span><span class="mobile-action-text">${label}</span>`;
+        return btn;
+      };
+
+      rail.append(
+        makeProxy('mobileOverviewMenuBtn', '&#9776;', 'פעולות'),
+        makeProxy('mobileOverviewExpenseBtn', '+', 'הוצאה'),
+        makeProxy('mobileOverviewJournalBtn', '&#9998;', 'יומן'),
+        makeProxy('mobileOverviewSortBtn', '&#8645;', 'מיין'),
+        makeProxy('mobileOverviewToggleBtn', '&#8693;', 'פתח / צמצם')
+      );
+      view.prepend(rail);
     }
-    host.prepend(rail);
-    rail.querySelector('#mobileOverviewSortBtn')?.addEventListener('click', ()=> triggerButton('btnAllSort'));
-    rail.querySelector('#mobileOverviewToggleBtn')?.addEventListener('click', ()=> triggerButton('btnAllToggle'));
-    rail.querySelector('#mobileOverviewExpenseBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddExpense'));
-    rail.querySelector('#mobileOverviewJournalBtn')?.addEventListener('click', ()=> triggerButton('btnQuickAddJournal'));
+
+    const search = document.getElementById('searchAll');
+    if(search && search.parentElement !== rail){
+      search.classList.add('mobile-overview-search');
+      rail.appendChild(search);
+    }
+
+    const bindProxy = (id, action) => {
+      const btn = document.getElementById(id);
+      if(!btn || btn.dataset.mobileProxyBound === '1') return;
+      btn.dataset.mobileProxyBound = '1';
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        action();
+      }, { passive:false });
+    };
+
+    bindProxy('mobileOverviewMenuBtn', ()=> openMobileSectionMenu('overview'));
+    bindProxy('mobileOverviewExpenseBtn', ()=> triggerButton('btnQuickAddExpense'));
+    bindProxy('mobileOverviewJournalBtn', ()=> triggerButton('btnQuickAddJournal'));
+    bindProxy('mobileOverviewSortBtn', ()=> triggerButton('btnAllSort'));
+    bindProxy('mobileOverviewToggleBtn', ()=> triggerButton('btnAllToggle'));
   }
 
   function syncMobileViewportVars(){
@@ -1434,7 +1443,7 @@ try{
       else { rootEls.forEach(el=>el.classList.remove('share-open')); }
     }catch(_e){}
 
-    if(tab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
+    if(tab==='overview') { setTimeout(()=> { try{ initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }catch(_){} }, 80);}
   }catch(e){}
 }
 
@@ -1875,29 +1884,8 @@ const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}
 
     state.maps.big.addLayer(expensesLG);
     state.maps.big.addLayer(journalLG);
-    document.getElementById('btnToggleSpent')?.classList.add('active');
-    document.getElementById('btnToggleVisited')?.classList.add('active');
-    // --- Map toolbar: toggle visibility of layers + button state ---
-    const btnSpent   = document.getElementById('btnToggleSpent');
-    const btnVisited = document.getElementById('btnToggleVisited');
-
-    function applyMapToolbarVisibility(){
-      if(btnSpent && btnSpent.classList.contains('active')){
-        if(!state.maps.big.hasLayer(expensesLG)) state.maps.big.addLayer(expensesLG);
-      } else {
-        if(state.maps.big.hasLayer(expensesLG)) state.maps.big.removeLayer(expensesLG);
-      }
-      if(btnVisited && btnVisited.classList.contains('active')){
-        if(!state.maps.big.hasLayer(journalLG)) state.maps.big.addLayer(journalLG);
-      } else {
-        if(state.maps.big.hasLayer(journalLG)) state.maps.big.removeLayer(journalLG);
-      }
-      invalidateMap(state.maps.big);
-    }
-    btnSpent?.addEventListener('click', ()=>{ btnSpent.classList.toggle('active'); applyMapToolbarVisibility(); });
-    btnVisited?.addEventListener('click', ()=>{ btnVisited.classList.toggle('active'); applyMapToolbarVisibility(); });
-    // ensure initial visibility matches default state
-    applyMapToolbarVisibility();
+    __wireMapToolbarButtons();
+    __applyBigMapLayerVisibility();
     
 
     invalidateMap(state.maps.big);
@@ -2139,7 +2127,7 @@ document.querySelectorAll('#tabs [data-tab]').forEach(el => el.addEventListener(
   setActiveTab(el);
   showView(nextTab);
   if(nextTab==='map') setTimeout(initBigMap, 50);
-  if(nextTab==='overview') { setTimeout(()=> { try{ initBigMap(); }catch(_){} initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }, 80);}
+  if(nextTab==='overview') { setTimeout(()=> { try{ initMiniMap(state.current||{}); invalidateMap(state.maps?.mini); }catch(_){} }, 80);}
 }));
 
 // Overview tab dropdown (All / Expenses / Journal)
@@ -2396,6 +2384,36 @@ function normalizeTripSummaryDoc(doc){
   return buildTripSummary(raw);
 }
 
+function getSearchableTrips(){
+  const uid = state.user?.uid;
+  return (state.trips || []).map(trip => {
+    const full = loadTripCache(uid, trip?.id);
+    return full ? { ...trip, ...full, id: trip.id } : trip;
+  });
+}
+
+async function hydrateTripsForSearch(expectedSearch){
+  if(state._tripSearchHydrating) return;
+  const ids = (state.trips || []).map(t => t?.id).filter(Boolean);
+  if(!ids.length) return;
+  state._tripSearchHydrating = true;
+  try{
+    await Promise.all(ids.map(async (id) => {
+      try{
+        const snap = await FB.getDoc(FB.doc(db, 'trips', id));
+        if(!snap.exists()) return;
+        saveTripCache(state.user?.uid, normalizeTripShape({ id: snap.id, ...snap.data() }));
+      }catch(_){}
+    }));
+  }finally{
+    state._tripSearchHydrating = false;
+    const currentSearch = ($('#searchTrips')?.value || '').trim().toLowerCase();
+    if(expectedSearch && currentSearch === expectedSearch){
+      scheduleRenderTripList();
+    }
+  }
+}
+
 function scheduleTripListBackfill(trips){
   if(__tripListBackfillTimer){
     clearTimeout(__tripListBackfillTimer);
@@ -2420,8 +2438,33 @@ function applyTripsSnapshotPerf(snapAt, snapSize){
       docs: snapSize,
       subscribeToSnapshotMs: Math.round(snapAt - __subscribeTripsStartedAt)
     };
-    console.info('[perf] tripsSnapshot', window.__lastTripsSnapshotPerf);
   }catch(_){}
+}
+
+let __renderTripListQueued = false;
+function scheduleRenderTripList(){
+  if(__renderTripListQueued) return;
+  __renderTripListQueued = true;
+  const run = ()=>{
+    __renderTripListQueued = false;
+    try{ renderTripList(); }catch(e){ console.error(e); }
+  };
+  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+  else setTimeout(run, 0);
+}
+
+function scheduleIdleWork(fn, delay=0){
+  const runner = ()=>{ try{ fn(); }catch(_){} };
+  if(typeof requestIdleCallback === 'function') requestIdleCallback(runner, { timeout: 2000 });
+  else setTimeout(runner, delay);
+}
+
+function markTripSummaryUpserted(id){
+  if(!id) return false;
+  state._summaryUpsertedIds = state._summaryUpsertedIds || new Set();
+  if(state._summaryUpsertedIds.has(id)) return true;
+  state._summaryUpsertedIds.add(id);
+  return false;
 }
 
 function subscribeTripsFull(reason='fallback'){
@@ -2432,12 +2475,12 @@ function subscribeTripsFull(reason='fallback'){
     state.trips = snap.docs
       .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
-    renderTripList();
+    scheduleRenderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
     scheduleTripListBackfill(state.trips);
-    state.trips.forEach(trip => { try{ upsertTripSummary(trip); }catch(_){} });
+    scheduleIdleWork(()=>{ state.trips.forEach(trip => { try{ if(!markTripSummaryUpserted(trip.id)) upsertTripSummary(trip); }catch(_){} }); }, 1500);
     markTripSummariesHydrated(state.user?.uid);
   }, (err)=>{
     try{ state._unsubTripsFallback && state._unsubTripsFallback(); }catch(_){}
@@ -2461,7 +2504,7 @@ function subscribeTrips(){
     .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
   if(cachedTrips.length){
     state.trips = cachedTrips;
-    renderTripList();
+    scheduleRenderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
   }
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
@@ -2471,7 +2514,7 @@ function subscribeTrips(){
     const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
     if(snap.size === 0){
       state.trips = [];
-      renderTripList();
+      scheduleRenderTripList();
       applyTripsSnapshotPerf(snapAt, snap.size);
       if(!__tripSummaryFallbackStarted){
         __tripSummaryFallbackStarted = true;
@@ -2483,7 +2526,7 @@ function subscribeTrips(){
     state.trips = snap.docs
       .map(d=> normalizeTripSummaryDoc(d))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
-    renderTripList();
+    scheduleRenderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
@@ -2510,9 +2553,14 @@ async function renderTripList(){
   let s = null;
   if(search){
     s = search.toLowerCase();
-    items = items.map(t=> ({...t, __match: matchInfo(t, s)}))
+    const searchTrips = getSearchableTrips();
+    items = searchTrips.map(t=> ({...t, __match: matchInfo(t, s)}))
                  .filter(t=> t.__match.hit)
                  .sort((a,b)=> b.__match.score - a.__match.score);
+    const hasFullDataInCache = searchTrips.some(t => Object.keys(t?.expenses || {}).length || Object.keys(t?.journal || {}).length);
+    if(!hasFullDataInCache || (!items.length && !state._tripSearchHydrating)){
+      hydrateTripsForSearch(s);
+    }
   }
   state._tripListRenderToken = (state._tripListRenderToken || 0) + 1;
   const renderToken = state._tripListRenderToken;
@@ -2522,7 +2570,7 @@ async function renderTripList(){
   } else {
     const buildTripMarkup = (chunk)=> chunk.map(t=> state.viewMode==='grid' ? cardHTML(t, s) : rowHTML(t, s)).join('');
     const bindTripListInteractions = (root)=>{
-      root.querySelectorAll('[data-trip]').forEach(el=>{
+      root.querySelectorAll('.trip-card[data-trip], .trip-row[data-trip]').forEach(el=>{
         if(el.dataset.tripBound === '1') return;
         el.dataset.tripBound = '1';
         el.addEventListener('click', ()=> openTrip(el.dataset.trip));
@@ -2574,7 +2622,6 @@ async function renderTripList(){
       mode: state.viewMode,
       ms: Math.round(perfNow() - renderStart)
     };
-    console.info('[perf] renderTripList', window.__lastRenderTripListPerf);
   }catch(_){}
 }
 function cardHTML(t, s){
@@ -2591,7 +2638,7 @@ function cardHTML(t, s){
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </button>
     </div>
-    ${s ? `<div class="muted" style="margin-top:6px;width:100%">התאמות: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
+    ${s ? `<div class="trip-search-matches"><div class="trip-search-title">התאמות בנסיעה</div><div class="trip-match-list">${where.map(w=>`<span class="pill hl-pill trip-match-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId || ''}" data-field="${w.field || ''}">${w.label}</span>`).join(' ')}</div></div>` : ''}
   </div>`;
 }
 function rowHTML(t, s){
@@ -2601,12 +2648,12 @@ function rowHTML(t, s){
     <div class="row-main-content">
       <strong>${esc(t.destination||'ללא יעד')}</strong>
       <span class="muted">${period}</span>
-      <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
+    <div class="pill types-pill" data-trip="${t.id}" data-keyword="${esc((t.types||'').toString())}">${esc((t.types||'').toString())}</div>
     </div>
     <button class="menu-btn" data-id="${t.id}" aria-label="פעולות">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
-    ${s ? `<div class="muted" style="grid-column:1/-1;margin-top:4px">התאמות: ${where.map(w=>`<span class="pill hl-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId}">${w.label}</span>`).join(' ')}</div>` : ''}
+    ${s ? `<div class="trip-search-matches trip-search-matches-inline"><div class="trip-search-title">התאמות בנסיעה</div><div class="trip-match-list">${where.map(w=>`<span class="pill hl-pill trip-match-pill" data-trip="${t.id}" data-term="${s}" data-type="${w.type}" data-item="${w.itemId || ''}" data-field="${w.field || ''}">${w.label}</span>`).join(' ')}</div></div>` : ''}
   </div>`;
 }
 
@@ -3300,6 +3347,9 @@ function appendExpenseRowToTimeline(body, e){
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'expense';
   tr1.dataset.mobileLayout = 'expense-two-line';
+  tr1.dataset.itemType = 'expense';
+  tr1.dataset.itemId = String(e.id || '');
+  tr1.dataset.itemRole = 'main';
   tr1.innerHTML = `
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
     <td class="cell header time"></td>
@@ -3310,6 +3360,9 @@ function appendExpenseRowToTimeline(body, e){
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
+  tr2.dataset.itemType = 'expense';
+  tr2.dataset.itemId = String(e.id || '');
+  tr2.dataset.itemRole = 'detail';
   tr2.innerHTML = `<td class="cell notes" colspan="6">${desc}</td>`;
   if(isMobileViewport?.()) tr2.hidden = true;
   body.appendChild(tr1); body.appendChild(tr2);
@@ -3331,6 +3384,9 @@ function appendJournalRowToTimeline(body, j, mapIndex){
   tr1.className = 'exp-item';
   tr1.dataset.kind = 'journal';
   tr1.dataset.mobileLayout = 'journal-card';
+  tr1.dataset.itemType = 'journal';
+  tr1.dataset.itemId = String(j.id || '');
+  tr1.dataset.itemRole = 'main';
   tr1.innerHTML = `
     ${selectionOn ? `<td class="cell select-cell"><input type="checkbox" class="jr-select" data-id="${esc(j.id)}" ${checkedAttr}></td>` : ''}
     <td class="cell header date">${bidiWrap(d.format('DD/MM/YYYY'))}</td>
@@ -3341,6 +3397,9 @@ function appendJournalRowToTimeline(body, j, mapIndex){
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
+  tr2.dataset.itemType = 'journal';
+  tr2.dataset.itemId = String(j.id || '');
+  tr2.dataset.itemRole = 'detail';
   tr2.innerHTML = `<td class="cell notes" colspan="${selectionOn ? 7 : 6}">${text}</td>`;
   if(isMobileViewport?.()) tr2.hidden = true;
   body.appendChild(tr1); body.appendChild(tr2);
@@ -3553,7 +3612,7 @@ $('#tripSave').addEventListener('click', async ()=>{
 });
 
 // Sidebar actions
-$('#searchTrips').addEventListener('input', renderTripList);
+$('#searchTrips').addEventListener('input', scheduleRenderTripList);
 let sortAsc = false; $('#btnSortTrips').addEventListener('click', ()=>{
   sortAsc = !sortAsc; state.trips.sort((a,b)=> sortAsc ? (a.start||'').localeCompare(b.start||'') : (b.start||'').localeCompare(a.start||'')); renderTripList();
 });
@@ -3791,6 +3850,7 @@ $('#lsReset').addEventListener('click', async ()=>{
 (function(){
   const $ = (sel)=>document.querySelector(sel);
   const isMobileViewport = ()=> /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.innerWidth <= 820;
+  let __prefillAutoLoginTried = false;
 
   async function doLogin(emailSel, passSel, errSel){
     const email = $(emailSel)?.value?.trim();
@@ -3852,6 +3912,19 @@ $('#lsReset').addEventListener('click', async ()=>{
     });
   });
 
+  function tryAutoLoginIfPrefilled(){
+    if(__prefillAutoLoginTried) return;
+    const email = $('#lsEmail')?.value?.trim();
+    const pass = $('#lsPass')?.value;
+    if(!email || !pass) return;
+    __prefillAutoLoginTried = true;
+    doLogin('#lsEmail', '#lsPass', '#lsError');
+  }
+
+  [80, 350, 900].forEach((delay)=>{
+    setTimeout(tryAutoLoginIfPrefilled, delay);
+  });
+
   window.__isMobileViewport = isMobileViewport;
 })();
 
@@ -3869,45 +3942,126 @@ function snippet(text, s, len=60){
 }
 function matchInfo(t, s){
   let score = 0, where = [];
-  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push({label:`<span class="match-source">יעד:</span> ${snippet(dst,s)}`, type:'meta', itemId:null}); }
-  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push({label:`<span class="match-source">סוגים:</span> ${snippet(types,s)}`, type:'meta', itemId:null}); }
-  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push({label:`<span class="match-source">משתתפים:</span> ${snippet(people,s)}`, type:'meta', itemId:null}); }
+  const dst = (t.destination||''); if(dst.toLowerCase().includes(s)){ score+=5; where.push({label:`<span class="match-source">יעד:</span> ${snippet(dst,s)}`, type:'meta', field:'destination', itemId:null}); }
+  const types = (Array.isArray(t.types)? t.types.join(', '): (t.types||'')); if(types.toLowerCase().includes(s)){ score+=2; where.push({label:`<span class="match-source">סוגים:</span> ${snippet(types,s)}`, type:'meta', field:'types', itemId:null}); }
+  const people = (Array.isArray(t.people)? t.people.join(', '): (t.people||'')); if(people.toLowerCase().includes(s)){ score+=1; where.push({label:`<span class="match-source">משתתפים:</span> ${snippet(people,s)}`, type:'meta', field:'people', itemId:null}); }
   const ex = Object.entries(t.expenses||{}); let exHits = 0; ex.forEach(([id, e])=>{ if((e.desc||'').toLowerCase().includes(s) || (e.category||'').toLowerCase().includes(s)){ exHits++; where.push({label:`<span class="match-source">הוצאות:</span> ${snippet(e.desc||e.category||'', s)}`, type:'expense', itemId:id});} });
   if(exHits) score += Math.min(3, exHits);
   const jr = Object.entries(t.journal||{}); let jrHits = 0; jr.forEach(([id, j])=>{ if((j.text||'').toLowerCase().includes(s) || (j.placeName||'').toLowerCase().includes(s)){ jrHits++; where.push({label:`<span class="match-source">יומן:</span> ${snippet(j.text||j.placeName||'', s)}`, type:'journal', itemId:id});} });
   if(jrHits) score += Math.min(3, jrHits);
   return { hit: score>0, score, where };
 }
-// Add the new function to highlight and scroll to the element
-function highlightAndScroll(element, s){
-  if(!element) return;
-  const text = element.innerHTML;
-  element.innerHTML = text.replace(new RegExp(`(${s})`, 'gi'), '<mark>$1</mark>');
-  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+function flashElement(el, ms = 2400){
+  if(!el) return;
+  el.classList.add('flash-green');
+  setTimeout(()=> el.classList.remove('flash-green'), ms);
 }
 
-function searchAndNavigate(tripId, query, type, itemId){
-  openTrip(tripId).then(()=>{
-    if(type === 'expense'){
-      // "הוצאות" ו"יומן" הוסרו מהטאבים; הכל מופיע ב"הצג הכל"
-      document.querySelector('#tabs [data-tab="overview"]')?.click();
-      setTimeout(()=>{
-        const cont = document.querySelector(`#view-overview`) || document.querySelector(`#tblAllTimeline`);
-        if(cont) highlightAllInContainer(cont, query);
-      }, 300);
-    } else if(type === 'journal'){
-      document.querySelector('#tabs [data-tab="overview"]')?.click();
-      setTimeout(()=>{
-        const cont = document.querySelector(`#view-overview`) || document.querySelector(`#tblAllTimeline`);
-        if(cont) highlightAllInContainer(cont, query);
-      }, 300);
-    } else if (type === 'meta') {
-      document.querySelector('#tabs [data-tab="meta"]')?.click();
-      setTimeout(()=>{
-        const cont = document.querySelector('#view-meta') || document.querySelector('#view-meta .dest-col');
-        if(cont) highlightAllInContainer(cont, query);
-      }, 300);
+function focusInputMatch(el, query){
+  if(!el) return false;
+  const value = String(el.value || '');
+  const q = String(query || '').toLowerCase();
+  const idx = value.toLowerCase().indexOf(q);
+  flashElement(el);
+  el.scrollIntoView({ behavior:'smooth', block:'center' });
+  try{ el.focus({ preventScroll:true }); }catch(_){ try{ el.focus(); }catch(__){} }
+  if(idx >= 0 && typeof el.setSelectionRange === 'function'){
+    try{ el.setSelectionRange(idx, idx + String(query || '').length); }catch(_){}
+    return true;
+  }
+  return idx >= 0;
+}
+
+function focusMetaMatch(field, query){
+  document.querySelector('#tabs [data-tab="meta"]')?.click();
+  setTimeout(()=>{
+    if(field === 'destination'){
+      focusInputMatch(document.getElementById('metaDestination'), query);
+      return;
     }
+    if(field === 'people'){
+      focusInputMatch(document.getElementById('metaPeople'), query);
+      return;
+    }
+    if(field === 'types'){
+      const chips = Array.from(document.querySelectorAll('#view-meta .metaType'));
+      const hits = chips.filter(btn => (btn.textContent || '').toLowerCase().includes(String(query || '').toLowerCase()));
+      const first = hits[0] || chips[0];
+      if(first){
+        hits.forEach(btn => flashElement(btn));
+        first.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+      }
+      return;
+    }
+    const cont = document.querySelector('#view-meta');
+    if(cont) highlightAllInContainer(cont, query);
+  }, 260);
+}
+
+function findTimelineMatchCells(type, itemId){
+  const main = document.querySelector(`#tblAllTimeline tr[data-item-type="${type}"][data-item-id="${itemId}"][data-item-role="main"]`);
+  const detail = document.querySelector(`#tblAllTimeline tr[data-item-type="${type}"][data-item-id="${itemId}"][data-item-role="detail"]`);
+  if(detail){
+    detail.hidden = false;
+    detail.classList.add('force-open');
+  }
+  if(main) main.classList.add('force-open');
+  const cells = [];
+  if(type === 'expense' && main){
+    cells.push(...main.querySelectorAll('.title, .category'));
+  }
+  if(type === 'journal' && main){
+    cells.push(...main.querySelectorAll('.location'));
+  }
+  if(detail){
+    const notes = detail.querySelector('.notes');
+    if(notes) cells.push(notes);
+  }
+  return { main, detail, cells };
+}
+
+function focusTimelineMatch(type, itemId, query){
+  document.querySelector('#tabs [data-tab="overview"]')?.click();
+  try{
+    state.overviewMode = 'all';
+    localStorage.setItem('overviewMode', 'all');
+    if(state.current) renderAllTimeline(state.current, state.allSort || 'desc');
+  }catch(_){}
+  const attemptFocus = (triesLeft = 8)=>{
+    const { main, detail, cells } = findTimelineMatchCells(type, itemId);
+    if(!main && triesLeft > 0){
+      return setTimeout(()=> attemptFocus(triesLeft - 1), 120);
+    }
+    const body = document.getElementById('tblAllTimeline');
+    if(body){
+      body.querySelectorAll('tr.exp-details.force-open').forEach(tr=>{
+        if(String(tr.dataset.itemId) !== String(itemId)) tr.classList.remove('force-open');
+      });
+      body.querySelectorAll('tr.exp-item.force-open').forEach(tr=>{
+        if(String(tr.dataset.itemId) !== String(itemId)) tr.classList.remove('force-open');
+      });
+    }
+    let hit = null;
+    cells.forEach(cell => {
+      const found = highlightAllInContainer(cell, query);
+      if(!hit && found) hit = found;
+    });
+    const anchor = hit || detail?.querySelector('.notes') || detail || main;
+    if(anchor) anchor.scrollIntoView({ behavior:'smooth', block:'center' });
+    flashElement(main);
+    flashElement(detail);
+  };
+  setTimeout(()=> attemptFocus(), 260);
+}
+
+function searchAndNavigate(tripId, query, type, itemId, field){
+  openTrip(tripId).then(()=>{
+    if(type === 'expense' || type === 'journal'){
+      focusTimelineMatch(type, itemId, query);
+      return;
+    }
+    focusMetaMatch(field, query);
   });
 }
 
@@ -4268,12 +4422,25 @@ function loadLastLocation(){
     return d;
   }catch(_){ return null; }
 }
+function updateLocationButtonLabel(kind, name){
+  try{
+    const buttonId = kind === 'journal' ? 'btnEditJrLocation' : 'btnEditExpLocation';
+    const btn = document.getElementById(buttonId);
+    if(!btn) return;
+    const label = btn.querySelector('.journal-location-trigger-label');
+    const text = String(name || '').trim() || 'מיקום / עריכה';
+    if(label) label.textContent = text;
+    btn.title = text;
+    btn.setAttribute('aria-label', text);
+    btn.classList.toggle('has-location-name', Boolean(String(name || '').trim()));
+  }catch(_){ }
+}
 function updateExpLocationPreview(){
   try{
     const prev = document.getElementById('expLocationPreview');
-    if(!prev) return;
     const name = (document.getElementById('expLocationName')?.value || '').trim();
-    prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
+    if(prev) prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
+    updateLocationButtonLabel('expense', name);
   }catch(_){ }
 }
 async function setExpenseLocation(lat, lng, name, opts){
@@ -4289,9 +4456,9 @@ async function setExpenseLocation(lat, lng, name, opts){
 function updateJrLocationPreview(){
   try{
     const prev = document.getElementById('jrLocationPreview');
-    if(!prev) return;
     const name = (document.getElementById('jrPlaceName')?.value || '').trim();
-    prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
+    if(prev) prev.textContent = name ? name : 'מיקום נשמר אוטומטית';
+    updateLocationButtonLabel('journal', name);
   }catch(_){ }
 }
 async function setJournalLocation(lat, lng, name, opts){
@@ -4564,7 +4731,7 @@ const usStateAliasMap = {
   'massachusetts':'massachusetts','ma':'massachusetts','מסצ׳וסטס':'massachusetts','boston':'massachusetts','בוסטון':'massachusetts',
   'pennsylvania':'pennsylvania','pa':'pennsylvania','פנסילבניה':'pennsylvania','פילדלפיה':'pennsylvania','philadelphia':'pennsylvania',
   'virginia':'virginia','va':'virginia','וירג׳יניה':'virginia',
-  'washington':'washington','wa':'washington','washington state':'washington','מדינת וושינגטון':'washington','וושינגטון':'washington','seattle':'washington','סיאטל':'washington',
+  'washington':'washington','wa':'washington','washington state':'washington','מדינת וושינגטון':'washington','וושינגטון':'washington',
   'district of columbia':'district of columbia','dc':'district of columbia','washington dc':'district of columbia','washington d c':'district of columbia','washington, dc':'district of columbia','וושינגטון די סי':'district of columbia','וושינגטון די.סי.':'district of columbia','וושינגטון די סי':'district of columbia'
 };
 function _cleanCountryLabel(v){
@@ -5823,6 +5990,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 // ---- Explicit login flow only (no auto-submit) ----
 let __loginInFlight = false;
+let __authModalAutoLoginTried = false;
 async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
   if(__loginInFlight) return;
   __loginInFlight = true;
@@ -5848,6 +6016,19 @@ document.addEventListener('click', (ev)=>{
   const t = ev.target;
   if(!t) return;
   if(t.matches('#authPrimary')){ loginWithCredentials(); }
+});
+
+function tryAutoLoginAuthModal(){
+  if(__authModalAutoLoginTried) return;
+  const email = document.querySelector('#authEmail')?.value?.trim();
+  const pass = document.querySelector('#authPass')?.value;
+  if(!email || !pass) return;
+  __authModalAutoLoginTried = true;
+  loginWithCredentials('#authEmail', '#authPass', '#authError');
+}
+
+[120, 450, 1000].forEach((delay)=>{
+  setTimeout(tryAutoLoginAuthModal, delay);
 });
 // ===== Auth UI helpers (final) =====
 // Toggle app/login screens on auth state change + start subscriptions
@@ -6015,11 +6196,14 @@ function highlightAllInContainer(container, s){
 document.addEventListener('click', (ev) => {
   const el = ev.target.closest('.hl-pill');
   if (!el) return;
+  ev.preventDefault();
+  ev.stopPropagation();
   const tripId = el.dataset.trip;
   const term = el.dataset.term || '';
   const type = el.dataset.type || 'meta';
   const itemId = el.dataset.item || null;
-  searchAndNavigate(tripId, term, type, itemId);
+  const field = el.dataset.field || '';
+  searchAndNavigate(tripId, term, type, itemId, field);
 });
 // --- end Keyword highlighting helpers ---
 
@@ -6091,13 +6275,62 @@ function normalizeEditorLinks(editor){
         a.classList.add('link-icon');
         a.textContent = '';
         a.style.display = 'inline-flex';
+      } else {
+        a.style.display = 'inline';
       }
       a.setAttribute('target','_blank');
       a.setAttribute('rel','noopener');
-      a.style.display = 'inline';
     }catch(_){}
   });
 }
+
+function bindEditorResizeHandles(){
+  try{
+    if(window.__editorResizeHandlesBound) return;
+    window.__editorResizeHandlesBound = true;
+
+    const MIN_BY_KIND = { expense: 84, journal: 100 };
+    const MAX_BY_KIND = { expense: 220, journal: 260 };
+
+    document.addEventListener('pointerdown', (ev)=>{
+      const handle = ev.target.closest('.editor-resize-handle[data-editor-resize]');
+      if(!handle || window.innerWidth <= 820) return;
+
+      const kind = handle.getAttribute('data-editor-resize');
+      const modal = handle.closest('dialog');
+      if(!modal) return;
+
+      ev.preventDefault();
+      const styles = getComputedStyle(modal);
+      const initial = parseFloat(styles.getPropertyValue('--editor-row-height')) || MIN_BY_KIND[kind] || 90;
+      const min = MIN_BY_KIND[kind] || 84;
+      const max = MAX_BY_KIND[kind] || 220;
+      const startY = ev.clientY;
+      const pointerId = ev.pointerId;
+
+      try{ handle.setPointerCapture(pointerId); }catch(_){}
+
+      const onMove = (moveEv)=>{
+        const delta = moveEv.clientY - startY;
+        const next = Math.max(min, Math.min(max, initial + delta));
+        modal.style.setProperty('--editor-row-height', `${next}px`, 'important');
+      };
+
+      const onEnd = ()=>{
+        document.removeEventListener('pointermove', onMove, true);
+        document.removeEventListener('pointerup', onEnd, true);
+        document.removeEventListener('pointercancel', onEnd, true);
+        try{ handle.releasePointerCapture(pointerId); }catch(_){}
+      };
+
+      document.addEventListener('pointermove', onMove, true);
+      document.addEventListener('pointerup', onEnd, true);
+      document.addEventListener('pointercancel', onEnd, true);
+    }, true);
+  }catch(_){}
+}
+
+bindEditorResizeHandles();
 
 function pasteAsIconLink(editor, url){
   const a = document.createElement('a');
@@ -6353,8 +6586,30 @@ function renderExpenseSummary(t){
   bar.classList.add('budget-bar-structured');
   if(isMobileViewport()){
     bar.classList.add('budget-bar-mobile');
-    bar.hidden = true;
-    bar.innerHTML = '';
+    bar.hidden = false;
+    bar.innerHTML = `
+      <button type="button" id="budgetSummaryTrigger" class="btn budget-summary-trigger" aria-label="פתח סיכום תקציב">
+        <span>תקציב נסיעה</span>
+      </button>
+      <button type="button" id="budgetCurrencyPill" class="btn budget-currency-pill" title="החלף מטבע">${cur}</button>
+      <div class="budget-progress ${band}" aria-label="התקדמות תקציב">
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="pct" aria-hidden="true">${pct}%</div>
+      </div>
+    `;
+    bar.querySelector('#budgetSummaryTrigger')?.addEventListener('click', openCurrentBudgetSummary);
+    bar.querySelector('#budgetCurrencyPill')?.addEventListener('click', ()=>{
+      const order = ['ILS', 'USD', 'EUR'];
+      const currentIdx = Math.max(0, order.indexOf(cur));
+      const nextCur = order[(currentIdx + 1) % order.length];
+      setActiveCurrency(nextCur);
+      try{
+        const ref = FB.doc(db,'trips', state.current.id || state.currentTripId);
+        FB.updateDoc(ref, { baseCurrency: nextCur }).catch(()=>{});
+        state.current.baseCurrency = nextCur;
+      }catch(_){}
+      renderExpenseSummary(state.current);
+    });
     return;
   }
 
@@ -6992,49 +7247,8 @@ window.initBigMap = function(){
       }
     });
 
-    const btnSpent = document.getElementById('btnToggleSpent');
-    const btnVisited = document.getElementById('btnToggleVisited');
-
-    if(btnSpent && !btnSpent.classList.contains('active')) btnSpent.classList.add('active');
-    if(btnVisited && !btnVisited.classList.contains('active')) btnVisited.classList.add('active');
-
-    function applyMapToolbarVisibility(){
-      const showSpent = !btnSpent || btnSpent.classList.contains('active');
-      const showVisited = !btnVisited || btnVisited.classList.contains('active');
-
-      if(showSpent){
-        if(!state.maps.big.hasLayer(expensesLG)) state.maps.big.addLayer(expensesLG);
-      }else{
-        if(state.maps.big.hasLayer(expensesLG)) state.maps.big.removeLayer(expensesLG);
-      }
-
-      if(showVisited){
-        if(!state.maps.big.hasLayer(journalLG)) state.maps.big.addLayer(journalLG);
-        if(!state.gpx?.enabled && !state.maps.big.hasLayer(gpxPointsLG)) state.maps.big.addLayer(gpxPointsLG);
-      }else{
-        if(state.maps.big.hasLayer(journalLG)) state.maps.big.removeLayer(journalLG);
-        if(state.maps.big.hasLayer(gpxPointsLG)) state.maps.big.removeLayer(gpxPointsLG);
-      }
-
-      try{ __syncManagedGpxWithVisited(); }catch(_){}
-
-      invalidateMap(state.maps.big);
-    }
-
-    if(btnSpent){
-      btnSpent.onclick = ()=>{
-        btnSpent.classList.toggle('active');
-        applyMapToolbarVisibility();
-      };
-    }
-    if(btnVisited){
-      btnVisited.onclick = ()=>{
-        btnVisited.classList.toggle('active');
-        applyMapToolbarVisibility();
-      };
-    }
-
-    applyMapToolbarVisibility();
+    __wireMapToolbarButtons();
+    __applyBigMapLayerVisibility();
 
     if(pts.length){
       state.maps.big.fitBounds(L.latLngBounds(pts).pad(0.2));
@@ -8414,8 +8628,8 @@ function __downsamplePath(path, maxPoints){
 }
 
 function __isVisitedLayerEnabled(){
-  const btnVisited = document.getElementById('btnToggleVisited');
-  return !btnVisited || btnVisited.classList.contains('active');
+  const visibility = __ensureMapLayerVisibility();
+  return visibility.visited !== false;
 }
 
 function __syncManagedGpxWithVisited(){
@@ -8433,23 +8647,129 @@ function __syncManagedGpxWithVisited(){
   }
 }
 
+function __ensureMapLayerVisibility(){
+  state.mapLayerVisibility = state.mapLayerVisibility || {};
+  if(typeof state.mapLayerVisibility.spent !== 'boolean') state.mapLayerVisibility.spent = true;
+  if(typeof state.mapLayerVisibility.visited !== 'boolean') state.mapLayerVisibility.visited = true;
+  state.gpx = state.gpx || { files:new Map(), order:[], enabled:false };
+  return state.mapLayerVisibility;
+}
+
+function __syncMapToolbarButtons(){
+  const visibility = __ensureMapLayerVisibility();
+  const buttons = [
+    ['btnToggleSpent', visibility.spent],
+    ['btnToggleVisited', visibility.visited],
+    ['btnToggleGPX', !!state.gpx?.enabled]
+  ];
+  buttons.forEach(([id, active])=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.classList.toggle('active', !!active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function __toggleMapLayer(map, layer, visible){
+  if(!map || !layer) return;
+  if(visible){
+    if(!map.hasLayer(layer)) map.addLayer(layer);
+  }else if(map.hasLayer(layer)){
+    map.removeLayer(layer);
+  }
+}
+
+function __applyBigMapLayerVisibility(){
+  const map = state.maps && state.maps.big;
+  if(!map) return;
+  const visibility = __ensureMapLayerVisibility();
+  const layers = state.maps.layers || {};
+  __toggleMapLayer(map, layers.expenses, visibility.spent);
+  __toggleMapLayer(map, layers.journal, visibility.visited);
+  __toggleMapLayer(map, layers.gpxPoints, !!state.gpx?.enabled);
+
+  if(state.gpx?.enabled){
+    try{ __syncManagedGpxWithVisited(); }catch(_){}
+  }else if(state.gpx?.files){
+    for(const id of state.gpx.order || []){
+      const f = state.gpx.files.get(id);
+      if(f?.layer && map.hasLayer(f.layer)) map.removeLayer(f.layer);
+    }
+  }
+
+  invalidateMap(map);
+}
+
+function __wireMapToolbarButtons(){
+  const btnSpent = document.getElementById('btnToggleSpent');
+  const btnVisited = document.getElementById('btnToggleVisited');
+  const btnGPX = document.getElementById('btnToggleGPX');
+  const gpxPanel = document.getElementById('gpxManagerPanel');
+
+  if(btnSpent && btnSpent.dataset.mapToolbarWired !== '1'){
+    btnSpent.dataset.mapToolbarWired = '1';
+    btnSpent.addEventListener('click', ()=>{
+      const visibility = __ensureMapLayerVisibility();
+      visibility.spent = !visibility.spent;
+      __syncMapToolbarButtons();
+      __applyBigMapLayerVisibility();
+    });
+  }
+
+  if(btnVisited && btnVisited.dataset.mapToolbarWired !== '1'){
+    btnVisited.dataset.mapToolbarWired = '1';
+    btnVisited.addEventListener('click', ()=>{
+      const visibility = __ensureMapLayerVisibility();
+      visibility.visited = !visibility.visited;
+      __syncMapToolbarButtons();
+      __applyBigMapLayerVisibility();
+    });
+  }
+
+  if(btnGPX && btnGPX.dataset.mapToolbarWired !== '1'){
+    btnGPX.dataset.mapToolbarWired = '1';
+    btnGPX.addEventListener('click', ()=>{
+      state.gpx = state.gpx || { files:new Map(), order:[], enabled:false };
+      if(state.gpx.enabled && gpxPanel?.hidden){
+        gpxPanel.hidden = false;
+        __syncMapToolbarButtons();
+        try{ __renderGpxPanel(); }catch(_){}
+        return;
+      }
+      state.gpx.enabled = !state.gpx.enabled;
+      if(gpxPanel) gpxPanel.hidden = !state.gpx.enabled;
+      __syncMapToolbarButtons();
+      if(state.gpx.enabled){
+        try{ __refreshGpxFromCurrent(); }catch(_){}
+        try{ __renderGpxPanel(); }catch(_){}
+      }
+      __applyBigMapLayerVisibility();
+    });
+  }
+
+  __syncMapToolbarButtons();
+}
+
 function __initGpxManager(){
   state.gpx = state.gpx || { files:new Map(), order:[], enabled:false };
   const btn = document.getElementById('btnToggleGPX');
   const panel = document.getElementById('gpxManagerPanel');
   if(!btn || !panel) return;
+  if(btn.dataset.mapToolbarWired === '1') return;
 
   btn.addEventListener('click', ()=>{
     const isPanelHidden = !!panel.hidden;
     if(state.gpx.enabled && isPanelHidden){
       panel.hidden = false;
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       __renderGpxPanel();
       return;
     }
 
     state.gpx.enabled = !state.gpx.enabled;
     btn.classList.toggle('active', state.gpx.enabled);
+    btn.setAttribute('aria-pressed', state.gpx.enabled ? 'true' : 'false');
     panel.hidden = !state.gpx.enabled;
     if(state.gpx.enabled){
       __refreshGpxFromCurrent();
@@ -8698,7 +9018,10 @@ function __escapeHtml(s){
 }
 
 
-document.addEventListener('DOMContentLoaded', ()=>{ try{ __initGpxManager(); }catch(e){ console.error(e); } });
+document.addEventListener('DOMContentLoaded', ()=>{
+  try{ __wireMapToolbarButtons(); }catch(e){ console.error(e); }
+  try{ __initGpxManager(); }catch(e){ console.error(e); }
+});
 
 
 
@@ -9121,4 +9444,115 @@ window.addEventListener('resize', ()=>{
     if(!trigger) return;
     setTimeout(syncMobileMapInfoCloseButton, 0);
   }, true);
+})();
+
+/* === exact mobile modal layout v2 === */
+(function(){
+  const MODAL_IDS = ['tripModal','expenseModal','journalModal'];
+
+  function isMobile(){
+    return window.innerWidth <= 820;
+  }
+
+  function currentViewport(){
+    const vv = window.visualViewport;
+    return {
+      width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 0),
+      height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 0),
+      top: Math.round(vv?.offsetTop || 0)
+    };
+  }
+
+  function updateBaseHeight(){
+    const vp = currentViewport();
+    const candidate = Math.max(window.innerHeight || 0, vp.height + vp.top);
+    const keyboardOpen = vp.height < (window.innerHeight || vp.height) - 120;
+    if(!keyboardOpen){
+      window.__exactModalBaseHeight = Math.max(window.__exactModalBaseHeight || 0, candidate);
+    }
+    if(!(window.__exactModalBaseHeight > 0)){
+      window.__exactModalBaseHeight = candidate;
+    }
+  }
+
+  function clearModalStyles(dlg){
+    if(!dlg) return;
+    ['top','left','right','bottom','width','minWidth','maxWidth','height','minHeight','maxHeight','position','margin','transform'].forEach((k)=> dlg.style[k] = '');
+    const body = dlg.querySelector(':scope > .body');
+    if(body){
+      ['height','minHeight','maxHeight'].forEach((k)=> body.style[k] = '');
+    }
+  }
+
+  function applyModalLayout(dlg){
+    if(!dlg || !dlg.open || !isMobile()) return;
+    updateBaseHeight();
+    const vp = currentViewport();
+    const baseH = window.__exactModalBaseHeight || Math.max(window.innerHeight || 0, vp.height + vp.top);
+    const width = Math.max(0, vp.width - 16);
+    const requested = Math.round(baseH * 0.50);
+    const usable = Math.max(260, vp.height - 8);
+    const height = Math.max(260, Math.min(requested, usable));
+    const top = vp.top + 8;
+
+    dlg.style.position = 'fixed';
+    dlg.style.left = '8px';
+    dlg.style.right = '8px';
+    dlg.style.top = `${top}px`;
+    dlg.style.bottom = 'auto';
+    dlg.style.width = 'auto';
+    dlg.style.minWidth = '0';
+    dlg.style.maxWidth = `${width}px`;
+    dlg.style.height = `${height}px`;
+    dlg.style.minHeight = `${height}px`;
+    dlg.style.maxHeight = `${height}px`;
+    dlg.style.margin = '0';
+    dlg.style.transform = 'none';
+
+    const header = dlg.querySelector(':scope > header');
+    const footer = dlg.querySelector(':scope > .footer');
+    const body = dlg.querySelector(':scope > .body');
+    if(body){
+      const headerH = Math.round(header?.getBoundingClientRect().height || 36);
+      const footerH = Math.round(footer?.getBoundingClientRect().height || 56);
+      const bodyH = Math.max(120, height - headerH - footerH);
+      body.style.height = `${bodyH}px`;
+      body.style.minHeight = `${bodyH}px`;
+      body.style.maxHeight = `${bodyH}px`;
+    }
+  }
+
+  function refreshOpenModals(){
+    MODAL_IDS.forEach((id)=> applyModalLayout(document.getElementById(id)));
+  }
+
+  function wireDialog(dlg){
+    if(!dlg || dlg.dataset.exactMobileModalWired === '1') return;
+    dlg.dataset.exactMobileModalWired = '1';
+    const mo = new MutationObserver(()=>{
+      if(dlg.open) setTimeout(()=> applyModalLayout(dlg), 30);
+      else clearModalStyles(dlg);
+    });
+    mo.observe(dlg, { attributes:true, attributeFilter:['open'] });
+    dlg.addEventListener('close', ()=> clearModalStyles(dlg));
+  }
+
+  function init(){
+    if(!isMobile()) return;
+    updateBaseHeight();
+    MODAL_IDS.forEach((id)=> wireDialog(document.getElementById(id)));
+    refreshOpenModals();
+    if(window.visualViewport && !window.visualViewport.__exactModalWired){
+      window.visualViewport.__exactModalWired = true;
+      window.visualViewport.addEventListener('resize', ()=> setTimeout(refreshOpenModals, 10));
+      window.visualViewport.addEventListener('scroll', ()=> setTimeout(refreshOpenModals, 10));
+    }
+    window.addEventListener('resize', ()=> setTimeout(refreshOpenModals, 10));
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init, { once:true });
+  }else{
+    init();
+  }
 })();
