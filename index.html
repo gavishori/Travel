@@ -348,17 +348,41 @@
     </div>
   </dialog>
 
-  <dialog
-id="expenseModal" class="modal">
-    <header><strong>הוצאה</strong>
-<button class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
-    <div class="body">
-      <label>כותרת<input id="expTitle" autocomplete="off" class="input" placeholder="כותרת להוצאה"/></label>
-      <label><span class="field-label">תיאור</span><div id="expText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true" placeholder="כתוב תיאור ההוצאה."></div><button type="button" class="editor-resize-handle" data-editor-resize="expense" aria-label="שנה גובה תיאור" tabindex="-1"></button></label>
-<div id="rtfBubbleExp" class="rtf-bubble" hidden><div class="colors"><button class="dot" data-color="#FFD60A" title="צהוב"></button><button class="dot" data-color="#E53935" title="אדום"></button><button class="dot" data-color="#1E88E5" title="כחול"></button><button class="dot" data-color="#34A853" title="ירוק"></button><button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button></div><div class="styles"><button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button><button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button><button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button></div></div>
-      <div class="row expense-main-row">
-        <label class="expense-cat-col">קטגוריה
+  <dialog id="expenseModal" class="modal mobile-editor-modal mobile-expense-modal" aria-label="הוצאה">
+    <header class="mobile-editor-header">
+      <strong>הוצאה</strong>
+      <button class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none">התנתקות</button>
+    </header>
+    <div class="body mobile-editor-body">
+      <label class="mobile-field mobile-title-field">
+        <span>כותרת</span>
+        <input id="expTitle" autocomplete="off" class="input" placeholder="כותרת להוצאה">
+      </label>
+
+      <label class="mobile-field mobile-text-field">
+        <span class="field-label">תיאור</span>
+        <div id="expText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true" placeholder="כתוב תיאור ההוצאה."></div>
+        <button type="button" class="editor-resize-handle" data-editor-resize="expense" aria-label="שנה גובה תיאור" tabindex="-1"></button>
+      </label>
+
+      <div id="rtfBubbleExp" class="rtf-bubble mobile-editor-toolbar" hidden>
+        <div class="colors">
+          <button class="dot" data-color="#FFD60A" title="צהוב"></button>
+          <button class="dot" data-color="#E53935" title="אדום"></button>
+          <button class="dot" data-color="#1E88E5" title="כחול"></button>
+          <button class="dot" data-color="#34A853" title="ירוק"></button>
+          <button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button>
+        </div>
+        <div class="styles">
+          <button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button>
+          <button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button>
+          <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
+        </div>
+      </div>
+
+      <div class="expense-main-row mobile-expense-fields">
+        <label class="mobile-field expense-cat-col">
+          <span>קטגוריה</span>
           <select id="expCat" class="input">
             <option value="">בחר...</option>
             <option>טיסה</option>
@@ -372,21 +396,29 @@ id="expenseModal" class="modal">
             <option>אחר</option>
           </select>
         </label>
-        <label class="expense-amount-col">סכום<input id="expAmount" type="number" class="input money" inputmode="decimal" enterkeyhint="done" step="0.01" autocomplete="off"></label>
-        <label class="expense-currency-col">מטבע
+        <label class="mobile-field expense-amount-col">
+          <span>סכום</span>
+          <input id="expAmount" type="number" class="input money" inputmode="decimal" enterkeyhint="done" step="0.01" autocomplete="off">
+        </label>
+        <label class="mobile-field expense-currency-col">
+          <span>מטבע</span>
           <button id="expCurrBtn" type="button" class="input expense-currency-button" aria-label="מטבע" title="החלפת מטבע">¤</button>
           <input id="expCurr" type="hidden" value="">
         </label>
       </div>
-      <div class="row expense-meta-row">
-        <label class="exp-date-col">תאריך
+
+      <div class="expense-meta-row mobile-meta-row">
+        <label class="mobile-field exp-date-col">
+          <span>תאריך</span>
           <input type="date" id="expDate" class="input">
         </label>
-        <label class="exp-time-col">שעה
+        <label class="mobile-field exp-time-col">
+          <span>שעה</span>
           <input type="time" id="expTime" class="input">
         </label>
-        <div class="exp-location-col location-compact">
-          <button id="btnEditExpLocation" class="btn location-btn journal-location-trigger expense-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">
+        <div class="mobile-field exp-location-col location-compact">
+          <span>מפה</span>
+          <button id="btnEditExpLocation" class="btn location-btn journal-location-trigger expense-location-trigger mobile-map-trigger" type="button" aria-label="מפה" title="מפה">
             <span class="journal-location-trigger-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-hidden="true">
                 <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z"></path>
@@ -395,19 +427,19 @@ id="expenseModal" class="modal">
                 <path d="M12 11.4a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8Z"></path>
               </svg>
             </span>
-            <span class="journal-location-trigger-label">מיקום / עריכה</span>
+            <span class="journal-location-trigger-label">מפה</span>
           </button>
-          <div id="expLocationPreview" class="muted" aria-live="polite"></div>
-          <input id="expLocationName" autocomplete="off" class="input" style="display:none" />
-          <input type="hidden" id="expLat" />
-          <input type="hidden" id="expLng" />
+          <div id="expLocationPreview" class="muted mobile-location-preview" aria-live="polite"></div>
+          <input id="expLocationName" autocomplete="off" class="input" style="display:none">
+          <input type="hidden" id="expLat">
+          <input type="hidden" id="expLng">
         </div>
       </div>
     </div>
-    <div class="footer">
-      <button id="expSave" class="btn primary">שמור</button>
-      <button id="expDelete" class="btn danger" style="display:none">מחק</button>
-      <button id="expCancel" class="btn">ביטול</button>
+    <div class="footer mobile-editor-footer">
+      <button id="expCancel" class="btn" type="button">ביטול</button>
+      <button id="expDelete" class="btn danger" type="button" style="display:none">מחק</button>
+      <button id="expSave" class="btn primary" type="button">שמור</button>
     </div>
   </dialog>
 
@@ -462,36 +494,50 @@ id="expenseModal" class="modal">
 </dialog>
 
 
-  <dialog id="journalModal" class="modal">
-    <header><strong>רישום יומן</strong>
-<button class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none;margin-inline-start:.5rem">התנתקות</button>
-</header>
-    <div class="body">
-      <label>כותרת<input id="jrTitle" autocomplete="off" class="input" placeholder="כותרת לדיווח"/></label>
-      <label><span class="field-label">תיאור</span><div id="jrText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true"></div><button type="button" class="editor-resize-handle" data-editor-resize="journal" aria-label="שנה גובה תיאור" tabindex="-1"></button></label>
-<div id="rtfBubble" class="rtf-bubble" hidden>
-  <div class="colors">
-    <button class="dot" data-color="#FFD60A" title="צהוב"></button>
-    <button class="dot" data-color="#E53935" title="אדום"></button>
-    <button class="dot" data-color="#1E88E5" title="כחול"></button>
-    <button class="dot" data-color="#34A853" title="ירוק"></button>
-    <button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button>
-  </div>
-  <div class="styles">
-    <button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button>
-    <button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button>
-    <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
-  </div>
-</div>
-      <div class="row journal-meta-row">
-        <label class="jr-date-col">תאריך
+  <dialog id="journalModal" class="modal mobile-editor-modal mobile-journal-modal" aria-label="רישום יומן">
+    <header class="mobile-editor-header">
+      <strong>רישום יומן</strong>
+      <button class="btn danger btn-logout-mobile" aria-label="התנתקות" style="display:none">התנתקות</button>
+    </header>
+    <div class="body mobile-editor-body">
+      <label class="mobile-field mobile-title-field">
+        <span>כותרת</span>
+        <input id="jrTitle" autocomplete="off" class="input" placeholder="כותרת לדיווח">
+      </label>
+
+      <label class="mobile-field mobile-text-field">
+        <span class="field-label">תיאור</span>
+        <div id="jrText" class="input rtf" contenteditable="true" aria-multiline="true" role="textbox" spellcheck="true"></div>
+        <button type="button" class="editor-resize-handle" data-editor-resize="journal" aria-label="שנה גובה תיאור" tabindex="-1"></button>
+      </label>
+
+      <div id="rtfBubble" class="rtf-bubble mobile-editor-toolbar" hidden>
+        <div class="colors">
+          <button class="dot" data-color="#FFD60A" title="צהוב"></button>
+          <button class="dot" data-color="#E53935" title="אדום"></button>
+          <button class="dot" data-color="#1E88E5" title="כחול"></button>
+          <button class="dot" data-color="#34A853" title="ירוק"></button>
+          <button class="dot" data-color="#000000" title="שחור (ברירת מחדל)"></button>
+        </div>
+        <div class="styles">
+          <button class="fmt" data-cmd="bold" title="מודגש"><b>B</b></button>
+          <button class="fmt" data-cmd="italic" title="נטוי"><i>I</i></button>
+          <button class="fmt" data-cmd="underline" title="קו תחתון"><u>U</u></button>
+        </div>
+      </div>
+
+      <div class="journal-meta-row mobile-meta-row">
+        <label class="mobile-field jr-date-col">
+          <span>תאריך</span>
           <input type="date" id="jrDate" class="input">
         </label>
-        <label class="jr-time-col">שעה
+        <label class="mobile-field jr-time-col">
+          <span>שעה</span>
           <input type="time" id="jrTime" class="input">
         </label>
-        <div class="jr-location-col location-compact">
-          <button id="btnEditJrLocation" class="btn location-btn journal-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">
+        <div class="mobile-field jr-location-col location-compact">
+          <span>מפה</span>
+          <button id="btnEditJrLocation" class="btn location-btn journal-location-trigger mobile-map-trigger" type="button" aria-label="מפה" title="מפה">
             <span class="journal-location-trigger-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-hidden="true">
                 <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z"></path>
@@ -500,19 +546,19 @@ id="expenseModal" class="modal">
                 <path d="M12 11.4a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8Z"></path>
               </svg>
             </span>
-            <span class="journal-location-trigger-label">מיקום / עריכה</span>
+            <span class="journal-location-trigger-label">מפה</span>
           </button>
-          <div id="jrLocationPreview" class="muted" aria-live="polite"></div>
+          <div id="jrLocationPreview" class="muted mobile-location-preview" aria-live="polite"></div>
         </div>
-        <input id="jrPlaceName" autocomplete="off" class="input" style="display:none" />
-        <input type="hidden" id="jrLat" />
-        <input type="hidden" id="jrLng" />
+        <input id="jrPlaceName" autocomplete="off" class="input" style="display:none">
+        <input type="hidden" id="jrLat">
+        <input type="hidden" id="jrLng">
       </div>
     </div>
-    <div class="footer">
-      <button id="jrSave" class="btn primary">שמור</button>
-      <button id="jrDelete" class="btn danger" style="display:none">מחק</button>
-      <button id="jrCancel" class="btn">ביטול</button>
+    <div class="footer mobile-editor-footer">
+      <button id="jrCancel" class="btn" type="button">ביטול</button>
+      <button id="jrDelete" class="btn danger" type="button" style="display:none">מחק</button>
+      <button id="jrSave" class="btn primary" type="button">שמור</button>
     </div>
   </dialog>
 
