@@ -13063,3 +13063,189 @@ html body .cell.notes a.mail-icon::before{
     scroll-behavior:auto !important;
   }
 }
+
+/* === MOBILE EXPENSE/JOURNAL COMPACT META ROW === */
+@media (max-width: 820px){
+  body.mobile-ui dialog#expenseModal[open],
+  body.mobile-ui dialog#journalModal[open],
+  dialog#expenseModal.modal[open],
+  dialog#journalModal.modal[open]{
+    height:min(46dvh, calc(var(--vvh, 100dvh) - 8px)) !important;
+    min-height:236px !important;
+    max-height:min(46dvh, calc(var(--vvh, 100dvh) - 8px)) !important;
+  }
+
+  body.mobile-ui dialog#expenseModal > header,
+  body.mobile-ui dialog#journalModal > header,
+  dialog#expenseModal.modal > header,
+  dialog#journalModal.modal > header{
+    min-height:42px !important;
+    padding:8px 14px !important;
+  }
+
+  body.mobile-ui dialog#expenseModal > .body,
+  body.mobile-ui dialog#journalModal > .body,
+  dialog#expenseModal.modal > .body,
+  dialog#journalModal.modal > .body{
+    padding:9px 12px !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui dialog#expenseModal .body > label,
+  body.mobile-ui dialog#journalModal .body > label,
+  dialog#expenseModal.modal .body > label,
+  dialog#journalModal.modal .body > label{
+    gap:3px !important;
+    font-size:13px !important;
+  }
+
+  body.mobile-ui #expenseModal .input,
+  body.mobile-ui #journalModal .input,
+  body.mobile-ui #expenseModal select,
+  body.mobile-ui #journalModal select,
+  body.mobile-ui #expenseModal input,
+  body.mobile-ui #journalModal input,
+  dialog#expenseModal.modal .input,
+  dialog#journalModal.modal .input,
+  dialog#expenseModal.modal select,
+  dialog#journalModal.modal select,
+  dialog#expenseModal.modal input,
+  dialog#journalModal.modal input{
+    min-height:40px !important;
+    height:40px !important;
+    padding:8px 10px !important;
+    border-radius:12px !important;
+    font-size:16px !important;
+  }
+
+  body.mobile-ui #expenseModal #expText,
+  body.mobile-ui #journalModal #jrText,
+  dialog#expenseModal.modal #expText,
+  dialog#journalModal.modal #jrText{
+    min-height:72px !important;
+    height:72px !important;
+    max-height:96px !important;
+    padding:8px 10px !important;
+    line-height:1.35 !important;
+  }
+
+  body.mobile-ui #journalModal #jrText,
+  dialog#journalModal.modal #jrText{
+    min-height:92px !important;
+    height:92px !important;
+    max-height:120px !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-main-row,
+  dialog#expenseModal.modal .expense-main-row{
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) minmax(76px, .55fr) 44px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row,
+  dialog#expenseModal.modal .expense-meta-row,
+  dialog#journalModal.modal .journal-meta-row{
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) 86px 44px !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row > .exp-date-col,
+  body.mobile-ui #expenseModal .expense-meta-row > .exp-time-col,
+  body.mobile-ui #journalModal .journal-meta-row > .jr-date-col,
+  body.mobile-ui #journalModal .journal-meta-row > .jr-time-col,
+  dialog#expenseModal.modal .expense-meta-row > .exp-date-col,
+  dialog#expenseModal.modal .expense-meta-row > .exp-time-col,
+  dialog#journalModal.modal .journal-meta-row > .jr-date-col,
+  dialog#journalModal.modal .journal-meta-row > .jr-time-col{
+    inline-size:auto !important;
+    min-inline-size:0 !important;
+    width:auto !important;
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-meta-row label,
+  body.mobile-ui #journalModal .journal-meta-row label,
+  dialog#expenseModal.modal .expense-meta-row label,
+  dialog#journalModal.modal .journal-meta-row label{
+    min-width:0 !important;
+    font-size:12px !important;
+    line-height:1.1 !important;
+    white-space:nowrap !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-date-col input,
+  body.mobile-ui #journalModal .jr-date-col input,
+  body.mobile-ui #expenseModal .exp-time-col input,
+  body.mobile-ui #journalModal .jr-time-col input,
+  dialog#expenseModal.modal .exp-date-col input,
+  dialog#journalModal.modal .jr-date-col input,
+  dialog#expenseModal.modal .exp-time-col input,
+  dialog#journalModal.modal .jr-time-col input{
+    inline-size:100% !important;
+    min-inline-size:0 !important;
+    max-inline-size:none !important;
+    text-align:center !important;
+  }
+
+  body.mobile-ui #expenseModal .exp-location-col.location-compact,
+  body.mobile-ui #journalModal .jr-location-col.location-compact,
+  dialog#expenseModal.modal .exp-location-col.location-compact,
+  dialog#journalModal.modal .jr-location-col.location-compact{
+    display:grid !important;
+    grid-template-columns:44px !important;
+    align-self:end !important;
+    justify-self:end !important;
+    min-width:0 !important;
+  }
+
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger,
+  dialog#expenseModal.modal .expense-location-trigger,
+  dialog#journalModal.modal .journal-location-trigger{
+    inline-size:44px !important;
+    min-inline-size:44px !important;
+    max-inline-size:44px !important;
+    block-size:40px !important;
+    min-block-size:40px !important;
+    max-block-size:40px !important;
+    padding:0 !important;
+    border-radius:12px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  body.mobile-ui #expenseModal .journal-location-trigger-label,
+  body.mobile-ui #journalModal .journal-location-trigger-label,
+  dialog#expenseModal.modal .journal-location-trigger-label,
+  dialog#journalModal.modal .journal-location-trigger-label,
+  body.mobile-ui #expenseModal #expLocationPreview,
+  body.mobile-ui #journalModal #jrLocationPreview,
+  dialog#expenseModal.modal #expLocationPreview,
+  dialog#journalModal.modal #jrLocationPreview{
+    display:none !important;
+  }
+
+  body.mobile-ui dialog#expenseModal > .footer,
+  body.mobile-ui dialog#journalModal > .footer,
+  dialog#expenseModal.modal > .footer,
+  dialog#journalModal.modal > .footer{
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    gap:8px !important;
+  }
+
+  body.mobile-ui dialog#expenseModal > .footer .btn,
+  body.mobile-ui dialog#journalModal > .footer .btn,
+  dialog#expenseModal.modal > .footer .btn,
+  dialog#journalModal.modal > .footer .btn{
+    min-height:42px !important;
+    height:42px !important;
+    padding:8px 10px !important;
+    border-radius:12px !important;
+  }
+}
