@@ -3770,16 +3770,6 @@ button[title*="Mobile"],
 /* clickable types pill */
 .trip-row .pill{ cursor: pointer; }
 .pill.active{ outline: 2px solid color-mix(in oklab, var(--brand) 40%, transparent); }
-.trip-list-state{
-  width:100%;
-  padding:18px 16px;
-  border:1px solid var(--border);
-  border-radius:16px;
-  background:var(--card);
-  color:var(--muted);
-  font-weight:700;
-  text-align:center;
-}
 
 /* Kill-switch for dev mobile controls */
 header .mobile-preview-controls{display:none !important}
