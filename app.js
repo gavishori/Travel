@@ -834,7 +834,6 @@ function syncJournalSelectionUi(){
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
-      add('מפה', ()=> setOverviewSelectValue('map'));
       add('תקציב', ()=> openCurrentBudgetSummary());
       add('מיין', ()=> triggerButton('btnAllSort'));
       add('פתח / צמצם הכל', ()=> triggerButton('btnAllToggle'));
@@ -843,7 +842,6 @@ function syncJournalSelectionUi(){
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
-      add('מפה', ()=> setOverviewSelectValue('map'));
       add('ייבוא / ייצוא / שיתוף', ()=> setOverviewSelectValue('share'));
       add('בדוק במפה', ()=> triggerButton('btnVerifyOnMap'));
     } else if(currentSection === 'map'){
@@ -860,7 +858,6 @@ function syncJournalSelectionUi(){
       title.textContent = 'ייבוא / ייצוא / שיתוף';
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
-      add('מפה', ()=> setOverviewSelectValue('map'));
     } else if(currentSection === 'expenses'){
       title.textContent = 'פעולות הוצאות';
       add('+ הוסף הוצאה', ()=> triggerButton('btnAddExpense'), 'primary');
@@ -1026,6 +1023,24 @@ function syncJournalSelectionUi(){
       newTripBtn.textContent = 'חדשה +';
       newTripBtn.setAttribute('aria-label', 'נסיעה חדשה');
       newTripBtn.title = 'נסיעה חדשה';
+    }
+
+    const mapTabBtn = document.querySelector('#tabs [data-tab="map"]');
+    if(mapTabBtn){
+      mapTabBtn.hidden = true;
+      mapTabBtn.style.display = 'none';
+      mapTabBtn.setAttribute('aria-hidden', 'true');
+      mapTabBtn.tabIndex = -1;
+    }
+    const overviewSelect = document.getElementById('overviewTabSelect');
+    const mapOption = overviewSelect?.querySelector('option[value="map"]');
+    if(mapOption){
+      mapOption.hidden = true;
+      mapOption.disabled = true;
+    }
+    if(overviewSelect?.value === 'map'){
+      overviewSelect.value = 'mix';
+      try { applyOverviewSelection('mix'); } catch(_) {}
     }
 
     if(typeof state === 'object'){
