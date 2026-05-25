@@ -240,26 +240,12 @@ function syncThemeToggleButton(){
 
 async function performPrimaryLogout(e){
   try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){ }
-  let signedOut = false;
   try{
-    if(typeof hardSignOut === 'function'){
-      await hardSignOut();
-      signedOut = true;
-    }
-    if(!signedOut && typeof FB !== 'undefined' && typeof FB.signOut === 'function'){
-      await FB.signOut(auth || FB.auth);
-      signedOut = true;
-    }
-    if(!signedOut && typeof signOutUser === 'function'){
-      await signOutUser();
-      signedOut = true;
-    }
-    if(!signedOut && typeof auth?.signOut === 'function'){
-      await auth.signOut();
-      signedOut = true;
-    }
+    if(typeof hardSignOut==='function'){ await hardSignOut(); }
+    else if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
+    else if(typeof signOutUser==='function'){ await signOutUser(); }
+    else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
   }catch(err){ console.error('primary logout failed', err); }
-  try{ if(typeof applyAuthShellState === 'function') applyAuthShellState(null); }catch(_){ }
   try { window.state = globalThis.state = { trips: [], current: null, currentTripId: null, user: null, maps: {}, filters: {}, shared: {}, rates: {}, categories: {} }; } catch(_) {}
   try { sessionStorage.clear(); } catch(_) {}
   try { localStorage.removeItem('activeTripId'); } catch(_) {}
@@ -578,21 +564,6 @@ window.addEventListener('resize', normalizeMobileOverviewHeader);
 window.addEventListener('pageshow', syncViewportModeClasses);
 window.addEventListener('pageshow', normalizeMobileOverviewHeader);
 
-(function wireAccountMenuLogoutFallback(){
-  let lastTouchTs = 0;
-  const run = (ev)=>{
-    const btn = ev.target?.closest?.('#accountMenuLogout');
-    if(!btn) return;
-    try{ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); }catch(_){ }
-    if(ev.type === 'click' && Date.now() - lastTouchTs < 500) return;
-    if(ev.type === 'touchend') lastTouchTs = Date.now();
-    closeAccountMenu();
-    performPrimaryLogout(ev);
-  };
-  document.addEventListener('touchend', run, { passive:false, capture:true });
-  document.addEventListener('click', run, { passive:false, capture:true });
-})();
-
 function finalMobileThemeSync(){
   if(!isCompactMobileHeader()) return;
   const btn = document.getElementById('btnTheme');
@@ -710,10 +681,10 @@ function syncJournalSelectionUi(){
     if(loggedIn){
       btn.classList.add('icon-only', 'is-authenticated');
       btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
-      btn.setAttribute('aria-label', 'יציאה');
-      btn.title = 'יציאה';
+      btn.setAttribute('aria-label', 'חשבון מחובר');
+      btn.title = 'חשבון מחובר';
       btn.classList.add('is-authenticated');
-      bindTap(btn, performPrimaryLogout, 'mobileFinalLogoutTap');
+      bindTap(btn, ()=> openAccountMenu(), 'mobileFinalAuthTap');
     }else{
       btn.textContent = 'התחברות';
       btn.setAttribute('aria-label', 'התחברות');
@@ -724,25 +695,6 @@ function syncJournalSelectionUi(){
 
   function getCurrentAuthUser(){
     return (typeof FB !== 'undefined' && FB?.auth?.currentUser) ? FB.auth.currentUser : null;
-  }
-
-  function syncMobileHeaderButtonOrder(){
-    const header = document.querySelector('.app > header');
-    const controls = header?.querySelector('.header-controls');
-    const allTrips = document.getElementById('btnAllTrips');
-    const authBtn = document.getElementById('btnLogin');
-    if(!header || !controls || !allTrips || !authBtn) return;
-    const userBadge = document.getElementById('userBadge');
-
-    if(isCompactMobileHeader()){
-      if(authBtn.parentElement !== header) header.insertBefore(authBtn, allTrips);
-      if(allTrips.parentElement !== controls) controls.insertBefore(allTrips, userBadge || null);
-      else if(userBadge && allTrips.nextElementSibling !== userBadge) controls.insertBefore(allTrips, userBadge);
-      return;
-    }
-
-    if(allTrips.parentElement !== header) header.insertBefore(allTrips, controls);
-    if(authBtn.parentElement !== controls) controls.insertBefore(authBtn, userBadge || null);
   }
 
   function ensureMobileSectionMenuDialog(){
@@ -1125,7 +1077,6 @@ function syncJournalSelectionUi(){
 
   function wire(){
     if(!isCompactMobileHeader()) return;
-    syncMobileHeaderButtonOrder();
     const themeBtn = document.getElementById('btnTheme');
     if(themeBtn && themeBtn.dataset.mobileFinalTheme !== '1'){
       themeBtn.dataset.mobileFinalTheme = '1';
@@ -1151,7 +1102,6 @@ function syncJournalSelectionUi(){
 
     window.addEventListener('pageshow', ()=>{
       if(!isCompactMobileHeader()) return;
-      syncMobileHeaderButtonOrder();
       const currentUser = getCurrentAuthUser();
       mobileApplyThemeButton();
       mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
@@ -1159,13 +1109,11 @@ function syncJournalSelectionUi(){
     });
     window.addEventListener('resize', ()=>{
       if(!isCompactMobileHeader()) return;
-      syncMobileHeaderButtonOrder();
       syncMobileViewportVars();
       applyMobileLayout();
     });
     window.addEventListener('focus', ()=>{
       if(!isCompactMobileHeader()) return;
-      syncMobileHeaderButtonOrder();
       const currentUser = getCurrentAuthUser();
       mobileApplyAuthButton(!!currentUser, currentUser?.email || '');
     });
@@ -1176,8 +1124,6 @@ function syncJournalSelectionUi(){
   }else{
     wire();
   }
-  window.addEventListener('resize', syncMobileHeaderButtonOrder);
-  window.addEventListener('pageshow', syncMobileHeaderButtonOrder);
 })();
 // --- end ensure button ---
 

@@ -5241,6 +5241,13 @@ html, body { overflow-x:hidden; }
 
 }
 
+/* --- Mobile-only Logout Button --- */
+.btn-logout-mobile{ display:none; }
+@media (max-width: 768px){
+  .btn-logout-mobile{ display:inline-flex; align-items:center; padding:.6rem .9rem; font-weight:600; border-radius:12px; }
+  .btn-logout-mobile.btn.danger{ background:#ffe8e8; border:1px solid #ffb3b3; }
+}
+
 /* iOS viewport fix */
 html, body { height:100%; }
 :root{ --vh: 1dvh; }

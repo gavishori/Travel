@@ -21,6 +21,14 @@
   ];
 
   const mq = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+  const ICONS = {
+    journal: '+י',
+    expense: '+ה',
+    search: '⌕',
+    collapse: '↕',
+    sort: '⇅',
+    breakdown: '◔'
+  };
 
   function isMobile(){
     return mq ? mq.matches : window.innerWidth <= 820;
@@ -35,7 +43,8 @@
     return {
       width: vv ? vv.width : window.innerWidth,
       height: vv ? vv.height : window.innerHeight,
-      offsetTop: vv ? vv.offsetTop : 0
+      offsetTop: vv ? vv.offsetTop : 0,
+      pageTop: vv ? vv.pageTop : window.scrollY || 0
     };
   }
 
@@ -55,6 +64,25 @@
     root.style.setProperty('--mobile-editor-height', px(editorHeight));
     document.body.classList.toggle('mobile-ui', isMobile());
     document.body.classList.toggle('keyboard-open', keyboardSpace > 80);
+  }
+
+  function addLogoutButtons(){
+    ALL_DIALOG_IDS.forEach((id) => {
+      const dialog = document.getElementById(id);
+      if (!dialog) return;
+
+      const header = dialog.querySelector('header') || dialog.querySelector('.header');
+      if (!header || header.querySelector('.btn-logout-mobile')) return;
+
+      const button = document.createElement('button');
+      button.className = 'btn danger btn-logout-mobile';
+      button.type = 'button';
+      button.setAttribute('aria-label', 'התנתקות');
+      button.style.display = 'none';
+      button.style.marginInlineStart = '.5rem';
+      button.textContent = 'התנתקות';
+      header.appendChild(button);
+    });
   }
 
   function markOpenEditorDialog(){
@@ -80,8 +108,71 @@
 
   function normalizeOpenDialogs(){
     updateViewportVars();
+    ensureMobileOverviewBar();
     ALL_DIALOG_IDS.forEach((id) => normalizeDialog(document.getElementById(id)));
     markOpenEditorDialog();
+  }
+
+  function triggerButton(id){
+    const btn = document.getElementById(id);
+    if (!btn) return false;
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    return true;
+  }
+
+  function ensureMobileOverviewBar(){
+    const overview = document.getElementById('view-overview');
+    if (!overview || !isMobile()) return;
+
+    let bar = document.getElementById('mobileOverviewUnifiedBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'mobileOverviewUnifiedBar';
+      bar.className = 'mobile-overview-unified-bar';
+      bar.setAttribute('role', 'toolbar');
+      bar.setAttribute('aria-label', 'פעולות הצג הכל');
+      bar.dir = 'rtl';
+      overview.insertBefore(bar, overview.firstChild);
+    }
+
+    if (!bar.dataset.built) {
+      bar.dataset.built = '1';
+      bar.innerHTML = `
+        <button type="button" class="mob-act mob-add-journal" data-mobile-action="journal" aria-label="הוסף יומן" title="הוסף יומן">${ICONS.journal}</button>
+        <button type="button" class="mob-act mob-add-expense" data-mobile-action="expense" aria-label="הוסף הוצאה" title="הוסף הוצאה">${ICONS.expense}</button>
+        <label class="mob-search-wrap" aria-label="חיפוש">
+          <span aria-hidden="true">${ICONS.search}</span>
+          <input id="mobileOverviewSearchProxy" type="search" inputmode="search" autocomplete="off" placeholder="חיפוש" dir="rtl">
+        </label>
+        <button type="button" class="mob-act" data-mobile-action="collapse" aria-label="פתח או צמצם הכל" title="פתח / צמצם">${ICONS.collapse}</button>
+        <button type="button" class="mob-act" data-mobile-action="sort" aria-label="מיין" title="מיין">${ICONS.sort}</button>
+        <button type="button" class="mob-act" data-mobile-action="breakdown" aria-label="פילוח" title="פילוח">${ICONS.breakdown}</button>
+      `;
+
+      bar.querySelector('[data-mobile-action="journal"]')?.addEventListener('click', () => {
+        triggerButton('btnQuickAddJournal') || triggerButton('btnAddJournal');
+      });
+      bar.querySelector('[data-mobile-action="expense"]')?.addEventListener('click', () => {
+        triggerButton('btnQuickAddExpense') || triggerButton('btnAddExpense');
+      });
+      bar.querySelector('[data-mobile-action="collapse"]')?.addEventListener('click', () => triggerButton('btnAllToggle'));
+      bar.querySelector('[data-mobile-action="sort"]')?.addEventListener('click', () => triggerButton('btnAllSort'));
+      bar.querySelector('[data-mobile-action="breakdown"]')?.addEventListener('click', () => {
+        triggerButton('btnQuickBreakdown') || triggerButton('openBreakdownBtn');
+      });
+
+      const proxy = bar.querySelector('#mobileOverviewSearchProxy');
+      proxy?.addEventListener('input', () => {
+        const source = document.getElementById('searchAll');
+        if (!source) return;
+        source.value = proxy.value;
+        source.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    }
+
+    const source = document.getElementById('searchAll');
+    const proxy = bar.querySelector('#mobileOverviewSearchProxy');
+    if (source && proxy && proxy.value !== source.value) proxy.value = source.value || '';
   }
 
   function removeHorizontalOverflow(){
@@ -123,7 +214,8 @@
       el.dataset.mobileKeyboardWired = '1';
       el.addEventListener('focus', () => {
         updateViewportVars();
-        normalizeDialog(el.closest('dialog'));
+        const dialog = el.closest('dialog');
+        normalizeDialog(dialog);
       }, { passive: true });
       el.addEventListener('blur', () => setTimeout(normalizeOpenDialogs, 80), { passive: true });
     });
@@ -147,6 +239,7 @@
 
   function boot(){
     updateViewportVars();
+    addLogoutButtons();
     wireDialogEvents();
     wireEditorFocus();
     patchShowModal();
