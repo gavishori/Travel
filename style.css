@@ -5241,13 +5241,6 @@ html, body { overflow-x:hidden; }
 
 }
 
-/* --- Mobile-only Logout Button --- */
-.btn-logout-mobile{ display:none; }
-@media (max-width: 768px){
-  .btn-logout-mobile{ display:inline-flex; align-items:center; padding:.6rem .9rem; font-weight:600; border-radius:12px; }
-  .btn-logout-mobile.btn.danger{ background:#ffe8e8; border:1px solid #ffb3b3; }
-}
-
 /* iOS viewport fix */
 html, body { height:100%; }
 :root{ --vh: 1dvh; }
@@ -17415,4 +17408,56 @@ html body .expense-detail-surface:empty{
 html body tr.exp-details[data-item-type="expense"]:has(.expense-detail-surface:empty),
 html body tr.exp-item[data-kind="expense"] + tr.exp-details:has(.expense-detail-surface:empty){
   display:none !important;
+}
+
+/* === TRUE EOF: remove bold emphasis from trip data rows on desktop and mobile === */
+html body #tblAllTimeline tr.exp-item[data-kind] td,
+html body #tblAllTimeline tr.exp-item[data-kind] td *,
+html body #tblExpenses tr.exp-item[data-kind] td,
+html body #tblExpenses tr.exp-item[data-kind] td *,
+html body #tblJournal tr.exp-item[data-kind] td,
+html body #tblJournal tr.exp-item[data-kind] td *,
+html body #view-overview .expenses-table tr.exp-item[data-kind] td,
+html body #view-overview .expenses-table tr.exp-item[data-kind] td *,
+html body #view-expenses .expenses-table tr.exp-item[data-kind] td,
+html body #view-expenses .expenses-table tr.exp-item[data-kind] td *,
+html body #view-journal .expenses-table tr.exp-item[data-kind] td,
+html body #view-journal .expenses-table tr.exp-item[data-kind] td *{
+  font-weight:400 !important;
+}
+
+/* === TRUE EOF: no bold anywhere inside visible expense/journal rows === */
+html body table.expenses-table tr.exp-item:not(.exp-details) td,
+html body table.expenses-table tr.exp-item:not(.exp-details) td *,
+html body #tblAllTimeline tr.exp-item:not(.exp-details) td,
+html body #tblAllTimeline tr.exp-item:not(.exp-details) td *,
+html body #tblExpenses tr.exp-item:not(.exp-details) td,
+html body #tblExpenses tr.exp-item:not(.exp-details) td *,
+html body #tblJournal tr.exp-item:not(.exp-details) td,
+html body #tblJournal tr.exp-item:not(.exp-details) td *,
+html body #view-overview td.header.title,
+html body #view-overview td.header.title *,
+html body #view-expenses td.header.title,
+html body #view-expenses td.header.title *,
+html body #view-journal td.header.location,
+html body #view-journal td.header.location *{
+  font-weight:400 !important;
+}
+
+/* === TRUE EOF: override highly specific expense title bold rules === */
+html body #view-overview #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) > td.header.title,
+html body #view-overview #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) > td.header.title *,
+html body #view-overview #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+html body #view-overview #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.title *,
+html body #view-expenses #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) > td.header.title,
+html body #view-expenses #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) > td.header.title *,
+html body #view-expenses #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+html body #view-expenses #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.title *,
+html body #tblAllTimeline tr.exp-item[data-kind="expense"][data-mobile-layout] td.header.title,
+html body #tblAllTimeline tr.exp-item[data-kind="expense"][data-mobile-layout] td.header.title *,
+html body #tblExpenses tr.exp-item[data-kind="expense"][data-mobile-layout] td.header.title,
+html body #tblExpenses tr.exp-item[data-kind="expense"][data-mobile-layout] td.header.title *,
+html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .expense-title-text,
+html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .expense-title-meta{
+  font-weight:400 !important;
 }
