@@ -12,45 +12,6 @@ function stripLinks(text){
 }
 
 var importGPXFromFile, importGPXAsTrek;
-// === Auth Button Toggle (Login <-> Logout) ===
-function legacyWireAuthPrimaryButton(){
-  const btn = document.getElementById('btnLogin'); // header primary button
-  if(!btn) return;
-  if(btn.dataset.authWired==='1') return;
-  btn.dataset.authWired='1';
-  const doLogout = async (e)=>{
-    try{ e?.preventDefault?.(); e?.stopPropagation?.(); }catch(_){ }
-
-    try{
-      if(typeof hardSignOut==='function'){ await hardSignOut(); }
-      else if(typeof FB!=='undefined' && typeof FB.signOut==='function'){ await FB.signOut(FB.auth); }
-      else if(typeof signOutUser==='function'){ await signOutUser(); }
-      else if(typeof FB?.auth?.signOut==='function'){ await FB.auth.signOut(); }
-    }catch(err){ console.error('primary logout failed', err); }
-    try { window.state = globalThis.state = { trips: [], current: null, currentTripId: null, user: null, maps: {}, filters: {}, shared: {}, rates: {}, categories: {} }; } catch(_) {}
-    try { sessionStorage.clear(); } catch(_) {}
-    try { localStorage.removeItem('activeTripId'); } catch(_) {}
-    // Force a hard reload with a cache-busting query so Firestore listeners fully reset
-    try { location.replace(location.pathname + '?logout=' + Date.now()); } catch(_) { location.reload(); }
-};
-  // Swap handlers on auth changes
-  window.__authPrimarySwap = (loggedIn)=>{
-    const old = document.getElementById('btnLogin');
-    if(!old) return;
-    const clone = old.cloneNode(true);
-    old.parentNode.replaceChild(clone, old);
-    const target = document.getElementById('btnLogin');
-    if(!target) return;
-    if(loggedIn){
-      target.textContent = 'ניתוק';
-      target.classList.add('danger');
-      target.addEventListener('click', doLogout, {passive:false});
-    } else {
-      target.textContent = 'התחברות';
-      target.classList.remove('danger');
-    }
-  };
-}
 function isCompactMobileHeader(){
   return window.matchMedia('(max-width: 820px)').matches;
 }
@@ -458,17 +419,6 @@ function refreshHeaderAuthUi(forcedUser){
   }
 }
 
-function syncThemeToggleButtonLegacy(){
-  const btn = document.getElementById('btnTheme');
-  if(!btn) return;
-  const isLight = document.body.dataset.theme === 'light';
-  const nextLabel = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
-  btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
-  btn.setAttribute('aria-label', nextLabel);
-  btn.title = nextLabel;
-  btn.classList.add('icon-only');
-}
-
 function wireHeaderControls(){
   const btn = document.getElementById('btnLogin');
   const themeBtn = document.getElementById('btnTheme');
@@ -489,31 +439,6 @@ function wireHeaderControls(){
   dlg?.addEventListener('click', (e)=>{
     if(e.target === dlg) closeAccountMenu();
   });
-
-  window.__authPrimarySwap = (loggedIn, email='')=>{
-    const old = document.getElementById('btnLogin');
-    if(!old) return;
-    const clone = old.cloneNode(true);
-    old.parentNode.replaceChild(clone, old);
-    const target = document.getElementById('btnLogin');
-    const compact = isCompactMobileHeader();
-    const emailEl = document.getElementById('accountMenuEmail');
-    if(!target) return;
-    if(emailEl) emailEl.textContent = email || '';
-    target.classList.remove('danger', 'icon-only', 'is-authenticated');
-    if(loggedIn){
-      target.classList.add('is-authenticated', 'icon-only');
-      target.innerHTML = '<span aria-hidden="true">⇦</span>';
-      target.setAttribute('aria-label', 'יציאה');
-      target.title = 'יציאה';
-      target.addEventListener('click', performPrimaryLogout, {passive:false});
-    } else {
-      target.textContent = 'התחברות';
-      target.setAttribute('aria-label', 'התחברות');
-      target.title = 'התחברות';
-      bindTap(target, ()=> openAuthEntryPoint(), 'authOpenTapWired');
-    }
-  };
 
   if(themeBtn){
     bindTap(themeBtn, ()=>{
@@ -563,58 +488,6 @@ window.addEventListener('resize', syncViewportModeClasses);
 window.addEventListener('resize', normalizeMobileOverviewHeader);
 window.addEventListener('pageshow', syncViewportModeClasses);
 window.addEventListener('pageshow', normalizeMobileOverviewHeader);
-
-function finalMobileThemeSync(){
-  if(!isCompactMobileHeader()) return;
-  const btn = document.getElementById('btnTheme');
-  if(!btn) return;
-  const isLight = document.body.dataset.theme === 'light';
-  btn.innerHTML = `<span aria-hidden="true">${isLight ? '&#9728;' : '&#9790;'}</span>`;
-  btn.classList.add('icon-only');
-  btn.setAttribute('aria-label', isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר');
-  btn.title = isLight ? 'מעבר למצב כהה' : 'מעבר למצב בהיר';
-}
-
-function finalMobileAuthSwap(loggedIn, email=''){
-  if(!isCompactMobileHeader()) return;
-  const old = document.getElementById('btnLogin');
-  if(!old) return;
-  const clone = old.cloneNode(true);
-  old.parentNode.replaceChild(clone, old);
-  const btn = document.getElementById('btnLogin');
-  const emailEl = document.getElementById('accountMenuEmail');
-  if(!btn) return;
-  if(emailEl) emailEl.textContent = email || '';
-  btn.classList.remove('danger', 'icon-only', 'is-authenticated');
-  if(loggedIn){
-    btn.classList.add('icon-only', 'is-authenticated');
-    btn.innerHTML = '<span aria-hidden="true">&#10140;</span>';
-    btn.setAttribute('aria-label', 'יציאה');
-    btn.title = 'יציאה';
-    bindTap(btn, performPrimaryLogout, 'finalAuthTapWired');
-  }else{
-    btn.textContent = 'התחברות';
-    btn.setAttribute('aria-label', 'התחברות');
-    btn.title = 'התחברות';
-    bindTap(btn, ()=> openAuthEntryPoint(), 'finalAuthOpenTapWired');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(!isCompactMobileHeader()) return;
-  const themeBtn = document.getElementById('btnTheme');
-  if(themeBtn){
-    bindTap(themeBtn, ()=>{
-      document.body.dataset.theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
-      finalMobileThemeSync();
-    }, 'finalThemeTapWired');
-    finalMobileThemeSync();
-  }
-
-  window.__authPrimarySwap = finalMobileAuthSwap;
-  const currentUser = (typeof FB !== 'undefined' && FB?.auth?.currentUser) ? FB.auth.currentUser : null;
-  finalMobileAuthSwap(!!currentUser, currentUser?.email || '');
-});
 
 // --- ensure "מחק נבחרים" button exists in Journal tab even if HTML not updated ---
 (function(){
@@ -2209,7 +2082,6 @@ if (token && tripId) {
   state.currentTripId = tripId;
   $('#sidebar').style.display = 'none';
   $('#btnLogin').style.display = 'none';
-  $('#btnLogout').style.display = 'none';
   $('#tabs').style.display = 'flex';
   // Switch to trip-mode so content is visible
   const container = document.querySelector('.container');
@@ -7071,17 +6943,6 @@ document.addEventListener('change', (e)=>{
 });
 
 
-// === Logout wiring ===
-document.addEventListener('DOMContentLoaded', ()=>{
-  const out = document.getElementById('btnLogout');
-  if(out && !out.dataset.wired){
-    out.dataset.wired='1';
-    out.addEventListener('click', async ()=>{
-      try{ if(typeof FB?.signOut==='function') await FB.signOut(FB.auth); }catch(e){ console.error(e); }
-    });
-  }
-});
-
 // === Export GPX from journal points ===
 function exportGPX(){
   try{
@@ -7190,21 +7051,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 window.getEmailSpan = function(){ return document.getElementById('currentUserEmail'); };
 
-
-// === Logout wiring (robust) ===
-document.addEventListener('DOMContentLoaded', ()=>{
-  const out = document.getElementById('btnLogout');
-  if(out && !out.dataset.wired){
-    out.dataset.wired='1';
-    out.addEventListener('click', async (e)=>{
-      try{
-        e.preventDefault();
-        if (typeof FB !== 'undefined' && FB?.signOut) { await FB.signOut(FB.auth); }
-        else if (window.firebase?.auth) { await window.firebase.auth().signOut(); }
-      }catch(err){ console.error('logout failed', err); }
-    });
-  }
-});
 
 function safeHide(el){ if(el){ el.hidden = true; } }
 function safeShow(el){ if(el){ el.hidden = false; } }
@@ -8191,86 +8037,6 @@ function renderCategoryBreakdownNode(targetId){
 
 })();
 
-// --- Logout button wiring (robust, FB-agnostic) ---
-(function(){
-  async function dynamicFirebaseSignOut(){
-    // Try to import modular Firebase if globals aren't available
-    try{
-      const appMod  = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-      const authMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
-      const { getApps, getApp } = appMod;
-      const { getAuth, signOut } = authMod;
-      let auth;
-      try{
-        const app = getApps().length ? getApp() : undefined;
-        auth = app ? getAuth(app) : getAuth();
-      }catch(_){ auth = (window.auth ? window.auth : null); }
-      if (auth){
-        await signOut(auth);
-      }
-    }catch(e){
-      // Fallback: if modular import fails, try classic globals or FB wrapper
-      try{
-        if (window.FB && window.FB.auth && typeof window.FB._rawSignOut === 'function'){
-          await window.FB._rawSignOut(window.FB.auth);
-        } else if (window.signOut && window.auth){
-          await window.signOut(window.auth);
-        }
-      }catch(_) {}
-    }
-  }
-
-  async function clearFirebaseCaches(){
-    try{
-      for (const store of [localStorage, sessionStorage]){
-        const keys = [];
-        for (let i=0;i<store.length;i++){ keys.push(store.key(i)); }
-        for (const k of keys){
-          if (!k) continue;
-          if (k.includes('firebase') || k.startsWith('FIREBASE') || k.includes('g_state') || k.includes('fb_')){
-            try{ store.removeItem(k); }catch(_){}
-          }
-        }
-      }
-    }catch(_){}
-    try{ if (indexedDB) indexedDB.deleteDatabase('firebaseLocalStorageDb'); }catch(_){}
-    try{ if (indexedDB) indexedDB.deleteDatabase('firebase-installations-database'); }catch(_){}
-    try{ if (indexedDB) indexedDB.deleteDatabase('firebase-heartbeat-database'); }catch(_){}
-  }
-
-  function cleanReload(){
-    try{
-      const url = location.origin + location.pathname + `?signedout=${Date.now()}`;
-      location.replace(url);
-    }catch(_){ location.reload(); }
-  }
-
-  function attachLogout(){
-    const btn = document.getElementById('logoutBtn');
-    if(!btn) return;
-    btn.addEventListener('click', async function(){
-      try{
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'מתנתק...';
-        await dynamicFirebaseSignOut();
-        await clearFirebaseCaches();
-        cleanReload();
-        setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 1200);
-      }catch(e){
-        console.error('Logout failed', e);
-        try{ await clearFirebaseCaches(); }catch(_){}
-        cleanReload();
-      }
-    });
-  }
-
-  if (document.readyState === 'complete' || document.readyState === 'interactive'){
-    attachLogout();
-  } else {
-    document.addEventListener('DOMContentLoaded', attachLogout, { once: true });
-  }
-})();
 // === Shared Details Expand/Collapse Manager ===
 (function(){
   function createDetailsToggleManager({
