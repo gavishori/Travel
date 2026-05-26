@@ -713,12 +713,10 @@ function syncJournalSelectionUi(){
     if(currentSection === 'overview'){
       title.textContent = 'תצוגה ופעולות';
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
+      add('מפה', ()=> applyOverviewSelection('map'));
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
-      add('תקציב', ()=> openCurrentBudgetSummary());
-      add('מיין', ()=> triggerButton('btnAllSort'));
-      add('פתח / צמצם הכל', ()=> triggerButton('btnAllToggle'));
     } else if(currentSection === 'meta'){
       title.textContent = 'נתוני נסיעה';
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
@@ -919,10 +917,6 @@ function syncJournalSelectionUi(){
     if(mapOption){
       mapOption.hidden = true;
       mapOption.disabled = true;
-    }
-    if(overviewSelect?.value === 'map'){
-      overviewSelect.value = 'mix';
-      try { applyOverviewSelection('mix'); } catch(_) {}
     }
 
     if(typeof state === 'object'){

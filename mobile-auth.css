@@ -74,9 +74,9 @@ body{
   body.mobile-ui #btnAllTrips,
   body.mobile-ui #btnRefresh,
   body.mobile-ui #btnTheme{
-    height:38px !important;
-    min-height:38px !important;
-    min-width:38px !important;
+    height:36px !important;
+    min-height:36px !important;
+    min-width:36px !important;
     border-radius:12px !important;
     white-space:nowrap !important;
     touch-action:manipulation;
@@ -92,8 +92,8 @@ body{
 
   body.mobile-ui #btnAllTrips{
     display:inline-flex !important;
-    max-width:118px !important;
-    padding:0 10px !important;
+    max-width:104px !important;
+    padding:0 8px !important;
     overflow:visible !important;
     font-size:14px !important;
     line-height:1 !important;
@@ -218,7 +218,6 @@ body{
   body.mobile-ui #btnViewMap,
   body.mobile-ui #tabs [data-tab="map"],
   body.mobile-ui #overviewTabSelect option[value="map"],
-  body.mobile-ui #view-map,
   body.mobile-ui #view-overview #tblAllTimeline td.map-cell,
   body.mobile-ui #view-overview #tblAllTimeline .map-action-btn,
   body.mobile-ui #view-overview #tblAllTimeline .map-action-badge,
@@ -873,5 +872,41 @@ body{
   html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main{
     align-items:center !important;
     line-height:1.1 !important;
+  }
+
+  /* Header room for theme, refresh and auth controls on narrow mobile screens. */
+  body.mobile-ui header{
+    grid-template-columns:minmax(105px,1fr) auto auto !important;
+    column-gap:6px !important;
+    padding-inline:8px !important;
+  }
+
+  body.mobile-ui header .brand .brand-text{
+    font-size:1.08rem !important;
+  }
+
+  body.mobile-ui .header-controls{
+    gap:5px !important;
+    overflow:visible !important;
+  }
+
+  body.mobile-ui #btnTheme,
+  body.mobile-ui #btnRefresh,
+  body.mobile-ui #btnLogin{
+    width:36px !important;
+    min-width:36px !important;
+    max-width:36px !important;
+    height:36px !important;
+    min-height:36px !important;
+    padding:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  body.mobile-ui #btnAllTrips{
+    max-width:104px !important;
+    padding-inline:8px !important;
+    font-size:13px !important;
   }
 }
