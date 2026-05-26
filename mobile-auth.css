@@ -845,4 +845,32 @@ body{
   html body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind]:not(.exp-details) td *{
     font-weight:400 !important;
   }
+
+  html body.mobile-ui #view-overview #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  html body.mobile-ui #view-overview #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details) td.location *,
+  html body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  html body.mobile-ui #tblJournal tr.exp-item[data-kind="journal"]:not(.exp-details) td.location *,
+  html body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.location,
+  html body.mobile-ui #view-journal .expenses-table tr.exp-item[data-kind="journal"]:not(.exp-details) td.location *{
+    font-weight:400 !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
+    align-self:center !important;
+    justify-self:start !important;
+    justify-content:flex-start !important;
+    padding-block:0 !important;
+    transform:translateY(1px);
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main{
+    align-items:center !important;
+    line-height:1.1 !important;
+  }
 }

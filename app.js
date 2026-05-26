@@ -799,8 +799,8 @@ function syncJournalSelectionUi(){
         makeProxy('mobileOverviewMenuBtn', '&#9776;', 'פעולות'),
         makeProxy('mobileOverviewExpenseBtn', '+', 'הוצאה'),
         makeProxy('mobileOverviewJournalBtn', '&#9998;', 'יומן'),
-        makeProxy('mobileOverviewSortBtn', '&#8645;', 'מיין'),
-        makeProxy('mobileOverviewToggleBtn', '&#8693;', 'פתח / צמצם')
+        makeProxy('mobileOverviewSortBtn', '&#8597;', 'מיין'),
+        makeProxy('mobileOverviewToggleBtn', '&#9638;', 'פתח / צמצם')
       );
       view.prepend(rail);
     }
