@@ -928,15 +928,15 @@ body{
   html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
   html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
     display:grid !important;
-    direction:rtl !important;
-    grid-template-columns:44px 72px minmax(0,1fr) 92px !important;
-    grid-template-rows:auto auto !important;
+    direction:ltr !important;
+    grid-template-columns:96px minmax(0,1fr) 88px 44px !important;
+    grid-template-rows:24px 22px !important;
     grid-template-areas:
-      "menu date title title"
-      "menu time category amount" !important;
+      ". title date menu"
+      "amount category time menu" !important;
     column-gap:8px !important;
-    row-gap:4px !important;
-    align-items:center !important;
+    row-gap:2px !important;
+    align-items:end !important;
     min-height:72px !important;
     padding:9px 10px !important;
     overflow:hidden !important;
@@ -974,6 +974,8 @@ body{
     justify-self:stretch !important;
     text-align:right !important;
     font-size:14px !important;
+    align-self:end !important;
+    direction:rtl !important;
   }
 
   html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
@@ -984,6 +986,8 @@ body{
     text-align:right !important;
     justify-self:stretch !important;
     font-size:14px !important;
+    align-self:end !important;
+    direction:ltr !important;
   }
 
   html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.time,
@@ -994,6 +998,8 @@ body{
     text-align:right !important;
     justify-self:stretch !important;
     font-size:14px !important;
+    align-self:end !important;
+    direction:ltr !important;
   }
 
   html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
@@ -1004,6 +1010,8 @@ body{
     text-align:center !important;
     justify-self:stretch !important;
     font-size:14px !important;
+    align-self:end !important;
+    direction:rtl !important;
   }
 
   html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
@@ -1011,14 +1019,15 @@ body{
   html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
   html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
     grid-area:amount !important;
-    align-self:stretch !important;
+    align-self:end !important;
     justify-self:stretch !important;
     text-align:left !important;
     transform:none !important;
     font-size:14px !important;
     display:flex !important;
-    align-items:center !important;
+    align-items:flex-end !important;
     justify-content:flex-start !important;
+    direction:ltr !important;
   }
 
   html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
@@ -1027,7 +1036,7 @@ body{
   html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main{
     display:flex !important;
     justify-content:flex-start !important;
-    align-items:center !important;
+    align-items:flex-end !important;
     gap:3px !important;
     min-width:0 !important;
     white-space:nowrap !important;
@@ -1050,7 +1059,7 @@ body{
   html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount *,
   html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount *,
   html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount *{
-    align-self:center !important;
+    align-self:end !important;
     margin-block:0 !important;
     transform:none !important;
   }
