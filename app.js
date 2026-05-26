@@ -464,6 +464,8 @@ function wireHeaderControls(){
     const target = document.getElementById('btnLogin');
     const emailEl = document.getElementById('accountMenuEmail');
     if(!target) return;
+    delete target.dataset.authTapWired;
+    delete target.dataset.authOpenTapWired;
     if(emailEl) emailEl.textContent = email || '';
     target.classList.remove('danger', 'icon-only', 'is-authenticated');
     if(loggedIn){
@@ -558,6 +560,10 @@ function syncJournalSelectionUi(){
     const btn = document.getElementById('btnLogin');
     const emailEl = document.getElementById('accountMenuEmail');
     if(!btn) return;
+    delete btn.dataset.mobileFinalAuthTap;
+    delete btn.dataset.mobileFinalAuthOpenTap;
+    delete btn.dataset.authTapWired;
+    delete btn.dataset.authOpenTapWired;
     if(emailEl) emailEl.textContent = email || '';
     btn.classList.remove('danger', 'icon-only', 'is-authenticated');
     if(loggedIn){

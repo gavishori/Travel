@@ -881,6 +881,18 @@ body{
     padding-inline:8px !important;
   }
 
+  body.mobile-ui header{
+    grid-template-columns:auto auto !important;
+    grid-template-areas:
+      "controls alltrips"
+      "dest dest" !important;
+    justify-content:space-between !important;
+  }
+
+  body.mobile-ui header .brand{
+    display:none !important;
+  }
+
   body.mobile-ui header .brand .brand-text{
     font-size:1.08rem !important;
   }
