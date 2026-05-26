@@ -719,10 +719,10 @@ function syncJournalSelectionUi(){
     if(currentSection === 'overview'){
       title.textContent = 'תצוגה ופעולות';
       add('נתוני נסיעה', ()=> setOverviewSelectValue('meta'));
-      add('מפה', ()=> applyOverviewSelection('map'));
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
+      add('מפה', ()=> applyOverviewSelection('map'));
     } else if(currentSection === 'meta'){
       title.textContent = 'נתוני נסיעה';
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));

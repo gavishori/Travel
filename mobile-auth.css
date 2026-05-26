@@ -921,4 +921,112 @@ body{
     padding-inline:8px !important;
     font-size:13px !important;
   }
+
+  /* Clean two-line expense cards on mobile. */
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details),
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details),
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details),
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details){
+    display:grid !important;
+    direction:rtl !important;
+    grid-template-columns:44px 72px minmax(0,1fr) 92px !important;
+    grid-template-rows:auto auto !important;
+    grid-template-areas:
+      "menu date title title"
+      "menu time category amount" !important;
+    column-gap:8px !important;
+    row-gap:4px !important;
+    align-items:center !important;
+    min-height:72px !important;
+    padding:9px 10px !important;
+    overflow:hidden !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td{
+    min-width:0 !important;
+    max-width:100% !important;
+    padding:0 !important;
+    margin:0 !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+    line-height:1.15 !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell:not(.map-cell),
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.menu-cell:not(.map-cell){
+    grid-area:menu !important;
+    align-self:center !important;
+    justify-self:center !important;
+    overflow:visible !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.title{
+    grid-area:title !important;
+    justify-self:stretch !important;
+    text-align:right !important;
+    font-size:18px !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.date,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.date{
+    grid-area:date !important;
+    text-align:right !important;
+    justify-self:stretch !important;
+    font-size:14px !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.time,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.time,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.time,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.time{
+    grid-area:time !important;
+    text-align:right !important;
+    justify-self:stretch !important;
+    font-size:14px !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.category{
+    grid-area:category !important;
+    text-align:center !important;
+    justify-self:stretch !important;
+    font-size:14px !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount{
+    grid-area:amount !important;
+    align-self:center !important;
+    justify-self:stretch !important;
+    text-align:left !important;
+    transform:none !important;
+    font-size:14px !important;
+  }
+
+  html body.mobile-ui #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #tblExpenses tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #view-overview .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main,
+  html body.mobile-ui #view-expenses .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) td.amount .amt-main{
+    display:flex !important;
+    justify-content:flex-start !important;
+    align-items:center !important;
+    gap:3px !important;
+    min-width:0 !important;
+    white-space:nowrap !important;
+  }
 }
