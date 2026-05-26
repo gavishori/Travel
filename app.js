@@ -422,6 +422,7 @@ function refreshHeaderAuthUi(forcedUser){
 function wireHeaderControls(){
   const btn = document.getElementById('btnLogin');
   const themeBtn = document.getElementById('btnTheme');
+  const refreshBtn = document.getElementById('btnRefresh');
   const dlg = document.getElementById('accountMenuDialog');
   if(!btn) return;
   if(btn.dataset.authWired==='1') return;
@@ -429,6 +430,9 @@ function wireHeaderControls(){
 
   if(themeBtn && themeBtn.dataset.themeWired!=='1'){
     themeBtn.dataset.themeWired='1';
+  }
+  if(refreshBtn && refreshBtn.dataset.refreshWired!=='1'){
+    refreshBtn.dataset.refreshWired='1';
   }
 
   document.getElementById('accountMenuLogout')?.addEventListener('click', async (e)=>{
@@ -445,6 +449,11 @@ function wireHeaderControls(){
       const nextTheme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
       setBodyTheme(nextTheme);
     }, 'themeTapWired');
+  }
+  if(refreshBtn){
+    bindTap(refreshBtn, ()=>{
+      window.location.reload();
+    }, 'refreshTapWired');
   }
 
   window.__authPrimarySwap = (loggedIn, email='')=>{

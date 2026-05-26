@@ -72,6 +72,7 @@ body{
 
   body.mobile-ui #btnLogin,
   body.mobile-ui #btnAllTrips,
+  body.mobile-ui #btnRefresh,
   body.mobile-ui #btnTheme{
     height:38px !important;
     min-height:38px !important;
