@@ -1064,3 +1064,113 @@ body{
     transform:none !important;
   }
 }
+/* === MOBILE EXPENSE META ROW FINAL LOCK: date + time + map on one row === */
+@media (max-width: 820px){
+  html body #expenseModal .expense-meta-row,
+  html body.mobile-ui #expenseModal .expense-meta-row{
+    display:grid !important;
+    grid-template-columns:112px 76px 32px !important;
+    grid-template-rows:44px !important;
+    grid-auto-rows:0 !important;
+    grid-auto-flow:unset !important;
+    align-items:end !important;
+    justify-content:end !important;
+    column-gap:6px !important;
+    row-gap:0 !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    height:44px !important;
+    min-height:44px !important;
+    max-height:44px !important;
+    overflow:hidden !important;
+    direction:rtl !important;
+  }
+
+  html body #expenseModal .expense-meta-row > .exp-date-col,
+  html body.mobile-ui #expenseModal .expense-meta-row > .exp-date-col{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:112px !important;
+    min-width:112px !important;
+    max-width:112px !important;
+    height:44px !important;
+    min-height:44px !important;
+    max-height:44px !important;
+    margin:0 !important;
+    overflow:hidden !important;
+  }
+
+  html body #expenseModal .expense-meta-row > .exp-time-col,
+  html body.mobile-ui #expenseModal .expense-meta-row > .exp-time-col{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    width:76px !important;
+    min-width:76px !important;
+    max-width:76px !important;
+    height:44px !important;
+    min-height:44px !important;
+    max-height:44px !important;
+    margin:0 !important;
+    overflow:hidden !important;
+  }
+
+  html body #expenseModal .expense-meta-row > .exp-location-col.location-compact,
+  html body.mobile-ui #expenseModal .expense-meta-row > .exp-location-col.location-compact{
+    grid-column:3 !important;
+    grid-row:1 !important;
+    width:32px !important;
+    min-width:32px !important;
+    max-width:32px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+    align-self:end !important;
+    justify-self:start !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    display:block !important;
+  }
+
+  html body #expenseModal .expense-meta-row #expDate,
+  html body #expenseModal .expense-meta-row #expTime,
+  html body.mobile-ui #expenseModal .expense-meta-row #expDate,
+  html body.mobile-ui #expenseModal .expense-meta-row #expTime{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+    padding:4px 6px !important;
+    font-size:16px !important;
+    line-height:1 !important;
+    text-align:center !important;
+    direction:ltr !important;
+    unicode-bidi:isolate !important;
+  }
+
+  html body #expenseModal .expense-meta-row .expense-location-trigger,
+  html body.mobile-ui #expenseModal .expense-meta-row .expense-location-trigger{
+    width:32px !important;
+    min-width:32px !important;
+    max-width:32px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+    margin:0 !important;
+    padding:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+  }
+
+  html body #expenseModal .expense-meta-row .expense-location-trigger .journal-location-trigger-label,
+  html body.mobile-ui #expenseModal .expense-meta-row .expense-location-trigger .journal-location-trigger-label,
+  html body #expenseModal .expense-meta-row #expLocationPreview,
+  html body.mobile-ui #expenseModal .expense-meta-row #expLocationPreview{
+    display:none !important;
+  }
+}

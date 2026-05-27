@@ -3648,12 +3648,12 @@ $('#expCurrBtn')?.addEventListener('click', cycleExpenseCurrency);
 function expenseDateToDisplay(value){
   const raw = String(value || '').trim();
   const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  if(iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
   const dotted = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
   if(dotted){
     const d = dotted[1].padStart(2,'0');
     const m = dotted[2].padStart(2,'0');
-    return `${d}.${m}.${dotted[3]}`;
+    return `${d}/${m}/${dotted[3]}`;
   }
   return raw;
 }
@@ -3683,8 +3683,8 @@ function syncExpenseMobileDateField(){
     el.dataset.isoValue = iso;
     if(el.type !== 'text') el.type = 'text';
     el.inputMode = 'numeric';
-    el.placeholder = 'DD.MM.YYYY';
-    el.pattern = '\\d{2}\\.\\d{2}\\.\\d{4}';
+    el.placeholder = 'DD/MM/YYYY';
+    el.pattern = '\\d{2}/\\d{2}/\\d{4}';
     el.value = expenseDateToDisplay(iso);
   }else{
     const iso = expenseDisplayDateToIso(el.value) || el.dataset.isoValue || '';
@@ -3694,6 +3694,36 @@ function syncExpenseMobileDateField(){
     el.removeAttribute('pattern');
     if(iso) el.value = iso;
   }
+  lockExpenseMetaRowInline();
+}
+
+function lockExpenseMetaRowInline(){
+  if(!isMobileViewport()) return;
+  const row = document.querySelector('#expenseModal .expense-meta-row');
+  const dateCol = document.querySelector('#expenseModal .expense-meta-row > .exp-date-col');
+  const timeCol = document.querySelector('#expenseModal .expense-meta-row > .exp-time-col');
+  const locCol = document.querySelector('#expenseModal .expense-meta-row > .exp-location-col.location-compact');
+  const date = document.getElementById('expDate');
+  const time = document.getElementById('expTime');
+  const locBtn = document.getElementById('btnEditExpLocation');
+  if(!row || !dateCol || !timeCol || !locCol) return;
+  const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
+  [
+    ['display','grid'], ['grid-template-columns','112px 76px 32px'], ['grid-template-rows','44px'],
+    ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','end'], ['justify-content','end'],
+    ['column-gap','6px'], ['row-gap','0'], ['height','44px'], ['min-height','44px'], ['max-height','44px'],
+    ['overflow','hidden'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
+  ].forEach(([p,v])=> imp(row,p,v));
+  [[dateCol,'1','112px','44px'], [timeCol,'2','76px','44px'], [locCol,'3','32px','32px']].forEach(([el,col,w,h])=>{
+    imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',w); imp(el,'max-width',w);
+    imp(el,'height',h); imp(el,'min-height',h); imp(el,'max-height',h); imp(el,'margin','0'); imp(el,'overflow','hidden');
+  });
+  [date,time].forEach((el)=>{
+    imp(el,'height','32px'); imp(el,'min-height','32px'); imp(el,'max-height','32px'); imp(el,'font-size','16px');
+    imp(el,'text-align','center'); imp(el,'direction','ltr'); imp(el,'width','100%'); imp(el,'max-width','100%');
+  });
+  imp(locBtn,'width','32px'); imp(locBtn,'min-width','32px'); imp(locBtn,'max-width','32px');
+  imp(locBtn,'height','32px'); imp(locBtn,'min-height','32px'); imp(locBtn,'max-height','32px');
 }
 
 function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
@@ -9426,6 +9456,7 @@ window.addEventListener('resize', ()=>{
 
   function refreshOpenModals(){
     MODAL_IDS.forEach((id)=> applyModalLayout(document.getElementById(id)));
+    try{ lockExpenseMetaRowInline(); }catch(_){ }
   }
 
   function wireDialog(dlg){
