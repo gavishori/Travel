@@ -516,13 +516,15 @@ id="expenseModal" class="modal">
           <input id="expCurr" type="hidden" value="">
         </label>
       </div>
-      <div class="row expense-meta-row">
-        <label class="exp-date-col">תאריך
-          <input type="date" id="expDate" class="input">
-        </label>
-        <label class="exp-time-col">שעה
-          <input type="time" id="expTime" class="input">
-        </label>
+      <div id="expenseMetaInlineRow" class="row expense-meta-row">
+        <div class="exp-date-col expense-meta-field">
+          <span class="expense-meta-caption">תאריך</span>
+          <input type="date" id="expDate" class="input" aria-label="תאריך">
+        </div>
+        <div class="exp-time-col expense-meta-field">
+          <span class="expense-meta-caption">שעה</span>
+          <input type="time" id="expTime" class="input" aria-label="שעה">
+        </div>
         <div class="exp-location-col location-compact">
           <button id="btnEditExpLocation" class="btn location-btn journal-location-trigger expense-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">
             <span class="journal-location-trigger-icon" aria-hidden="true">
