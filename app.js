@@ -3709,21 +3709,24 @@ function lockExpenseMetaRowInline(){
   if(!row || !dateCol || !timeCol || !locCol) return;
   const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
   [
-    ['display','grid'], ['grid-template-columns','112px 76px 32px'], ['grid-template-rows','44px'],
+    ['display','grid'], ['grid-template-columns','minmax(118px, 1fr) 78px 36px'], ['grid-template-rows','36px'],
     ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','end'], ['justify-content','end'],
-    ['column-gap','6px'], ['row-gap','0'], ['height','44px'], ['min-height','44px'], ['max-height','44px'],
+    ['column-gap','6px'], ['row-gap','0'], ['height','36px'], ['min-height','36px'], ['max-height','36px'],
     ['overflow','hidden'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
   ].forEach(([p,v])=> imp(row,p,v));
-  [[dateCol,'1','112px','44px'], [timeCol,'2','76px','44px'], [locCol,'3','32px','32px']].forEach(([el,col,w,h])=>{
-    imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',w); imp(el,'max-width',w);
+  [[dateCol,'1','auto','0','100%','36px'], [timeCol,'2','78px','78px','78px','36px'], [locCol,'3','36px','36px','36px','36px']].forEach(([el,col,w,minW,maxW,h])=>{
+    imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',minW); imp(el,'max-width',maxW);
     imp(el,'height',h); imp(el,'min-height',h); imp(el,'max-height',h); imp(el,'margin','0'); imp(el,'overflow','hidden');
+    imp(el,'font-size','0'); imp(el,'line-height','0'); imp(el,'gap','0'); imp(el,'padding','0');
   });
   [date,time].forEach((el)=>{
     imp(el,'height','32px'); imp(el,'min-height','32px'); imp(el,'max-height','32px'); imp(el,'font-size','16px');
     imp(el,'text-align','center'); imp(el,'direction','ltr'); imp(el,'width','100%'); imp(el,'max-width','100%');
+    imp(el,'line-height','1'); imp(el,'padding','4px 6px');
   });
-  imp(locBtn,'width','32px'); imp(locBtn,'min-width','32px'); imp(locBtn,'max-width','32px');
+  imp(locBtn,'width','36px'); imp(locBtn,'min-width','36px'); imp(locBtn,'max-width','36px');
   imp(locBtn,'height','32px'); imp(locBtn,'min-height','32px'); imp(locBtn,'max-height','32px');
+  imp(locBtn,'padding','0'); imp(locBtn,'border-radius','9px');
 }
 
 function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
