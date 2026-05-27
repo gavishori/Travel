@@ -9374,6 +9374,7 @@ window.addEventListener('resize', ()=>{
   function clearModalStyles(dlg){
     if(!dlg) return;
     ['top','left','right','bottom','width','minWidth','maxWidth','height','minHeight','maxHeight','position','margin','transform'].forEach((k)=> dlg.style[k] = '');
+    if(dlg.id === 'expenseModal') delete dlg.dataset.mobileStableHeight;
     const body = dlg.querySelector(':scope > .body');
     if(body){
       ['height','minHeight','maxHeight'].forEach((k)=> body.style[k] = '');
@@ -9386,9 +9387,14 @@ window.addEventListener('resize', ()=>{
     const vp = currentViewport();
     const baseH = window.__exactModalBaseHeight || Math.max(window.innerHeight || 0, vp.height + vp.top);
     const width = Math.max(0, vp.width - 16);
-    const requested = Math.round(baseH * 0.50);
+    const isExpenseModal = dlg.id === 'expenseModal';
+    const requested = Math.round(baseH * (isExpenseModal ? 0.56 : 0.50));
     const usable = Math.max(260, vp.height - 8);
-    const height = Math.max(260, Math.min(requested, usable));
+    if(isExpenseModal && !dlg.dataset.mobileStableHeight){
+      dlg.dataset.mobileStableHeight = String(requested);
+    }
+    const stableRequested = isExpenseModal ? Number(dlg.dataset.mobileStableHeight || requested) : requested;
+    const height = Math.max(isExpenseModal ? 320 : 260, Math.min(stableRequested, usable));
     const top = vp.top + 8;
 
     dlg.style.position = 'fixed';

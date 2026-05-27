@@ -17475,8 +17475,8 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body dialog#expenseModal > .body,
   html body.mobile-ui dialog#expenseModal > .body{
     display:grid !important;
-    grid-template-rows:auto minmax(64px,.9fr) auto auto auto !important;
-    gap:5px !important;
+    grid-template-rows:auto minmax(54px,1fr) 28px 48px 44px !important;
+    gap:4px !important;
     width:100% !important;
     min-height:0 !important;
     max-height:none !important;
@@ -17502,11 +17502,11 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body.mobile-ui dialog#expenseModal input,
   html body.mobile-ui dialog#expenseModal select,
   html body.mobile-ui dialog#expenseModal button.input{
-    min-height:34px !important;
-    height:34px !important;
-    padding:5px 8px !important;
+    min-height:32px !important;
+    height:32px !important;
+    padding:4px 7px !important;
     border-radius:9px !important;
-    font-size:.9rem !important;
+    font-size:16px !important;
     line-height:1.15 !important;
     overflow:hidden !important;
     text-overflow:ellipsis !important;
@@ -17525,10 +17525,10 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body #expenseModal #expText,
   html body.mobile-ui #expenseModal #expText{
     height:100% !important;
-    min-height:64px !important;
+    min-height:54px !important;
     max-height:none !important;
-    padding:6px 8px 28px !important;
-    font-size:.9rem !important;
+    padding:5px 8px !important;
+    font-size:16px !important;
     line-height:1.25 !important;
     overflow:auto !important;
     overflow-x:hidden !important;
@@ -17545,14 +17545,15 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     position:static !important;
     width:100% !important;
     max-width:100% !important;
-    min-height:30px !important;
+    min-height:28px !important;
+    height:28px !important;
     margin:0 !important;
     padding:3px 4px !important;
     transform:none !important;
     display:flex !important;
     justify-content:center !important;
     align-items:center !important;
-    gap:5px !important;
+    gap:4px !important;
     overflow:hidden !important;
     border-radius:10px !important;
   }
@@ -17570,17 +17571,17 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   }
 
   html body #expenseModal #rtfBubbleExp .dot{
-    width:20px !important;
-    height:20px !important;
-    min-width:20px !important;
+    width:19px !important;
+    height:19px !important;
+    min-width:19px !important;
     padding:0 !important;
   }
 
   html body #expenseModal #rtfBubbleExp .fmt{
-    width:24px !important;
-    min-width:24px !important;
-    height:24px !important;
-    min-height:24px !important;
+    width:23px !important;
+    min-width:23px !important;
+    height:23px !important;
+    min-height:23px !important;
     padding:0 !important;
     border-radius:8px !important;
     font-size:.85rem !important;
@@ -17591,7 +17592,7 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body.mobile-ui #expenseModal .expense-main-row{
     grid-row:4 !important;
     display:grid !important;
-    grid-template-columns:minmax(0,1.35fr) minmax(74px,.8fr) 42px !important;
+    grid-template-columns:minmax(0,1fr) 96px 38px !important;
     gap:5px !important;
     width:100% !important;
     overflow:hidden !important;
@@ -17601,12 +17602,13 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body.mobile-ui #expenseModal .expense-meta-row{
     grid-row:5 !important;
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) minmax(0,.72fr) 42px !important;
+    grid-template-columns:112px 76px 32px !important;
     gap:5px !important;
     width:100% !important;
     overflow:hidden !important;
     align-items:end !important;
     grid-auto-flow:column !important;
+    justify-content:space-between !important;
   }
 
   html body #expenseModal .expense-meta-row > .exp-date-col,
@@ -17625,9 +17627,9 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body.mobile-ui #expenseModal .expense-meta-row > .exp-location-col.location-compact{
     grid-column:3 !important;
     grid-row:1 !important;
-    width:42px !important;
-    min-width:42px !important;
-    max-width:42px !important;
+    width:32px !important;
+    min-width:32px !important;
+    max-width:32px !important;
     display:block !important;
     overflow:hidden !important;
   }
@@ -17645,10 +17647,10 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body #expenseModal .expense-location-trigger,
   html body.mobile-ui #expenseModal .expense-currency-button,
   html body.mobile-ui #expenseModal .expense-location-trigger{
-    width:42px !important;
-    min-width:42px !important;
-    height:34px !important;
-    min-height:34px !important;
+    width:38px !important;
+    min-width:38px !important;
+    height:32px !important;
+    min-height:32px !important;
     padding:0 !important;
     display:flex !important;
     align-items:center !important;
@@ -17658,6 +17660,14 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     overflow:hidden !important;
   }
 
+  html body #expenseModal .expense-location-trigger,
+  html body.mobile-ui #expenseModal .expense-location-trigger{
+    width:32px !important;
+    min-width:32px !important;
+    height:32px !important;
+    min-height:32px !important;
+  }
+
   html body #expenseModal #expDate{
     direction:ltr !important;
     text-align:center !important;
@@ -17665,7 +17675,22 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   }
 
   html body #expenseModal .expense-currency-button{
-    font-size:1rem !important;
+    font-size:16px !important;
+  }
+
+  html body #expenseModal #expAmount{
+    width:96px !important;
+    min-width:96px !important;
+    max-width:96px !important;
+    direction:ltr !important;
+    text-align:center !important;
+    font-variant-numeric:tabular-nums !important;
+  }
+
+  html body #expenseModal #expTime{
+    direction:ltr !important;
+    text-align:center !important;
+    font-variant-numeric:tabular-nums !important;
   }
 
   html body #expenseModal .expense-location-trigger .journal-location-trigger-label,
@@ -17674,8 +17699,8 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   }
 
   html body #expenseModal .expense-location-trigger .journal-location-trigger-icon{
-    width:20px !important;
-    height:20px !important;
+    width:18px !important;
+    height:18px !important;
     margin:0 !important;
   }
 
@@ -17686,20 +17711,20 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
   html body dialog#expenseModal > .footer,
   html body.mobile-ui dialog#expenseModal > .footer{
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) minmax(0,2.2fr) !important;
-    gap:6px !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) !important;
+    gap:5px !important;
     width:100% !important;
-    padding:6px 8px !important;
+    padding:5px 8px !important;
     overflow:hidden !important;
   }
 
   html body dialog#expenseModal > .footer .btn,
   html body.mobile-ui dialog#expenseModal > .footer .btn{
-    min-height:38px !important;
-    height:38px !important;
+    min-height:34px !important;
+    height:34px !important;
     padding:0 8px !important;
     border-radius:10px !important;
-    font-size:.95rem !important;
+    font-size:16px !important;
     line-height:1 !important;
     white-space:nowrap !important;
   }
