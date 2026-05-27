@@ -3785,6 +3785,11 @@ $('#expLocationName').value = e?.locationName || '';
 
   document.dispatchEvent(new Event('openExpenseModal')); $('#expenseModal').showModal();
   syncExpenseMobileDateField();
+  if(isMobileViewport()){
+    requestAnimationFrame(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); });
+    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); }, 60);
+    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); }, 180);
+  }
 }
 
 async function saveExpense(){
