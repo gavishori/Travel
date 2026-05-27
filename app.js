@@ -3645,6 +3645,57 @@ function cycleExpenseCurrency(){
 }
 $('#expCurrBtn')?.addEventListener('click', cycleExpenseCurrency);
 
+function expenseDateToDisplay(value){
+  const raw = String(value || '').trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  const dotted = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if(dotted){
+    const d = dotted[1].padStart(2,'0');
+    const m = dotted[2].padStart(2,'0');
+    return `${d}.${m}.${dotted[3]}`;
+  }
+  return raw;
+}
+
+function expenseDisplayDateToIso(value){
+  const raw = String(value || '').trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return raw;
+  const dotted = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if(!dotted) return '';
+  const d = dotted[1].padStart(2,'0');
+  const m = dotted[2].padStart(2,'0');
+  const y = dotted[3];
+  const candidate = `${y}-${m}-${d}`;
+  const parsed = new Date(`${candidate}T00:00:00`);
+  if(Number.isNaN(parsed.getTime())) return '';
+  if(parsed.getFullYear() !== Number(y) || parsed.getMonth() + 1 !== Number(m) || parsed.getDate() !== Number(d)) return '';
+  return candidate;
+}
+
+function syncExpenseMobileDateField(){
+  const el = document.getElementById('expDate');
+  if(!el) return;
+  const mobile = isMobileViewport();
+  if(mobile){
+    const iso = expenseDisplayDateToIso(el.value) || el.value;
+    el.dataset.isoValue = iso;
+    if(el.type !== 'text') el.type = 'text';
+    el.inputMode = 'numeric';
+    el.placeholder = 'DD.MM.YYYY';
+    el.pattern = '\\d{2}\\.\\d{2}\\.\\d{4}';
+    el.value = expenseDateToDisplay(iso);
+  }else{
+    const iso = expenseDisplayDateToIso(el.value) || el.dataset.isoValue || '';
+    if(el.type !== 'date') el.type = 'date';
+    el.inputMode = '';
+    el.placeholder = '';
+    el.removeAttribute('pattern');
+    if(iso) el.value = iso;
+  }
+}
+
 function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
 
   /*__OPEN_EXP_PREFILL__*/
@@ -3700,6 +3751,7 @@ $('#expLocationName').value = e?.locationName || '';
   } catch(_){}
 
   document.dispatchEvent(new Event('openExpenseModal')); $('#expenseModal').showModal();
+  syncExpenseMobileDateField();
 }
 
 async function saveExpense(){
@@ -3721,8 +3773,9 @@ async function saveExpense(){
   const $expD = document.getElementById('expDate');
   const $expT = document.getElementById('expTime');
   let _exp_dateIso;
-  if ($expD && $expT && $expD.value && $expT.value) {
-    _exp_dateIso = new Date(`${$expD.value}T${$expT.value}:00`).toISOString();
+  const expDateIsoValue = expenseDisplayDateToIso($expD?.value || '') || $expD?.dataset?.isoValue || '';
+  if ($expD && $expT && expDateIsoValue && $expT.value) {
+    _exp_dateIso = new Date(`${expDateIsoValue}T${$expT.value}:00`).toISOString();
   } else {
     const curE = (t.expenses && t.expenses[$('#expenseModal')?.dataset?.id || '']) || {};
     _exp_dateIso = curE.dateIso || curE.createdAt || new Date().toISOString();
