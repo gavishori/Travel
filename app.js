@@ -3709,7 +3709,7 @@ function lockExpenseMetaRowInline(){
   if(!row || !dateCol || !timeCol || !locCol) return;
   const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
   [
-    ['display','grid'], ['grid-template-columns','minmax(0, calc((100% - 182px) * .8)) 94px 76px'], ['grid-template-rows','32px'],
+    ['display','grid'], ['grid-template-columns','minmax(0, 1fr) 94px 76px'], ['grid-template-rows','32px'],
     ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','start'], ['justify-content','end'],
     ['column-gap','6px'], ['row-gap','0'], ['height','32px'], ['min-height','32px'], ['max-height','32px'],
     ['overflow','hidden'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
