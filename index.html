@@ -52,7 +52,7 @@
         display:grid !important;
         grid-template-columns:minmax(0, 1fr) 112px 38px !important;
         grid-template-rows:34px !important;
-        align-items:end !important;
+        align-items:start !important;
         gap:4px !important;
         width:100% !important;
         height:34px !important;
@@ -108,35 +108,36 @@
       html body dialog#expenseModal .body > .expense-meta-row,
       html body #expenseModal .expense-meta-row{
         display:grid !important;
-        grid-template-columns:minmax(0, 1fr) 94px 76px !important;
-        grid-template-rows:34px !important;
+        grid-template-columns:minmax(0, calc((100% - 182px) * .8)) 94px 76px !important;
+        grid-template-rows:32px !important;
         grid-auto-flow:column !important;
         grid-auto-rows:0 !important;
         align-items:end !important;
         justify-content:stretch !important;
         gap:6px !important;
         width:100% !important;
-        height:34px !important;
-        min-height:34px !important;
-        max-height:34px !important;
+        height:32px !important;
+        min-height:32px !important;
+        max-height:32px !important;
         overflow:hidden !important;
         direction:rtl !important;
       }
       html body dialog#expenseModal .body > .expense-meta-row > .exp-date-col{
         grid-column:1 !important;
         grid-row:1 !important;
-        width:80% !important;
+        width:100% !important;
         min-width:0 !important;
-        max-width:80% !important;
-        height:34px !important;
-        min-height:34px !important;
-        max-height:34px !important;
+        max-width:100% !important;
+        height:32px !important;
+        min-height:32px !important;
+        max-height:32px !important;
         margin:0 !important;
         padding:0 !important;
         overflow:hidden !important;
         font-size:0 !important;
         line-height:0 !important;
-        justify-self:end !important;
+        justify-self:stretch !important;
+        align-self:start !important;
       }
       html body dialog#expenseModal .body > .expense-meta-row > .exp-time-col{
         grid-column:2 !important;
@@ -144,14 +145,15 @@
         width:94px !important;
         min-width:94px !important;
         max-width:94px !important;
-        height:34px !important;
-        min-height:34px !important;
-        max-height:34px !important;
+        height:32px !important;
+        min-height:32px !important;
+        max-height:32px !important;
         margin:0 !important;
         padding:0 !important;
         overflow:visible !important;
         font-size:0 !important;
         line-height:0 !important;
+        align-self:start !important;
       }
       html body dialog#expenseModal .body > .expense-meta-row > .exp-location-col.location-compact{
         grid-column:3 !important;
@@ -184,6 +186,7 @@
         border-radius:9px !important;
         background:#fff !important;
         box-shadow:none !important;
+        transform:translateY(-2px) !important;
         font-size:16px !important;
         line-height:1 !important;
         text-align:center !important;
