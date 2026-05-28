@@ -3709,26 +3709,29 @@ function lockExpenseMetaRowInline(){
   if(!row || !dateCol || !timeCol || !locCol) return;
   const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
   [
-    ['display','grid'], ['grid-template-columns','minmax(0, 1fr) 86px 38px'], ['grid-template-rows','34px'],
+    ['display','grid'], ['grid-template-columns','minmax(0, 1fr) 94px 76px'], ['grid-template-rows','34px'],
     ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','end'], ['justify-content','end'],
     ['column-gap','6px'], ['row-gap','0'], ['height','34px'], ['min-height','34px'], ['max-height','34px'],
     ['overflow','hidden'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
   ].forEach(([p,v])=> imp(row,p,v));
-  [[dateCol,'1','80%','0','80%','34px'], [timeCol,'2','86px','86px','86px','34px'], [locCol,'3','38px','38px','38px','34px']].forEach(([el,col,w,minW,maxW,h])=>{
+  [[dateCol,'1','80%','0','80%','34px'], [timeCol,'2','94px','94px','94px','34px'], [locCol,'3','76px','76px','76px','34px']].forEach(([el,col,w,minW,maxW,h])=>{
     imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',minW); imp(el,'max-width',maxW);
     imp(el,'height',h); imp(el,'min-height',h); imp(el,'max-height',h); imp(el,'margin','0'); imp(el,'overflow','hidden');
     imp(el,'font-size','0'); imp(el,'line-height','0'); imp(el,'gap','0'); imp(el,'padding','0');
   });
+  imp(timeCol,'overflow','visible');
   imp(dateCol,'justify-self','end');
   imp(locCol,'justify-self','start');
   [date,time].forEach((el)=>{
     imp(el,'height','32px'); imp(el,'min-height','32px'); imp(el,'max-height','32px'); imp(el,'font-size','16px');
     imp(el,'text-align','center'); imp(el,'direction','ltr'); imp(el,'width','100%'); imp(el,'max-width','100%');
-    imp(el,'line-height','1'); imp(el,'padding','4px 6px'); imp(el,'border-radius','9px'); imp(el,'margin','0');
+    imp(el,'line-height','1'); imp(el,'padding','4px 6px'); imp(el,'border','1px solid #d9e1ea');
+    imp(el,'border-radius','9px'); imp(el,'background','#fff'); imp(el,'box-shadow','none'); imp(el,'margin','0');
   });
-  imp(locBtn,'width','38px'); imp(locBtn,'min-width','38px'); imp(locBtn,'max-width','38px');
+  imp(locBtn,'width','76px'); imp(locBtn,'min-width','76px'); imp(locBtn,'max-width','76px');
   imp(locBtn,'height','32px'); imp(locBtn,'min-height','32px'); imp(locBtn,'max-height','32px');
-  imp(locBtn,'padding','0'); imp(locBtn,'border-radius','9px');
+  imp(locBtn,'padding','0'); imp(locBtn,'border','1px solid #d9e1ea'); imp(locBtn,'border-radius','9px');
+  imp(locBtn,'background','#fff'); imp(locBtn,'box-shadow','none');
 }
 
 function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
