@@ -910,7 +910,7 @@ html body .cell.notes a.mail-icon::before{
   body.mobile-ui #expenseModal .expense-meta-row,
   body.mobile-ui #journalModal .journal-meta-row{
     display:grid !important;
-    grid-template-columns:1fr !important;
+    grid-template-columns:0.7fr 0.8fr 1.5fr !important;
     gap:12px !important;
   }
 
@@ -1204,7 +1204,7 @@ html body .cell.notes a.mail-icon::before{
   body.mobile-ui #expenseModal .expense-meta-row,
   body.mobile-ui #journalModal .journal-meta-row{
     display:grid !important;
-    grid-template-columns:1fr !important;
+    grid-template-columns:0.7fr 0.8fr 1.5fr !important;
     gap:12px !important;
   }
 
@@ -8899,7 +8899,7 @@ button, .btn, .menu-btn, select, input, textarea {
   #expenseModal .expense-meta-row,
   #journalModal .journal-meta-row{
     display:grid !important;
-    grid-template-columns:1fr !important;
+    grid-template-columns:0.7fr 0.8fr 1.5fr !important;
     gap:12px !important;
   }
 
@@ -14509,7 +14509,7 @@ html body .cell.notes a.mail-icon::before{
   body.mobile-ui #expenseModal .expense-meta-row,
   body.mobile-ui #journalModal .journal-meta-row{
     display:grid !important;
-    grid-template-columns:1fr !important;
+    grid-template-columns:0.7fr 0.8fr 1.5fr !important;
     gap:12px !important;
   }
 }

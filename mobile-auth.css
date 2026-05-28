@@ -278,7 +278,7 @@ body{
   }
 
   body.mobile-ui #view-overview #tblAllTimeline tr.exp-item[data-kind="journal"]:not(.exp-details){
-    grid-template-columns:34px 70px minmax(0, 1fr) !important;
+    grid-template-columns:34px 49px minmax(0, 1fr) !important;
     grid-template-areas:
       "menu date location"
       "menu time location" !important;
