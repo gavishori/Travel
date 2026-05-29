@@ -17767,3 +17767,30 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     grid-row:2 !important;
   }
 }
+
+/* === TRUE EOF: mobile map markers are circles, not pins === */
+@media (max-width: 820px){
+  html body .leaflet-marker-icon.mobile-round-marker,
+  html body.mobile-ui .leaflet-marker-icon.mobile-round-marker{
+    width:28px !important;
+    height:28px !important;
+    margin-left:-14px !important;
+    margin-top:-14px !important;
+  }
+
+  html body .num-pin.mobile-round-pin,
+  html body.mobile-ui .num-pin.mobile-round-pin,
+  html body.mobile-ui .leaflet-marker-icon .num-pin{
+    width:28px !important;
+    height:28px !important;
+    border-radius:999px !important;
+    aspect-ratio:1 / 1 !important;
+  }
+
+  html body .num-pin.mobile-round-pin::after,
+  html body.mobile-ui .num-pin.mobile-round-pin::after,
+  html body.mobile-ui .leaflet-marker-icon .num-pin::after{
+    content:none !important;
+    display:none !important;
+  }
+}

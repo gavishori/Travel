@@ -1813,8 +1813,14 @@ const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}
 // Create a numbered marker icon
 function _numberedMarker(lat, lng, n, kind){
   const cls = (kind==='expense') ? 'red' : 'green';
-  const html = `<div class="num-pin ${cls}">${n}</div>`;
-  const icon = L.divIcon({ className:'', html, iconSize:[28,28], iconAnchor:[14,28] });
+  const mobile = typeof isMobileViewport === 'function' && isMobileViewport();
+  const html = `<div class="num-pin ${cls}${mobile ? ' mobile-round-pin' : ''}">${n}</div>`;
+  const icon = L.divIcon({
+    className: mobile ? 'mobile-round-marker' : '',
+    html,
+    iconSize: mobile ? [28,28] : [28,28],
+    iconAnchor: mobile ? [14,14] : [14,28]
+  });
   return L.marker([lat,lng], { icon: icon });
 }
 
