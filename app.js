@@ -619,6 +619,56 @@ function syncJournalSelectionUi(){
     }, 80);
   }
 
+  function renderCurrentTripView(view){
+    try{
+      const trip = state?.current || state?._lastTripObj;
+      if(!trip) return;
+      if(view === 'overview' && typeof renderAllTimeline === 'function'){
+        renderAllTimeline(trip, state.allSort || 'desc');
+        if(typeof renderExpenseSummary === 'function') renderExpenseSummary(trip);
+      }else if(view === 'expenses' && typeof renderExpenses === 'function'){
+        renderExpenses(trip, state.expenseSort);
+      }else if(view === 'journal' && typeof renderJournal === 'function'){
+        renderJournal(trip, state.journalSort);
+      }else if(view === 'map' && typeof initBigMap === 'function'){
+        setTimeout(()=> {
+          initBigMap();
+          try{ invalidateMap(state.maps?.big); }catch(_){}
+        }, 50);
+      }
+    }catch(_){}
+  }
+
+  function showOnlyMobileView(view){
+    if(!isCompactMobileHeader()){
+      showView(view);
+      renderCurrentTripView(view);
+      return;
+    }
+
+    const target = document.getElementById(`view-${view}`);
+    if(!target) return;
+
+    document.querySelectorAll('.tabview').forEach((el)=>{
+      el.hidden = true;
+      el.removeAttribute('data-active');
+    });
+    target.hidden = false;
+    target.setAttribute('data-active', '1');
+
+    document.querySelectorAll('#tabs [data-tab]').forEach((btn)=>{
+      btn.classList.toggle('active', btn.dataset.tab === view);
+    });
+
+    const headerBar = document.getElementById('overviewHeaderBar');
+    if(headerBar) headerBar.hidden = true;
+
+    document.body.dataset.mobileActiveView = view;
+    syncOverviewSelectActiveState(view);
+    renderCurrentTripView(view);
+    scrollMobileViewIntoPlace(view);
+  }
+
   function applyOverviewSelection(value){
     const v = (value || '').trim();
     if(!v) return;
@@ -631,24 +681,28 @@ function syncJournalSelectionUi(){
       }
     }catch(_){}
 
-    if (v === 'journal' || v === 'expenses' || v === 'mix') {
+    if (v === 'journal' || v === 'expenses') {
+      const select = document.getElementById('overviewTabSelect');
+      if(select && select.value !== v) select.value = v;
+      showOnlyMobileView(v);
+      return;
+    }
+
+    if (v === 'mix') {
       const select = document.getElementById('overviewTabSelect');
       if(select && select.value !== v) select.value = v;
       const modeSel = document.getElementById('overviewMode');
       if (modeSel) {
-        modeSel.value = (v === 'mix') ? 'all' : v;
+        modeSel.value = 'all';
         modeSel.dispatchEvent(new Event('change', { bubbles: true }));
       } else {
         try {
-          const nextMode = (v === 'mix') ? 'all' : v;
-          state.overviewMode = nextMode;
-          localStorage.setItem('overviewMode', nextMode);
+          state.overviewMode = 'all';
+          localStorage.setItem('overviewMode', 'all');
           if (state.current) renderAllTimeline(state.current, state.allSort);
         } catch (_) {}
       }
-      showView('overview');
-      syncOverviewSelectActiveState('overview');
-      scrollMobileViewIntoPlace('overview');
+      showOnlyMobileView('overview');
       return;
     }
 
@@ -675,11 +729,7 @@ function syncJournalSelectionUi(){
     if (v === 'meta' || v === 'map' || v === 'share') {
       const select = document.getElementById('overviewTabSelect');
       if(select && select.value !== v) select.value = v;
-      if (typeof switchToTab === 'function') switchToTab(v);
-      else showView(v);
-      syncOverviewSelectActiveState(v);
-      if (v === 'map') setTimeout(initBigMap, 50);
-      scrollMobileViewIntoPlace(v);
+      showOnlyMobileView(v);
       return;
     }
 
@@ -1814,11 +1864,16 @@ const jourEntries = _sortByCreated(Object.entries(state._lastTripObj.journal||{}
 function _numberedMarker(lat, lng, n, kind){
   const cls = (kind==='expense') ? 'red' : 'green';
   const mobile = typeof isMobileViewport === 'function' && isMobileViewport();
-  const html = `<div class="num-pin ${cls}${mobile ? ' mobile-round-pin' : ''}">${n}</div>`;
+  const mobileColors = cls === 'red'
+    ? 'background:#e53935;border-color:#b71c1c;color:#fff;'
+    : 'background:#34a853;border-color:#1b5e20;color:#fff;';
+  const html = mobile
+    ? `<div class="mobile-map-circle ${cls}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;line-height:1;border:2px solid;box-shadow:0 2px 6px rgba(0,0,0,.25);${mobileColors}">${n}</div>`
+    : `<div class="num-pin ${cls}">${n}</div>`;
   const icon = L.divIcon({
-    className: mobile ? 'mobile-round-marker' : '',
+    className: mobile ? 'mobile-map-circle-marker' : '',
     html,
-    iconSize: mobile ? [28,28] : [28,28],
+    iconSize: [28,28],
     iconAnchor: mobile ? [14,14] : [14,28]
   });
   return L.marker([lat,lng], { icon: icon });
