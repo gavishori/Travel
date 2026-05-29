@@ -606,6 +606,19 @@ function syncJournalSelectionUi(){
     document.getElementById(id)?.click();
   }
 
+  function scrollMobileViewIntoPlace(view){
+    if(!isCompactMobileHeader()) return;
+    const target = document.getElementById(`view-${view}`);
+    if(!target) return;
+    setTimeout(()=>{
+      try{
+        target.scrollIntoView({ behavior:'smooth', block:'start', inline:'nearest' });
+      }catch(_){
+        try{ target.scrollIntoView(); }catch(__){}
+      }
+    }, 80);
+  }
+
   function applyOverviewSelection(value){
     const v = (value || '').trim();
     if(!v) return;
@@ -635,6 +648,7 @@ function syncJournalSelectionUi(){
       }
       showView('overview');
       syncOverviewSelectActiveState('overview');
+      scrollMobileViewIntoPlace('overview');
       return;
     }
 
@@ -665,6 +679,7 @@ function syncJournalSelectionUi(){
       else showView(v);
       syncOverviewSelectActiveState(v);
       if (v === 'map') setTimeout(initBigMap, 50);
+      scrollMobileViewIntoPlace(v);
       return;
     }
 
@@ -676,8 +691,6 @@ function syncJournalSelectionUi(){
     const select = document.getElementById('overviewTabSelect');
     if(select){
       select.value = value;
-      select.dispatchEvent(new Event('change', { bubbles:true }));
-      return;
     }
     applyOverviewSelection(value);
   }
@@ -690,6 +703,8 @@ function syncJournalSelectionUi(){
     if(!document.getElementById('view-expenses')?.hidden) return 'expenses';
     if(!document.getElementById('view-journal')?.hidden) return 'journal';
     if(!document.getElementById('view-meta')?.hidden) return 'meta';
+    if(!document.getElementById('view-map')?.hidden) return 'map';
+    if(!document.getElementById('view-share')?.hidden) return 'share';
     return 'home';
   }
 
