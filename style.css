@@ -17848,3 +17848,67 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     display:block !important;
   }
 }
+
+@media (min-width: 821px){
+  html body dialog#expenseModal > .body{
+    grid-template-rows:50px 119px 48px 56px 56px !important;
+  }
+
+  html body dialog#journalModal > .body{
+    grid-template-rows:50px 153px 48px 56px !important;
+  }
+
+  html body #expenseModal #rtfBubbleExp,
+  html body #journalModal #rtfBubble{
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
+    padding:3px 8px !important;
+    gap:8px !important;
+    align-self:start !important;
+    justify-self:center !important;
+    overflow:hidden !important;
+  }
+
+  html body #expenseModal #rtfBubbleExp .colors,
+  html body #expenseModal #rtfBubbleExp .styles,
+  html body #journalModal #rtfBubble .colors,
+  html body #journalModal #rtfBubble .styles{
+    gap:4px !important;
+    align-items:center !important;
+  }
+
+  html body #expenseModal #rtfBubbleExp button.dot,
+  html body #journalModal #rtfBubble button.dot{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    inline-size:19px !important;
+    block-size:19px !important;
+    width:19px !important;
+    height:19px !important;
+    min-width:19px !important;
+    min-height:19px !important;
+    max-width:19px !important;
+    max-height:19px !important;
+    flex:0 0 19px !important;
+    aspect-ratio:1 / 1 !important;
+    padding:0 !important;
+    margin:0 !important;
+    border-radius:50% !important;
+    line-height:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  html body #expenseModal #rtfBubbleExp .fmt,
+  html body #journalModal #rtfBubble .fmt{
+    width:28px !important;
+    min-width:28px !important;
+    max-width:28px !important;
+    height:19px !important;
+    min-height:19px !important;
+    max-height:19px !important;
+    padding:0 !important;
+    font-size:1rem !important;
+    line-height:1 !important;
+  }
+}
