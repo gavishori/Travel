@@ -2293,6 +2293,39 @@ let __subTripsTimer=null;
 let __tripListBackfillTimer=null;
 let __subscribeTripsStartedAt = 0;
 let __tripSummaryFallbackStarted = false;
+let __autoOpenLatestTripId = null;
+
+function shouldUseLightTripLoading(){
+  try{
+    if(isMobileViewport()) return true;
+    return localStorage.getItem('flymily_light_trip_loading') === '1';
+  }catch(_){
+    return true;
+  }
+}
+
+function latestTripFromList(trips){
+  try{
+    return [...(trips || [])]
+      .filter(t => t?.id)
+      .sort((a,b)=> (b.start || b.createdAt || '').localeCompare(a.start || a.createdAt || ''))[0] || null;
+  }catch(_){
+    return null;
+  }
+}
+
+function maybeOpenLatestTripOnly(trips){
+  try{
+    if(!shouldUseLightTripLoading()) return;
+    if(state.currentTripId) return;
+    const latest = latestTripFromList(trips);
+    if(!latest?.id || __autoOpenLatestTripId === latest.id) return;
+    __autoOpenLatestTripId = latest.id;
+    setTimeout(()=>{
+      if(!state.currentTripId) openTrip(latest.id);
+    }, 0);
+  }catch(_){}
+}
 
 function tripSummaryRef(id){
   return FB.doc(db, 'tripSummaries', id);
@@ -2420,6 +2453,7 @@ function getSearchableTrips(){
 }
 
 async function hydrateTripsForSearch(expectedSearch){
+  if(shouldUseLightTripLoading()) return;
   if(state._tripSearchHydrating) return;
   const ids = (state.trips || []).map(t => t?.id).filter(Boolean);
   if(!ids.length) return;
@@ -2469,9 +2503,20 @@ function applyTripsSnapshotPerf(snapAt, snapSize){
   }catch(_){}
 }
 
-function subscribeTripsFull(reason='fallback'){
+function subscribeTripsFull(reason='fallback', opts={}){
   try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
-  const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
+  const lightLoad = shouldUseLightTripLoading();
+  const canOrderLatest = lightLoad && !opts.noOrderBy;
+  const q = canOrderLatest
+    ? FB.query(
+        FB.collection(db, 'trips'),
+        FB.where('ownerUid', '==', state.user.uid),
+        FB.orderBy('start', 'desc'),
+        FB.limit(1)
+      )
+    : lightLoad
+      ? FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid), FB.limit(1))
+      : FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   state._unsubTripsFallback = FB.onSnapshot(q, (snap)=>{
     const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
     state.trips = snap.docs
@@ -2481,13 +2526,18 @@ function subscribeTripsFull(reason='fallback'){
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
-    scheduleTripListBackfill(state.trips);
+    if(!lightLoad) scheduleTripListBackfill(state.trips);
     state.trips.forEach(trip => { try{ upsertTripSummary(trip); }catch(_){} });
     markTripSummariesHydrated(state.user?.uid);
+    maybeOpenLatestTripOnly(state.trips);
   }, (err)=>{
     try{ state._unsubTripsFallback && state._unsubTripsFallback(); }catch(_){}
     if(String(err).includes('Missing or insufficient permissions')){
       __subTripsTimer = setTimeout(()=>{ try{ subscribeTrips(); }catch(_){} }, 800);
+      return;
+    }
+    if(canOrderLatest && !opts.noOrderBy){
+      subscribeTripsFull(`${reason}-no-order`, { noOrderBy:true });
       return;
     }
     console.warn('subscribeTripsFull failed', reason, err);
@@ -2508,6 +2558,7 @@ function subscribeTrips(){
     state.trips = cachedTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
+    maybeOpenLatestTripOnly(state.trips);
   }
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
   try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
@@ -2532,7 +2583,8 @@ function subscribeTrips(){
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, state.trips);
     applyTripsSnapshotPerf(snapAt, snap.size);
-    if(!hasHydratedTripSummaries(state.user?.uid) && !__tripSummaryFallbackStarted){
+    maybeOpenLatestTripOnly(state.trips);
+    if(!shouldUseLightTripLoading() && !hasHydratedTripSummaries(state.user?.uid) && !__tripSummaryFallbackStarted){
       __tripSummaryFallbackStarted = true;
       subscribeTripsFull('hydrate-tripSummaries');
     }
@@ -3267,7 +3319,7 @@ function renderExpenses(t, order){
       <td class="cell header category">${cat}</td>
       <td class="cell header amount">${buildExpenseAmountMarkup(amount, curr)}</td>
       <td class="cell header menu-cell map-cell">${buildMapActionButton('expense', e.id, mapIndex)}</td>
-      <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
+      <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות">⋮</button></td>
     `;
     const tr4 = document.createElement('tr');
     tr4.className = 'exp-item exp-details';
@@ -3324,7 +3376,7 @@ function renderJournal(t, order){
       <td class="cell header time">${bidiWrap(getRowTimeString(j))}</td>
       <td class="cell header location" colspan="${hasMapPoint ? 3 : 4}">${esc(displayTitle)}</td>
       ${mapActionCell}
-      <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
+      <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות">⋮</button></td>
     `;
     const tr2 = document.createElement('tr');
     tr2.className = 'exp-item exp-details';
@@ -3373,7 +3425,7 @@ function appendExpenseRowToTimeline(body, e, mapIndex){
     <td class="cell header category">${esc(e.category||'')}</td>
     <td class="cell header amount">${buildExpenseAmountMarkup(amount, e.currency || '')}</td>
     <td class="cell header menu-cell map-cell">${buildMapActionButton('expense', e.id, mapIndex)}</td>
-    <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
+    <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות">⋮</button></td>
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
@@ -3415,7 +3467,7 @@ function appendJournalRowToTimeline(body, j, mapIndex){
     <td class="cell header time">${bidiWrap(getRowTimeString(j))}</td>
     <td class="cell header location" colspan="${hasMapPoint ? 2 : 3}">${esc(displayTitle)}</td>
     ${hasMapPoint ? `<td class="cell header menu-cell map-cell">${buildMapActionButton('journal', j.id, mapIndex)}</td>` : ''}
-    <td class="cell header menu-cell"><button class="menu-btn">...</button></td>
+    <td class="cell header menu-cell"><button class="menu-btn" aria-label="פעולות">⋮</button></td>
   `;
   const tr2 = document.createElement('tr');
   tr2.className = 'exp-item exp-details';
