@@ -2314,16 +2314,94 @@ function latestTripFromList(trips){
   }
 }
 
+function addDays(date, days){
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function isTripInMobileActiveWindow(trip){
+  try{
+    if(!trip?.id || !trip.start || !trip.end) return false;
+    const start = _parseISODateOnly(trip.start);
+    const end = _parseISODateOnly(trip.end);
+    const today = _parseISODateOnly(_todayKey());
+    if(!start || !end || !today) return false;
+    const lo = addDays(start, -14).getTime();
+    const hi = end.getTime();
+    return today.getTime() >= Math.min(lo, hi) && today.getTime() <= Math.max(lo, hi);
+  }catch(_){
+    return false;
+  }
+}
+
+function getMobileActiveTrips(trips){
+  try{
+    return [...(trips || [])]
+      .filter(isTripInMobileActiveWindow)
+      .sort((a,b)=> (b.start || b.createdAt || '').localeCompare(a.start || a.createdAt || ''));
+  }catch(_){
+    return [];
+  }
+}
+
+function preferredMobileActiveTrip(trips){
+  try{
+    const active = getMobileActiveTrips(trips);
+    if(!active.length) return null;
+    const storedId = localStorage.getItem('activeTripId') || '';
+    if(storedId){
+      const stored = active.find(t => String(t.id) === String(storedId));
+      if(stored) return stored;
+    }
+    if(state?.currentTripId){
+      const current = active.find(t => String(t.id) === String(state.currentTripId));
+      if(current) return current;
+    }
+    return active[0] || null;
+  }catch(_){
+    return null;
+  }
+}
+
 function maybeOpenLatestTripOnly(trips){
   try{
     if(!shouldUseLightTripLoading()) return;
     if(state.currentTripId) return;
-    const latest = latestTripFromList(trips);
-    if(!latest?.id || __autoOpenLatestTripId === latest.id) return;
-    __autoOpenLatestTripId = latest.id;
+    const active = preferredMobileActiveTrip(trips);
+    if(!active?.id || __autoOpenLatestTripId === active.id) return;
+    __autoOpenLatestTripId = active.id;
     setTimeout(()=>{
-      if(!state.currentTripId) openTrip(latest.id);
+      if(!state.currentTripId) openTrip(active.id);
     }, 0);
+  }catch(_){}
+}
+
+async function maybeOpenStoredActiveTrip(){
+  try{
+    if(!shouldUseLightTripLoading()) return;
+    if(state.currentTripId || !state.user?.uid) return;
+    const storedId = localStorage.getItem('activeTripId') || '';
+    if(!storedId || __autoOpenLatestTripId === storedId) return;
+
+    const cachedTrip = loadTripCache(state.user.uid, storedId);
+    if(cachedTrip && isTripInMobileActiveWindow(cachedTrip)){
+      state.trips = [buildTripSummary({ ...cachedTrip, id: storedId })];
+      renderTripList();
+      __autoOpenLatestTripId = storedId;
+      await openTrip(storedId);
+      return;
+    }
+
+    const snap = await FB.getDoc(FB.doc(db, 'trips', storedId));
+    if(!snap.exists() || state.currentTripId) return;
+    const trip = normalizeTripShape({ id: snap.id, ...snap.data() });
+    if(!isTripInMobileActiveWindow(trip)) return;
+    saveTripCache(state.user.uid, trip);
+    state.trips = [buildTripSummary(trip)];
+    renderTripList();
+    __autoOpenLatestTripId = storedId;
+    await openTrip(storedId);
   }catch(_){}
 }
 
@@ -2512,19 +2590,20 @@ function subscribeTripsFull(reason='fallback', opts={}){
         FB.collection(db, 'trips'),
         FB.where('ownerUid', '==', state.user.uid),
         FB.orderBy('start', 'desc'),
-        FB.limit(1)
+        FB.limit(8)
       )
     : lightLoad
-      ? FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid), FB.limit(1))
+      ? FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid), FB.limit(8))
       : FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   state._unsubTripsFallback = FB.onSnapshot(q, (snap)=>{
     const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-    state.trips = snap.docs
+    const snapshotTrips = snap.docs
       .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+    state.trips = lightLoad ? getMobileActiveTrips(snapshotTrips).slice(0, 1) : snapshotTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
-    saveTripSummariesCache(state.user?.uid, state.trips);
+    saveTripSummariesCache(state.user?.uid, snapshotTrips);
     applyTripsSnapshotPerf(snapAt, snap.size);
     if(!lightLoad) scheduleTripListBackfill(state.trips);
     state.trips.forEach(trip => { try{ upsertTripSummary(trip); }catch(_){} });
@@ -2555,11 +2634,12 @@ function subscribeTrips(){
   const cachedTrips = loadTripSummariesCache(state.user.uid)
     .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
   if(cachedTrips.length){
-    state.trips = cachedTrips;
+    state.trips = shouldUseLightTripLoading() ? getMobileActiveTrips(cachedTrips).slice(0, 1) : cachedTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     maybeOpenLatestTripOnly(state.trips);
   }
+  setTimeout(()=>{ try{ maybeOpenStoredActiveTrip(); }catch(_){ } }, 0);
   try { state._unsubTrips && state._unsubTrips(); } catch(_) {}
   try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
   const q = FB.query(FB.collection(db, 'tripSummaries'), FB.where('ownerUid', '==', state.user.uid));
@@ -2576,12 +2656,13 @@ function subscribeTrips(){
       return;
     }
     try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
-    state.trips = snap.docs
+    const snapshotTrips = snap.docs
       .map(d=> normalizeTripSummaryDoc(d))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
+    state.trips = shouldUseLightTripLoading() ? getMobileActiveTrips(snapshotTrips).slice(0, 1) : snapshotTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
-    saveTripSummariesCache(state.user?.uid, state.trips);
+    saveTripSummariesCache(state.user?.uid, snapshotTrips);
     applyTripsSnapshotPerf(snapAt, snap.size);
     maybeOpenLatestTripOnly(state.trips);
     if(!shouldUseLightTripLoading() && !hasHydratedTripSummaries(state.user?.uid) && !__tripSummaryFallbackStarted){
@@ -2605,6 +2686,9 @@ async function renderTripList(){
   const search = $('#searchTrips').value?.trim();
   let items = [...state.trips];
   let s = null;
+  if(shouldUseLightTripLoading() && !search){
+    items = getMobileActiveTrips(items).slice(0, 1);
+  }
   if(search){
     s = search.toLowerCase();
     const searchTrips = getSearchableTrips();
@@ -2746,6 +2830,7 @@ function showView(view){
 // Open a trip -> Overview tab
 async function openTrip(id){
   state.currentTripId = id;
+  try { localStorage.setItem('activeTripId', id); } catch (_) {}
   enterTripMode();
   $$('#tabs [data-tab]').forEach(b=>b.classList.remove('active'));
   const first = $('#tabs [data-tab="overview"]');
