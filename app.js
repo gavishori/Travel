@@ -2227,6 +2227,7 @@ function xErr(e){
   return 'שגיאה: ' + msg;
 }
 function numOrNull(s){
+  if(s == null || String(s).trim() === '') return null;
   const n = Number(s);
   return isNaN(n) ? null : n;
 }
@@ -3948,6 +3949,22 @@ function openExpenseModal(e){try{ window._rebindTextColorDots(); }catch(_){}
 $('#expLocationName').value = e?.locationName || '';
   updateLocLabelState('exp'); // <--- שורה חדשה שנוספה
 	  try{ updateExpLocationPreview(); }catch(_){ }
+  try{
+    const isNew = !e;
+    if(isNew){
+      const cached = loadLastLocation();
+      if(cached && !$('#expLat').value && !$('#expLng').value){
+        $('#expLat').value = cached.lat;
+        $('#expLng').value = cached.lng;
+        if(!$('#expLocationName').value && cached.name) $('#expLocationName').value = cached.name;
+        try{ updateExpLocationPreview(); }catch(_){ }
+      }
+      getCurrentLocationOnce().then(({lat, lng})=>{
+        try{ setExpenseLocation(lat, lng, (document.getElementById('expLocationName')?.value||''), {persist:false}); }catch(_){ }
+        reverseGeocode(lat, lng).then(name=>{ try{ setExpenseLocation(lat, lng, name, {persist:true}); }catch(_){} });
+      }).catch(()=>{});
+    }
+  }catch(_){ }
   $('#expDelete').style.display = e? 'inline-block':'none';
   // Prefill expDate/expTime (enrich)
   try {
@@ -4015,8 +4032,18 @@ async function saveExpense(){
 
   // Ensure we have a meaningful locationName/title when possible
   let _locName = (document.getElementById('expLocationName')?.value || '').trim();
-  const _latVal = numOrNull($('#expLat').value);
-  const _lngVal = numOrNull($('#expLng').value);
+  let _latVal = numOrNull($('#expLat').value);
+  let _lngVal = numOrNull($('#expLng').value);
+  const _isNewExpense = !($('#expenseModal')?.dataset?.id || '');
+  if(_isNewExpense && !_locName && !$('#expLat').value && !$('#expLng').value){
+    try{
+      const currentLoc = await getCurrentLocationOnce();
+      _latVal = currentLoc.lat;
+      _lngVal = currentLoc.lng;
+      try{ _locName = (await reverseGeocode(_latVal, _lngVal) || '').trim(); }catch(_){ }
+      try{ await setExpenseLocation(_latVal, _lngVal, _locName, {persist:true}); }catch(_){ }
+    }catch(_){ }
+  }
   if(!_locName && _latVal != null && _lngVal != null){
     try{
       const name = await reverseGeocode(_latVal, _lngVal);
@@ -4628,6 +4655,57 @@ function getCurrentLocation(callback) {
     showToast('הדפדפן אינו תומך ב-Geolocation.');
   }
 }
+function getCurrentLocationOnce(){
+  return new Promise((resolve, reject)=>{
+    try{
+      if(!navigator.geolocation){
+        reject(new Error('Geolocation unsupported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position)=> resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        }),
+        (error)=> reject(error),
+        { enableHighAccuracy:true, timeout:8000, maximumAge:60000 }
+      );
+    }catch(err){ reject(err); }
+  });
+}
+
+(function bindMobileRtfCaretScroll(){
+  const editorSelector = '#expText.input.rtf, #jrText.input.rtf';
+  const keepCaretVisible = (editor)=>{
+    try{
+      if(!editor || !editor.matches(editorSelector)) return;
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
+      const range = sel.getRangeAt(0).cloneRange();
+      range.collapse(false);
+      const caret = range.getBoundingClientRect();
+      const box = editor.getBoundingClientRect();
+      if(!caret || !box || !box.height) return;
+      const pad = 18;
+      if(caret.bottom > box.bottom - pad){
+        editor.scrollTop += caret.bottom - box.bottom + pad;
+      }else if(caret.top < box.top + pad){
+        editor.scrollTop -= box.top - caret.top + pad;
+      }
+    }catch(_){ }
+  };
+  const schedule = (event)=>{
+    const editor = event.target?.closest?.(editorSelector);
+    if(!editor) return;
+    requestAnimationFrame(()=> keepCaretVisible(editor));
+    setTimeout(()=> keepCaretVisible(editor), 80);
+  };
+  document.addEventListener('focusin', schedule);
+  document.addEventListener('input', schedule);
+  document.addEventListener('keyup', schedule);
+  document.addEventListener('mouseup', schedule);
+  document.addEventListener('touchend', schedule, {passive:true});
+})();
 
 // === Persist last known location (for faster entry) ===
 const __LAST_LOC_KEY = 'flymily_last_location_v1';
@@ -5472,17 +5550,27 @@ function buildMapHref(exp){
 function openMapSelectModal(lat, lng) {
   const modal = $('#mapSelectModal');
   modal.showModal();
-  state.maps.select = L.map('selectMap').setView([lat || 32.0853, lng || 34.7818], 12);
+  const cached = (!lat || !lng) ? loadLastLocation() : null;
+  const startLat = lat || cached?.lat || 32.0853;
+  const startLng = lng || cached?.lng || 34.7818;
+  state.maps.selectStartedWithCoords = Boolean(lat && lng);
+  state.maps.selectTouched = false;
+  state.maps.select = L.map('selectMap').setView([startLat, startLng], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.maps.select);
   state.maps.select.invalidateSize();
 
-  if (lat && lng) {
-    state.maps.selectMarker = L.marker([lat, lng]).addTo(state.maps.select);
-  } else {
-    state.maps.selectMarker = L.marker(state.maps.select.getCenter()).addTo(state.maps.select);
+  state.maps.selectMarker = L.marker([startLat, startLng]).addTo(state.maps.select);
+  if(!lat && !lng){
+    getCurrentLocationOnce().then(({lat: curLat, lng: curLng})=>{
+      if(!state.maps.select || state.maps.selectTouched) return;
+      const point = [curLat, curLng];
+      state.maps.select.setView(point, 15);
+      state.maps.selectMarker.setLatLng(point);
+    }).catch(()=>{});
   }
 
   state.maps.select.on('click', (e) => {
+    state.maps.selectTouched = true;
     if (state.maps.selectMarker) {
       state.maps.selectMarker.setLatLng(e.latlng);
     } else {
@@ -5497,7 +5585,14 @@ function openMapSelectModal(lat, lng) {
 // Save location from map modal
 $('#selectMapSave').addEventListener('click', async () => {
   if (state.maps.selectMarker) {
-    const { lat, lng } = state.maps.selectMarker.getLatLng();
+    let { lat, lng } = state.maps.selectMarker.getLatLng();
+    if(!state.maps.selectStartedWithCoords && !state.maps.selectTouched){
+      try{
+        const currentLoc = await getCurrentLocationOnce();
+        lat = currentLoc.lat;
+        lng = currentLoc.lng;
+      }catch(_){ }
+    }
     if (state.maps.currentModal === 'expense') {
 	      const name = await reverseGeocode(lat, lng);
 	      await setExpenseLocation(lat, lng, name, {persist:true});
@@ -5657,28 +5752,11 @@ async function saveJournal() {
 
   const prev = t.journal[id] || {};
 
-  const getCurrentLocationOnce = ()=> new Promise((resolve, reject)=>{
-    try{
-      if(!navigator.geolocation){
-        reject(new Error('Geolocation unsupported'));
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position)=> resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        }),
-        (error)=> reject(error),
-        { enableHighAccuracy:true, timeout:8000, maximumAge:60000 }
-      );
-    }catch(err){ reject(err); }
-  });
-
   if(
     isInitialCreate &&
     !($('#jrPlaceName')?.value || '').trim() &&
-    !numOrNull($('#jrLat').value) &&
-    !numOrNull($('#jrLng').value)
+    !$('#jrLat').value &&
+    !$('#jrLng').value
   ){
     try{
       const currentLoc = await getCurrentLocationOnce();
