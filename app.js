@@ -3988,11 +3988,12 @@ $('#expLocationName').value = e?.locationName || '';
   } catch(_){}
 
   document.dispatchEvent(new Event('openExpenseModal')); $('#expenseModal').showModal();
+  try{ window.__fixMobileRtfEditors?.(); }catch(_){ }
   syncExpenseMobileDateField();
   if(isMobileViewport()){
-    requestAnimationFrame(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); });
-    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); }, 60);
-    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); }, 180);
+    requestAnimationFrame(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); try{ window.__fixMobileRtfEditors?.(); }catch(_){} });
+    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); try{ window.__fixMobileRtfEditors?.(); }catch(_){} }, 60);
+    setTimeout(()=>{ syncExpenseMobileDateField(); lockExpenseMetaRowInline(); try{ window.__fixMobileRtfEditors?.(); }catch(_){} }, 180);
   }
 }
 
@@ -4629,9 +4630,7 @@ function applyRateNotes(){
 (function(){
   const target = document.body;
   if(!target) return;
-  const obs = new MutationObserver(()=> applyRateNotes());
-  obs.observe(target, { childList:true, subtree:true });
-  // also run once on load
+  // Rate note rendering is currently disabled inside applyRateNotes; avoid scanning tables on every DOM mutation.
   window.addEventListener('DOMContentLoaded', applyRateNotes);
   setTimeout(applyRateNotes, 300);
 })();
@@ -4676,9 +4675,38 @@ function getCurrentLocationOnce(){
 
 (function bindMobileRtfCaretScroll(){
   const editorSelector = '#expText.input.rtf, #jrText.input.rtf';
+  const tuneEditor = (editor)=>{
+    try{
+      if(!editor || !editor.matches(editorSelector)) return;
+      const modal = editor.closest('dialog.modal');
+      const label = editor.closest('label');
+      const body = modal?.querySelector(':scope > .body');
+      const set = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
+      set(editor, 'height', 'clamp(150px, 30dvh, 280px)');
+      set(editor, 'min-height', '150px');
+      set(editor, 'max-height', '30dvh');
+      set(editor, 'overflow-y', 'auto');
+      set(editor, 'overflow-x', 'hidden');
+      set(editor, '-webkit-overflow-scrolling', 'touch');
+      set(editor, 'overscroll-behavior', 'contain');
+      set(editor, 'touch-action', 'pan-y');
+      set(editor, 'resize', 'vertical');
+      set(editor, 'white-space', 'pre-wrap');
+      set(editor, 'overflow-wrap', 'anywhere');
+      set(label, 'overflow', 'visible');
+      set(label, 'min-height', '0');
+      set(body, 'overflow-y', 'auto');
+      set(body, 'overflow-x', 'hidden');
+      set(body, '-webkit-overflow-scrolling', 'touch');
+    }catch(_){ }
+  };
+  const tuneAll = ()=>{
+    document.querySelectorAll(editorSelector).forEach(tuneEditor);
+  };
   const keepCaretVisible = (editor)=>{
     try{
       if(!editor || !editor.matches(editorSelector)) return;
+      tuneEditor(editor);
       const sel = window.getSelection();
       if(!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
       const range = sel.getRangeAt(0).cloneRange();
@@ -4697,9 +4725,12 @@ function getCurrentLocationOnce(){
   const schedule = (event)=>{
     const editor = event.target?.closest?.(editorSelector);
     if(!editor) return;
+    tuneEditor(editor);
     requestAnimationFrame(()=> keepCaretVisible(editor));
     setTimeout(()=> keepCaretVisible(editor), 80);
   };
+  window.__fixMobileRtfEditors = tuneAll;
+  document.addEventListener('DOMContentLoaded', tuneAll);
   document.addEventListener('focusin', schedule);
   document.addEventListener('input', schedule);
   document.addEventListener('keyup', schedule);
@@ -4711,7 +4742,10 @@ function getCurrentLocationOnce(){
 const __LAST_LOC_KEY = 'flymily_last_location_v1';
 function saveLastLocation(lat, lng, name){
   try{
-    const payload = { lat:Number(lat), lng:Number(lng), name:String(name||''), ts: Date.now() };
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if(!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return;
+    const payload = { lat:latNum, lng:lngNum, name:String(name||''), ts: Date.now() };
     localStorage.setItem(__LAST_LOC_KEY, JSON.stringify(payload));
   }catch(_){ }
 }
@@ -4721,6 +4755,10 @@ function loadLastLocation(){
     if(!raw) return null;
     const d = JSON.parse(raw);
     if(!d || typeof d.lat!=='number' || typeof d.lng!=='number') return null;
+    if(d.lat === 0 && d.lng === 0){
+      try{ localStorage.removeItem(__LAST_LOC_KEY); }catch(_){ }
+      return null;
+    }
     return d;
   }catch(_){ return null; }
 }
@@ -5737,6 +5775,9 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
   } catch(_){}
 
   $('#journalModal').showModal();
+  try{ window.__fixMobileRtfEditors?.(); }catch(_){ }
+  setTimeout(()=>{ try{ window.__fixMobileRtfEditors?.(); }catch(_){} }, 60);
+  setTimeout(()=>{ try{ window.__fixMobileRtfEditors?.(); }catch(_){} }, 180);
 }
 
 async function saveJournal() {
@@ -9691,7 +9732,8 @@ window.addEventListener('resize', ()=>{
     const baseH = window.__exactModalBaseHeight || Math.max(window.innerHeight || 0, vp.height + vp.top);
     const width = Math.max(0, vp.width - 16);
     const isExpenseModal = dlg.id === 'expenseModal';
-    const requested = Math.round(baseH * (isExpenseModal ? 0.56 : 0.50));
+    const isJournalModal = dlg.id === 'journalModal';
+    const requested = Math.round(baseH * ((isExpenseModal || isJournalModal) ? 0.88 : 0.50));
     const usable = Math.max(260, vp.height - 8);
     if(isExpenseModal && !dlg.dataset.mobileStableHeight){
       dlg.dataset.mobileStableHeight = String(requested);
@@ -9724,6 +9766,14 @@ window.addEventListener('resize', ()=>{
       body.style.height = `${bodyH}px`;
       body.style.minHeight = `${bodyH}px`;
       body.style.maxHeight = `${bodyH}px`;
+      if(isExpenseModal || isJournalModal){
+        body.style.setProperty('overflow-y', 'auto', 'important');
+        body.style.setProperty('overflow-x', 'hidden', 'important');
+        body.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+      }
+    }
+    if(isExpenseModal || isJournalModal){
+      try{ window.__fixMobileRtfEditors?.(); }catch(_){ }
     }
   }
 
