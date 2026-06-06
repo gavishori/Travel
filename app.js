@@ -3248,46 +3248,12 @@ function _isTodayWithinTripDates(startYMD, endYMD){
 }
 
 function maybeShowTripTodayPrompt(trip, opts){
-  try{
-    const source = opts?.source || 'trip';
-    if(!trip || !trip.id) return;
-    // Avoid prompts on shared read-only views
-    if(state?.shared?.readOnly) return;
-    const start = trip.start;
-    const end   = trip.end;
-    if(!_isTodayWithinTripDates(start, end)) return;
-
-    const homeKey = (source === 'home') ? `tripTodayPrompt_${trip.id}_${_todayKey()}_home` : '';
-    if(homeKey && sessionStorage.getItem(homeKey) === '1') return;
-
-    const dlg = document.getElementById('tripTodayModal');
-    if(!dlg || typeof dlg.showModal !== 'function') return;
-    dlg.dataset.tripId = trip.id;
-    dlg.dataset.source = source;
-    const ctx = document.getElementById('tripTodayContext');
-    if(ctx){
-      const destination = String(trip.destination || 'נסיעה ללא שם').trim();
-      const period = `${fmtDate(trip.start)} – ${fmtDate(trip.end)}`;
-      ctx.textContent = `נסיעה פעילה: ${destination} (${period})`;
-    }
-    // If another modal is open, don't steal focus
-    try{
-      const anyOpen = document.querySelector('dialog[open]');
-      if(anyOpen && anyOpen !== dlg) return;
-    }catch(_){ }
-    dlg.showModal();
-    if(homeKey) sessionStorage.setItem(homeKey, '1');
-  }catch(_){ }
+  // Active trips open directly to the main trip screen; no quick-add prompt.
+  return;
 }
 
 function maybeShowTodayPromptFromTrips(trips){
-  try{
-    const activeTrips = (trips || []).filter(trip => trip?.id && _isTodayWithinTripDates(trip.start, trip.end));
-    if(!activeTrips.length) return;
-    const preferred = (state?.currentTripId && activeTrips.find(trip => trip.id === state.currentTripId))
-      || [...activeTrips].sort((a,b)=> (b.start || '').localeCompare(a.start || ''))[0];
-    maybeShowTripTodayPrompt(preferred, { source:'home' });
-  }catch(_){ }
+  return;
 }
 
 async function runTripTodayPromptAction(kind){
