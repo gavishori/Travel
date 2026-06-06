@@ -4678,26 +4678,18 @@ function getCurrentLocationOnce(){
   const tuneEditor = (editor)=>{
     try{
       if(!editor || !editor.matches(editorSelector)) return;
-      const modal = editor.closest('dialog.modal');
-      const label = editor.closest('label');
-      const body = modal?.querySelector(':scope > .body');
       const set = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
-      set(editor, 'height', 'clamp(150px, 30dvh, 280px)');
-      set(editor, 'min-height', '150px');
-      set(editor, 'max-height', '30dvh');
+      editor.style.removeProperty('height');
+      editor.style.removeProperty('min-height');
+      editor.style.removeProperty('max-height');
+      editor.style.removeProperty('resize');
       set(editor, 'overflow-y', 'auto');
       set(editor, 'overflow-x', 'hidden');
       set(editor, '-webkit-overflow-scrolling', 'touch');
       set(editor, 'overscroll-behavior', 'contain');
       set(editor, 'touch-action', 'pan-y');
-      set(editor, 'resize', 'vertical');
       set(editor, 'white-space', 'pre-wrap');
       set(editor, 'overflow-wrap', 'anywhere');
-      set(label, 'overflow', 'visible');
-      set(label, 'min-height', '0');
-      set(body, 'overflow-y', 'auto');
-      set(body, 'overflow-x', 'hidden');
-      set(body, '-webkit-overflow-scrolling', 'touch');
     }catch(_){ }
   };
   const tuneAll = ()=>{
@@ -9732,8 +9724,7 @@ window.addEventListener('resize', ()=>{
     const baseH = window.__exactModalBaseHeight || Math.max(window.innerHeight || 0, vp.height + vp.top);
     const width = Math.max(0, vp.width - 16);
     const isExpenseModal = dlg.id === 'expenseModal';
-    const isJournalModal = dlg.id === 'journalModal';
-    const requested = Math.round(baseH * ((isExpenseModal || isJournalModal) ? 0.88 : 0.50));
+    const requested = Math.round(baseH * (isExpenseModal ? 0.56 : 0.50));
     const usable = Math.max(260, vp.height - 8);
     if(isExpenseModal && !dlg.dataset.mobileStableHeight){
       dlg.dataset.mobileStableHeight = String(requested);
@@ -9766,14 +9757,6 @@ window.addEventListener('resize', ()=>{
       body.style.height = `${bodyH}px`;
       body.style.minHeight = `${bodyH}px`;
       body.style.maxHeight = `${bodyH}px`;
-      if(isExpenseModal || isJournalModal){
-        body.style.setProperty('overflow-y', 'auto', 'important');
-        body.style.setProperty('overflow-x', 'hidden', 'important');
-        body.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
-      }
-    }
-    if(isExpenseModal || isJournalModal){
-      try{ window.__fixMobileRtfEditors?.(); }catch(_){ }
     }
   }
 
