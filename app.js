@@ -1190,6 +1190,45 @@ document.addEventListener('input', (e) => {
   };
 })();
 // === End textarea helpers ===
+
+// Keep long rich-text journal editing stable on mobile. Native contenteditable
+// paste can lose the caret after viewport/keyboard changes, so insert text at
+// the current selection explicitly.
+(function(){
+  function bindStableJournalPaste(){
+    const editor = document.getElementById('jrText');
+    if(!editor || editor.dataset.stablePasteBound === '1') return;
+    editor.dataset.stablePasteBound = '1';
+    editor.addEventListener('paste', (ev)=>{
+      try{
+        const text = ev.clipboardData?.getData('text/plain');
+        if(text == null) return;
+        ev.preventDefault();
+        editor.focus({ preventScroll:true });
+        if(document.queryCommandSupported && document.queryCommandSupported('insertText')){
+          document.execCommand('insertText', false, text);
+          return;
+        }
+        const sel = window.getSelection();
+        if(!sel || !sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const node = document.createTextNode(text);
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }catch(_){}
+    }, { passive:false });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bindStableJournalPaste, { once:true });
+  }else{
+    bindStableJournalPaste();
+  }
+  window.__bindStableJournalPaste = bindStableJournalPaste;
+})();
 // === ensureExpenseCurrencyOption: global-safe ===
 (function () {
   const root = (typeof window !== 'undefined') ? window : globalThis;
@@ -6369,8 +6408,8 @@ function tryAutoLoginAuthModal(){
 // Toggle app/login screens on auth state change + start subscriptions
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
   let __lastAuthUid = null;
-  FB.onAuthStateChanged(FB.auth, (user) => {
-    if((user?.uid||null)===__lastAuthUid){ return; }
+  const applyAuthUser = (user, force=false) => {
+    if(!force && (user?.uid||null)===__lastAuthUid){ return; }
     __lastAuthUid = user?.uid||null;
     applyAuthShellState(user);
     if (user) {
@@ -6379,7 +6418,13 @@ if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
     } else {
       state.user = null;
     }
-  });
+  };
+  try{
+    if(FB.auth?.currentUser){
+      applyAuthUser(FB.auth.currentUser, true);
+    }
+  }catch(_){}
+  FB.onAuthStateChanged(FB.auth, (user) => applyAuthUser(user));
 }try { /*log removed*/ } catch(e){}
 
 

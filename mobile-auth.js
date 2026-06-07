@@ -21,6 +21,8 @@
   ];
 
   const mq = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+  let overflowScanTimer = 0;
+  let lastOverflowScanAt = 0;
 
   function isMobile(){
     return mq ? mq.matches : window.innerWidth <= 820;
@@ -74,8 +76,9 @@
     document.body.classList.toggle('mobile-editor-open', active && isMobile());
   }
 
-  function normalizeDialog(dialog){
+  function normalizeDialog(dialog, opts = {}){
     if (!dialog || !isMobile()) return;
+    const resetScroll = opts.resetScroll === true;
 
     dialog.style.maxWidth = '';
     dialog.style.width = '';
@@ -83,7 +86,7 @@
     dialog.style.right = '';
     dialog.style.transform = '';
 
-    if (EDITOR_DIALOG_IDS.includes(dialog.id)) {
+    if (resetScroll && EDITOR_DIALOG_IDS.includes(dialog.id)) {
       dialog.scrollTop = 0;
       const body = dialog.querySelector('.body');
       if (body) body.scrollTop = 0;
@@ -98,6 +101,9 @@
 
   function removeHorizontalOverflow(){
     if (!isMobile()) return;
+    const now = Date.now();
+    if (now - lastOverflowScanAt < 450) return;
+    lastOverflowScanAt = now;
 
     const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 0;
     if (!viewportWidth) return;
@@ -116,6 +122,20 @@
       el.style.minWidth = '0';
       if (getComputedStyle(el).overflowX === 'visible') el.style.overflowX = 'hidden';
     });
+  }
+
+  function scheduleRemoveHorizontalOverflow(delay = 80){
+    if (!isMobile()) return;
+    if (overflowScanTimer) window.clearTimeout(overflowScanTimer);
+    const run = () => {
+      overflowScanTimer = 0;
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(removeHorizontalOverflow, { timeout: 800 });
+      } else {
+        removeHorizontalOverflow();
+      }
+    };
+    overflowScanTimer = window.setTimeout(run, delay);
   }
 
   function wireDialogEvents(){
@@ -149,9 +169,9 @@
     HTMLDialogElement.prototype.showModal = function patchedShowModal(){
       const result = original.apply(this, arguments);
       requestAnimationFrame(() => {
-        normalizeDialog(this);
+        normalizeDialog(this, { resetScroll: true });
         normalizeOpenDialogs();
-        setTimeout(removeHorizontalOverflow, 60);
+        scheduleRemoveHorizontalOverflow(120);
       });
       return result;
     };
@@ -163,12 +183,12 @@
     wireEditorFocus();
     patchShowModal();
     normalizeOpenDialogs();
-    removeHorizontalOverflow();
+    scheduleRemoveHorizontalOverflow(300);
 
     const refresh = () => {
       updateViewportVars();
       normalizeOpenDialogs();
-      requestAnimationFrame(removeHorizontalOverflow);
+      scheduleRemoveHorizontalOverflow(120);
     };
 
     window.addEventListener('resize', refresh, { passive: true });
@@ -190,7 +210,7 @@
       wireDialogEvents();
       wireEditorFocus();
       normalizeOpenDialogs();
-      removeHorizontalOverflow();
+      scheduleRemoveHorizontalOverflow(180);
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] });
   }
