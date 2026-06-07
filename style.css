@@ -17929,3 +17929,133 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     scrollbar-gutter:stable !important;
   }
 }
+
+/* Mobile-only modal polish: stretch editor to toolbar and keep meta controls uncropped. */
+@media (max-width: 820px){
+  html body dialog#expenseModal > .body,
+  html body.mobile-ui dialog#expenseModal > .body,
+  body.mobile-ui dialog#expenseModal > .body{
+    grid-template-rows:auto minmax(128px,1fr) 28px 38px 40px !important;
+  }
+
+  html body dialog#journalModal > .body,
+  html body.mobile-ui dialog#journalModal > .body,
+  body.mobile-ui dialog#journalModal > .body{
+    grid-template-rows:auto minmax(136px,1fr) 28px 40px !important;
+  }
+
+  html body dialog#expenseModal .body > label:has(#expText),
+  html body.mobile-ui dialog#expenseModal .body > label:has(#expText),
+  body.mobile-ui dialog#expenseModal .body > label:has(#expText),
+  html body dialog#journalModal .body > label:has(#jrText),
+  html body.mobile-ui dialog#journalModal .body > label:has(#jrText),
+  body.mobile-ui dialog#journalModal .body > label:has(#jrText){
+    display:grid !important;
+    grid-template-rows:auto minmax(0,1fr) !important;
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+
+  html body dialog#expenseModal #expText.input.rtf,
+  html body.mobile-ui dialog#expenseModal #expText.input.rtf,
+  body.mobile-ui #expenseModal #expText.input.rtf,
+  html body dialog#journalModal #jrText.input.rtf,
+  html body.mobile-ui dialog#journalModal #jrText.input.rtf,
+  body.mobile-ui #journalModal #jrText.input.rtf{
+    height:100% !important;
+    min-height:128px !important;
+    max-height:none !important;
+    align-self:stretch !important;
+  }
+
+  html body dialog#expenseModal .expense-meta-row,
+  html body.mobile-ui dialog#expenseModal .expense-meta-row,
+  body.mobile-ui #expenseModal .expense-meta-row,
+  html body dialog#journalModal .journal-meta-row,
+  html body.mobile-ui dialog#journalModal .journal-meta-row,
+  body.mobile-ui #journalModal .journal-meta-row{
+    grid-template-columns:minmax(0,1fr) 72px 48px !important;
+    grid-template-rows:40px !important;
+    gap:6px !important;
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
+    align-items:center !important;
+    justify-content:stretch !important;
+    overflow:visible !important;
+  }
+
+  html body dialog#expenseModal .expense-meta-row > .exp-date-col,
+  html body.mobile-ui dialog#expenseModal .expense-meta-row > .exp-date-col,
+  body.mobile-ui #expenseModal .expense-meta-row > .exp-date-col,
+  html body dialog#journalModal .journal-meta-row > .jr-date-col,
+  html body.mobile-ui dialog#journalModal .journal-meta-row > .jr-date-col,
+  body.mobile-ui #journalModal .journal-meta-row > .jr-date-col{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+
+  html body dialog#expenseModal .expense-meta-row > .exp-time-col,
+  html body.mobile-ui dialog#expenseModal .expense-meta-row > .exp-time-col,
+  body.mobile-ui #expenseModal .expense-meta-row > .exp-time-col,
+  html body dialog#journalModal .journal-meta-row > .jr-time-col,
+  html body.mobile-ui dialog#journalModal .journal-meta-row > .jr-time-col,
+  body.mobile-ui #journalModal .journal-meta-row > .jr-time-col{
+    width:72px !important;
+    min-width:72px !important;
+    max-width:72px !important;
+  }
+
+  html body dialog#expenseModal .expense-meta-row > .exp-location-col.location-compact,
+  html body.mobile-ui dialog#expenseModal .expense-meta-row > .exp-location-col.location-compact,
+  body.mobile-ui #expenseModal .expense-meta-row > .exp-location-col.location-compact,
+  html body dialog#journalModal .journal-meta-row > .jr-location-col.location-compact,
+  html body.mobile-ui dialog#journalModal .journal-meta-row > .jr-location-col.location-compact,
+  body.mobile-ui #journalModal .journal-meta-row > .jr-location-col.location-compact{
+    width:48px !important;
+    min-width:48px !important;
+    max-width:48px !important;
+    overflow:visible !important;
+  }
+
+  html body dialog#expenseModal #expDate,
+  html body dialog#expenseModal #expTime,
+  html body.mobile-ui dialog#expenseModal #expDate,
+  html body.mobile-ui dialog#expenseModal #expTime,
+  body.mobile-ui #expenseModal #expDate,
+  body.mobile-ui #expenseModal #expTime,
+  html body dialog#journalModal #jrDate,
+  html body dialog#journalModal #jrTime,
+  html body.mobile-ui dialog#journalModal #jrDate,
+  html body.mobile-ui dialog#journalModal #jrTime,
+  body.mobile-ui #journalModal #jrDate,
+  body.mobile-ui #journalModal #jrTime{
+    height:36px !important;
+    min-height:36px !important;
+    max-height:36px !important;
+    margin:0 !important;
+    padding:5px 6px !important;
+    line-height:1.2 !important;
+    border-radius:10px !important;
+    overflow:visible !important;
+  }
+
+  html body dialog#expenseModal .expense-location-trigger,
+  html body.mobile-ui dialog#expenseModal .expense-location-trigger,
+  body.mobile-ui #expenseModal .expense-location-trigger,
+  html body dialog#journalModal .journal-location-trigger,
+  html body.mobile-ui dialog#journalModal .journal-location-trigger,
+  body.mobile-ui #journalModal .journal-location-trigger{
+    width:48px !important;
+    min-width:48px !important;
+    max-width:48px !important;
+    height:36px !important;
+    min-height:36px !important;
+    max-height:36px !important;
+    margin:0 !important;
+    padding:0 !important;
+    border-radius:10px !important;
+    overflow:visible !important;
+  }
+}
