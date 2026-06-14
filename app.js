@@ -787,6 +787,7 @@ function syncJournalSelectionUi(){
       add('הצג יומן + הוצאות', ()=> setOverviewSelectValue('mix'));
       add('הצג יומן', ()=> setOverviewSelectValue('journal'));
       add('הצג הוצאות', ()=> setOverviewSelectValue('expenses'));
+      add('פילוח', ()=> triggerButton('openBreakdownBtn'));
       add('מפה', ()=> applyOverviewSelection('map'));
     } else if(currentSection === 'meta'){
       title.textContent = 'נתוני נסיעה';
@@ -4141,8 +4142,6 @@ $('#lsReset').addEventListener('click', async ()=>{
 (function(){
   const $ = (sel)=>document.querySelector(sel);
   const isMobileViewport = ()=> /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || window.innerWidth <= 820;
-  let __prefillAutoLoginTried = false;
-
   async function doLogin(emailSel, passSel, errSel){
     const email = $(emailSel)?.value?.trim();
     const pass  = $(passSel)?.value;
@@ -4201,19 +4200,6 @@ $('#lsReset').addEventListener('click', async ()=>{
         doLogin('#lsEmail', '#lsPass', '#lsError');
       }
     });
-  });
-
-  function tryAutoLoginIfPrefilled(){
-    if(__prefillAutoLoginTried) return;
-    const email = $('#lsEmail')?.value?.trim();
-    const pass = $('#lsPass')?.value;
-    if(!email || !pass) return;
-    __prefillAutoLoginTried = true;
-    doLogin('#lsEmail', '#lsPass', '#lsError');
-  }
-
-  [80, 350, 900].forEach((delay)=>{
-    setTimeout(tryAutoLoginIfPrefilled, delay);
   });
 
   window.__isMobileViewport = isMobileViewport;
@@ -6364,7 +6350,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 // ---- Explicit login flow only (no auto-submit) ----
 let __loginInFlight = false;
-let __authModalAutoLoginTried = false;
 async function loginWithCredentials(emailSel='#authEmail', passSel='#authPass', errSel='#authError'){
   if(__loginInFlight) return;
   __loginInFlight = true;
@@ -6392,18 +6377,6 @@ document.addEventListener('click', (ev)=>{
   if(t.matches('#authPrimary')){ loginWithCredentials(); }
 });
 
-function tryAutoLoginAuthModal(){
-  if(__authModalAutoLoginTried) return;
-  const email = document.querySelector('#authEmail')?.value?.trim();
-  const pass = document.querySelector('#authPass')?.value;
-  if(!email || !pass) return;
-  __authModalAutoLoginTried = true;
-  loginWithCredentials('#authEmail', '#authPass', '#authError');
-}
-
-[120, 450, 1000].forEach((delay)=>{
-  setTimeout(tryAutoLoginAuthModal, delay);
-});
 // ===== Auth UI helpers (final) =====
 // Toggle app/login screens on auth state change + start subscriptions
 if (typeof FB !== 'undefined' && FB?.onAuthStateChanged) {
