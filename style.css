@@ -4993,6 +4993,33 @@ html.share-open [style*="overflow:scroll"]{
 .breakdown-row-bar>span{display:block;height:100%;background:var(--brand);width:0}
 .breakdown-total{font-weight:600}
 
+.breakdown-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.breakdown-summary-card{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:0;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:color-mix(in oklab,var(--panel,#fff) 96%,var(--brand,#1a73ff) 4%);
+}
+.breakdown-summary-card span{
+  color:var(--muted,#6b7280);
+  font-size:12px;
+  font-weight:600;
+}
+.breakdown-summary-card strong{
+  font-size:16px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.breakdown-summary-card strong.neg{color:var(--danger,#d9363e)}
 
 /* --- Breakdown: expandable categories --- */
 .breakdown-head{display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px}
@@ -5054,6 +5081,184 @@ html.share-open [style*="overflow:scroll"]{
 .breakdown-missing-table th,.breakdown-missing-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;vertical-align:top}
 .breakdown-missing-table thead th{position:sticky;top:0;background:var(--panel,#fff)}
 .breakdown-missing-table tbody{display:table-row-group}
+
+@media (max-width: 640px){
+  #breakdownDialog.modal{
+    width:calc(100vw - 20px);
+    max-width:calc(100vw - 20px);
+    max-height:calc(100dvh - 28px);
+    border-radius:18px;
+  }
+  #breakdownDialog .header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:10px;
+    align-items:center;
+    padding:12px 14px;
+  }
+  #breakdownDialog .header h3{
+    margin:0;
+    font-size:20px;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  #breakdownDialog #closeBreakdownDlg{
+    min-width:74px;
+    min-height:40px;
+    padding:8px 14px;
+    border:2px solid var(--brand,#1a73ff);
+    color:var(--ink,#0e1116);
+    background:#fff;
+    border-radius:999px;
+    font-weight:700;
+  }
+  #breakdownDialog .body{
+    padding:12px 14px 16px;
+    max-height:calc(100dvh - 104px);
+    overflow:auto;
+  }
+  .breakdown-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .breakdown-summary-card{
+    padding:9px 10px;
+    border-radius:10px;
+  }
+  .breakdown-summary-card span{
+    font-size:12px;
+  }
+  .breakdown-summary-card strong{
+    font-size:15px;
+  }
+  .breakdown-head{
+    display:block;
+    margin-bottom:8px;
+  }
+  .breakdown-head .muted,
+  .breakdown-note{
+    font-size:13px;
+    line-height:1.35;
+  }
+  .breakdown-table,
+  .breakdown-table thead,
+  .breakdown-table tbody,
+  .breakdown-table tr,
+  .breakdown-table th,
+  .breakdown-table td{
+    display:block;
+    width:100% !important;
+  }
+  .breakdown-table thead{
+    display:none;
+  }
+  .breakdown-table tr{
+    border-bottom:1px solid var(--border);
+  }
+  .breakdown-table th,
+  .breakdown-table td{
+    border-bottom:0;
+    padding:0;
+  }
+  .breakdown-cat-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "cat sum"
+      "pct pct";
+    gap:6px 10px;
+    padding:12px 0;
+    align-items:start;
+  }
+  .breakdown-cat-row .bd-cat{
+    grid-area:cat;
+    font-weight:700;
+    line-height:1.25;
+  }
+  .breakdown-cat-row .bd-sum{
+    grid-area:sum;
+    font-weight:700;
+    white-space:nowrap;
+    text-align:left;
+  }
+  .breakdown-cat-row .bd-pct{
+    grid-area:pct;
+  }
+  .breakdown-cat-row .bd-pct .muted{
+    margin-top:3px;
+    text-align:left;
+    font-size:14px;
+  }
+  .breakdown-row-bar{
+    height:8px;
+  }
+  .breakdown-details.open{
+    display:block;
+  }
+  .breakdown-details td{
+    display:block;
+    padding:0 0 12px;
+  }
+  .bd-details-wrap{
+    padding:8px 0 0;
+  }
+  .bd-items,
+  .bd-items thead,
+  .bd-items tbody,
+  .bd-items tr,
+  .bd-items th,
+  .bd-items td{
+    display:block;
+    width:100% !important;
+  }
+  .bd-items thead{
+    display:none;
+  }
+  .bd-items tr{
+    padding:8px 0;
+    border-top:1px dashed color-mix(in oklab,var(--border) 80%,transparent);
+  }
+  .bd-items th,
+  .bd-items td{
+    padding:2px 0;
+    border-bottom:0;
+  }
+  .bd-item-amt,
+  .bd-item-ils{
+    white-space:normal;
+    color:var(--muted,#6b7280);
+    font-size:13px;
+  }
+  .breakdown-total{
+    padding:10px 0 !important;
+    font-size:18px;
+  }
+  .breakdown-missing{
+    padding:10px;
+  }
+  .breakdown-missing-table,
+  .breakdown-missing-table thead,
+  .breakdown-missing-table tbody,
+  .breakdown-missing-table tr,
+  .breakdown-missing-table th,
+  .breakdown-missing-table td{
+    display:block;
+    width:100%;
+  }
+  .breakdown-missing-table thead{
+    display:none;
+  }
+  .breakdown-missing-table tr{
+    padding:8px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .breakdown-missing-table th,
+  .breakdown-missing-table td{
+    padding:2px 0;
+    border-bottom:0;
+  }
+}
 
 
 /* highlight target row when navigated from map popup */
@@ -14641,8 +14846,8 @@ html body .cell.notes a.mail-icon::before{
 }
 
 #view-meta .budget-row label:nth-child(1){ grid-area:usd !important; }
-#view-meta .budget-row label:nth-child(2){ grid-area:eur !important; }
-#view-meta .budget-row label:nth-child(3){ grid-area:ils !important; }
+  #view-meta .budget-row label:nth-child(2){ grid-area:eur !important; }
+  #view-meta .budget-row label:nth-child(3){ grid-area:ils !important; }
 #view-meta #btnBudgetEdit{ grid-area:edit !important; }
 #view-meta #btnSaveMeta{ grid-area:save !important; }
 
@@ -18057,5 +18262,56 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     padding:0 !important;
     border-radius:10px !important;
     overflow:visible !important;
+  }
+}
+
+/* Final mobile override for the category breakdown dialog. */
+@media (max-width: 640px){
+  html body #breakdownDialog.modal,
+  html body.mobile-ui #breakdownDialog.modal,
+  html body.mobile-ui dialog#breakdownDialog.modal[open]{
+    width:calc(100vw - 20px) !important;
+    max-width:calc(100vw - 20px) !important;
+    max-height:calc(100dvh - 28px) !important;
+    display:flex !important;
+    flex-direction:column !important;
+    border-radius:18px !important;
+  }
+
+  html body #breakdownDialog .header,
+  html body.mobile-ui #breakdownDialog .header{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:10px !important;
+    align-items:center !important;
+    padding:12px 14px !important;
+  }
+
+  html body #breakdownDialog .header h3,
+  html body.mobile-ui #breakdownDialog .header h3{
+    margin:0 !important;
+    font-size:20px !important;
+    line-height:1.2 !important;
+    overflow-wrap:anywhere !important;
+  }
+
+  html body #breakdownDialog #closeBreakdownDlg,
+  html body.mobile-ui #breakdownDialog #closeBreakdownDlg{
+    min-width:74px !important;
+    min-height:40px !important;
+    padding:8px 14px !important;
+    border:2px solid var(--brand,#1a73ff) !important;
+    background:#fff !important;
+    border-radius:999px !important;
+    font-weight:700 !important;
+  }
+
+  html body #breakdownDialog .body,
+  html body.mobile-ui #breakdownDialog .body{
+    flex:1 1 auto !important;
+    display:block !important;
+    padding:12px 14px 16px !important;
+    max-height:none !important;
+    overflow:auto !important;
   }
 }

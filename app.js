@@ -7817,8 +7817,33 @@ function renderCategoryBreakdownNode(targetId){
   // הפילוח חייב להיות מבוסס על מה ששולם בפועל בש"ח, ולא על התקציב.
   const pctBase = total;
   const pctLabel = 'אחוז מסך ששולם';
+  const budgetPayload = (typeof buildBudgetSummaryPayload === 'function')
+    ? buildBudgetSummaryPayload(trip, 'ILS')
+    : null;
+  const hottestCat = cats[0];
+  const hottestLabel = hottestCat
+    ? `${esc(hottestCat[0])} · ${fmtILS(hottestCat[1])} ILS`
+    : 'אין נתונים';
 
   let html = `
+    <div class="breakdown-summary" dir="rtl">
+      <div class="breakdown-summary-card">
+        <span>תקציב</span>
+        <strong>${budgetPayload ? esc(budgetPayload.budget) : '0 ILS'}</strong>
+      </div>
+      <div class="breakdown-summary-card">
+        <span>שולם</span>
+        <strong>${budgetPayload ? esc(budgetPayload.paid) : `${fmtILS(total)} ILS`}</strong>
+      </div>
+      <div class="breakdown-summary-card">
+        <span>נשאר</span>
+        <strong class="${budgetPayload?.isNeg ? 'neg' : ''}">${budgetPayload ? esc(budgetPayload.balance) : '0 ILS'}</strong>
+      </div>
+      <div class="breakdown-summary-card hot">
+        <span>מה חם</span>
+        <strong>${hottestLabel}</strong>
+      </div>
+    </div>
     <div class="breakdown-head" dir="rtl">
       <div class="breakdown-note">לחיצה על קטגוריה תפתח את ההוצאות שבקטגוריה</div>
       <div class="muted">החישוב מבוסס על סך ששולם בפועל: ${fmtILS(total)} ILS</div>
