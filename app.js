@@ -7745,50 +7745,48 @@ async function importKMLFromFile(file){
 // === End Shift-Select ===
 
 function renderCategoryBreakdownNode(targetId){
-  const el = document.getElementById(targetId); if(!el) return;
-  const local = 'ILS';
+  const el = document.getElementById(targetId);
+  if(!el) return;
+
   const trip = normalizeTripShape(state?.current || {});
   const expenses = (trip && (Array.isArray(trip.expenses)
     ? trip.expenses
-    : Object.entries(trip.expenses||{}).map(([id,e])=>({ id, ...e }))
+    : Object.entries(trip.expenses || {}).map(([id, e]) => ({ id, ...e }))
   )) || [];
 
-  const breakdown = {}; let total = 0;
-  const byCategory = {}; // cat -> { sum:number, items:[{id, category, amount, currency, desc, date, time, ils:number|NaN}] }
-  const unconverted = []; // flat list for footer section
+  const byCategory = {};
+  const unconverted = [];
+  let total = 0;
 
   const toILS = (amt, fromCur, ratesObj)=>{
-    const a = Number(amt||0);
-    const cur = (fromCur||'ILS').toUpperCase();
-    if(!isFinite(a) || a===0) return 0;
+    const a = Number(amt || 0);
+    const cur = (fromCur || 'ILS').toUpperCase();
+    if(!isFinite(a) || a === 0) return 0;
     if(cur === 'ILS') return a;
     try{
       const M = rateMatrix(ratesObj || {});
       const r = (M && M[cur] && M[cur].ILS) ? Number(M[cur].ILS) : null;
       if(r && isFinite(r)) return a * r;
-    }catch(_){/* ignore */}
+    }catch(_){}
     return NaN;
   };
 
-  // normalize expenses and build per-category lists
-  expenses.forEach(e=>{
-    const cat = (e?.category || 'אחר').toString();
-    const amt = Number(e?.amount||0);
-    const from = (e?.currency || 'ILS');
+  expenses.forEach((e)=>{
+    const cat = (e?.category || 'אחר').toString().trim() || 'אחר';
+    const amt = Number(e?.amount || 0);
+    const from = (e?.currency || 'ILS').toString();
     const rates = e?.rates || state?.rates || {};
-
     let ils = NaN;
-    if(typeof convertAmount==='function'){
-      try{ ils = convertAmount(amt, from, local, rates); }catch(_){ ils = NaN; }
+    if(typeof convertAmount === 'function'){
+      try{ ils = convertAmount(amt, from, 'ILS', rates); }catch(_){ ils = NaN; }
     }
     if(!isFinite(ils)) ils = toILS(amt, from, rates);
 
     const item = {
       id: e?.id,
-      category: cat,
-      amount: isFinite(amt)?amt:0,
-      currency: (from||'').toString(),
-      desc: (e?.desc || e?.descHtml || '').toString(),
+      amount: isFinite(amt) ? amt : 0,
+      currency: from,
+      desc: (e?.desc || e?.descHtml || '').toString().replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
       date: (e?.date || '').toString(),
       time: (e?.time || '').toString(),
       ils
@@ -7799,206 +7797,149 @@ function renderCategoryBreakdownNode(targetId){
 
     if(isFinite(ils)){
       byCategory[cat].sum += ils;
-      breakdown[cat] = (breakdown[cat]||0) + ils;
       total += ils;
     }else{
-      unconverted.push({
-        category: cat,
-        amount: item.amount,
-        currency: item.currency || '???',
-        desc: item.desc.slice(0, 80)
-      });
+      unconverted.push({ category: cat, amount: item.amount, currency: item.currency, desc: item.desc.slice(0, 80) });
     }
   });
 
-  const cats = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]);
-  const fmtILS = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:0});
-  const fmtAmt = (n)=> (Number(n||0)).toLocaleString('he-IL',{maximumFractionDigits:2});
-  // הפילוח חייב להיות מבוסס על מה ששולם בפועל בש"ח, ולא על התקציב.
-  const pctBase = total;
-  const pctLabel = 'אחוז מסך ששולם';
-  const budgetPayload = (typeof buildBudgetSummaryPayload === 'function')
-    ? buildBudgetSummaryPayload(trip, 'ILS')
-    : null;
-  const hottestCat = cats[0];
-  const hottestLabel = hottestCat
-    ? `${esc(hottestCat[0])} · ${fmtILS(hottestCat[1])} ILS`
-    : 'אין נתונים';
+  const cats = Object.entries(byCategory)
+    .filter(([, data]) => data.items.length)
+    .sort((a, b) => (b[1].sum || 0) - (a[1].sum || 0));
+  const fmtILS = (n)=> Number(n || 0).toLocaleString('he-IL', { maximumFractionDigits:0 });
+  const fmtAmt = (n)=> Number(n || 0).toLocaleString('he-IL', { maximumFractionDigits:2 });
+
+  if(!cats.length){
+    el.innerHTML = `
+      <section class="breakdown-panel breakdown-empty" dir="rtl">
+        <div class="breakdown-kicker">פילוח לפי נושאים</div>
+        <p class="muted">אין עדיין הוצאות להצגה בפילוח.</p>
+      </section>
+    `;
+    return;
+  }
 
   let html = `
-    <div class="breakdown-summary" dir="rtl">
-      <div class="breakdown-summary-card">
-        <span>תקציב</span>
-        <strong>${budgetPayload ? esc(budgetPayload.budget) : '0 ILS'}</strong>
+    <section class="breakdown-panel" dir="rtl">
+      <div class="breakdown-head">
+        <div>
+          <div class="breakdown-kicker">פילוח לפי נושאים</div>
+          <div class="breakdown-note">כל נושא ניתן לפתיחה וסגירה להצגת ההוצאות שלו.</div>
+        </div>
+        <div class="breakdown-total-pill">
+          <span>סך ששולם</span>
+          <strong>${fmtILS(total)} ILS</strong>
+        </div>
       </div>
-      <div class="breakdown-summary-card">
-        <span>שולם</span>
-        <strong>${budgetPayload ? esc(budgetPayload.paid) : `${fmtILS(total)} ILS`}</strong>
-      </div>
-      <div class="breakdown-summary-card">
-        <span>נשאר</span>
-        <strong class="${budgetPayload?.isNeg ? 'neg' : ''}">${budgetPayload ? esc(budgetPayload.balance) : '0 ILS'}</strong>
-      </div>
-      <div class="breakdown-summary-card hot">
-        <span>מה חם</span>
-        <strong>${hottestLabel}</strong>
-      </div>
-    </div>
-    <div class="breakdown-head" dir="rtl">
-      <div class="breakdown-note">לחיצה על קטגוריה תפתח את ההוצאות שבקטגוריה</div>
-      <div class="muted">החישוב מבוסס על סך ששולם בפועל: ${fmtILS(total)} ILS</div>
-    </div>
-    <table class="breakdown-table" dir="rtl">
-      <thead>
-        <tr>
-          <th class="bd-cat">קטגוריה</th>
-          <th class="bd-sum">סכום (ILS)</th>
-          <th class="bd-pct">${pctLabel}</th>
-        </tr>
-      </thead>
-      <tbody>
+      <div class="breakdown-accordion" role="list">
   `;
 
-  cats.forEach(([cat,sum], idx)=>{
-    const pct = pctBase ? (sum/pctBase*100) : 0;
-    const barPct = Math.min(Math.max(pct, 0), 100);
-    const safeCat = esc(cat);
+  cats.forEach(([cat, data], idx)=>{
+    const pct = total ? (data.sum / total * 100) : 0;
     const rowId = `bd_${idx}`;
-
-    html += `
-      <tr class="breakdown-cat-row" data-bd-cat="${safeCat}" data-bd-row="${rowId}" role="button" tabindex="0">
-        <td class="bd-cat">
-          <span class="bd-toggle" aria-hidden="true">▸</span>
-          <span class="bd-cat-name">${safeCat}</span>
-          <span class="bd-count">(${(byCategory[cat]?.items?.length||0)})</span>
-        </td>
-        <td class="bd-sum">${fmtILS(sum)}</td>
-        <td class="bd-pct">
-          <div class="breakdown-row-bar"><span style="width:${barPct.toFixed(1)}%"></span></div>
-          <div class="muted">${pct.toFixed(1)}%</div>
-        </td>
-      </tr>
-    `;
-
-    // details row (collapsed by default)
-    const items = (byCategory[cat]?.items || []);
-    const detailsRows = items.map(it=>{
-      const ilsTxt = isFinite(it.ils) ? fmtILS(it.ils) : '—';
+    const items = data.items.map((it)=>{
       const when = [it.date, it.time].filter(Boolean).join(' ');
-      const desc = esc((it.desc||'').trim());
-      const cur = esc((it.currency||'').toUpperCase());
+      const desc = esc(it.desc || '');
+      const cur = esc((it.currency || '').toUpperCase());
+      const ilsTxt = isFinite(it.ils) ? `${fmtILS(it.ils)} ILS` : 'ללא המרה';
       return `
-        <tr>
-          <td class="bd-item-desc">
+        <li class="bd-item">
+          <div class="bd-item-desc">
             <div class="bd-item-title">${desc || '<span class="muted">(ללא תיאור)</span>'}</div>
             ${when ? `<div class="muted bd-item-when">${esc(when)}</div>` : ''}
-          </td>
-          <td class="bd-item-amt">${fmtAmt(it.amount)} ${cur}</td>
-          <td class="bd-item-ils">${ilsTxt}</td>
-        </tr>
+          </div>
+          <div class="bd-item-money">
+            <span class="bd-item-amt">${fmtAmt(it.amount)} ${cur}</span>
+            <strong class="bd-item-ils">${ilsTxt}</strong>
+          </div>
+        </li>
       `;
     }).join('');
 
     html += `
-      <tr class="breakdown-details" data-bd-details="${rowId}" aria-hidden="true">
-        <td colspan="3">
-          <div class="bd-details-wrap">
-            <table class="bd-items">
-              <thead>
-                <tr>
-                  <th>הוצאה</th>
-                  <th>סכום</th>
-                  <th>ILS</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${detailsRows || `<tr><td colspan="3" class="muted">אין הוצאות בקטגוריה.</td></tr>`}
-              </tbody>
-            </table>
-          </div>
-        </td>
-      </tr>
+      <article class="breakdown-topic" role="listitem">
+        <button class="breakdown-cat-row" data-bd-row="${rowId}" type="button" aria-expanded="false">
+          <span class="bd-main">
+            <span class="bd-toggle" aria-hidden="true">▸</span>
+            <span class="bd-cat-name">${esc(cat)}</span>
+            <span class="bd-count">${data.items.length} הוצאות</span>
+          </span>
+          <span class="bd-metrics">
+            <strong>${fmtILS(data.sum)} ILS</strong>
+            <span class="muted">${pct.toFixed(1)}%</span>
+          </span>
+          <span class="breakdown-row-bar" aria-hidden="true"><span style="width:${Math.min(Math.max(pct, 0), 100).toFixed(1)}%"></span></span>
+        </button>
+        <div class="breakdown-details" data-bd-details="${rowId}" aria-hidden="true">
+          <ul class="bd-items">${items}</ul>
+        </div>
+      </article>
     `;
   });
 
-  html += `
-      <tr>
-        <td class="breakdown-total">סה"כ</td>
-        <td class="breakdown-total">${fmtILS(total)}</td>
-        <td></td>
-      </tr>
-      </tbody>
-    </table>
-  `;
+  html += `</div></section>`;
 
   if(unconverted.length){
-    const byCur = {};
-    unconverted.forEach(u=>{ byCur[u.currency] = (byCur[u.currency]||0) + Number(u.amount||0); });
-    const parts = Object.entries(byCur).map(([c,s])=>`${c}: ${fmtAmt(s)}`);
     html += `
       <div class="breakdown-warning" dir="rtl">
-        <div>שימו לב: יש ${unconverted.length} הוצאות ללא שער המרה ל-ILS. הן מוצגות כאן כדי ששום הוצאה לא תיעלם.</div>
-        <div class="muted">סיכום לפי מטבע: ${parts.join(' , ')}</div>
-      </div>
-      <div class="breakdown-missing" dir="rtl">
-        <div class="breakdown-missing-title">הוצאות ללא המרה</div>
-        <table class="breakdown-missing-table">
-          <thead><tr><th>קטגוריה</th><th>סכום</th><th>מטבע</th><th>תיאור</th></tr></thead>
-          <tbody>
-            ${unconverted.map(u=>`
-              <tr>
-                <td>${esc(u.category||'')}</td>
-                <td>${fmtAmt(u.amount)}</td>
-                <td>${esc(u.currency||'')}</td>
-                <td class="muted">${esc(u.desc||'')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <strong>יש ${unconverted.length} הוצאות ללא שער המרה ל-ILS.</strong>
+        <div class="muted">הן לא נספרו בסך השולם אך נשמרות ברשימת ההוצאות.</div>
       </div>
     `;
   }
 
   el.innerHTML = html;
 
-  // One-time delegation: toggle category details on click/Enter/Space
-  if(!el.dataset.bdBound){
-    const toggleRow = (row)=>{
-      const rowId = row?.dataset?.bdRow;
-      if(!rowId) return;
-      // Robust: rely on DOM adjacency instead of CSS.escape/querySelector
-      // (some layouts/tables can make querySelector brittle).
-      const details = row.nextElementSibling;
-      if(!details || !details.classList.contains('breakdown-details')) return;
-      const isOpen = details.classList.contains('open');
-      details.classList.toggle('open', !isOpen);
-      details.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
-      row.classList.toggle('open', !isOpen);
-      const icon = row.querySelector('.bd-toggle');
-      if(icon) icon.textContent = isOpen ? '▸' : '▾';
-    };
-
+  if(!el.dataset.bdAccordionBound){
     el.addEventListener('click', (ev)=>{
       const row = ev.target?.closest?.('.breakdown-cat-row');
-      if(row && el.contains(row)) toggleRow(row);
+      if(!row || !el.contains(row)) return;
+      const topic = row.closest('.breakdown-topic');
+      const details = topic?.querySelector(`.breakdown-details[data-bd-details="${row.dataset.bdRow}"]`);
+      if(!details) return;
+      const isOpen = details.classList.toggle('open');
+      details.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      row.classList.toggle('open', isOpen);
+      row.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      const icon = row.querySelector('.bd-toggle');
+      if(icon) icon.textContent = isOpen ? '▾' : '▸';
     });
-
-    el.addEventListener('keydown', (ev)=>{
-      if(ev.key !== 'Enter' && ev.key !== ' ') return;
-      const row = ev.target?.closest?.('.breakdown-cat-row');
-      if(row && el.contains(row)){
-        ev.preventDefault();
-        toggleRow(row);
-      }
-    });
-
-    el.dataset.bdBound = '1';
+    el.dataset.bdAccordionBound = '1';
   }
 }
 
 
 // === Bind "סיכום פילוח" button reliably ===
 (function(){
+  function forceBreakdownDialogLayout(dlg){
+    if(!dlg) return;
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 820px)').matches;
+    dlg.classList.toggle('breakdown-sheet', !!isMobile);
+
+    const set = (prop, value)=> dlg.style.setProperty(prop, value, 'important');
+    const clear = (prop)=> dlg.style.removeProperty(prop);
+
+    if(!isMobile){
+      ['position','inset','top','right','bottom','left','margin','width','max-width','height','max-height','transform','overflow']
+        .forEach(clear);
+      return;
+    }
+
+    set('position', 'fixed');
+    set('top', 'calc(8px + env(safe-area-inset-top, 0px))');
+    set('right', '8px');
+    set('bottom', 'calc(8px + env(safe-area-inset-bottom, 0px))');
+    set('left', '8px');
+    set('inset', 'calc(8px + env(safe-area-inset-top, 0px)) 8px calc(8px + env(safe-area-inset-bottom, 0px)) 8px');
+    set('margin', '0');
+    set('width', 'calc(100vw - 16px)');
+    set('max-width', 'calc(100vw - 16px)');
+    set('height', 'calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))');
+    set('max-height', 'calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))');
+    set('transform', 'none');
+    set('overflow', 'hidden');
+  }
+
   function openBreakdown(){
     const dlg = document.getElementById('breakdownDialog');
     if(!dlg) return;
@@ -8006,14 +7947,22 @@ function renderCategoryBreakdownNode(targetId){
       renderCategoryBreakdownNode('categoryBreakdownDialog');
     }
     try{
-      if(dlg.open) return;
-      if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+      if(!dlg.open){
+        if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+      }
+      forceBreakdownDialogLayout(dlg);
     }catch(err){
       // Fallback for browsers / edge cases
       try{ dlg.setAttribute('open',''); }catch(_){ }
+      forceBreakdownDialogLayout(dlg);
     }
   }
-  function closeBreakdown(){ document.getElementById('breakdownDialog')?.close(); }
+  function closeBreakdown(){
+    const dlg = document.getElementById('breakdownDialog');
+    if(!dlg) return;
+    dlg.close();
+    dlg.classList.remove('breakdown-sheet');
+  }
 
   function bindOnce(){
     const btn = document.getElementById('openBreakdownBtn');

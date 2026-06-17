@@ -4,6 +4,233 @@
   --glass: color-mix(in oklab, var(--card) 78%, transparent);
 }
 
+/* Canonical category breakdown sheet. Overrides older table-based styles. */
+#breakdownDialog.breakdown-sheet,
+#breakdownDialog.breakdown-sheet[open]{
+  display:grid !important;
+  grid-template-rows:auto minmax(0, 1fr) !important;
+}
+
+#breakdownDialog.breakdown-sheet .header{
+  position:sticky !important;
+  top:0 !important;
+  z-index:2 !important;
+  display:grid !important;
+  grid-template-columns:minmax(0, 1fr) auto !important;
+  align-items:center !important;
+  gap:10px !important;
+  padding:14px !important;
+  border-bottom:1px solid var(--border, #dbe4ef) !important;
+  background:var(--card, #fff) !important;
+}
+
+#breakdownDialog.breakdown-sheet .header h3{
+  margin:0 !important;
+  font-size:1.22rem !important;
+  line-height:1.25 !important;
+  overflow-wrap:anywhere !important;
+}
+
+#breakdownDialog.breakdown-sheet #closeBreakdownDlg{
+  min-width:88px !important;
+  min-height:42px !important;
+  border:2px solid var(--brand, #1a73ff) !important;
+  border-radius:9999px !important;
+  background:#fff !important;
+  font-weight:800 !important;
+}
+
+#breakdownDialog.breakdown-sheet .body{
+  min-height:0 !important;
+  max-height:none !important;
+  padding:14px !important;
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+.breakdown-panel{
+  display:grid;
+  gap:14px;
+}
+
+.breakdown-head{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:10px;
+  margin:0;
+}
+
+.breakdown-kicker{
+  font-size:1rem;
+  font-weight:800;
+  line-height:1.25;
+}
+
+.breakdown-note{
+  margin-top:4px;
+  font-size:.92rem;
+  color:var(--muted, #6b7280);
+}
+
+.breakdown-total-pill{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border:1px solid var(--border, #dbe4ef);
+  border-radius:14px;
+  background:color-mix(in oklab, var(--brand, #1a73ff) 6%, var(--card, #fff));
+}
+
+.breakdown-total-pill span{
+  color:var(--muted, #6b7280);
+  font-size:.82rem;
+  font-weight:600;
+}
+
+.breakdown-total-pill strong{
+  white-space:nowrap;
+}
+
+.breakdown-accordion{
+  display:grid;
+  gap:10px;
+}
+
+.breakdown-topic{
+  border:1px solid var(--border, #dbe4ef);
+  border-radius:16px;
+  background:var(--card, #fff);
+  overflow:hidden;
+}
+
+.breakdown-cat-row{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:8px;
+  align-items:center;
+  padding:13px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--ink, #0e1116);
+  text-align:inherit;
+}
+
+.breakdown-cat-row.open{
+  background:color-mix(in oklab, var(--brand, #1a73ff) 5%, transparent);
+}
+
+.bd-main{
+  min-width:0;
+  display:flex;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.bd-toggle{
+  flex:0 0 auto;
+  color:var(--muted, #6b7280);
+}
+
+.bd-cat-name{
+  min-width:0;
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+
+.bd-count{
+  color:var(--muted, #6b7280);
+  font-size:.85rem;
+  font-weight:600;
+}
+
+.bd-metrics{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:center;
+}
+
+.breakdown-row-bar{
+  height:9px;
+  background:color-mix(in oklab, var(--brand, #1a73ff) 20%, transparent);
+  border-radius:9999px;
+  overflow:hidden;
+}
+
+.breakdown-row-bar>span{
+  display:block;
+  height:100%;
+  background:var(--brand, #1a73ff);
+}
+
+.breakdown-details{
+  display:none;
+  border-top:1px solid var(--border, #dbe4ef);
+  background:color-mix(in oklab, var(--card, #fff) 94%, var(--brand, #1a73ff) 6%);
+}
+
+.breakdown-details.open{
+  display:block;
+}
+
+.bd-items{
+  display:grid;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.bd-item{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:8px;
+  padding:12px 14px;
+  border-bottom:1px dashed color-mix(in oklab, var(--border, #dbe4ef) 75%, transparent);
+}
+
+.bd-item:last-child{
+  border-bottom:0;
+}
+
+.bd-item-title{
+  font-weight:500;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+
+.bd-item-when{
+  margin-top:3px;
+  font-size:.85rem;
+}
+
+.bd-item-money{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:center;
+}
+
+.bd-item-amt{
+  color:var(--muted, #6b7280);
+  font-size:.9rem;
+}
+
+.bd-item-ils{
+  font-weight:800;
+}
+
+.breakdown-empty{
+  padding:16px;
+  border:1px solid var(--border, #dbe4ef);
+  border-radius:16px;
+  background:var(--card, #fff);
+}
+
 /* === FINAL FIXED RTL TIMELINE COLUMNS === */
 @media (min-width: 821px){
   #view-overview #tblAllTimeline tr.exp-item[data-kind="expense"]:not(.exp-details){
