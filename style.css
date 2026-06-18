@@ -5,7 +5,6 @@
 }
 
 /* Canonical category breakdown sheet. Overrides older table-based styles. */
-#breakdownDialog.breakdown-sheet,
 #breakdownDialog.breakdown-sheet[open]{
   display:grid !important;
   grid-template-rows:auto minmax(0, 1fr) !important;
@@ -18494,8 +18493,8 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
 
 /* Final mobile override for the category breakdown dialog. */
 @media (max-width: 640px){
-  html body #breakdownDialog.modal,
-  html body.mobile-ui #breakdownDialog.modal,
+  html body #breakdownDialog.modal[open],
+  html body.mobile-ui #breakdownDialog.modal[open],
   html body.mobile-ui dialog#breakdownDialog.modal[open]{
     width:calc(100vw - 20px) !important;
     max-width:calc(100vw - 20px) !important;
@@ -18505,8 +18504,8 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     border-radius:18px !important;
   }
 
-  html body #breakdownDialog .header,
-  html body.mobile-ui #breakdownDialog .header{
+  html body #breakdownDialog.modal[open] .header,
+  html body.mobile-ui #breakdownDialog.modal[open] .header{
     display:grid !important;
     grid-template-columns:minmax(0,1fr) auto !important;
     gap:10px !important;
@@ -18514,16 +18513,16 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     padding:12px 14px !important;
   }
 
-  html body #breakdownDialog .header h3,
-  html body.mobile-ui #breakdownDialog .header h3{
+  html body #breakdownDialog.modal[open] .header h3,
+  html body.mobile-ui #breakdownDialog.modal[open] .header h3{
     margin:0 !important;
     font-size:20px !important;
     line-height:1.2 !important;
     overflow-wrap:anywhere !important;
   }
 
-  html body #breakdownDialog #closeBreakdownDlg,
-  html body.mobile-ui #breakdownDialog #closeBreakdownDlg{
+  html body #breakdownDialog.modal[open] #closeBreakdownDlg,
+  html body.mobile-ui #breakdownDialog.modal[open] #closeBreakdownDlg{
     min-width:74px !important;
     min-height:40px !important;
     padding:8px 14px !important;
@@ -18533,8 +18532,8 @@ html body .expenses-table tr.exp-item[data-kind="expense"]:not(.exp-details) .ex
     font-weight:700 !important;
   }
 
-  html body #breakdownDialog .body,
-  html body.mobile-ui #breakdownDialog .body{
+  html body #breakdownDialog.modal[open] .body,
+  html body.mobile-ui #breakdownDialog.modal[open] .body{
     flex:1 1 auto !important;
     display:block !important;
     padding:12px 14px 16px !important;

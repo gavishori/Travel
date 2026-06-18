@@ -7911,6 +7911,25 @@ function renderCategoryBreakdownNode(targetId){
 
 // === Bind "סיכום פילוח" button reliably ===
 (function(){
+  function clearBreakdownDialogLayout(dlg){
+    if(!dlg) return;
+    dlg.classList.remove('breakdown-sheet');
+    ['position','inset','top','right','bottom','left','margin','width','max-width','height','max-height','transform','overflow']
+      .forEach((prop)=> dlg.style.removeProperty(prop));
+  }
+
+  function closeStaleBreakdownOnStartup(){
+    const dlg = document.getElementById('breakdownDialog');
+    if(!dlg || dlg.dataset.userOpened === '1') return;
+    try{
+      if(dlg.open) dlg.close();
+      dlg.removeAttribute('open');
+    }catch(_){
+      try{ dlg.removeAttribute('open'); }catch(__){}
+    }
+    clearBreakdownDialogLayout(dlg);
+  }
+
   function forceBreakdownDialogLayout(dlg){
     if(!dlg) return;
     const isMobile = window.matchMedia && window.matchMedia('(max-width: 820px)').matches;
@@ -7940,9 +7959,10 @@ function renderCategoryBreakdownNode(targetId){
     set('overflow', 'hidden');
   }
 
-  function openBreakdown(){
+  function openBreakdown(userInitiated=false){
     const dlg = document.getElementById('breakdownDialog');
     if(!dlg) return;
+    if(userInitiated) dlg.dataset.userOpened = '1';
     if (typeof renderCategoryBreakdownNode === 'function'){
       renderCategoryBreakdownNode('categoryBreakdownDialog');
     }
@@ -7961,14 +7981,15 @@ function renderCategoryBreakdownNode(targetId){
     const dlg = document.getElementById('breakdownDialog');
     if(!dlg) return;
     dlg.close();
-    dlg.classList.remove('breakdown-sheet');
+    delete dlg.dataset.userOpened;
+    clearBreakdownDialogLayout(dlg);
   }
 
   function bindOnce(){
     const btn = document.getElementById('openBreakdownBtn');
     if(btn && !btn.dataset.bound){
       btn.type = btn.type || 'button';
-      btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openBreakdown(); });
+      btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openBreakdown(true); });
       btn.dataset.bound = '1';
     }
     const closeBtn = document.getElementById('closeBreakdownDlg');
@@ -7994,6 +8015,11 @@ function renderCategoryBreakdownNode(targetId){
 
   // Bind now + keep trying (handles dynamic DOM)
   document.addEventListener('DOMContentLoaded', ()=>{
+    closeStaleBreakdownOnStartup();
+    setTimeout(closeStaleBreakdownOnStartup, 80);
+    setTimeout(closeStaleBreakdownOnStartup, 350);
+    setTimeout(closeStaleBreakdownOnStartup, 1000);
+    window.addEventListener('pageshow', closeStaleBreakdownOnStartup);
     // Expose for other UI entry points (e.g., Overview quick toolbar)
     try{ window.__openBreakdownDialog = openBreakdown; }catch(_){ }
 
@@ -8005,7 +8031,7 @@ function renderCategoryBreakdownNode(targetId){
         if(!t) return;
         e.preventDefault();
         e.stopPropagation();
-        openBreakdown();
+        openBreakdown(true);
       }, true);
       document.documentElement.dataset.bdGlobalBound = '1';
     }
@@ -8028,7 +8054,7 @@ function renderCategoryBreakdownNode(targetId){
     e.preventDefault();
     e.stopPropagation();
     if (typeof window.__openBreakdownDialog === 'function'){
-      window.__openBreakdownDialog();
+      window.__openBreakdownDialog(true);
       return;
     }
     const dlgBtn = document.getElementById('openBreakdownBtn');
