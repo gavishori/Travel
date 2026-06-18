@@ -4728,14 +4728,30 @@ function getCurrentLocationOnce(){
       if(!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
       const range = sel.getRangeAt(0).cloneRange();
       range.collapse(false);
-      const caret = range.getBoundingClientRect();
+      let caret = range.getBoundingClientRect();
+      const atEndRange = document.createRange();
+      atEndRange.selectNodeContents(editor);
+      atEndRange.collapse(false);
+      const atEnd = range.compareBoundaryPoints(Range.START_TO_START, atEndRange) >= 0;
+      if((!caret || (!caret.width && !caret.height)) && sel.isCollapsed){
+        const marker = document.createElement('span');
+        marker.textContent = '\u200b';
+        marker.style.cssText = 'display:inline-block;width:1px;height:1em;overflow:hidden;line-height:1;vertical-align:baseline;';
+        range.insertNode(marker);
+        caret = marker.getBoundingClientRect();
+        marker.remove();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
       const box = editor.getBoundingClientRect();
       if(!caret || !box || !box.height) return;
-      const pad = 18;
+      const pad = atEnd ? 86 : 18;
       if(caret.bottom > box.bottom - pad){
         editor.scrollTop += caret.bottom - box.bottom + pad;
       }else if(caret.top < box.top + pad){
         editor.scrollTop -= box.top - caret.top + pad;
+      }else if(atEnd){
+        editor.scrollTop = editor.scrollHeight;
       }
     }catch(_){ }
   };
@@ -4749,8 +4765,11 @@ function getCurrentLocationOnce(){
   window.__fixMobileRtfEditors = tuneAll;
   document.addEventListener('DOMContentLoaded', tuneAll);
   document.addEventListener('focusin', schedule);
+  document.addEventListener('beforeinput', schedule);
   document.addEventListener('input', schedule);
   document.addEventListener('keyup', schedule);
+  document.addEventListener('paste', schedule);
+  document.addEventListener('compositionend', schedule);
   document.addEventListener('mouseup', schedule);
   document.addEventListener('touchend', schedule, {passive:true});
 })();

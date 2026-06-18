@@ -243,6 +243,21 @@
         grid-template-rows:40px minmax(62px, 1fr) 38px !important;
       }
 
+      html body dialog#journalModal #jrText.input.rtf,
+      body.mobile-ui dialog#journalModal #jrText.input.rtf{
+        overflow-x:hidden !important;
+        overflow-y:auto !important;
+        -webkit-overflow-scrolling:touch !important;
+        overscroll-behavior:contain !important;
+        touch-action:pan-y !important;
+        min-height:0 !important;
+        max-height:none !important;
+        padding-bottom:96px !important;
+        scroll-padding-block:18px 104px !important;
+        user-select:text !important;
+        -webkit-user-select:text !important;
+      }
+
       html body dialog#expenseModal .body > .expense-meta-row,
       html body #expenseModal .expense-meta-row,
       body.mobile-ui dialog#expenseModal .body > .expense-meta-row,
