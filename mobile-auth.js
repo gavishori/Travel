@@ -67,6 +67,7 @@
     root.style.setProperty('--mobile-keyboard-space', px(keyboardSpace));
     root.style.setProperty('--mobile-editor-height', px(editorHeight));
     document.body.classList.toggle('mobile-ui', isMobile());
+    document.body.classList.toggle('mobile-editor-redesign', isMobile());
     document.body.classList.toggle('keyboard-open', keyboardSpace > 80);
     updateFixedHeaderVars();
   }

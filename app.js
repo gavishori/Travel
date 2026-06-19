@@ -3918,6 +3918,7 @@ function syncExpenseMobileDateField(){
 }
 
 function lockExpenseMetaRowInline(){
+  if(document.body?.classList?.contains('mobile-editor-redesign')) return;
   if(!isMobileViewport()) return;
   const row = document.querySelector('#expenseModal .expense-meta-row');
   const dateCol = document.querySelector('#expenseModal .expense-meta-row > .exp-date-col');
@@ -4704,10 +4705,21 @@ function getCurrentLocationOnce(){
     try{
       if(!editor || !editor.matches(editorSelector)) return;
       const set = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
+      editor.style.removeProperty('resize');
+      if(document.body?.classList?.contains('mobile-editor-redesign')){
+        editor.style.removeProperty('height');
+        editor.style.removeProperty('min-height');
+        editor.style.removeProperty('max-height');
+        set(editor, 'overflow-y', 'visible');
+        set(editor, 'overflow-x', 'hidden');
+        set(editor, 'touch-action', 'manipulation');
+        set(editor, 'white-space', 'pre-wrap');
+        set(editor, 'overflow-wrap', 'anywhere');
+        return;
+      }
       editor.style.removeProperty('height');
       editor.style.removeProperty('min-height');
       editor.style.removeProperty('max-height');
-      editor.style.removeProperty('resize');
       set(editor, 'overflow-y', 'auto');
       set(editor, 'overflow-x', 'hidden');
       set(editor, '-webkit-overflow-scrolling', 'touch');
@@ -9714,7 +9726,7 @@ window.addEventListener('resize', ()=>{
 
 /* === exact mobile modal layout v2 === */
 (function(){
-  const MODAL_IDS = ['tripModal','expenseModal','journalModal'];
+  const MODAL_IDS = ['tripModal'];
 
   function isMobile(){
     return window.innerWidth <= 820;
