@@ -3929,31 +3929,31 @@ function lockExpenseMetaRowInline(){
   if(!row || !dateCol || !timeCol || !locCol) return;
   const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
   [
-    ['display','grid'], ['grid-template-columns','128px 66px 60px'], ['grid-template-rows','34px'],
-    ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','start'], ['justify-content','end'],
-    ['column-gap','6px'], ['row-gap','0'], ['height','34px'], ['min-height','34px'], ['max-height','34px'],
+    ['display','grid'], ['grid-template-columns','minmax(136px,1fr) 104px 72px'], ['grid-template-rows','40px'],
+    ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','center'], ['justify-content','stretch'],
+    ['column-gap','6px'], ['row-gap','0'], ['height','40px'], ['min-height','40px'], ['max-height','40px'],
     ['overflow','visible'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
   ].forEach(([p,v])=> imp(row,p,v));
-  [[dateCol,'1','128px','128px','128px','34px'], [timeCol,'2','66px','66px','66px','34px'], [locCol,'3','60px','60px','60px','34px']].forEach(([el,col,w,minW,maxW,h])=>{
+  [[dateCol,'1','100%','0','100%','40px'], [timeCol,'2','104px','104px','104px','40px'], [locCol,'3','72px','72px','72px','40px']].forEach(([el,col,w,minW,maxW,h])=>{
     imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',minW); imp(el,'max-width',maxW);
     imp(el,'height',h); imp(el,'min-height',h); imp(el,'max-height',h); imp(el,'margin','0'); imp(el,'overflow','hidden');
     imp(el,'font-size','0'); imp(el,'line-height','0'); imp(el,'gap','0'); imp(el,'padding','0');
   });
   imp(timeCol,'overflow','visible');
   imp(dateCol,'justify-self','stretch');
-  imp(dateCol,'align-self','start');
-  imp(timeCol,'align-self','start');
-  imp(locCol,'justify-self','start');
+  imp(dateCol,'align-self','center');
+  imp(timeCol,'align-self','center');
+  imp(locCol,'justify-self','stretch');
   [date,time].forEach((el)=>{
-    imp(el,'height','32px'); imp(el,'min-height','32px'); imp(el,'max-height','32px'); imp(el,'font-size','16px');
+    imp(el,'height','36px'); imp(el,'min-height','36px'); imp(el,'max-height','36px'); imp(el,'font-size','16px');
     imp(el,'text-align','center'); imp(el,'direction','ltr'); imp(el,'width','100%'); imp(el,'max-width','100%');
-    imp(el,'line-height','1'); imp(el,'padding','4px 6px'); imp(el,'border','1px solid #d9e1ea');
-    imp(el,'border-radius','9px'); imp(el,'background','#fff'); imp(el,'box-shadow','none');
+    imp(el,'line-height','1.2'); imp(el,'padding','5px 6px'); imp(el,'border','1px solid #d9e1ea');
+    imp(el,'border-radius','10px'); imp(el,'background','#fff'); imp(el,'box-shadow','none');
     imp(el,'transform','none'); imp(el,'margin','0');
   });
-  imp(locBtn,'width','60px'); imp(locBtn,'min-width','60px'); imp(locBtn,'max-width','60px');
-  imp(locBtn,'height','32px'); imp(locBtn,'min-height','32px'); imp(locBtn,'max-height','32px');
-  imp(locBtn,'padding','0'); imp(locBtn,'border','1px solid #d9e1ea'); imp(locBtn,'border-radius','9px');
+  imp(locBtn,'width','72px'); imp(locBtn,'min-width','72px'); imp(locBtn,'max-width','72px');
+  imp(locBtn,'height','36px'); imp(locBtn,'min-height','36px'); imp(locBtn,'max-height','36px');
+  imp(locBtn,'padding','0'); imp(locBtn,'border','1px solid #d9e1ea'); imp(locBtn,'border-radius','10px');
   imp(locBtn,'background','#fff'); imp(locBtn,'box-shadow','none');
 }
 
