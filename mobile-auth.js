@@ -95,8 +95,17 @@
 
   function normalizeOpenDialogs(){
     updateViewportVars();
+    if (isEditingRichText()) {
+      markOpenEditorDialog();
+      return;
+    }
     ALL_DIALOG_IDS.forEach((id) => normalizeDialog(document.getElementById(id)));
     markOpenEditorDialog();
+  }
+
+  function isEditingRichText(){
+    const active = document.activeElement;
+    return !!(active && active.closest && active.closest('#expText, #jrText'));
   }
 
   function removeHorizontalOverflow(){
@@ -155,9 +164,50 @@
       el.dataset.mobileKeyboardWired = '1';
       el.addEventListener('focus', () => {
         updateViewportVars();
-        normalizeDialog(el.closest('dialog'));
+        if (!el.closest('#expText, #jrText')) normalizeDialog(el.closest('dialog'));
       }, { passive: true });
       el.addEventListener('blur', () => setTimeout(normalizeOpenDialogs, 80), { passive: true });
+    });
+  }
+
+  function keepActiveEditorCaretVisible(){
+    if (!isMobile()) return;
+    const editor = document.activeElement;
+    if (!editor || !editor.matches?.('#expText, #jrText')) return;
+    const sel = window.getSelection?.();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) return;
+    const editorRect = editor.getBoundingClientRect();
+    let caretRect = range.getBoundingClientRect();
+    if (!caretRect || (!caretRect.height && !caretRect.width)) {
+      const clone = range.cloneRange();
+      const marker = document.createElement('span');
+      marker.textContent = '\u200b';
+      marker.style.cssText = 'display:inline-block;width:1px;height:1em;overflow:hidden;';
+      clone.insertNode(marker);
+      caretRect = marker.getBoundingClientRect();
+      marker.remove();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    const bottomSlack = 84;
+    if (caretRect.bottom > editorRect.bottom - bottomSlack) {
+      editor.scrollTop += caretRect.bottom - (editorRect.bottom - bottomSlack);
+    } else if (caretRect.top < editorRect.top + 18) {
+      editor.scrollTop -= (editorRect.top + 18) - caretRect.top;
+    }
+  }
+
+  function wireRichTextCaretScroll(){
+    ['expText', 'jrText'].forEach((id) => {
+      const editor = document.getElementById(id);
+      if (!editor || editor.dataset.mobileCaretScrollWired) return;
+      editor.dataset.mobileCaretScrollWired = '1';
+      const schedule = () => requestAnimationFrame(keepActiveEditorCaretVisible);
+      ['focus', 'click', 'keyup', 'input', 'touchend'].forEach((eventName) => {
+        editor.addEventListener(eventName, schedule, { passive: true });
+      });
     });
   }
 
@@ -181,6 +231,7 @@
     updateViewportVars();
     wireDialogEvents();
     wireEditorFocus();
+    wireRichTextCaretScroll();
     patchShowModal();
     normalizeOpenDialogs();
     scheduleRemoveHorizontalOverflow(300);
@@ -209,6 +260,7 @@
     const observer = new MutationObserver(() => {
       wireDialogEvents();
       wireEditorFocus();
+      wireRichTextCaretScroll();
       normalizeOpenDialogs();
       scheduleRemoveHorizontalOverflow(180);
     });

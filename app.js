@@ -3929,12 +3929,12 @@ function lockExpenseMetaRowInline(){
   if(!row || !dateCol || !timeCol || !locCol) return;
   const imp = (el, prop, value)=> el?.style?.setProperty(prop, value, 'important');
   [
-    ['display','grid'], ['grid-template-columns','minmax(136px,1fr) 104px 72px'], ['grid-template-rows','40px'],
+    ['display','grid'], ['grid-template-columns','minmax(0,1fr) clamp(82px,25vw,96px) clamp(52px,16vw,64px)'], ['grid-template-rows','40px'],
     ['grid-auto-rows','0'], ['grid-auto-flow','unset'], ['align-items','center'], ['justify-content','stretch'],
     ['column-gap','6px'], ['row-gap','0'], ['height','40px'], ['min-height','40px'], ['max-height','40px'],
     ['overflow','visible'], ['direction','rtl'], ['width','100%'], ['max-width','100%']
   ].forEach(([p,v])=> imp(row,p,v));
-  [[dateCol,'1','100%','0','100%','40px'], [timeCol,'2','104px','104px','104px','40px'], [locCol,'3','72px','72px','72px','40px']].forEach(([el,col,w,minW,maxW,h])=>{
+  [[dateCol,'1','100%','0','100%','40px'], [timeCol,'2','100%','0','100%','40px'], [locCol,'3','100%','0','100%','40px']].forEach(([el,col,w,minW,maxW,h])=>{
     imp(el,'grid-column',col); imp(el,'grid-row','1'); imp(el,'width',w); imp(el,'min-width',minW); imp(el,'max-width',maxW);
     imp(el,'height',h); imp(el,'min-height',h); imp(el,'max-height',h); imp(el,'margin','0'); imp(el,'overflow','hidden');
     imp(el,'font-size','0'); imp(el,'line-height','0'); imp(el,'gap','0'); imp(el,'padding','0');
@@ -3951,7 +3951,7 @@ function lockExpenseMetaRowInline(){
     imp(el,'border-radius','10px'); imp(el,'background','#fff'); imp(el,'box-shadow','none');
     imp(el,'transform','none'); imp(el,'margin','0');
   });
-  imp(locBtn,'width','72px'); imp(locBtn,'min-width','72px'); imp(locBtn,'max-width','72px');
+  imp(locBtn,'width','100%'); imp(locBtn,'min-width','0'); imp(locBtn,'max-width','100%');
   imp(locBtn,'height','36px'); imp(locBtn,'min-height','36px'); imp(locBtn,'max-height','36px');
   imp(locBtn,'padding','0'); imp(locBtn,'border','1px solid #d9e1ea'); imp(locBtn,'border-radius','10px');
   imp(locBtn,'background','#fff'); imp(locBtn,'box-shadow','none');
@@ -4750,8 +4750,6 @@ function getCurrentLocationOnce(){
         editor.scrollTop += caret.bottom - box.bottom + pad;
       }else if(caret.top < box.top + pad){
         editor.scrollTop -= box.top - caret.top + pad;
-      }else if(atEnd){
-        editor.scrollTop = editor.scrollHeight;
       }
     }catch(_){ }
   };
@@ -4765,7 +4763,6 @@ function getCurrentLocationOnce(){
   window.__fixMobileRtfEditors = tuneAll;
   document.addEventListener('DOMContentLoaded', tuneAll);
   document.addEventListener('focusin', schedule);
-  document.addEventListener('beforeinput', schedule);
   document.addEventListener('input', schedule);
   document.addEventListener('keyup', schedule);
   document.addEventListener('paste', schedule);
@@ -9756,6 +9753,7 @@ window.addEventListener('resize', ()=>{
 
   function applyModalLayout(dlg){
     if(!dlg || !dlg.open || !isMobile()) return;
+    if(isEditingRichTextInModal(dlg)) return;
     updateBaseHeight();
     const vp = currentViewport();
     const baseH = window.__exactModalBaseHeight || Math.max(window.innerHeight || 0, vp.height + vp.top);
@@ -9798,8 +9796,15 @@ window.addEventListener('resize', ()=>{
   }
 
   function refreshOpenModals(){
+    if(isEditingRichTextInModal()) return;
     MODAL_IDS.forEach((id)=> applyModalLayout(document.getElementById(id)));
     try{ lockExpenseMetaRowInline(); }catch(_){ }
+  }
+
+  function isEditingRichTextInModal(dlg){
+    const active = document.activeElement;
+    if(!active || !active.matches?.('#expText, #jrText')) return false;
+    return dlg ? dlg.contains(active) : true;
   }
 
   function wireDialog(dlg){
