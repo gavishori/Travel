@@ -1032,6 +1032,25 @@
       }
     }
   </style>
+  <style id="mobile-journal-two-targeted-adjustments">
+    @media (max-width:820px){
+      html body.mobile-ui dialog#journalModal #jrDelete,
+      html body dialog#journalModal #jrDelete{
+        display:none!important;
+      }
+
+      html body.mobile-ui dialog#journalModal>.footer,
+      html body dialog#journalModal>.footer{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      }
+
+      html body.mobile-ui dialog#journalModal .body>.journal-meta-row,
+      html body dialog#journalModal .body>.journal-meta-row{
+        grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 44px!important;
+        justify-content:start!important;
+      }
+    }
+  </style>
 </head>
 <body data-theme="light">
     
