@@ -1048,12 +1048,14 @@
       html body dialog#journalModal .body>.journal-meta-row{
         grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 76px!important;
         justify-content:space-between!important;
+        position:relative!important;
       }
 
       html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-location-col,
       html body dialog#journalModal .journal-meta-row>.jr-location-col{
         width:76px!important;min-width:76px!important;max-width:76px!important;
-        justify-self:stretch!important;
+        position:absolute!important;left:0!important;right:auto!important;bottom:0!important;
+        justify-self:auto!important;
       }
 
       html body.mobile-ui dialog#journalModal #btnEditJrLocation,
