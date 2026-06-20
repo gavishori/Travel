@@ -1046,8 +1046,20 @@
 
       html body.mobile-ui dialog#journalModal .body>.journal-meta-row,
       html body dialog#journalModal .body>.journal-meta-row{
-        grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 44px!important;
-        justify-content:start!important;
+        grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 76px!important;
+        justify-content:space-between!important;
+      }
+
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-location-col,
+      html body dialog#journalModal .journal-meta-row>.jr-location-col{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        justify-self:stretch!important;
+      }
+
+      html body.mobile-ui dialog#journalModal #btnEditJrLocation,
+      html body dialog#journalModal #btnEditJrLocation{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        transform:none!important;
       }
     }
   </style>

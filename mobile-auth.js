@@ -206,7 +206,10 @@
       if (!editor || editor.dataset.mobileCaretScrollWired) return;
       editor.dataset.mobileCaretScrollWired = '1';
       const schedule = () => requestAnimationFrame(keepActiveEditorCaretVisible);
-      ['focus', 'click', 'keyup', 'input', 'touchend'].forEach((eventName) => {
+      const events = id === 'jrText'
+        ? ['focus', 'click', 'keyup', 'input']
+        : ['focus', 'click', 'keyup', 'input', 'touchend'];
+      events.forEach((eventName) => {
         editor.addEventListener(eventName, schedule, { passive: true });
       });
     });
