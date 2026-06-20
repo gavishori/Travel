@@ -712,6 +712,180 @@
     }
   </style>
 
+  <style id="mobile-expense-editor-half-screen-live">
+    @media (max-width:820px){
+      html body.mobile-ui dialog#expenseModal.modal[open],
+      html body dialog#expenseModal.modal[open]{
+        position:fixed!important;top:calc(var(--vv-top,0px) + 4px)!important;right:6px!important;bottom:auto!important;left:6px!important;
+        width:auto!important;max-width:calc(100vw - 12px)!important;height:calc(var(--vvh,100dvh) - 8px)!important;
+        min-height:0!important;max-height:calc(var(--vvh,100dvh) - 8px)!important;margin:0!important;transform:none!important;
+        display:grid!important;grid-template-rows:32px minmax(0,1fr) 54px!important;overflow:hidden!important;
+        border:1px solid #dfe5ec!important;border-radius:16px!important;background:#fff!important;
+      }
+      html body.mobile-ui dialog#expenseModal>header,
+      html body dialog#expenseModal>header{
+        display:flex!important;align-items:center!important;height:32px!important;min-height:32px!important;max-height:32px!important;
+        padding:0 12px!important;border:0!important;border-bottom:1px solid #e7ebf0!important;background:#fff!important;
+      }
+      html body.mobile-ui dialog#expenseModal>header strong,
+      html body dialog#expenseModal>header strong{font-size:.88rem!important;line-height:1!important}
+      html body.mobile-ui dialog#expenseModal>.body,
+      html body dialog#expenseModal>.body{
+        display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+        grid-template-rows:36px 40px 30px minmax(64px,1fr) 44px!important;gap:5px!important;
+        width:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;
+        padding:8px 10px!important;overflow:hidden!important;overscroll-behavior:none!important;background:#f8fafc!important;
+      }
+      html body.mobile-ui dialog#expenseModal>.body>label:has(#expTitle),
+      html body dialog#expenseModal>.body>label:has(#expTitle){
+        grid-column:1!important;grid-row:1!important;display:grid!important;grid-template-columns:50px minmax(0,1fr)!important;
+        grid-template-rows:36px!important;align-items:center!important;gap:7px!important;width:100%!important;min-width:0!important;
+        height:36px!important;margin:0!important;padding:0!important;overflow:visible!important;
+        font-size:.78rem!important;line-height:1!important;font-weight:700!important;color:#334155!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expTitle,
+      html body dialog#expenseModal #expTitle{
+        width:100%!important;min-width:0!important;height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;padding:5px 9px!important;border:1px solid #cfd8e3!important;border-radius:9px!important;
+        background:#fff!important;box-shadow:none!important;font-size:16px!important;line-height:1.15!important;
+      }
+      html body.mobile-ui dialog#expenseModal .expense-main-row,
+      html body dialog#expenseModal .expense-main-row{
+        grid-column:1!important;grid-row:2!important;display:grid!important;
+        grid-template-columns:minmax(0,1fr) 94px 38px!important;grid-template-rows:40px!important;gap:5px!important;
+        width:100%!important;min-width:0!important;height:40px!important;margin:0!important;padding:0!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#expenseModal .expense-main-row>label,
+      html body dialog#expenseModal .expense-main-row>label{
+        display:grid!important;grid-template-rows:10px 28px!important;gap:2px!important;min-width:0!important;height:40px!important;
+        margin:0!important;padding:0!important;font-size:.62rem!important;line-height:10px!important;font-weight:600!important;
+        color:#475569!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#expenseModal .expense-main-row .input,
+      html body.mobile-ui dialog#expenseModal .expense-main-row #expCurrBtn,
+      html body dialog#expenseModal .expense-main-row .input,
+      html body dialog#expenseModal .expense-main-row #expCurrBtn{
+        width:100%!important;min-width:0!important;height:28px!important;min-height:28px!important;max-height:28px!important;
+        margin:0!important;padding:3px 6px!important;border:1px solid #cfd8e3!important;border-radius:8px!important;
+        background:#fff!important;box-shadow:none!important;font-size:15px!important;line-height:1!important;
+      }
+      html body.mobile-ui dialog#expenseModal>.body>label:has(#expText),
+      html body dialog#expenseModal>.body>label:has(#expText){
+        grid-column:1!important;grid-row:3/5!important;display:grid!important;grid-template-rows:30px minmax(0,1fr)!important;
+        gap:5px!important;width:100%!important;min-width:0!important;min-height:0!important;height:100%!important;
+        margin:0!important;padding:0!important;position:static!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#expenseModal>.body>label:has(#expText)>.field-label,
+      html body dialog#expenseModal>.body>label:has(#expText)>.field-label{
+        grid-row:1!important;display:flex!important;align-items:center!important;width:50px!important;height:30px!important;
+        font-size:.78rem!important;line-height:1!important;font-weight:700!important;color:#334155!important;
+      }
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp,
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp[hidden],
+      html body dialog#expenseModal #rtfBubbleExp,
+      html body dialog#expenseModal #rtfBubbleExp[hidden]{
+        grid-column:1!important;grid-row:3!important;align-self:center!important;justify-self:end!important;
+        position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;pointer-events:auto!important;
+        display:flex!important;align-items:center!important;justify-content:flex-end!important;width:auto!important;max-width:calc(100% - 58px)!important;
+        height:30px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:1px 3px!important;
+        gap:5px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+        overflow:visible!important;z-index:2!important;
+      }
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp .colors,
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp .styles,
+      html body dialog#expenseModal #rtfBubbleExp .colors,
+      html body dialog#expenseModal #rtfBubbleExp .styles{display:flex!important;align-items:center!important;gap:3px!important}
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp .dot,
+      html body dialog#expenseModal #rtfBubbleExp .dot{
+        width:22px!important;min-width:22px!important;max-width:22px!important;height:22px!important;min-height:22px!important;max-height:22px!important;
+        padding:0!important;border-radius:50%!important;
+      }
+      html body.mobile-ui dialog#expenseModal #rtfBubbleExp .fmt,
+      html body dialog#expenseModal #rtfBubbleExp .fmt{
+        width:24px!important;min-width:24px!important;max-width:24px!important;height:24px!important;min-height:24px!important;max-height:24px!important;
+        padding:0!important;border-radius:7px!important;font-size:.78rem!important;line-height:1!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expText,
+      html body dialog#expenseModal #expText{
+        grid-row:2!important;display:block!important;width:100%!important;min-width:0!important;height:auto!important;
+        min-height:0!important;max-height:100%!important;align-self:stretch!important;margin:0!important;padding:8px 10px 16px!important;
+        border:1px solid #cfd8e3!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;
+        font-size:16px!important;line-height:1.4!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;
+        overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;
+        touch-action:pan-y!important;scroll-padding-block:10px 24px!important;user-select:text!important;-webkit-user-select:text!important;
+      }
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>label:has(#expText)>#expText.input.rtf[contenteditable="true"],
+      html body dialog#expenseModal.modal[open]>.body>label:has(#expText)>#expText.input.rtf[contenteditable="true"]{
+        height:auto!important;min-height:0!important;max-height:100%!important;
+        block-size:auto!important;min-block-size:0!important;max-block-size:100%!important;
+        align-self:stretch!important;padding:8px 10px 16px!important;
+      }
+      html body.mobile-ui dialog#expenseModal .editor-resize-handle,
+      html body dialog#expenseModal .editor-resize-handle{display:none!important}
+      html body.mobile-ui dialog#expenseModal .body>#expenseMetaInlineRow,
+      html body dialog#expenseModal .body>#expenseMetaInlineRow{
+        grid-column:1!important;grid-row:5!important;display:grid!important;
+        grid-template-columns:minmax(0,1fr) 82px 44px!important;grid-template-rows:44px!important;grid-auto-flow:unset!important;
+        gap:5px!important;align-items:stretch!important;justify-content:stretch!important;width:100%!important;min-width:0!important;max-width:100%!important;
+        height:44px!important;min-height:44px!important;max-height:44px!important;margin:0!important;padding:0!important;
+        overflow:visible!important;direction:rtl!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-date-col,
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-time-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-date-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-time-col{
+        grid-row:1!important;display:grid!important;grid-template-rows:10px 32px!important;gap:2px!important;
+        width:100%!important;min-width:0!important;max-width:100%!important;height:44px!important;margin:0!important;padding:0!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-date-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-date-col{grid-column:1!important}
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-time-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-time-col{grid-column:2!important}
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow .expense-meta-caption,
+      html body dialog#expenseModal #expenseMetaInlineRow .expense-meta-caption{
+        display:block!important;height:10px!important;font-size:.62rem!important;line-height:10px!important;font-weight:600!important;color:#475569!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expDate,
+      html body.mobile-ui dialog#expenseModal #expTime,
+      html body dialog#expenseModal #expDate,
+      html body dialog#expenseModal #expTime{
+        width:100%!important;min-width:0!important;max-width:100%!important;height:32px!important;min-height:32px!important;max-height:32px!important;
+        margin:0!important;padding:3px 5px!important;border:1px solid #cfd8e3!important;border-radius:8px!important;
+        background:#fff!important;box-shadow:none!important;font-size:15px!important;line-height:1!important;text-align:center!important;
+        direction:ltr!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-location-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-location-col{
+        grid-column:3!important;grid-row:1!important;align-self:end!important;width:44px!important;min-width:44px!important;max-width:44px!important;
+        height:32px!important;min-height:32px!important;max-height:32px!important;margin:0!important;padding:0!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#expenseModal #btnEditExpLocation,
+      html body dialog#expenseModal #btnEditExpLocation{
+        display:flex!important;align-items:center!important;justify-content:center!important;width:44px!important;min-width:44px!important;max-width:44px!important;
+        height:32px!important;min-height:32px!important;max-height:32px!important;margin:0!important;padding:0!important;
+        border:1px solid #cfd8e3!important;border-radius:8px!important;background:#fff!important;box-shadow:none!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#expenseModal #btnEditExpLocation .journal-location-trigger-label,
+      html body.mobile-ui dialog#expenseModal #expLocationPreview,
+      html body dialog#expenseModal #btnEditExpLocation .journal-location-trigger-label,
+      html body dialog#expenseModal #expLocationPreview{display:none!important}
+      html body.mobile-ui dialog#expenseModal #btnEditExpLocation svg,
+      html body dialog#expenseModal #btnEditExpLocation svg{width:20px!important;height:20px!important;margin:0!important}
+      html body.mobile-ui dialog#expenseModal>.footer,
+      html body dialog#expenseModal>.footer{
+        display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;align-items:center!important;
+        height:54px!important;min-height:54px!important;max-height:54px!important;padding:6px 10px!important;
+        border:0!important;border-top:1px solid #e7ebf0!important;background:#fff!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#expenseModal>.footer:has(#expDelete[style*="display:none"]),
+      html body dialog#expenseModal>.footer:has(#expDelete[style*="display:none"]){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      html body.mobile-ui dialog#expenseModal>.footer .btn,
+      html body dialog#expenseModal>.footer .btn{
+        width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+        margin:0!important;padding:5px 8px!important;border-radius:10px!important;font-size:.95rem!important;font-weight:700!important;
+      }
+    }
+  </style>
 </head>
 <body data-theme="light">
     
