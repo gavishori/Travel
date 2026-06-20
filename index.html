@@ -42,7 +42,7 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="modulepreload" href="./firebase.js">
-  <link rel="modulepreload" href="./app.js?v=mobile-editor-layout-20260620-1">
+  <link rel="modulepreload" href="./app.js?v=mobile-editor-sheet-20260619-4">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
@@ -50,8 +50,8 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-  <link rel="stylesheet" href="./style.css?v=mobile-editor-layout-20260620-1" />
-  <link rel="stylesheet" href="./mobile-auth.css?v=mobile-editor-layout-20260620-1" />
+  <link rel="stylesheet" href="./style.css?v=mobile-editor-sheet-20260619-4" />
+  <link rel="stylesheet" href="./mobile-auth.css?v=mobile-date-fit-20260603-1" />
   <style id="expense-mobile-meta-force">
     @media (max-width: 820px){
       html body dialog#expenseModal .body > .expense-main-row,
@@ -712,7 +712,7 @@
     }
   </style>
 
-  <style id="mobile-expense-editor-half-screen-live">
+  <style id="mobile-expense-editor-half-screen-live" media="not all">
     @media (max-width:820px){
       html body.mobile-ui dialog#expenseModal.modal[open],
       html body dialog#expenseModal.modal[open]{
@@ -881,6 +881,152 @@
       html body dialog#expenseModal>.footer:has(#expDelete[style*="display:none"]){grid-template-columns:repeat(2,minmax(0,1fr))!important}
       html body.mobile-ui dialog#expenseModal>.footer .btn,
       html body dialog#expenseModal>.footer .btn{
+        width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+        margin:0!important;padding:5px 8px!important;border-radius:10px!important;font-size:.95rem!important;font-weight:700!important;
+      }
+    }
+  </style>
+  <style id="mobile-journal-editor-half-screen-live">
+    @media (max-width:820px){
+      html body.mobile-ui dialog#journalModal.modal[open],
+      html body dialog#journalModal.modal[open]{
+        position:fixed!important;top:calc(var(--vv-top,0px) + 4px)!important;right:6px!important;bottom:auto!important;left:6px!important;
+        width:auto!important;max-width:calc(100vw - 12px)!important;height:calc(var(--vvh,100dvh) - 8px)!important;
+        min-height:0!important;max-height:calc(var(--vvh,100dvh) - 8px)!important;margin:0!important;transform:none!important;
+        display:grid!important;grid-template-rows:32px minmax(0,1fr) 54px!important;overflow:hidden!important;
+        border:1px solid #dfe5ec!important;border-radius:16px!important;background:#fff!important;
+      }
+      html body.mobile-ui dialog#journalModal>header,
+      html body dialog#journalModal>header{
+        display:flex!important;align-items:center!important;height:32px!important;min-height:32px!important;max-height:32px!important;
+        padding:0 12px!important;border:0!important;border-bottom:1px solid #e7ebf0!important;background:#fff!important;
+      }
+      html body.mobile-ui dialog#journalModal>header strong,
+      html body dialog#journalModal>header strong{font-size:.88rem!important;line-height:1!important}
+      html body.mobile-ui dialog#journalModal>.body,
+      html body dialog#journalModal>.body{
+        display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+        grid-template-rows:36px 30px minmax(64px,1fr) 44px!important;gap:5px!important;
+        width:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;
+        padding:8px 10px!important;overflow:hidden!important;overscroll-behavior:none!important;background:#f8fafc!important;
+      }
+      html body.mobile-ui dialog#journalModal>.body>label:has(#jrTitle),
+      html body dialog#journalModal>.body>label:has(#jrTitle){
+        grid-column:1!important;grid-row:1!important;display:grid!important;grid-template-columns:50px minmax(0,1fr)!important;
+        grid-template-rows:36px!important;align-items:center!important;gap:7px!important;width:100%!important;min-width:0!important;
+        height:36px!important;margin:0!important;padding:0!important;overflow:visible!important;
+        font-size:.78rem!important;line-height:1!important;font-weight:700!important;color:#334155!important;
+      }
+      html body.mobile-ui dialog#journalModal #jrTitle,
+      html body dialog#journalModal #jrTitle{
+        width:100%!important;min-width:0!important;height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;padding:5px 9px!important;border:1px solid #cfd8e3!important;border-radius:9px!important;
+        background:#fff!important;box-shadow:none!important;font-size:16px!important;line-height:1.15!important;
+      }
+      html body.mobile-ui dialog#journalModal>.body>label:has(#jrText),
+      html body dialog#journalModal>.body>label:has(#jrText){
+        grid-column:1!important;grid-row:2/4!important;display:grid!important;grid-template-rows:30px minmax(0,1fr)!important;
+        gap:5px!important;width:100%!important;min-width:0!important;min-height:0!important;height:100%!important;
+        margin:0!important;padding:0!important;position:static!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#journalModal>.body>label:has(#jrText)>.field-label,
+      html body dialog#journalModal>.body>label:has(#jrText)>.field-label{
+        grid-row:1!important;display:flex!important;align-items:center!important;width:50px!important;height:30px!important;
+        font-size:.78rem!important;line-height:1!important;font-weight:700!important;color:#334155!important;
+      }
+      html body.mobile-ui dialog#journalModal #rtfBubble,
+      html body.mobile-ui dialog#journalModal #rtfBubble[hidden],
+      html body dialog#journalModal #rtfBubble,
+      html body dialog#journalModal #rtfBubble[hidden]{
+        grid-column:1!important;grid-row:2!important;align-self:center!important;justify-self:end!important;
+        position:static!important;inset:auto!important;transform:none!important;visibility:visible!important;pointer-events:auto!important;
+        display:flex!important;align-items:center!important;justify-content:flex-end!important;width:auto!important;max-width:calc(100% - 58px)!important;
+        height:30px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:1px 3px!important;
+        gap:5px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+        overflow:visible!important;z-index:2!important;
+      }
+      html body.mobile-ui dialog#journalModal #rtfBubble .colors,
+      html body.mobile-ui dialog#journalModal #rtfBubble .styles,
+      html body dialog#journalModal #rtfBubble .colors,
+      html body dialog#journalModal #rtfBubble .styles{display:flex!important;align-items:center!important;gap:3px!important}
+      html body.mobile-ui dialog#journalModal #rtfBubble .dot,
+      html body dialog#journalModal #rtfBubble .dot{
+        width:22px!important;min-width:22px!important;max-width:22px!important;height:22px!important;min-height:22px!important;max-height:22px!important;
+        padding:0!important;border-radius:50%!important;
+      }
+      html body.mobile-ui dialog#journalModal #rtfBubble .fmt,
+      html body dialog#journalModal #rtfBubble .fmt{
+        width:24px!important;min-width:24px!important;max-width:24px!important;height:24px!important;min-height:24px!important;max-height:24px!important;
+        padding:0!important;border-radius:7px!important;font-size:.78rem!important;line-height:1!important;
+      }
+      html body.mobile-ui dialog#journalModal.modal[open]>.body>label:has(#jrText)>#jrText.input.rtf[contenteditable="true"],
+      html body dialog#journalModal.modal[open]>.body>label:has(#jrText)>#jrText.input.rtf[contenteditable="true"]{
+        grid-row:2!important;display:block!important;width:100%!important;min-width:0!important;
+        height:auto!important;min-height:0!important;max-height:100%!important;block-size:auto!important;min-block-size:0!important;max-block-size:100%!important;
+        align-self:stretch!important;margin:0!important;padding:8px 10px 16px!important;
+        border:1px solid #cfd8e3!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;
+        font-size:16px!important;line-height:1.4!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;
+        overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;
+        touch-action:pan-y!important;scroll-padding-block:10px 24px!important;user-select:text!important;-webkit-user-select:text!important;
+      }
+      html body.mobile-ui dialog#journalModal .editor-resize-handle,
+      html body dialog#journalModal .editor-resize-handle{display:none!important}
+      html body.mobile-ui dialog#journalModal .body>.journal-meta-row,
+      html body dialog#journalModal .body>.journal-meta-row{
+        grid-column:1!important;grid-row:4!important;display:grid!important;
+        grid-template-columns:minmax(0,1fr) 82px 44px!important;grid-template-rows:44px!important;grid-auto-flow:unset!important;
+        gap:5px!important;align-items:stretch!important;justify-content:stretch!important;width:100%!important;min-width:0!important;max-width:100%!important;
+        height:44px!important;min-height:44px!important;max-height:44px!important;margin:0!important;padding:0!important;
+        overflow:visible!important;direction:rtl!important;
+      }
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-date-col,
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-time-col,
+      html body dialog#journalModal .journal-meta-row>.jr-date-col,
+      html body dialog#journalModal .journal-meta-row>.jr-time-col{
+        grid-row:1!important;display:grid!important;grid-template-rows:10px 32px!important;gap:2px!important;
+        width:100%!important;min-width:0!important;max-width:100%!important;height:44px!important;margin:0!important;padding:0!important;
+        font-size:.62rem!important;line-height:10px!important;font-weight:600!important;color:#475569!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-date-col,
+      html body dialog#journalModal .journal-meta-row>.jr-date-col{grid-column:1!important}
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-time-col,
+      html body dialog#journalModal .journal-meta-row>.jr-time-col{grid-column:2!important}
+      html body.mobile-ui dialog#journalModal #jrDate,
+      html body.mobile-ui dialog#journalModal #jrTime,
+      html body dialog#journalModal #jrDate,
+      html body dialog#journalModal #jrTime{
+        width:100%!important;min-width:0!important;max-width:100%!important;height:32px!important;min-height:32px!important;max-height:32px!important;
+        margin:0!important;padding:3px 5px!important;border:1px solid #cfd8e3!important;border-radius:8px!important;
+        background:#fff!important;box-shadow:none!important;font-size:15px!important;line-height:1!important;text-align:center!important;
+        direction:ltr!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#journalModal .journal-meta-row>.jr-location-col,
+      html body dialog#journalModal .journal-meta-row>.jr-location-col{
+        grid-column:3!important;grid-row:1!important;align-self:end!important;width:44px!important;min-width:44px!important;max-width:44px!important;
+        height:32px!important;min-height:32px!important;max-height:32px!important;margin:0!important;padding:0!important;overflow:visible!important;
+      }
+      html body.mobile-ui dialog#journalModal #btnEditJrLocation,
+      html body dialog#journalModal #btnEditJrLocation{
+        display:flex!important;align-items:center!important;justify-content:center!important;width:44px!important;min-width:44px!important;max-width:44px!important;
+        height:32px!important;min-height:32px!important;max-height:32px!important;margin:0!important;padding:0!important;
+        border:1px solid #cfd8e3!important;border-radius:8px!important;background:#fff!important;box-shadow:none!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#journalModal #btnEditJrLocation .journal-location-trigger-label,
+      html body.mobile-ui dialog#journalModal #jrLocationPreview,
+      html body dialog#journalModal #btnEditJrLocation .journal-location-trigger-label,
+      html body dialog#journalModal #jrLocationPreview{display:none!important}
+      html body.mobile-ui dialog#journalModal #btnEditJrLocation svg,
+      html body dialog#journalModal #btnEditJrLocation svg{width:20px!important;height:20px!important;margin:0!important}
+      html body.mobile-ui dialog#journalModal>.footer,
+      html body dialog#journalModal>.footer{
+        display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;align-items:center!important;
+        height:54px!important;min-height:54px!important;max-height:54px!important;padding:6px 10px!important;
+        border:0!important;border-top:1px solid #e7ebf0!important;background:#fff!important;overflow:hidden!important;
+      }
+      html body.mobile-ui dialog#journalModal>.footer:has(#jrDelete[style*="display:none"]),
+      html body dialog#journalModal>.footer:has(#jrDelete[style*="display:none"]){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      html body.mobile-ui dialog#journalModal>.footer .btn,
+      html body dialog#journalModal>.footer .btn{
         width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;max-height:42px!important;
         margin:0!important;padding:5px 8px!important;border-radius:10px!important;font-size:.95rem!important;font-weight:700!important;
       }
@@ -1445,8 +1591,8 @@ id="expenseModal" class="modal">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./app.js?v=mobile-editor-layout-20260620-1"></script>
-  <script src="./mobile-auth.js?v=mobile-editor-layout-20260620-1" defer></script>
+  <script type="module" src="./app.js?v=mobile-editor-sheet-20260619-4"></script>
+  <script src="./mobile-auth.js?v=mobile-editor-sheet-20260619-4" defer></script>
 
 <dialog id="confirmDeleteModal" class="modal">
   <header><strong>לאשר מחיקה?</strong>
