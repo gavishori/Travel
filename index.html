@@ -1534,7 +1534,7 @@ id="expenseModal" class="modal">
           <input type="date" id="jrDate" class="input">
         </label>
         <label class="jr-time-col">שעה
-          <input type="time" id="jrTime" class="input">
+          <input type="text" id="jrTime" class="input" inputmode="numeric" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="00:00" autocomplete="off" aria-label="שעה בפורמט 24 שעות">
         </label>
         <div class="jr-location-col location-compact">
           <button id="btnEditJrLocation" class="btn location-btn journal-location-trigger" type="button" aria-label="מיקום / עריכה" title="מיקום / עריכה">

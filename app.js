@@ -5772,6 +5772,42 @@ $('#btnAddJournal').addEventListener('click', ()=> openJournalModal());
 $('#jrCancel').addEventListener('click', ()=> $('#journalModal').close());
 $('#jrSave').addEventListener('click', saveJournal);
 
+function normalizeJournalTime24(value){
+  const source = String(value || '').trim();
+  const match = source.match(/^(\d{1,2}):([0-5]\d)\s*(AM|PM)?$/i);
+  if(!match) return '';
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const suffix = String(match[3] || '').toUpperCase();
+  if(suffix){
+    if(hour < 1 || hour > 12) return '';
+    if(suffix === 'AM' && hour === 12) hour = 0;
+    if(suffix === 'PM' && hour !== 12) hour += 12;
+  }
+  if(hour < 0 || hour > 23 || minute < 0 || minute > 59) return '';
+  return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
+}
+
+(function wireJournalTime24Input(){
+  const input = document.getElementById('jrTime');
+  if(!input || input.dataset.time24Wired === '1') return;
+  input.dataset.time24Wired = '1';
+  input.addEventListener('input', ()=>{
+    const digits = input.value.replace(/\D/g,'').slice(0,4);
+    input.value = digits.length > 2 ? `${digits.slice(0,2)}:${digits.slice(2)}` : digits;
+    input.setCustomValidity('');
+  });
+  input.addEventListener('blur', ()=>{
+    const normalized = normalizeJournalTime24(input.value);
+    if(normalized){
+      input.value = normalized;
+      input.setCustomValidity('');
+    }else if(input.value){
+      input.setCustomValidity('יש להזין שעה בפורמט 24 שעות: HH:MM');
+    }
+  });
+})();
+
 function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
 
   try{ document.querySelector('#journalModal .input.rtf').style.paddingBottom='72px'; }catch(_){}
@@ -5809,7 +5845,7 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
     let dStr=null, tStr=null;
     if (base && base.date && base.time) {
       dStr = base.date.split('/').reverse().join('-'); // dd/mm/yyyy -> yyyy-mm-dd
-      tStr = base.time;
+      tStr = normalizeJournalTime24(base.time);
     } else if (base && (base.createdAt||base.dateIso)) {
       const d = new Date(base.createdAt||base.dateIso);
       dStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -5820,7 +5856,7 @@ function openJournalModal(j) {try{ window._rebindTextColorDots(); }catch(_){}
       tStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
     const $d=$('#jrDate'), $t=$('#jrTime');
-    if($d) $d.value=dStr; if($t) $t.value=tStr;
+    if($d) $d.value=dStr; if($t) $t.value=normalizeJournalTime24(tStr);
   } catch(_){}
 
   $('#journalModal').showModal();
@@ -5868,9 +5904,17 @@ async function saveJournal() {
 
   const $jrD = $('#jrDate');
   const $jrT = $('#jrTime');
+  const normalizedJournalTime = normalizeJournalTime24($jrT?.value || '');
+  if($jrT?.value && !normalizedJournalTime){
+    $jrT.setCustomValidity('יש להזין שעה בפורמט 24 שעות: HH:MM');
+    $jrT.reportValidity();
+    $jrT.focus();
+    return;
+  }
+  if($jrT && normalizedJournalTime) $jrT.value = normalizedJournalTime;
   let _jr_dateIso;
-  if ($jrD && $jrT && $jrD.value && $jrT.value) {
-    _jr_dateIso = new Date(`${$jrD.value}T${$jrT.value}:00`).toISOString();
+  if ($jrD && $jrT && $jrD.value && normalizedJournalTime) {
+    _jr_dateIso = new Date(`${$jrD.value}T${normalizedJournalTime}:00`).toISOString();
   } else {
     _jr_dateIso = prev.dateIso || prev.createdAt || new Date().toISOString();
   }
