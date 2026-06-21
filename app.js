@@ -4768,9 +4768,10 @@ function getCurrentLocationOnce(){
   const schedule = (event)=>{
     const editor = event.target?.closest?.(editorSelector);
     if(!editor) return;
-    // A touchend after a manual scroll must not pull the journal back to the
-    // old caret (which is often still at the end of the document).
-    if(editor.id === 'jrText' && event.type === 'touchend') return;
+    // The journal editor uses native contenteditable scrolling. Any automatic
+    // caret correction here can pull a manually scrolled document back to the
+    // previous caret position.
+    if(editor.id === 'jrText') return;
     tuneEditor(editor);
     requestAnimationFrame(()=> keepCaretVisible(editor));
     setTimeout(()=> keepCaretVisible(editor), 80);

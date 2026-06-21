@@ -201,15 +201,12 @@
   }
 
   function wireRichTextCaretScroll(){
-    ['expText', 'jrText'].forEach((id) => {
+    ['expText'].forEach((id) => {
       const editor = document.getElementById(id);
       if (!editor || editor.dataset.mobileCaretScrollWired) return;
       editor.dataset.mobileCaretScrollWired = '1';
       const schedule = () => requestAnimationFrame(keepActiveEditorCaretVisible);
-      const events = id === 'jrText'
-        ? ['focus', 'click', 'keyup', 'input']
-        : ['focus', 'click', 'keyup', 'input', 'touchend'];
-      events.forEach((eventName) => {
+      ['focus', 'click', 'keyup', 'input', 'touchend'].forEach((eventName) => {
         editor.addEventListener(eventName, schedule, { passive: true });
       });
     });
