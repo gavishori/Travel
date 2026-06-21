@@ -712,7 +712,7 @@
     }
   </style>
 
-  <style id="mobile-expense-editor-half-screen-live" media="not all">
+  <style id="mobile-expense-editor-half-screen-live">
     @media (max-width:820px){
       html body.mobile-ui dialog#expenseModal.modal[open],
       html body dialog#expenseModal.modal[open]{
@@ -883,6 +883,67 @@
       html body dialog#expenseModal>.footer .btn{
         width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;max-height:42px!important;
         margin:0!important;padding:5px 8px!important;border-radius:10px!important;font-size:.95rem!important;font-weight:700!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expDelete,
+      html body dialog#expenseModal #expDelete{
+        display:none!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal>.footer,
+      html body dialog#expenseModal>.footer{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal .body>#expenseMetaInlineRow,
+      html body dialog#expenseModal .body>#expenseMetaInlineRow{
+        grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 76px!important;
+        gap:0!important;justify-content:space-between!important;position:relative!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow .expense-meta-caption,
+      html body dialog#expenseModal #expenseMetaInlineRow .expense-meta-caption{
+        display:none!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-date-col,
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-time-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-date-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-time-col{
+        display:block!important;align-self:end!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;padding:0!important;overflow:visible!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expDate,
+      html body.mobile-ui dialog#expenseModal #expTime,
+      html body dialog#expenseModal #expDate,
+      html body dialog#expenseModal #expTime{
+        display:block!important;height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;transform:none!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expDate,
+      html body dialog#expenseModal #expDate{
+        width:calc(100% - 2px)!important;min-width:0!important;max-width:calc(100% - 2px)!important;
+        margin-left:auto!important;margin-right:0!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #expenseMetaInlineRow>.exp-location-col,
+      html body dialog#expenseModal #expenseMetaInlineRow>.exp-location-col{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        position:absolute!important;left:0!important;right:auto!important;bottom:0!important;
+        inset-inline-start:auto!important;inset-inline-end:auto!important;
+        margin:0!important;transform:none!important;justify-self:auto!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal #btnEditExpLocation,
+      html body dialog#expenseModal #btnEditExpLocation{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;left:auto!important;right:auto!important;
+        inset-inline-start:auto!important;inset-inline-end:auto!important;transform:none!important;
       }
     }
   </style>
@@ -1097,6 +1158,99 @@
       }
     }
   </style>
+  <style id="mobile-expense-match-journal-live">
+    @media (max-width:820px){
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row{
+        grid-template-columns:minmax(110px,calc(70% - 95px)) 82px 76px!important;
+        grid-template-rows:44px!important;gap:0!important;justify-content:space-between!important;
+        align-items:stretch!important;position:relative!important;
+        height:44px!important;min-height:44px!important;max-height:44px!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-date-col,
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-time-col,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-date-col,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-time-col{
+        display:block!important;align-self:end!important;
+        width:100%!important;min-width:0!important;max-width:100%!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;padding:0!important;overflow:visible!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row .expense-meta-caption,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row .expense-meta-caption{
+        display:none!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input,
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expTime.input,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expTime.input{
+        display:block!important;height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;transform:none!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input{
+        width:100%!important;min-width:0!important;max-width:100%!important;
+        margin-left:auto!important;margin-right:0!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-location-col,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-location-col{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        position:absolute!important;left:0!important;right:auto!important;bottom:0!important;
+        inset-inline-start:auto!important;inset-inline-end:auto!important;
+        margin:0!important;padding:0!important;transform:none!important;justify-self:auto!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #btnEditExpLocation,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #btnEditExpLocation{
+        width:76px!important;min-width:76px!important;max-width:76px!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;transform:none!important;
+      }
+    }
+  </style>
+
+  <style id="mobile-expense-date-width-equal-gap-fix">
+    @media (max-width:820px){
+      /* Final targeted fix: keep the time field and map button sizes unchanged,
+         and give the date field the remaining width with equal 6px gaps. */
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row{
+        grid-template-columns:minmax(0, calc(100% - 170px)) 82px 76px!important;
+        column-gap:6px!important;
+        row-gap:0!important;
+        justify-content:stretch!important;
+        align-items:end!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-date-col,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row>.exp-date-col{
+        width:100%!important;
+        min-width:0!important;
+        max-width:100%!important;
+        height:34px!important;
+        min-height:34px!important;
+        max-height:34px!important;
+        align-self:end!important;
+      }
+
+      html body.mobile-ui dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input,
+      html body dialog#expenseModal.modal[open]>.body>#expenseMetaInlineRow.expense-meta-row #expDate.input{
+        width:100%!important;
+        min-width:0!important;
+        max-width:100%!important;
+        height:34px!important;
+        min-height:34px!important;
+        max-height:34px!important;
+      }
+    }
+  </style>
+
 </head>
 <body data-theme="light">
     

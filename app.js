@@ -3918,6 +3918,7 @@ function syncExpenseMobileDateField(){
 }
 
 function lockExpenseMetaRowInline(){
+  if(document.getElementById('mobile-expense-editor-half-screen-live')) return;
   if(document.body?.classList?.contains('mobile-editor-redesign')) return;
   if(!isMobileViewport()) return;
   const row = document.querySelector('#expenseModal .expense-meta-row');
