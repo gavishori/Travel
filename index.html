@@ -1066,6 +1066,28 @@
         margin:0!important;left:auto!important;right:auto!important;
         inset-inline-start:auto!important;inset-inline-end:auto!important;transform:none!important;
       }
+
+      html body.mobile-ui dialog#journalModal .journal-meta-row>label.jr-date-col,
+      html body.mobile-ui dialog#journalModal .journal-meta-row>label.jr-time-col,
+      html body dialog#journalModal .journal-meta-row>label.jr-date-col,
+      html body dialog#journalModal .journal-meta-row>label.jr-time-col{
+        display:block!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        align-self:end!important;
+        margin:0!important;padding:0!important;
+        font-size:0!important;line-height:0!important;
+        overflow:visible!important;
+        transform:translateY(4px)!important;
+      }
+
+      html body.mobile-ui dialog#journalModal .journal-meta-row>label.jr-date-col>#jrDate.input,
+      html body.mobile-ui dialog#journalModal .journal-meta-row>label.jr-time-col>#jrTime.input,
+      html body dialog#journalModal .journal-meta-row>label.jr-date-col>#jrDate.input,
+      html body dialog#journalModal .journal-meta-row>label.jr-time-col>#jrTime.input{
+        display:block!important;
+        height:34px!important;min-height:34px!important;max-height:34px!important;
+        margin:0!important;transform:none!important;
+      }
     }
   </style>
 </head>
@@ -1530,10 +1552,10 @@ id="expenseModal" class="modal">
   </div>
 </div>
       <div class="row journal-meta-row">
-        <label class="jr-date-col">תאריך
-          <input type="date" id="jrDate" class="input">
+        <label class="jr-date-col">
+          <input type="date" id="jrDate" class="input" aria-label="תאריך">
         </label>
-        <label class="jr-time-col">שעה
+        <label class="jr-time-col">
           <input type="text" id="jrTime" class="input" inputmode="numeric" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="00:00" autocomplete="off" aria-label="שעה בפורמט 24 שעות">
         </label>
         <div class="jr-location-col location-compact">
