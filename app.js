@@ -1,4 +1,4 @@
-﻿// --- Helper: strip links (for Word export) ---
+// --- Helper: strip links (for Word export) ---
 function stripLinks(text){
   try{
     if(text==null) return '';
@@ -1260,10 +1260,22 @@ async function loadExternalScript(urls) {
     try {
       await new Promise((res, rej) => {
         const s = document.createElement('script');
+        let done = false;
+        const finish = (ok) => {
+          if(done) return;
+          done = true;
+          clearTimeout(timer);
+          if(ok) res();
+          else {
+            s.remove();
+            rej(new Error('failed'));
+          }
+        };
+        const timer = setTimeout(() => finish(false), 8000);
         s.src = url;
         s.async = true;
-        s.onload = () => res();
-        s.onerror = () => { s.remove(); rej(new Error('failed')); };
+        s.onload = () => finish(true);
+        s.onerror = () => finish(false);
         document.head.appendChild(s);
       });
       return true;
@@ -6171,25 +6183,35 @@ async function ensureHtml2Canvas(){
 // Format helpers for meta
 function kvRowsFromMeta(trip){
   const rows = [];
-  rows.push({ שדה:'יעד', ערך: esc(trip.destination||'') });
-  rows.push({ שדה:'תאריכים', ערך: `${fmtDate(trip.start)} – ${fmtDate(trip.end)}` });
-  if (trip.people && trip.people.length) rows.push({ שדה:'משתתפים', ערך: esc(trip.people.join(', ')) });
-  if (trip.types && trip.types.length) rows.push({ שדה:'סוג טיול', ערך: esc(trip.types.join(', ')) });
+  const listText = (value)=>{
+    if(Array.isArray(value)) return value.map(v => String(v || '').trim()).filter(Boolean).join(', ');
+    return String(value || '').trim();
+  };
+  const safeTrip = trip || {};
+  rows.push({ שדה:'יעד', ערך: esc(safeTrip.destination||'') });
+  rows.push({ שדה:'תאריכים', ערך: `${fmtDate(safeTrip.start)} - ${fmtDate(safeTrip.end)}` });
+  const people = listText(safeTrip.people);
+  const types = listText(safeTrip.types);
+  if (people) rows.push({ שדה:'משתתפים', ערך: esc(people) });
+  if (types) rows.push({ שדה:'סוג טיול', ערך: esc(types) });
   // Budget (flatten one level)
-  if (trip.budget && typeof trip.budget === 'object'){
+  if (safeTrip.budget && typeof safeTrip.budget === 'object'){
     const pairs = [];
-    if (Number(trip.budget.USD) > 0) pairs.push(`USD: ${formatInt(trip.budget.USD)}`);
-    if (Number(trip.budget.EUR) > 0) pairs.push(`EUR: ${formatInt(trip.budget.EUR)}`);
-    if (Number(trip.budget.ILS) > 0) pairs.push(`ILS: ${formatInt(trip.budget.ILS)}`);
+    if (Number(safeTrip.budget.USD) > 0) pairs.push(`USD: ${formatInt(safeTrip.budget.USD)}`);
+    if (Number(safeTrip.budget.EUR) > 0) pairs.push(`EUR: ${formatInt(safeTrip.budget.EUR)}`);
+    if (Number(safeTrip.budget.ILS) > 0) pairs.push(`ILS: ${formatInt(safeTrip.budget.ILS)}`);
     if (pairs.length) rows.push({ שדה:'תקציב', ערך: pairs.join(' | ') });
   }
   // Rates
-  if (trip.rates && typeof trip.rates === 'object'){
+  if (safeTrip.rates && typeof safeTrip.rates === 'object'){
     const parts = [];
-    if (trip.rates.USDILS) parts.push(`USDILS: ${trip.rates.USDILS}`);
-    if (trip.rates.USDEUR) parts.push(`USDEUR: ${trip.rates.USDEUR}`);
-    if (trip.rates.USDLocal) parts.push(`USDLocal: ${trip.rates.USDLocal}`);
-    if (parts.length) rows.push({ שדה:'שערי מטבע', ערך: parts.join(' | ') + (trip.rates.lockedAt ? ` | lockedAt: ${dayjs(trip.rates.lockedAt).toISOString()}` : '') });
+    if (safeTrip.rates.USDILS) parts.push(`USDILS: ${safeTrip.rates.USDILS}`);
+    if (safeTrip.rates.USDEUR) parts.push(`USDEUR: ${safeTrip.rates.USDEUR}`);
+    if (safeTrip.rates.USDLocal) parts.push(`USDLocal: ${safeTrip.rates.USDLocal}`);
+    if (safeTrip.rates.lockedAt) {
+      try{ parts.push(`lockedAt: ${dayjs(safeTrip.rates.lockedAt).format('YYYY-MM-DD HH:mm')}`); }catch(_){}
+    }
+    if (parts.length) rows.push({ שדה:'שערי מטבע', ערך: parts.join(' | ') });
   }
   return rows;
 }
@@ -6227,109 +6249,566 @@ async function exportPDF(){
 }
 
 // override Excel
-async function exportExcel(){
-  const t = currentTrip();
-  if(!t.id){ toast('פתח נסיעה'); return; }
-  const ok = await ensureXLSX(); if(!ok){ toast('בעיה בייצוא Excel'); return; }
-  const wb = XLSX.utils.book_new();
-
-  const meta = kvRowsFromMeta(t);
-  const s0 = XLSX.utils.json_to_sheet(meta);
-  XLSX.utils.book_append_sheet(wb, s0, 'נתוני נסיעה');
-
-  const jr = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j=>({ תאריך: fmtDateTime(j.dateIso || j.createdAt), כותרת:(j.title||''), תיאור:j.text||'' }));
-  const s1 = XLSX.utils.json_to_sheet(jr);
-  XLSX.utils.book_append_sheet(wb, s1, 'יומן יומי');
-
-  const ex = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e=>({ תיאור:e.desc||'', קטגוריה:e.category||'', סכום:e.amount||'', מטבע:e.currency||'', תאריך:fmtDateTime(e.dateIso || e.createdAt)}));
-  const s2 = XLSX.utils.json_to_sheet(ex);
-  XLSX.utils.book_append_sheet(wb, s2, 'הוצאות');
-
-  const fn = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.xlsx`;
-  XLSX.writeFile(wb, fn);
+function excelCellText(value){
+  const div = document.createElement('div');
+  div.innerHTML = String(value ?? '');
+  return div.textContent || div.innerText || '';
 }
 
-// override Word
+function excelHtmlEscape(value){
+  return excelCellText(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function rowsToExcelHtmlTable(rows){
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const headers = Array.from(new Set(safeRows.flatMap(row => Object.keys(row || {}))));
+  if(!headers.length) return '<table><tbody><tr><td></td></tr></tbody></table>';
+  const head = headers.map(h => `<th>${excelHtmlEscape(h)}</th>`).join('');
+  const body = safeRows.map(row => (
+    `<tr>${headers.map(h => `<td>${excelHtmlEscape(row?.[h] ?? '')}</td>`).join('')}</tr>`
+  )).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function downloadExcelHtmlWorkbook(fileName, sheets){
+  const html = `<!doctype html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+  ${sheets.map((sheet, i) => `<x:ExcelWorksheet><x:Name>${excelHtmlEscape(sheet.name || `Sheet${i + 1}`)}</x:Name><x:WorksheetOptions><x:DisplayRightToLeft/></x:WorksheetOptions></x:ExcelWorksheet>`).join('')}
+  </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body, table { direction: rtl; font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; margin-bottom: 24px; }
+    th, td { border: 1px solid #cfd8e3; padding: 6px 8px; mso-number-format:"\\@"; }
+    th { background: #edf2f7; font-weight: 700; }
+    h2 { font-size: 18px; margin: 18px 0 8px; }
+  </style>
+</head>
+<body>
+  ${sheets.map(sheet => `<h2>${excelHtmlEscape(sheet.name)}</h2>${rowsToExcelHtmlTable(sheet.rows)}`).join('')}
+</body>
+</html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName.replace(/\.xlsx$/i, '.xls');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=> URL.revokeObjectURL(link.href), 1000);
+}
+
+async function getAllTripsForExcelExport(){
+  const loaded = new Map();
+  const ids = new Set();
+  const fetchedFullIds = new Set();
+  const uid = state?.user?.uid || null;
+
+  const dataScore = (trip)=>{
+    if(!trip) return 0;
+    return Object.keys(trip.expenses || {}).length + Object.keys(trip.journal || {}).length + (trip.destination ? 1 : 0);
+  };
+  const addTrip = (trip, options = {})=>{
+    const normalized = normalizeTripShape(trip || {});
+    if(!normalized?.id) return;
+    ids.add(normalized.id);
+    const current = loaded.get(normalized.id);
+    if(!current || options.full || dataScore(normalized) >= dataScore(current)){
+      loaded.set(normalized.id, normalized);
+    }
+    if(options.full) fetchedFullIds.add(normalized.id);
+  };
+
+  loadTripSummariesCache(uid).forEach(trip => addTrip(trip));
+
+  try{
+    if(uid && FB?.getDocs){
+      const q = FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', uid));
+      const snap = await FB.getDocs(q);
+      snap.docs.forEach(doc => addTrip({ id: doc.id, ...doc.data() }, { full:true }));
+    }
+  }catch(err){
+    console.warn('Full Excel export could not query trips, trying summaries and cached data', err);
+  }
+
+  try{
+    if(uid && FB?.getDocs){
+      const q = FB.query(FB.collection(db, 'tripSummaries'), FB.where('ownerUid', '==', uid));
+      const snap = await FB.getDocs(q);
+      snap.docs.forEach(doc => addTrip({ id: doc.id, ...doc.data() }));
+    }
+  }catch(err){
+    console.warn('Full Excel export could not query trip summaries', err);
+  }
+
+  (state?.trips || []).forEach(trip => {
+    const cached = loadTripCache(uid, trip?.id);
+    addTrip(cached ? { ...trip, ...cached, id: trip.id } : trip);
+  });
+  if(state?.current?.id || state?.currentTripId) addTrip({ ...state.current, id: state.current?.id || state.currentTripId });
+
+  await Promise.all(Array.from(ids).map(async (id)=>{
+    if(!id || fetchedFullIds.has(id)) return;
+    try{
+      const cached = loadTripCache(uid, id);
+      if(cached) addTrip({ ...cached, id }, { full:true });
+      const snap = await FB.getDoc(FB.doc(db, 'trips', id));
+      if(snap.exists()) addTrip({ id: snap.id, ...snap.data() }, { full:true });
+    }catch(err){
+      console.warn('Full Excel export could not fetch trip', id, err);
+    }
+  }));
+
+  return Array.from(loaded.values()).sort((a,b)=> (b.start || '').localeCompare(a.start || ''));
+}
+
+function buildAllAppExcelSheets(trips){
+  const tripRows = [];
+  const journalRows = [];
+  const expenseRows = [];
+  const categoryRows = [];
+
+  trips.forEach((trip)=>{
+    const budget = trip?.budget || {};
+    const rates = trip?.rates || {};
+    tripRows.push({
+      'מזהה נסיעה': trip.id || '',
+      'יעד': trip.destination || '',
+      'תאריך התחלה': fmtDate(trip.start),
+      'תאריך סיום': fmtDate(trip.end),
+      'מטבע מקומי': trip.localCurrency || '',
+      'משתתפים': Array.isArray(trip.people) ? trip.people.join(', ') : (trip.people || ''),
+      'סוג טיול': Array.isArray(trip.types) ? trip.types.join(', ') : (trip.types || ''),
+      'תקציב USD': budget.USD || '',
+      'תקציב EUR': budget.EUR || '',
+      'תקציב ILS': budget.ILS || '',
+      'שער USDILS': rates.USDILS || '',
+      'שער USDEUR': rates.USDEUR || '',
+      'שער USDLocal': rates.USDLocal || '',
+      'נוצר': fmtDateTime(trip.createdAt),
+      'עודכן': fmtDateTime(trip.updatedAt)
+    });
+
+    Object.entries(trip.journal || {}).forEach(([id, j])=>{
+      journalRows.push({
+        'מזהה נסיעה': trip.id || '',
+        'יעד': trip.destination || '',
+        'מזהה רשומה': id,
+        'תאריך': fmtDateTime(j?.dateIso || j?.createdAt || j?.date),
+        'כותרת': j?.title || '',
+        'תיאור': j?.text || '',
+        'מיקום': j?.locationName || '',
+        'קו רוחב': j?.lat ?? '',
+        'קו אורך': j?.lng ?? '',
+        'נוצר': fmtDateTime(j?.createdAt)
+      });
+    });
+
+    Object.entries(trip.expenses || {}).forEach(([id, e])=>{
+      let amountILS = '';
+      try{
+        const converted = convertAmount(Number(e?.amount || 0), e?.currency || 'ILS', 'ILS', e?.rates || trip?.rates || {});
+        amountILS = isFinite(converted) ? converted : '';
+      }catch(_){}
+      expenseRows.push({
+        'מזהה נסיעה': trip.id || '',
+        'יעד': trip.destination || '',
+        'מזהה הוצאה': id,
+        'תאריך': e?.date || fmtDate(e?.dateIso || e?.createdAt),
+        'שעה': e?.time || '',
+        'כותרת': e?.title || '',
+        'תיאור': e?.desc || excelCellText(e?.descHtml || ''),
+        'קטגוריה': e?.category || '',
+        'סכום': e?.amount ?? '',
+        'מטבע': e?.currency || '',
+        'סכום ב-ILS': amountILS,
+        'מיקום': e?.locationName || '',
+        'קו רוחב': e?.lat ?? '',
+        'קו אורך': e?.lng ?? '',
+        'נוצר': fmtDateTime(e?.createdAt)
+      });
+    });
+  });
+
+  Object.entries(state?.categories || {}).forEach(([type, values])=>{
+    (Array.isArray(values) ? values : []).forEach(value => {
+      categoryRows.push({ 'סוג': type, 'קטגוריה': value });
+    });
+  });
+
+  return [
+    { name: 'נסיעות', rows: tripRows },
+    { name: 'יומן', rows: journalRows },
+    { name: 'הוצאות', rows: expenseRows },
+    { name: 'קטגוריות', rows: categoryRows }
+  ];
+}
+
+async function exportExcel(){
+  const trips = await getAllTripsForExcelExport();
+  if(!trips.length){ toast('אין נתונים לייצוא'); return; }
+  const sheets = buildAllAppExcelSheets(trips);
+  const fn = `FLYMILY_all_data_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+  const ok = await ensureXLSX();
+  const XLSXLib = window.XLSX;
+  if(ok && XLSXLib?.utils?.book_new && typeof XLSXLib.writeFile === 'function'){
+    try{
+      const wb = XLSXLib.utils.book_new();
+      sheets.forEach(sheet => {
+        XLSXLib.utils.book_append_sheet(wb, XLSXLib.utils.json_to_sheet(sheet.rows), sheet.name);
+      });
+      XLSXLib.writeFile(wb, fn);
+      return;
+    }catch(err){
+      console.error('XLSX export failed, using HTML Excel fallback', err);
+    }
+  }
+
+  downloadExcelHtmlWorkbook(fn, sheets);
+}
+
+// override Word - full RTL trip report with TOC
+function wordText(value){
+  return excelCellText(value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function wordDateValue(item){
+  return item?.dateIso || item?.date || item?.createdAt || item?.updatedAt || '';
+}
+
+function wordSortByDateAsc(a, b){
+  const av = String(wordDateValue(a) || '');
+  const bv = String(wordDateValue(b) || '');
+  return av.localeCompare(bv);
+}
+
+function wordSafeFilePart(value){
+  return String(value || 'trip')
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 80) || 'trip';
+}
+
+function wordPlainHtml(value){
+  return excelHtmlEscape(stripLinks(excelCellText(value ?? '')));
+}
+
+function wordPlain(value){
+  return stripLinks(excelCellText(value ?? '')).trim();
+}
+
+function wordListText(value){
+  if(Array.isArray(value)) return value.map(v => wordPlain(v)).filter(Boolean).join(', ');
+  if(value && typeof value === 'object') return Object.values(value).map(v => wordPlain(v)).filter(Boolean).join(', ');
+  return wordPlain(value);
+}
+
+function wordTripDays(trip){
+  try{
+    if(!trip?.start || !trip?.end || typeof dayjs === 'undefined') return '';
+    const start = dayjs(trip.start);
+    const end = dayjs(trip.end);
+    if(!start.isValid() || !end.isValid()) return '';
+    return String(Math.max(1, end.diff(start, 'day') + 1));
+  }catch(_){ return ''; }
+}
+
+function wordTripCurrencies(trip){
+  const set = new Set(['ILS']);
+  const budget = trip?.budget || {};
+  Object.keys(budget).forEach(cur => { if(Number(budget[cur] || 0) || cur) set.add(cur); });
+  Object.values(trip?.expenses || {}).forEach(e => { if(e?.currency) set.add(e.currency); });
+  if(trip?.baseCurrency) set.add(trip.baseCurrency);
+  if(trip?.localCurrency) set.add(trip.localCurrency);
+  return Array.from(set).filter(Boolean);
+}
+
+function wordMoney(value, cur){
+  const n = Number(value || 0);
+  const rounded = Math.round((isFinite(n) ? n : 0) * 100) / 100;
+  return `${rounded.toLocaleString('he-IL')} ${cur || ''}`.trim();
+}
+
+function wordConvert(amount, from, to, rates){
+  try{
+    const n = Number(amount || 0);
+    const val = convertAmount(n, from || to || 'ILS', to || from || 'ILS', rates || {});
+    return isFinite(val) ? val : 0;
+  }catch(_){ return 0; }
+}
+
+function wordExpenseIls(expense, trip){
+  return wordConvert(Number(expense?.amount || 0), expense?.currency || 'ILS', 'ILS', expense?.rates || trip?.rates || state?.rates || {});
+}
+
+function buildMetaRowsForWordReport(trip){
+  const rows = [];
+  const add = (label, value)=>{
+    const clean = wordPlain(value);
+    if(clean) rows.push([label, clean]);
+  };
+  add('יעד', trip?.destination || '');
+  add('תאריכי הטיול', `${fmtDate(trip?.start)} - ${fmtDate(trip?.end)}`.replace(/^\s*-\s*$/,''));
+  add('מספר ימים', wordTripDays(trip));
+  add('משתתפים', wordListText(trip?.people));
+  add('סוג טיול', wordListText(trip?.types));
+  add('מטבע בסיס', trip?.baseCurrency || 'ILS');
+  add('מטבע מקומי', trip?.localCurrency || '');
+  const rates = trip?.rates || {};
+  const rateParts = [];
+  if(rates.USDILS) rateParts.push(`USD/ILS: ${rates.USDILS}`);
+  if(rates.USDEUR) rateParts.push(`USD/EUR: ${rates.USDEUR}`);
+  if(rates.USDLocal) rateParts.push(`USD/Local: ${rates.USDLocal}`);
+  if(rates.lockedAt) rateParts.push(`עודכן: ${fmtDateTime(rates.lockedAt)}`);
+  add('שערי המרה', rateParts.join(' | '));
+  add('תאריך יצירת הדוח', new Date().toLocaleString('he-IL'));
+  if(!rows.length) rows.push(['-', 'אין נתוני נסיעה']);
+  return rows;
+}
+
+function buildBudgetRowsForWordReport(trip){
+  const currencies = wordTripCurrencies(trip);
+  const budget = trip?.budget || {};
+  const expenses = Object.values(trip?.expenses || {});
+  const rows = currencies.map(cur => {
+    const budgetAmount = Number(budget[cur] || 0);
+    const paid = expenses.reduce((sum, e)=> sum + wordConvert(Number(e?.amount || 0), e?.currency || cur, cur, e?.rates || trip?.rates || state?.rates || {}), 0);
+    const balance = budgetAmount - paid;
+    const pct = budgetAmount > 0 ? `${Math.round((paid / budgetAmount) * 100)}%` : (paid > 0 ? '100%' : '0%');
+    return [cur, wordMoney(budgetAmount, cur), wordMoney(paid, cur), wordMoney(balance, cur), pct];
+  });
+  return rows.length ? rows : [['ILS', '0 ILS', '0 ILS', '0 ILS', '0%']];
+}
+
+function buildJournalRowsForWordReport(trip){
+  const rows = Object.values(trip?.journal || {})
+    .sort(wordSortByDateAsc)
+    .map(j => [
+      fmtDate(j?.dateIso || j?.date || j?.createdAt),
+      j?.time || '',
+      wordPlain(j?.title || j?.placeName || j?.locationName || ''),
+      wordPlain(j?.locationName || j?.placeName || ''),
+      wordPlain(j?.text || j?.desc || '')
+    ]);
+  return rows.length ? rows : [['', '', 'אין רשומות יומן', '', '']];
+}
+
+function buildExpenseRowsForWordReport(trip){
+  const rows = Object.values(trip?.expenses || {})
+    .sort(wordSortByDateAsc)
+    .map(e => [
+      e?.date || fmtDate(e?.dateIso || e?.createdAt),
+      e?.time || '',
+      wordPlain(e?.category || 'אחר'),
+      wordMoney(e?.amount, e?.currency || ''),
+      wordMoney(wordExpenseIls(e, trip), 'ILS'),
+      wordPlain(e?.title || e?.locationName || ''),
+      wordPlain(e?.desc || e?.descHtml || '')
+    ]);
+  return rows.length ? rows : [['', '', '', '', '', 'אין הוצאות', '']];
+}
+
+function buildExpenseBreakdownForWordReport(trip){
+  const groups = {};
+  let totalIls = 0;
+  Object.values(trip?.expenses || {}).forEach(e => {
+    const cat = wordPlain(e?.category || 'אחר') || 'אחר';
+    const ils = wordExpenseIls(e, trip);
+    if(!groups[cat]) groups[cat] = { sum:0, count:0, items:[] };
+    groups[cat].sum += ils;
+    groups[cat].count += 1;
+    groups[cat].items.push({ ...e, _ils: ils });
+    totalIls += ils;
+  });
+  const categories = Object.entries(groups)
+    .sort((a,b)=> b[1].sum - a[1].sum)
+    .map(([cat, data]) => ({
+      category: cat,
+      count: data.count,
+      sumIls: data.sum,
+      pct: totalIls ? (data.sum / totalIls * 100) : 0,
+      items: data.items.sort(wordSortByDateAsc)
+    }));
+  return { totalIls, categories };
+}
+
+function wordHtmlTable(headers, rows, className = ''){
+  const bodyRows = rows && rows.length ? rows : [headers.map(()=> '')];
+  return `<table class="${className}"><thead><tr>${headers.map(h => `<th>${excelHtmlEscape(h)}</th>`).join('')}</tr></thead><tbody>${
+    bodyRows.map(row => `<tr>${row.map(cell => `<td>${excelHtmlEscape(cell)}</td>`).join('')}</tr>`).join('')
+  }</tbody></table>`;
+}
+
+function wordToc(){
+  return `<nav class="toc">
+    <h2>תוכן עניינים</h2>
+    <ol>
+      <li><a href="#trip-meta">נתוני הנסיעה</a></li>
+      <li><a href="#trip-budget">התקציב</a></li>
+      <li><a href="#trip-journal">היומן</a></li>
+      <li><a href="#trip-expenses">הוצאות</a></li>
+      <li><a href="#trip-breakdown">פילוח הוצאות</a></li>
+    </ol>
+  </nav>`;
+}
+
+function wordBreakdownHtml(breakdown){
+  if(!breakdown?.categories?.length){
+    return `<p class="empty">אין הוצאות לפילוח.</p>`;
+  }
+  const summaryRows = breakdown.categories.map(item => [
+    item.category,
+    String(item.count),
+    wordMoney(item.sumIls, 'ILS'),
+    `${item.pct.toFixed(1)}%`
+  ]);
+  const details = breakdown.categories.map(group => {
+    const rows = group.items.map(e => [
+      e?.date || fmtDate(e?.dateIso || e?.createdAt),
+      e?.time || '',
+      wordPlain(e?.title || e?.locationName || ''),
+      wordMoney(e?.amount, e?.currency || ''),
+      wordMoney(e?._ils || 0, 'ILS')
+    ]);
+    return `<h3>${excelHtmlEscape(group.category)} — ${excelHtmlEscape(wordMoney(group.sumIls, 'ILS'))}</h3>
+      ${wordHtmlTable(['תאריך', 'שעה', 'תיאור', 'סכום', '₪'], rows, 'small')}`;
+  }).join('');
+  return `<p class="total">סה״כ הוצאות: <strong>${excelHtmlEscape(wordMoney(breakdown.totalIls, 'ILS'))}</strong></p>
+    ${wordHtmlTable(['קטגוריה', 'כמות', 'סך ב-ILS', 'אחוז'], summaryRows)}
+    ${details}`;
+}
+
+function wordExportData(trip){
+  return {
+    metaRows: buildMetaRowsForWordReport(trip),
+    budgetRows: buildBudgetRowsForWordReport(trip),
+    journalRows: buildJournalRowsForWordReport(trip),
+    expenseRows: buildExpenseRowsForWordReport(trip),
+    breakdown: buildExpenseBreakdownForWordReport(trip)
+  };
+}
+
+function downloadTripWordHtml(trip, data){
+  const title = `דוח נסיעה${trip?.destination ? ` — ${trip.destination}` : ''}`;
+  const dates = `${fmtDate(trip?.start)} - ${fmtDate(trip?.end)}`.replace(/^\s*-\s*$/,'');
+  const html = `<!doctype html>
+<html dir="rtl" lang="he" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+  <meta charset="utf-8">
+  <title>${excelHtmlEscape(title)}</title>
+  <style>
+    @page{size:A4;margin:2cm 1.6cm 1.8cm 1.6cm;}
+    body{direction:rtl;font-family:Arial,'Rubik',sans-serif;color:#111827;line-height:1.5;font-size:11.5pt;}
+    h1,h2,h3,p{direction:rtl;text-align:right;}
+    h1{font-size:28pt;margin:0 0 10px;color:#0f172a;}
+    h2{font-size:18pt;margin:28px 0 10px;color:#0f172a;border-bottom:2px solid #1a73ff;padding-bottom:6px;}
+    h3{font-size:14pt;margin:20px 0 8px;color:#1f2937;}
+    .cover{min-height:620px;display:block;padding-top:120px;text-align:center;}
+    .cover h1,.cover p{text-align:center;}
+    .subtitle{font-size:15pt;color:#475569;margin-top:8px;}
+    .generated{font-size:10pt;color:#64748b;margin-top:28px;}
+    .page-break{page-break-before:always;}
+    .toc{page-break-before:always;margin-top:30px;}
+    .toc ol{font-size:13pt;line-height:1.9;margin-right:22px;}
+    .toc a{color:#1a73ff;text-decoration:none;}
+    table{width:100%;border-collapse:collapse;margin:10px 0 22px;direction:rtl;}
+    th,td{border:1px solid #cfd8e3;padding:7px 9px;text-align:right;vertical-align:top;}
+    th{background:#edf2f7;font-weight:700;color:#0f172a;}
+    tr:nth-child(even) td{background:#fafafa;}
+    .small th,.small td{font-size:10pt;padding:5px 7px;}
+    .total{background:#f8fafc;border:1px solid #cfd8e3;padding:10px 12px;border-radius:8px;}
+    .empty{color:#64748b;}
+    .ltr{direction:ltr;unicode-bidi:isolate;}
+    .journal-table{margin-top:10px;}
+    .journal-table th,.journal-table td{font-size:10.5pt;}
+    .journal-meta-head th{background:#edf2f7;}
+    .journal-meta-row td{background:#ffffff;}
+    .journal-content-head th{background:#f8fafc;text-align:center;font-weight:700;}
+    .journal-content-row td{background:#ffffff;white-space:pre-wrap;line-height:1.55;padding:11px 12px;}
+    .journal-content-row{page-break-after:auto;}
+    .footer-note{margin-top:30px;color:#64748b;font-size:9pt;border-top:1px solid #e5e7eb;padding-top:10px;}
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>${excelHtmlEscape(title)}</h1>
+    <p class="subtitle">${excelHtmlEscape(dates)}</p>
+    <p class="generated">נוצר בתאריך ${excelHtmlEscape(new Date().toLocaleString('he-IL'))}</p>
+  </section>
+
+  ${wordToc()}
+
+  <section id="trip-meta" class="page-break">
+    <h2>1. נתוני הנסיעה</h2>
+    ${wordHtmlTable(['שדה', 'ערך'], data.metaRows)}
+  </section>
+
+  <section id="trip-budget" class="page-break">
+    <h2>2. התקציב</h2>
+    ${wordHtmlTable(['מטבע', 'תקציב', 'נוצל', 'יתרה', '% ניצול'], data.budgetRows)}
+  </section>
+
+  <section id="trip-journal" class="page-break">
+    <h2>3. היומן</h2>
+    ${wordJournalTable(data.journalRows)}
+  </section>
+
+  <section id="trip-expenses" class="page-break">
+    <h2>4. הוצאות</h2>
+    ${wordHtmlTable(['תאריך', 'שעה', 'קטגוריה', 'סכום', '₪', 'תיאור / מקום', 'הערות'], data.expenseRows, 'small')}
+  </section>
+
+  <section id="trip-breakdown" class="page-break">
+    <h2>5. פילוח הוצאות</h2>
+    ${wordBreakdownHtml(data.breakdown)}
+  </section>
+
+  <p class="footer-note">FLYMILY — דוח נסיעה</p>
+</body>
+</html>`;
+  const blob = new Blob(['\ufeff', html], { type:'application/msword;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `FLYMILY_${wordSafeFilePart(trip?.destination)}_Trip_Report.doc`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=> URL.revokeObjectURL(link.href), 1000);
+}
+
+
+function wordJournalTable(rows){
+  const bodyRows = rows && rows.length ? rows : [['', '', 'אין רשומות יומן', '', '']];
+  let h = '<table class="journal-table"><tbody>';
+  for(const r of bodyRows){
+    h += '<tr class="journal-meta-head"><th>תאריך</th><th>שעה</th><th>כותרת</th><th>מיקום</th></tr>';
+    h += `<tr class="journal-meta-row"><td>${excelHtmlEscape(r[0] || '')}</td><td>${excelHtmlEscape(r[1] || '')}</td><td>${excelHtmlEscape(r[2] || '')}</td><td>${excelHtmlEscape(r[3] || '')}</td></tr>`;
+    h += '<tr class="journal-content-head"><th colspan="4">תוכן</th></tr>';
+    h += `<tr class="journal-content-row"><td colspan="4">${excelHtmlEscape(r[4] || '')}</td></tr>`;
+  }
+  h += '</tbody></table>';
+  return h;
+}
 async function exportWord(){
-  const t = currentTrip();
-  if(!t.id){ toast('פתח נסיעה'); return; }
-  const ok = await ensureDOCX(); if(!ok){ toast('בעיה בייצוא Word'); return; }
-  const { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
-
-  const metaRows = kvRowsFromMeta(t).map(r =>
-    new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(r['שדה'])]}),
-      new TableCell({ children:[new Paragraph(String(r['ערך']))]}),
-    ]})
-  );
-  const metaTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'שדה', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'ערך', alignment: AlignmentType.CENTER})]}),
-    ]}), ...metaRows ]
-  });
-
-  const journalRows = Object.values(t.journal || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(j =>
-    new TableRow({
-      children:[
-        new TableCell({ children:[new Paragraph(fmtDateTime(j.dateIso || j.createdAt)||'')]}),
-        new TableCell({ children:[new Paragraph(j.placeName||'')]}),
-        new TableCell({ children:[new Paragraph(stripLinks(j.text||''))]}),
-      ]
-    })
-  );
-  const jrTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'כותרת', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
-    ]}), ...journalRows ]
-  });
-
-  const exRows = Object.values(t.expenses || {}).sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(e =>
-    new TableRow({ children:[
-      new TableCell({ children:[new Paragraph(fmtDateTime(e.dateIso || e.createdAt)||'')]}), // 1. תאריך
-      new TableCell({ children:[new Paragraph(e.currency||'')]}),                               // 2. מטבע
-      new TableCell({ children:[new Paragraph(String(e.amount ?? ''))]}),                       // 3. סכום
-      new TableCell({ children:[new Paragraph(e.category||'')]}),                               // 4. קטגוריה
-      new TableCell({ children:[new Paragraph(stripLinks(e.desc||''))]}),                                   // 5. תיאור
-    ]})
-  );
-  const exTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [ new TableRow({ children:[
-      new TableCell({ children:[new Paragraph({text:'תאריך', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'מטבע', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'סכום', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'קטגוריה', alignment: AlignmentType.CENTER})]}),
-      new TableCell({ children:[new Paragraph({text:'תיאור', alignment: AlignmentType.CENTER})]}),
-    ]}), ...exRows ]
-  });
-
-  const doc = new Document({
-    sections:[{
-      properties:{},
-      children:[
-        // כותרת ראשית: שונתה ל"הטיול שלי ל[יעד]"
-        new Paragraph({ text:`הטיול שלי ל${t.destination||'המרכז'}`, heading: HeadingLevel.TITLE }),
-        new Paragraph({ text:`${fmtDate(t.start)} – ${fmtDate(t.end)}` }),
-        // כותרת משנה: "נתוני נסיעה" - הוספת יישור לימין
-        new Paragraph({ text:'נתוני נסיעה', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
-        metaTable,
-        // כותרת משנה: "יומן יומי" - הוצמדה לימין
-        new Paragraph({ text:'יומן יומי', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
-        jrTable,
-        // כותרת משנה: "הוצאות" - הוצמדה לימין
-        new Paragraph({ text:'הוצאות', heading: HeadingLevel.HEADING_2, alignment: AlignmentType.RIGHT }),
-        exTable
-      ]
-    }]
-  });
-  const blob = await Packer.toBlob(doc);
-  const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
-  link.download = `FLYMILY_${(t.destination||'trip').replace(/\s+/g,'_')}.docx`; link.click(); URL.revokeObjectURL(link.href);
+  try{
+    const t = currentTrip();
+    if(!t.id){ toast('פתח נסיעה'); return; }
+    const data = wordExportData(t);
+    downloadTripWordHtml(t, data);
+    toast('נוצר דוח Word מלא');
+  }catch(err){
+    console.error('Word export failed', err);
+    toast('ייצוא הנסיעה ל-Word נכשל');
+  }
 }
 
 
@@ -6417,7 +6896,11 @@ Object.keys(expMap).forEach(k=>{
 // Wire the new Export Trip Schedule button
 document.addEventListener('DOMContentLoaded', ()=>{
   const btn = document.getElementById('btnExportTripSchedule');
-  if(btn){ btn.addEventListener('click', ()=> exportTripScheduleWord()); }
+  if(btn && !btn.dataset._scheduleWordBound){
+    btn.dataset._scheduleWordBound = '1';
+    btn.textContent = 'לוח תכנון';
+    btn.addEventListener('click', ()=> exportTripScheduleWord());
+  }
 });
 
 
@@ -7864,6 +8347,8 @@ function renderCategoryBreakdownNode(targetId){
       amount: isFinite(amt) ? amt : 0,
       currency: from,
       desc: (e?.desc || e?.descHtml || '').toString().replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
+      title: (e?.title || '').toString().trim(),
+      locationName: (e?.locationName || '').toString().trim(),
       date: (e?.date || '').toString(),
       time: (e?.time || '').toString(),
       ils
@@ -7916,7 +8401,7 @@ function renderCategoryBreakdownNode(targetId){
     const rowId = `bd_${idx}`;
     const items = data.items.map((it)=>{
       const when = [it.date, it.time].filter(Boolean).join(' ');
-      const desc = esc(it.desc || '');
+      const desc = esc(it.desc || it.title || it.locationName || '');
       const cur = esc((it.currency || '').toUpperCase());
       const ilsTxt = isFinite(it.ils) ? `${fmtILS(it.ils)} ILS` : 'ללא המרה';
       return `
@@ -8177,9 +8662,9 @@ function renderCategoryBreakdownNode(targetId){
   window.openTripPrintPreview = openPrintPreview;
   document.addEventListener('DOMContentLoaded', ()=>{
     const btn = document.getElementById('btnExportTripSchedule');
-    if(btn && !btn.dataset._ppBound){
+    if(btn && !btn.dataset._scheduleWordBound && !btn.dataset._ppBound){
       btn.dataset._ppBound = '1';
-      btn.textContent = 'ייצא הוצאות ל WORD';
+      btn.textContent = 'לוח תכנון';
       btn.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); openPrintPreview(); });
     }
   });
