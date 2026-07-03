@@ -6438,25 +6438,83 @@ function buildAllAppExcelSheets(trips){
     });
   });
 
-  Object.entries(state?.categories || {}).forEach(([type, values])=>{
-    (Array.isArray(values) ? values : []).forEach(value => {
-      categoryRows.push({ 'סוג': type, 'קטגוריה': value });
+  const breakdown = new Map();
+  trips.forEach((trip)=>{
+    Object.values(trip?.expenses || {}).forEach((e)=>{
+      const category = e?.category || 'אחר';
+      const key = `${trip.id || ''}__${category}`;
+      let row = breakdown.get(key);
+      if(!row){
+        row = {
+          'מזהה נסיעה': trip.id || '',
+          'יעד': trip.destination || '',
+          'קטגוריה': category,
+          'מספר הוצאות': 0,
+          'סה״כ ב-ILS': 0
+        };
+        breakdown.set(key, row);
+      }
+      row['מספר הוצאות'] += 1;
+      try{
+        const converted = convertAmount(Number(e?.amount || 0), e?.currency || 'ILS', 'ILS', e?.rates || trip?.rates || {});
+        if(isFinite(converted)) row['סה״כ ב-ILS'] += converted;
+      }catch(_){}
     });
+  });
+  breakdown.forEach(row=>{
+    row['סה״כ ב-ILS'] = Math.round(row['סה״כ ב-ILS'] * 100) / 100;
+    categoryRows.push(row);
   });
 
   return [
-    { name: 'נסיעות', rows: tripRows },
+    { name: 'נתוני נסיעה', rows: tripRows },
     { name: 'יומן', rows: journalRows },
     { name: 'הוצאות', rows: expenseRows },
-    { name: 'קטגוריות', rows: categoryRows }
+    { name: 'פילוח', rows: categoryRows }
   ];
 }
 
+async function getCurrentTripForExcelExport(){
+  const uid = state?.user?.uid || null;
+  const currentId = state?.current?.id || state?.currentTripId || null;
+  if(!currentId){
+    const fallback = state?.current ? normalizeTripShape(state.current) : null;
+    return fallback?.id ? fallback : null;
+  }
+
+  let trip = null;
+  try{
+    if(state?.current && String(state.current.id || state.currentTripId || currentId) === String(currentId)){
+      trip = normalizeTripShape({ ...state.current, id: currentId });
+    }
+  }catch(_){}
+
+  try{
+    const cached = loadTripCache(uid, currentId);
+    if(cached) trip = normalizeTripShape({ ...(trip || {}), ...cached, id: currentId });
+  }catch(_){}
+
+  try{
+    if(FB?.getDoc && FB?.doc && db){
+      const snap = await FB.getDoc(FB.doc(db, 'trips', currentId));
+      if(snap.exists()) trip = normalizeTripShape({ ...(trip || {}), id: snap.id, ...snap.data() });
+    }
+  }catch(err){
+    console.warn('Excel export could not fetch current trip, using local data', err);
+  }
+
+  return trip ? normalizeTripShape({ ...trip, id: currentId }) : null;
+}
+
+function excelSafeFilePart(value){
+  return excelCellText(value || '').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '_').slice(0, 60) || 'trip';
+}
+
 async function exportExcel(){
-  const trips = await getAllTripsForExcelExport();
-  if(!trips.length){ toast('אין נתונים לייצוא'); return; }
-  const sheets = buildAllAppExcelSheets(trips);
-  const fn = `FLYMILY_all_data_${new Date().toISOString().slice(0,10)}.xlsx`;
+  const trip = await getCurrentTripForExcelExport();
+  if(!trip){ toast('בחר נסיעה לייצוא'); return; }
+  const sheets = buildAllAppExcelSheets([trip]);
+  const fn = `FLYMILY_${excelSafeFilePart(trip.destination || trip.id)}_${new Date().toISOString().slice(0,10)}.xlsx`;
 
   const ok = await ensureXLSX();
   const XLSXLib = window.XLSX;
@@ -6728,13 +6786,6 @@ function downloadTripWordHtml(trip, data){
     .total{background:#f8fafc;border:1px solid #cfd8e3;padding:10px 12px;border-radius:8px;}
     .empty{color:#64748b;}
     .ltr{direction:ltr;unicode-bidi:isolate;}
-    .journal-table{margin-top:10px;}
-    .journal-table th,.journal-table td{font-size:10.5pt;}
-    .journal-meta-head th{background:#edf2f7;}
-    .journal-meta-row td{background:#ffffff;}
-    .journal-content-head th{background:#f8fafc;text-align:center;font-weight:700;}
-    .journal-content-row td{background:#ffffff;white-space:pre-wrap;line-height:1.55;padding:11px 12px;}
-    .journal-content-row{page-break-after:auto;}
     .footer-note{margin-top:30px;color:#64748b;font-size:9pt;border-top:1px solid #e5e7eb;padding-top:10px;}
   </style>
 </head>
@@ -6787,16 +6838,9 @@ function downloadTripWordHtml(trip, data){
 
 
 function wordJournalTable(rows){
-  const bodyRows = rows && rows.length ? rows : [['', '', 'אין רשומות יומן', '', '']];
-  let h = '<table class="journal-table"><tbody>';
-  for(const r of bodyRows){
-    h += '<tr class="journal-meta-head"><th>תאריך</th><th>שעה</th><th>כותרת</th><th>מיקום</th></tr>';
-    h += `<tr class="journal-meta-row"><td>${excelHtmlEscape(r[0] || '')}</td><td>${excelHtmlEscape(r[1] || '')}</td><td>${excelHtmlEscape(r[2] || '')}</td><td>${excelHtmlEscape(r[3] || '')}</td></tr>`;
-    h += '<tr class="journal-content-head"><th colspan="4">תוכן</th></tr>';
-    h += `<tr class="journal-content-row"><td colspan="4">${excelHtmlEscape(r[4] || '')}</td></tr>`;
-  }
-  h += '</tbody></table>';
-  return h;
+  let h=`<table><thead><tr><th>תאריך</th><th>שעה</th><th>כותרת</th><th>מיקום</th></tr><tr><th colspan="4">תוכן</th></tr></thead><tbody>`;
+  for(const r of rows){h+=`<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td></tr><tr><td colspan="4">${r[4]||''}</td></tr>`;}
+  h+='</tbody></table>';return h;
 }
 async function exportWord(){
   try{
