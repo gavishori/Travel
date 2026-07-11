@@ -19477,3 +19477,29 @@ body[data-theme="light"] header button,
 body[data-theme="light"] header #userBadge{
   border-color:rgba(255,255,255,.78) !important;
 }
+/* EOF guard: saved URL anchors marked as link icons must render as symbols only. */
+html body .rtf a.link-icon:not(.show-link-text):not([data-show-text]),
+html body .rtf a.mail-icon:not(.show-link-text):not([data-show-text]),
+html body .cell.notes a.link-icon:not(.show-link-text):not([data-show-text]),
+html body .cell.notes a.mail-icon:not(.show-link-text):not([data-show-text]),
+html body a.link-icon-only:not(.show-link-text):not([data-show-text]){
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:24px !important;
+  overflow:hidden !important;
+  color:#1E88E5 !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  text-decoration:none !important;
+  vertical-align:middle !important;
+  white-space:nowrap !important;
+}
+
+html body .rtf a.link-icon:not(.show-link-text):not([data-show-text])::before,
+html body .cell.notes a.link-icon:not(.show-link-text):not([data-show-text])::before,
+html body a.link-icon-only:not(.show-link-text):not([data-show-text])::before{
+  font-size:18px !important;
+}

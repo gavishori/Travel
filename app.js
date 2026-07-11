@@ -2390,8 +2390,15 @@ function isTripInMobileActiveWindow(trip){
 
 function getMobileActiveTrips(trips){
   try{
+    const storedId = localStorage.getItem('activeTripId') || '';
+    const currentId = state?.currentTripId || '';
     return [...(trips || [])]
-      .filter(isTripInMobileActiveWindow)
+      .filter(trip => {
+        const id = String(trip?.id || '');
+        return isTripInMobileActiveWindow(trip)
+          || (storedId && id === String(storedId))
+          || (currentId && id === String(currentId));
+      })
       .sort((a,b)=> (b.start || b.createdAt || '').localeCompare(a.start || a.createdAt || ''));
   }catch(_){
     return [];
@@ -2400,7 +2407,9 @@ function getMobileActiveTrips(trips){
 
 function getLightTripList(trips){
   try{
-    return isMobileViewport() ? getMobileActiveTrips(trips) : trips;
+    if(!isMobileViewport()) return trips;
+    const active = getMobileActiveTrips(trips);
+    return active.length ? active : [...(trips || [])];
   }catch(_){
     return [];
   }
@@ -2446,7 +2455,7 @@ async function maybeOpenStoredActiveTrip(){
     if(!storedId || __autoOpenLatestTripId === storedId) return;
 
     const cachedTrip = loadTripCache(state.user.uid, storedId);
-    if(cachedTrip && isTripInMobileActiveWindow(cachedTrip)){
+    if(cachedTrip){
       state.trips = [buildTripSummary({ ...cachedTrip, id: storedId })];
       renderTripList();
       __autoOpenLatestTripId = storedId;
@@ -2457,7 +2466,6 @@ async function maybeOpenStoredActiveTrip(){
     const snap = await FB.getDoc(FB.doc(db, 'trips', storedId));
     if(!snap.exists() || state.currentTripId) return;
     const trip = normalizeTripShape({ id: snap.id, ...snap.data() });
-    if(!isTripInMobileActiveWindow(trip)) return;
     saveTripCache(state.user.uid, trip);
     state.trips = [buildTripSummary(trip)];
     renderTripList();
