@@ -2380,9 +2380,10 @@ function isTripInMobileActiveWindow(trip){
     const end = _parseISODateOnly(trip.end);
     const today = _parseISODateOnly(_todayKey());
     if(!start || !end || !today) return false;
-    const lo = addDays(start, -14).getTime();
-    const hi = end.getTime();
-    return today.getTime() >= Math.min(lo, hi) && today.getTime() <= Math.max(lo, hi);
+    const todayMs = today.getTime();
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    return todayMs >= Math.min(startMs, endMs) && todayMs <= Math.max(startMs, endMs);
   }catch(_){
     return false;
   }
@@ -2390,15 +2391,8 @@ function isTripInMobileActiveWindow(trip){
 
 function getMobileActiveTrips(trips){
   try{
-    const storedId = localStorage.getItem('activeTripId') || '';
-    const currentId = state?.currentTripId || '';
     return [...(trips || [])]
-      .filter(trip => {
-        const id = String(trip?.id || '');
-        return isTripInMobileActiveWindow(trip)
-          || (storedId && id === String(storedId))
-          || (currentId && id === String(currentId));
-      })
+      .filter(isTripInMobileActiveWindow)
       .sort((a,b)=> (b.start || b.createdAt || '').localeCompare(a.start || a.createdAt || ''));
   }catch(_){
     return [];
@@ -2409,7 +2403,7 @@ function getLightTripList(trips){
   try{
     if(!isMobileViewport()) return trips;
     const active = getMobileActiveTrips(trips);
-    return active.length ? active : [...(trips || [])];
+    return active;
   }catch(_){
     return [];
   }
@@ -2438,7 +2432,9 @@ function maybeOpenLatestTripOnly(trips){
   try{
     if(!shouldUseLightTripLoading()) return;
     if(state.currentTripId) return;
-    const active = preferredMobileActiveTrip(trips);
+    const activeTrips = getMobileActiveTrips(trips);
+    if(activeTrips.length !== 1) return;
+    const active = preferredMobileActiveTrip(activeTrips);
     if(!active?.id || __autoOpenLatestTripId === active.id) return;
     __autoOpenLatestTripId = active.id;
     setTimeout(()=>{
@@ -2453,6 +2449,8 @@ async function maybeOpenStoredActiveTrip(){
     if(state.currentTripId || !state.user?.uid) return;
     const storedId = localStorage.getItem('activeTripId') || '';
     if(!storedId || __autoOpenLatestTripId === storedId) return;
+    const activeTrips = getMobileActiveTrips(state.trips);
+    if(activeTrips.length !== 1 || String(activeTrips[0]?.id || '') !== String(storedId)) return;
 
     const cachedTrip = loadTripCache(state.user.uid, storedId);
     if(cachedTrip){
