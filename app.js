@@ -2398,6 +2398,14 @@ function getMobileActiveTrips(trips){
   }
 }
 
+function getLightTripList(trips){
+  try{
+    return isMobileViewport() ? getMobileActiveTrips(trips) : trips;
+  }catch(_){
+    return [];
+  }
+}
+
 function preferredMobileActiveTrip(trips){
   try{
     const active = getMobileActiveTrips(trips);
@@ -2637,7 +2645,7 @@ function applyTripsSnapshotPerf(snapAt, snapSize){
 function subscribeTripsFull(reason='fallback', opts={}){
   try { state._unsubTripsFallback && state._unsubTripsFallback(); } catch(_) {}
   const lightLoad = shouldUseLightTripLoading();
-  const canOrderLatest = lightLoad && !opts.noOrderBy;
+  const canOrderLatest = lightLoad && !isMobileViewport() && !opts.noOrderBy;
   const q = canOrderLatest
     ? FB.query(
         FB.collection(db, 'trips'),
@@ -2646,14 +2654,14 @@ function subscribeTripsFull(reason='fallback', opts={}){
         FB.limit(8)
       )
     : lightLoad
-      ? FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid), FB.limit(8))
+      ? FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid))
       : FB.query(FB.collection(db, 'trips'), FB.where('ownerUid', '==', state.user.uid));
   state._unsubTripsFallback = FB.onSnapshot(q, (snap)=>{
     const snapAt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
     const snapshotTrips = snap.docs
       .map(d=> normalizeTripShape({ id:d.id, ...d.data() }))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
-    state.trips = lightLoad ? getMobileActiveTrips(snapshotTrips).slice(0, 1) : snapshotTrips;
+    state.trips = lightLoad ? getLightTripList(snapshotTrips) : snapshotTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, snapshotTrips);
@@ -2687,7 +2695,7 @@ function subscribeTrips(){
   const cachedTrips = loadTripSummariesCache(state.user.uid)
     .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
   if(cachedTrips.length){
-    state.trips = shouldUseLightTripLoading() ? getMobileActiveTrips(cachedTrips).slice(0, 1) : cachedTrips;
+    state.trips = shouldUseLightTripLoading() ? getLightTripList(cachedTrips) : cachedTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     maybeOpenLatestTripOnly(state.trips);
@@ -2712,7 +2720,7 @@ function subscribeTrips(){
     const snapshotTrips = snap.docs
       .map(d=> normalizeTripSummaryDoc(d))
       .sort((a,b)=> (b.start||'').localeCompare(a.start||''));
-    state.trips = shouldUseLightTripLoading() ? getMobileActiveTrips(snapshotTrips).slice(0, 1) : snapshotTrips;
+    state.trips = shouldUseLightTripLoading() ? getLightTripList(snapshotTrips) : snapshotTrips;
     renderTripList();
     setTimeout(()=>{ try{ maybeShowTodayPromptFromTrips(state.trips); }catch(_){ } }, 0);
     saveTripSummariesCache(state.user?.uid, snapshotTrips);
@@ -2740,7 +2748,7 @@ async function renderTripList(){
   let items = [...state.trips];
   let s = null;
   if(shouldUseLightTripLoading() && !search){
-    items = getMobileActiveTrips(items).slice(0, 1);
+    items = getLightTripList(items);
   }
   if(search){
     s = search.toLowerCase();
@@ -10012,7 +10020,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   function getCollapsed(){
-    try{ return localStorage.getItem('allDetailsCollapsed') === '1'; }catch(_){ return false; }
+    try{
+      const stored = localStorage.getItem('allDetailsCollapsed');
+      return stored == null ? true : stored === '1';
+    }catch(_){
+      return true;
+    }
   }
 
   function init(){
